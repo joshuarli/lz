@@ -2,9 +2,111 @@ use crate::ansi::strip_ansi;
 use crate::buffer::LineBuffer;
 use regex_lite::Regex;
 
+/// Boyer-Moore-Horspool substring searcher.
+///
+/// Uses a 256-entry bad-character shift table to skip ahead when a mismatch
+/// occurs. For literal patterns this is dramatically faster than regex because
+/// it can skip over large chunks of the haystack without examining every byte.
+struct BMH {
+    /// The needle bytes (lowercased if case-insensitive).
+    needle: Vec<u8>,
+    /// Bad-character shift table indexed by raw byte value.
+    shift: [usize; 256],
+    case_insensitive: bool,
+}
+
+impl BMH {
+    fn new(pattern: &[u8], case_insensitive: bool) -> Self {
+        let needle: Vec<u8> = if case_insensitive {
+            pattern.iter().map(|b| b.to_ascii_lowercase()).collect()
+        } else {
+            pattern.to_vec()
+        };
+        let n = needle.len();
+        let mut shift = [n; 256];
+        // Set shift for every byte in the needle except the last.
+        for i in 0..n.saturating_sub(1) {
+            let b = needle[i];
+            shift[b as usize] = n - 1 - i;
+            if case_insensitive {
+                shift[b.to_ascii_uppercase() as usize] = n - 1 - i;
+            }
+        }
+        BMH {
+            needle,
+            shift,
+            case_insensitive,
+        }
+    }
+
+    /// Find first occurrence starting at `start`. Returns byte offset in haystack.
+    fn find_from(&self, haystack: &[u8], start: usize) -> Option<usize> {
+        let n = self.needle.len();
+        if n == 0 {
+            return Some(start);
+        }
+        if start + n > haystack.len() {
+            return None;
+        }
+        let last = n - 1;
+        let mut i = start;
+        while i + n <= haystack.len() {
+            let mut j = last;
+            loop {
+                let hb = if self.case_insensitive {
+                    haystack[i + j].to_ascii_lowercase()
+                } else {
+                    haystack[i + j]
+                };
+                if hb != self.needle[j] {
+                    break;
+                }
+                if j == 0 {
+                    return Some(i);
+                }
+                j -= 1;
+            }
+            // Shift based on the aligned byte under the last needle position.
+            // The shift table has entries for both cases, so raw byte is fine.
+            i += self.shift[haystack[i + last] as usize];
+        }
+        None
+    }
+
+    fn is_match(&self, haystack: &[u8]) -> bool {
+        self.find_from(haystack, 0).is_some()
+    }
+
+    fn find_all(&self, haystack: &[u8]) -> Vec<(usize, usize)> {
+        let n = self.needle.len();
+        if n == 0 {
+            return vec![];
+        }
+        let mut matches = Vec::new();
+        let mut start = 0;
+        while let Some(pos) = self.find_from(haystack, start) {
+            matches.push((pos, pos + n));
+            start = pos + n;
+        }
+        matches
+    }
+}
+
+/// Returns true if the pattern contains no regex metacharacters.
+fn is_literal(pattern: &str) -> bool {
+    !pattern
+        .bytes()
+        .any(|b| matches!(b, b'\\' | b'.' | b'^' | b'$' | b'*' | b'+' | b'?' | b'(' | b')' | b'[' | b']' | b'{' | b'}' | b'|'))
+}
+
+enum Matcher {
+    Literal(BMH),
+    Regex(Regex),
+}
+
 pub struct Search {
     pub pattern: String,
-    regex: Regex,
+    matcher: Matcher,
 }
 
 impl Search {
@@ -16,27 +118,41 @@ impl Search {
         }
 
         let has_upper = pattern.chars().any(|c| c.is_uppercase());
-        let regex_pattern = if has_upper {
-            pattern.to_string()
-        } else {
-            format!("(?i){}", pattern)
-        };
+        let case_insensitive = !has_upper;
 
-        let regex = Regex::new(&regex_pattern).map_err(|e| format!("Invalid regex: {}", e))?;
+        let matcher = if is_literal(pattern) {
+            Matcher::Literal(BMH::new(pattern.as_bytes(), case_insensitive))
+        } else {
+            let regex_pattern = if case_insensitive {
+                format!("(?i){}", pattern)
+            } else {
+                pattern.to_string()
+            };
+            let regex =
+                Regex::new(&regex_pattern).map_err(|e| format!("Invalid regex: {}", e))?;
+            Matcher::Regex(regex)
+        };
 
         Ok(Search {
             pattern: pattern.to_string(),
-            regex,
+            matcher,
         })
     }
 
     /// Check if a line matches (strips ANSI first).
     pub fn is_match(&self, line: &str) -> bool {
         if !line.contains('\x1b') {
-            return self.regex.is_match(line);
+            return self.is_match_raw(line);
         }
         let stripped = strip_ansi(line);
-        self.regex.is_match(&stripped)
+        self.is_match_raw(&stripped)
+    }
+
+    fn is_match_raw(&self, text: &str) -> bool {
+        match &self.matcher {
+            Matcher::Literal(bmh) => bmh.is_match(text.as_bytes()),
+            Matcher::Regex(regex) => regex.is_match(text),
+        }
     }
 
     /// Find all match byte ranges in ANSI-stripped text.
@@ -48,15 +164,23 @@ impl Search {
 
     /// Find all match byte ranges in already-stripped text.
     pub fn find_matches_stripped(&self, stripped: &str) -> Vec<(usize, usize)> {
-        self.regex
-            .find_iter(stripped)
-            .map(|m| (m.start(), m.end()))
-            .collect()
+        match &self.matcher {
+            Matcher::Literal(bmh) => bmh.find_all(stripped.as_bytes()),
+            Matcher::Regex(regex) => regex
+                .find_iter(stripped)
+                .map(|m| (m.start(), m.end()))
+                .collect(),
+        }
     }
 
     /// Find next matching line from `from_line`, searching forward.
     /// Reads more lines from buffer as needed.
-    pub fn find_next_line(&self, buffer: &mut LineBuffer, from_line: usize, forward: bool) -> Option<usize> {
+    pub fn find_next_line(
+        &self,
+        buffer: &mut LineBuffer,
+        from_line: usize,
+        forward: bool,
+    ) -> Option<usize> {
         if forward {
             let mut line_idx = from_line;
             loop {
@@ -101,6 +225,101 @@ mod tests {
         LineBuffer::from_lines(lines.iter().map(|s| s.to_string()).collect())
     }
 
+    // --- is_literal ---
+
+    #[test]
+    fn literal_detection() {
+        assert!(is_literal("hello"));
+        assert!(is_literal("0500000"));
+        assert!(is_literal("foo bar"));
+        assert!(!is_literal("foo.bar"));
+        assert!(!is_literal("foo*"));
+        assert!(!is_literal("^start"));
+        assert!(!is_literal("end$"));
+        assert!(!is_literal("[abc]"));
+        assert!(!is_literal("a|b"));
+        assert!(!is_literal("foo\\d"));
+    }
+
+    // --- BMH ---
+
+    #[test]
+    fn bmh_basic_find() {
+        let bmh = BMH::new(b"fox", false);
+        assert_eq!(bmh.find_from(b"the quick brown fox", 0), Some(16));
+    }
+
+    #[test]
+    fn bmh_no_match() {
+        let bmh = BMH::new(b"xyz", false);
+        assert_eq!(bmh.find_from(b"hello world", 0), None);
+    }
+
+    #[test]
+    fn bmh_at_start() {
+        let bmh = BMH::new(b"the", false);
+        assert_eq!(bmh.find_from(b"the quick brown fox", 0), Some(0));
+    }
+
+    #[test]
+    fn bmh_at_end() {
+        let bmh = BMH::new(b"fox", false);
+        assert_eq!(bmh.find_from(b"fox", 0), Some(0));
+    }
+
+    #[test]
+    fn bmh_case_insensitive() {
+        let bmh = BMH::new(b"hello", true);
+        assert!(bmh.is_match(b"HELLO WORLD"));
+        assert!(bmh.is_match(b"Hello World"));
+        assert!(bmh.is_match(b"hello world"));
+    }
+
+    #[test]
+    fn bmh_case_sensitive() {
+        let bmh = BMH::new(b"Hello", false);
+        assert!(bmh.is_match(b"Hello World"));
+        assert!(!bmh.is_match(b"hello world"));
+        assert!(!bmh.is_match(b"HELLO WORLD"));
+    }
+
+    #[test]
+    fn bmh_find_all() {
+        let bmh = BMH::new(b"ab", false);
+        assert_eq!(bmh.find_all(b"ab cd ab ef ab"), vec![(0, 2), (6, 8), (12, 14)]);
+    }
+
+    #[test]
+    fn bmh_find_all_no_overlap() {
+        let bmh = BMH::new(b"aa", false);
+        assert_eq!(bmh.find_all(b"aaaa"), vec![(0, 2), (2, 4)]);
+    }
+
+    #[test]
+    fn bmh_single_byte() {
+        let bmh = BMH::new(b"x", false);
+        assert_eq!(bmh.find_from(b"abcxdef", 0), Some(3));
+    }
+
+    #[test]
+    fn bmh_empty_needle() {
+        let bmh = BMH::new(b"", false);
+        assert_eq!(bmh.find_from(b"anything", 0), Some(0));
+    }
+
+    #[test]
+    fn bmh_haystack_shorter_than_needle() {
+        let bmh = BMH::new(b"longpattern", false);
+        assert_eq!(bmh.find_from(b"short", 0), None);
+    }
+
+    #[test]
+    fn bmh_find_from_offset() {
+        let bmh = BMH::new(b"ab", false);
+        assert_eq!(bmh.find_from(b"ab ab ab", 1), Some(3));
+        assert_eq!(bmh.find_from(b"ab ab ab", 4), Some(6));
+    }
+
     // --- Search::new ---
 
     #[test]
@@ -132,7 +351,19 @@ mod tests {
     fn new_regex_special_chars() {
         let s = Search::new("a.b").unwrap();
         assert!(!s.find_matches("axb").is_empty()); // dot matches any
-        assert!(s.find_matches("ab").is_empty());   // but not zero chars
+        assert!(s.find_matches("ab").is_empty()); // but not zero chars
+    }
+
+    #[test]
+    fn new_literal_pattern_uses_bmh() {
+        let s = Search::new("0500000").unwrap();
+        assert!(matches!(s.matcher, Matcher::Literal(_)));
+    }
+
+    #[test]
+    fn new_regex_pattern_uses_regex() {
+        let s = Search::new("foo.*bar").unwrap();
+        assert!(matches!(s.matcher, Matcher::Regex(_)));
     }
 
     // --- find_matches ---

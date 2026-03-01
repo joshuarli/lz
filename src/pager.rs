@@ -7,11 +7,18 @@ use crate::input::{Key, KeyReader};
 use crate::search::Search;
 use crate::terminal;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Copy)]
 enum Mode {
     Normal,
     SearchInput,
+    FilterInput,
     Follow,
+}
+
+#[derive(PartialEq, Clone, Copy)]
+enum SearchDir {
+    Forward,
+    Backward,
 }
 
 pub(crate) struct LineEditor {
@@ -96,9 +103,13 @@ pub struct Pager {
     left_col: usize,
     wrap: bool,
     search: Option<Search>,
+    search_dir: SearchDir,
     current_match_line: Option<usize>,
     mode: Mode,
     search_input: LineEditor,
+    filter_input: LineEditor,
+    filter: Option<Search>,
+    filtered_lines: Vec<usize>,
     history: SearchHistory,
     term_width: u16,
     term_height: u16,
@@ -117,9 +128,13 @@ impl Pager {
             left_col: 0,
             wrap: false,
             search: None,
+            search_dir: SearchDir::Forward,
             current_match_line: None,
             mode: if follow { Mode::Follow } else { Mode::Normal },
             search_input: LineEditor::new(),
+            filter_input: LineEditor::new(),
+            filter: None,
+            filtered_lines: Vec::new(),
             history,
             term_width: w,
             term_height: h,
@@ -197,6 +212,10 @@ impl Pager {
                 self.handle_search_input_key(key);
                 false
             }
+            Mode::FilterInput => {
+                self.handle_filter_input_key(key);
+                false
+            }
             Mode::Follow => self.handle_follow_key(key),
         }
     }
@@ -243,12 +262,23 @@ impl Pager {
                 }
             }
             Key::Char('/') => {
+                self.search_dir = SearchDir::Forward;
                 self.mode = Mode::SearchInput;
                 self.search_input.clear();
                 self.history.reset_cursor();
             }
-            Key::Char('n') => self.search_next(),
-            Key::Char('N') => self.search_prev(),
+            Key::Char('?') => {
+                self.search_dir = SearchDir::Backward;
+                self.mode = Mode::SearchInput;
+                self.search_input.clear();
+                self.history.reset_cursor();
+            }
+            Key::Char('n') => self.search_same_dir(),
+            Key::Char('N') => self.search_opposite_dir(),
+            Key::Char('&') => {
+                self.mode = Mode::FilterInput;
+                self.filter_input.clear();
+            }
             Key::Char('w') => {
                 self.wrap = !self.wrap;
                 self.left_col = 0;
@@ -284,7 +314,7 @@ impl Pager {
                     Ok(s) => {
                         self.search = Some(s);
                         self.current_match_line = None;
-                        self.search_next();
+                        self.search_same_dir();
                     }
                     Err(e) => {
                         self.status_msg = Some(e);
@@ -320,13 +350,27 @@ impl Pager {
         }
     }
 
-    fn search_next(&mut self) {
+    fn search_same_dir(&mut self) {
+        let forward = self.search_dir == SearchDir::Forward;
+        self.do_search(forward);
+    }
+
+    fn search_opposite_dir(&mut self) {
+        let forward = self.search_dir == SearchDir::Backward;
+        self.do_search(forward);
+    }
+
+    fn do_search(&mut self, forward: bool) {
         let search = match self.search.take() {
             Some(s) => s,
             None => return,
         };
-        let from = self.current_match_line.map(|l| l + 1).unwrap_or(self.top_line);
-        match search.find_next_line(&mut self.buffer, from, true) {
+        let from = if forward {
+            self.current_match_line.map(|l| l + 1).unwrap_or(self.top_line)
+        } else {
+            self.current_match_line.unwrap_or(self.top_line)
+        };
+        match search.find_next_line(&mut self.buffer, from, forward) {
             Some(line) => {
                 self.current_match_line = Some(line);
                 self.top_line = line;
@@ -338,22 +382,61 @@ impl Pager {
         self.search = Some(search);
     }
 
-    fn search_prev(&mut self) {
-        let search = match self.search.take() {
-            Some(s) => s,
+    fn handle_filter_input_key(&mut self, key: Key) {
+        match key {
+            Key::Escape | Key::Ctrl('c') => {
+                self.mode = Mode::Normal;
+            }
+            Key::Enter => {
+                let pattern = self.filter_input.content.clone();
+                self.mode = Mode::Normal;
+                if pattern.is_empty() {
+                    // Empty pattern clears the filter
+                    self.clear_filter();
+                    return;
+                }
+                match Search::new(&pattern) {
+                    Ok(s) => {
+                        self.filter = Some(s);
+                        self.rebuild_filter();
+                        self.top_line = 0;
+                    }
+                    Err(e) => {
+                        self.status_msg = Some(e);
+                    }
+                }
+            }
+            Key::Backspace => self.filter_input.backspace(),
+            Key::Delete => self.filter_input.delete(),
+            Key::Left => self.filter_input.move_left(),
+            Key::Right => self.filter_input.move_right(),
+            Key::Home => self.filter_input.move_home(),
+            Key::End => self.filter_input.move_end(),
+            Key::Char(ch) => self.filter_input.insert(ch),
+            _ => {}
+        }
+    }
+
+    fn rebuild_filter(&mut self) {
+        self.filtered_lines.clear();
+        let filter = match &self.filter {
+            Some(f) => f,
             None => return,
         };
-        let from = self.current_match_line.unwrap_or(self.top_line);
-        match search.find_next_line(&mut self.buffer, from, false) {
-            Some(line) => {
-                self.current_match_line = Some(line);
-                self.top_line = line;
-            }
-            None => {
-                self.status_msg = Some("Pattern not found".to_string());
+        // Read all lines so we can filter them
+        self.buffer.read_all();
+        for i in 0..self.buffer.len() {
+            if let Some(line) = self.buffer.lines.get(i) {
+                if filter.is_match(line) {
+                    self.filtered_lines.push(i);
+                }
             }
         }
-        self.search = Some(search);
+    }
+
+    fn clear_filter(&mut self) {
+        self.filter = None;
+        self.filtered_lines.clear();
     }
 
     fn scroll_down(&mut self, lines: usize) {
@@ -374,7 +457,7 @@ impl Pager {
     }
 
     fn scroll_to_bottom(&mut self) {
-        let total = self.buffer.len();
+        let total = self.display_line_count();
         let ch = self.content_height();
         if total > ch {
             self.top_line = total - ch;
@@ -385,13 +468,17 @@ impl Pager {
 
     fn clamp_top_line(&mut self) {
         let ch = self.content_height();
-        self.buffer.get_line(self.top_line + ch);
+        if self.filter.is_none() {
+            self.buffer.get_line(self.top_line + ch);
+        }
 
-        let total = self.buffer.len();
+        let total = self.display_line_count();
         if total <= ch {
             self.top_line = 0;
-        } else if self.top_line > total - ch && self.buffer.is_finished() {
-            self.top_line = total - ch;
+        } else if self.top_line > total - ch {
+            if self.filter.is_some() || self.buffer.is_finished() {
+                self.top_line = total - ch;
+            }
         }
     }
 
@@ -490,17 +577,42 @@ impl Pager {
         Ok(())
     }
 
+    /// Map a display row to an actual buffer line index.
+    fn display_line_idx(&self, display_idx: usize) -> Option<usize> {
+        if self.filter.is_some() {
+            self.filtered_lines.get(display_idx).copied()
+        } else {
+            Some(display_idx)
+        }
+    }
+
+    /// Total number of displayable lines (filtered or total).
+    fn display_line_count(&self) -> usize {
+        if self.filter.is_some() {
+            self.filtered_lines.len()
+        } else {
+            self.buffer.len()
+        }
+    }
+
     fn render_nowrap(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize) {
         // Pre-ensure all lines are loaded so we can borrow buffer.lines directly
-        self.buffer.get_line(self.top_line + ch);
+        if self.filter.is_none() {
+            self.buffer.get_line(self.top_line + ch);
+        }
         for row in 0..ch {
             terminal::move_cursor(buf, row as u16, 0);
-            let line_idx = self.top_line + row;
-            match self.buffer.lines.get(line_idx) {
-                Some(line) => {
-                    let display = truncate_to_width(line, self.left_col, w, self.raw_mode);
-                    self.write_line_with_search(buf, &display, line_idx);
-                }
+            let display_idx = self.top_line + row;
+            match self.display_line_idx(display_idx) {
+                Some(line_idx) => match self.buffer.lines.get(line_idx) {
+                    Some(line) => {
+                        let display = truncate_to_width(line, self.left_col, w, self.raw_mode);
+                        self.write_line_with_search(buf, &display, line_idx);
+                    }
+                    None => {
+                        buf.push(b'~');
+                    }
+                },
                 None => {
                     buf.push(b'~');
                 }
@@ -511,14 +623,19 @@ impl Pager {
 
     fn render_wrapped(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize) {
         let mut screen_row = 0;
-        let mut line_idx = self.top_line;
+        let mut display_idx = self.top_line;
 
         // Pre-ensure a reasonable number of lines are loaded
-        self.buffer.get_line(self.top_line + ch);
+        if self.filter.is_none() {
+            self.buffer.get_line(self.top_line + ch);
+        }
 
         while screen_row < ch {
-            match self.buffer.lines.get(line_idx) {
+            let actual_idx = self.display_line_idx(display_idx);
+            let line_opt = actual_idx.and_then(|i| self.buffer.lines.get(i));
+            match line_opt {
                 Some(line) => {
+                    let actual = actual_idx.unwrap();
                     let total_width = if self.raw_mode {
                         unicode_width::UnicodeWidthStr::width(line.as_str())
                     } else {
@@ -538,20 +655,21 @@ impl Pager {
                         let start_col = wrap_row * w;
                         let display = truncate_to_width(line, start_col, w, self.raw_mode);
                         if wrap_row == 0 {
-                            self.write_line_with_search(buf, &display, line_idx);
+                            self.write_line_with_search(buf, &display, actual);
                         } else {
                             buf.extend_from_slice(display.as_bytes());
                         }
                         terminal::clear_line(buf);
                         screen_row += 1;
                     }
-                    line_idx += 1;
+                    display_idx += 1;
                 }
                 None => {
                     terminal::move_cursor(buf, screen_row as u16, 0);
                     buf.push(b'~');
                     terminal::clear_line(buf);
                     screen_row += 1;
+                    display_idx += 1;
                 }
             }
         }
@@ -587,64 +705,118 @@ impl Pager {
         buf.extend_from_slice(display.as_bytes());
     }
 
-    fn render_status(&self, buf: &mut Vec<u8>, _w: usize) {
+    fn render_status(&self, buf: &mut Vec<u8>, w: usize) {
         terminal::move_cursor(buf, self.term_height - 1, 0);
+        // Inverse video for the status bar
+        buf.extend_from_slice(b"\x1b[7m");
 
-        let status = self.build_status_text(_w);
-        buf.extend_from_slice(status.as_bytes());
-        terminal::clear_line(buf);
+        let (left, right) = self.build_status_parts();
+
+        let left_w = left.len().min(w);
+        let right_w = right.len().min(w);
+
+        if left_w + right_w < w {
+            buf.extend_from_slice(left.as_bytes());
+            let gap = w - left_w - right_w;
+            for _ in 0..gap {
+                buf.push(b' ');
+            }
+            buf.extend_from_slice(right.as_bytes());
+        } else {
+            // Not enough room — prioritize left, truncate
+            let truncated = &left[..left_w.min(w)];
+            buf.extend_from_slice(truncated.as_bytes());
+            let remaining = w.saturating_sub(left_w);
+            for _ in 0..remaining {
+                buf.push(b' ');
+            }
+        }
+
+        buf.extend_from_slice(b"\x1b[m");
     }
 
-    fn build_status_text(&self, w: usize) -> String {
+    fn build_status_parts(&self) -> (String, String) {
+        // --- input modes: just show the prompt on the left, position on right ---
         if self.mode == Mode::SearchInput {
-            let prompt = format!("/{}", self.search_input.content);
-            return if prompt.len() > w { prompt[..w].to_string() } else { prompt };
+            let ch = if self.search_dir == SearchDir::Forward { '/' } else { '?' };
+            let left = format!("{}{}", ch, self.search_input.content);
+            return (left, self.position_string());
+        }
+
+        if self.mode == Mode::FilterInput {
+            let left = format!("&{}", self.filter_input.content);
+            return (left, self.position_string());
         }
 
         if self.mode == Mode::Follow {
-            return "Waiting for data... (press q to quit)".to_string();
+            return ("Waiting for data...".to_string(), self.position_string());
         }
 
-        if let Some(ref msg) = self.status_msg {
-            return msg.clone();
-        }
-
-        let mut left = String::new();
-
-        if let Some(ref name) = self.filename {
-            left.push_str(name);
-            left.push(' ');
-        }
-
-        let ch = self.content_height();
-        let at_end = self.buffer.is_finished() && self.top_line + ch >= self.buffer.len();
-
-        if at_end {
-            left.push_str("(END)");
-        } else if let Some(total) = self.buffer.line_count() {
-            if total > 0 {
-                let pct = ((self.top_line + 1) * 100) / total;
-                left.push_str(&format!("{}%", pct.min(100)));
-            }
-        }
-
-        if self.wrap {
-            left.push_str(" [wrap]");
-        }
-
-        if let Some(ref search) = self.search {
-            let right = format!(" /{}", search.pattern);
-            let total_len = left.len() + right.len();
-            if total_len < w {
-                left.push_str(&" ".repeat(w - total_len));
-                left.push_str(&right);
-            }
-        }
-
-        if left.is_empty() {
-            ":".to_string()
+        // --- normal mode ---
+        let left = if let Some(ref msg) = self.status_msg {
+            msg.clone()
         } else {
-            left
+            let mut s = String::new();
+            if let Some(ref name) = self.filename {
+                s.push_str(name);
+            }
+            if let Some(ref f) = self.filter {
+                if !s.is_empty() {
+                    s.push(' ');
+                }
+                s.push_str(&format!("[&{}]", f.pattern));
+            }
+            if self.wrap {
+                if !s.is_empty() {
+                    s.push(' ');
+                }
+                s.push_str("[wrap]");
+            }
+            if s.is_empty() {
+                ":".to_string()
+            } else {
+                s
+            }
+        };
+
+        (left, self.position_string())
+    }
+
+    fn position_string(&self) -> String {
+        let ch = self.content_height();
+        let total_display = self.display_line_count();
+
+        if total_display == 0 {
+            return "(empty)".to_string();
         }
+
+        let at_end = if self.filter.is_some() {
+            self.top_line + ch >= total_display
+        } else {
+            self.buffer.is_finished() && self.top_line + ch >= total_display
+        };
+
+        // Line numbers (1-indexed for display)
+        let first = self.top_line + 1;
+        let last = (self.top_line + ch).min(total_display);
+
+        let mut s = format!("{}-{}", first, last);
+
+        if let Some(total) = if self.filter.is_some() {
+            Some(total_display)
+        } else {
+            self.buffer.line_count()
+        } {
+            s.push_str(&format!("/{}", total));
+
+            if at_end {
+                s.push_str(" (END)");
+            } else if total > 0 {
+                let pct = ((self.top_line + ch) * 100) / total;
+                s.push_str(&format!(" {}%", pct.min(100)));
+            }
+        }
+
+        s
     }
 }
