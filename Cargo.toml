@@ -1,0 +1,17 @@
+[package]
+name = "lz"
+version = "0.1.0"
+edition = "2021"
+description = "A minimal, fast pager"
+
+[dependencies]
+regex-lite = "0.1"
+unicode-width = "0.2"
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
