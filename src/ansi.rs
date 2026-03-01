@@ -75,6 +75,9 @@ pub fn strip_ansi(line: &str) -> String {
 
 /// Compute the visible (display) width of a line, ignoring ANSI escapes.
 pub fn visible_width(line: &str) -> usize {
+    if !line.contains('\x1b') {
+        return display_width(line);
+    }
     let stripped = strip_ansi(line);
     display_width(&stripped)
 }

@@ -321,12 +321,11 @@ impl Pager {
     }
 
     fn search_next(&mut self) {
-        let pattern = match self.search {
-            Some(ref s) => s.pattern.clone(),
+        let search = match self.search.take() {
+            Some(s) => s,
             None => return,
         };
         let from = self.current_match_line.map(|l| l + 1).unwrap_or(self.top_line);
-        let search = Search::new(&pattern).unwrap();
         match search.find_next_line(&mut self.buffer, from, true) {
             Some(line) => {
                 self.current_match_line = Some(line);
@@ -336,15 +335,15 @@ impl Pager {
                 self.status_msg = Some("Pattern not found".to_string());
             }
         }
+        self.search = Some(search);
     }
 
     fn search_prev(&mut self) {
-        let pattern = match self.search {
-            Some(ref s) => s.pattern.clone(),
+        let search = match self.search.take() {
+            Some(s) => s,
             None => return,
         };
         let from = self.current_match_line.unwrap_or(self.top_line);
-        let search = Search::new(&pattern).unwrap();
         match search.find_next_line(&mut self.buffer, from, false) {
             Some(line) => {
                 self.current_match_line = Some(line);
@@ -354,6 +353,7 @@ impl Pager {
                 self.status_msg = Some("Pattern not found".to_string());
             }
         }
+        self.search = Some(search);
     }
 
     fn scroll_down(&mut self, lines: usize) {
@@ -491,14 +491,14 @@ impl Pager {
     }
 
     fn render_nowrap(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize) {
+        // Pre-ensure all lines are loaded so we can borrow buffer.lines directly
+        self.buffer.get_line(self.top_line + ch);
         for row in 0..ch {
             terminal::move_cursor(buf, row as u16, 0);
             let line_idx = self.top_line + row;
-            // Clone the line to avoid borrow conflict with self
-            let line_owned = self.buffer.get_line(line_idx).map(|s| s.to_string());
-            match line_owned {
+            match self.buffer.lines.get(line_idx) {
                 Some(line) => {
-                    let display = truncate_to_width(&line, self.left_col, w, self.raw_mode);
+                    let display = truncate_to_width(line, self.left_col, w, self.raw_mode);
                     self.write_line_with_search(buf, &display, line_idx);
                 }
                 None => {
@@ -513,14 +513,16 @@ impl Pager {
         let mut screen_row = 0;
         let mut line_idx = self.top_line;
 
+        // Pre-ensure a reasonable number of lines are loaded
+        self.buffer.get_line(self.top_line + ch);
+
         while screen_row < ch {
-            let line_owned = self.buffer.get_line(line_idx).map(|s| s.to_string());
-            match line_owned {
+            match self.buffer.lines.get(line_idx) {
                 Some(line) => {
                     let total_width = if self.raw_mode {
                         unicode_width::UnicodeWidthStr::width(line.as_str())
                     } else {
-                        visible_width(&line)
+                        visible_width(line)
                     };
                     let rows_needed = if total_width == 0 {
                         1
@@ -534,7 +536,7 @@ impl Pager {
                         }
                         terminal::move_cursor(buf, screen_row as u16, 0);
                         let start_col = wrap_row * w;
-                        let display = truncate_to_width(&line, start_col, w, self.raw_mode);
+                        let display = truncate_to_width(line, start_col, w, self.raw_mode);
                         if wrap_row == 0 {
                             self.write_line_with_search(buf, &display, line_idx);
                         } else {
@@ -557,26 +559,24 @@ impl Pager {
 
     fn write_line_with_search(&self, buf: &mut Vec<u8>, display: &str, line_idx: usize) {
         if let Some(ref search) = self.search {
-            // Check if the original line has matches
             if let Some(original_line) = self.buffer.lines.get(line_idx) {
-                if !search.find_matches(original_line).is_empty() {
-                    // Find matches in the displayed (possibly truncated) text
-                    let stripped_display = strip_ansi(display);
-                    let display_matches = search.find_matches(display);
-                    if !display_matches.is_empty() {
-                        let mut result = String::with_capacity(display.len() + 64);
+                if search.is_match(original_line) {
+                    let stripped = strip_ansi(display);
+                    let matches = search.find_matches_stripped(&stripped);
+                    if !matches.is_empty() {
+                        let mut result = String::with_capacity(stripped.len() + matches.len() * 16);
                         let mut last_end = 0;
-                        for (start, end) in &display_matches {
+                        for (start, end) in &matches {
                             if *start > last_end {
-                                result.push_str(&stripped_display[last_end..*start]);
+                                result.push_str(&stripped[last_end..*start]);
                             }
                             result.push_str("\x1b[30;43m");
-                            result.push_str(&stripped_display[*start..*end]);
+                            result.push_str(&stripped[*start..*end]);
                             result.push_str("\x1b[m");
                             last_end = *end;
                         }
-                        if last_end < stripped_display.len() {
-                            result.push_str(&stripped_display[last_end..]);
+                        if last_end < stripped.len() {
+                            result.push_str(&stripped[last_end..]);
                         }
                         buf.extend_from_slice(result.as_bytes());
                         return;

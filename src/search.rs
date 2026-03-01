@@ -30,11 +30,26 @@ impl Search {
         })
     }
 
+    /// Check if a line matches (strips ANSI first).
+    pub fn is_match(&self, line: &str) -> bool {
+        if !line.contains('\x1b') {
+            return self.regex.is_match(line);
+        }
+        let stripped = strip_ansi(line);
+        self.regex.is_match(&stripped)
+    }
+
     /// Find all match byte ranges in ANSI-stripped text.
+    #[cfg(test)]
     pub fn find_matches(&self, line: &str) -> Vec<(usize, usize)> {
         let stripped = strip_ansi(line);
+        self.find_matches_stripped(&stripped)
+    }
+
+    /// Find all match byte ranges in already-stripped text.
+    pub fn find_matches_stripped(&self, stripped: &str) -> Vec<(usize, usize)> {
         self.regex
-            .find_iter(&stripped)
+            .find_iter(stripped)
             .map(|m| (m.start(), m.end()))
             .collect()
     }
@@ -47,8 +62,7 @@ impl Search {
             loop {
                 match buffer.get_line(line_idx) {
                     Some(line) => {
-                        let stripped = strip_ansi(line);
-                        if self.regex.is_match(&stripped) {
+                        if self.is_match(line) {
                             return Some(line_idx);
                         }
                         line_idx += 1;
@@ -64,8 +78,7 @@ impl Search {
             loop {
                 match buffer.get_line(line_idx) {
                     Some(line) => {
-                        let stripped = strip_ansi(line);
-                        if self.regex.is_match(&stripped) {
+                        if self.is_match(line) {
                             return Some(line_idx);
                         }
                         if line_idx == 0 {
