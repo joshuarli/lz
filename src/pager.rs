@@ -13,6 +13,7 @@ enum Mode {
     SearchInput,
     FilterInput,
     Follow,
+    Help,
 }
 
 #[derive(PartialEq, Clone, Copy)]
@@ -216,6 +217,13 @@ impl Pager {
                 self.handle_filter_input_key(key);
                 false
             }
+            Mode::Help => {
+                match key {
+                    Key::Char('h') | Key::Char('q') | Key::Escape => self.mode = Mode::Normal,
+                    _ => {}
+                }
+                false
+            }
             Mode::Follow => self.handle_follow_key(key),
         }
     }
@@ -288,6 +296,9 @@ impl Pager {
                 self.follow = true;
                 self.buffer.read_all();
                 self.scroll_to_bottom();
+            }
+            Key::Char('h') => {
+                self.mode = Mode::Help;
             }
             _ => {}
         }
@@ -562,7 +573,9 @@ impl Pager {
         buf.extend_from_slice(b"\x1b[?25l");
         terminal::move_cursor(&mut buf, 0, 0);
 
-        if self.wrap {
+        if self.mode == Mode::Help {
+            Self::render_help(&mut buf, w, ch);
+        } else if self.wrap {
             self.render_wrapped(&mut buf, w, ch);
         } else {
             self.render_nowrap(&mut buf, w, ch);
@@ -705,118 +718,102 @@ impl Pager {
         buf.extend_from_slice(display.as_bytes());
     }
 
+    fn render_help(buf: &mut Vec<u8>, w: usize, ch: usize) {
+        const HELP: &[&str] = &[
+            "",
+            "  NAVIGATION",
+            "    j / Down / Enter   Scroll down one line",
+            "    k / Up             Scroll up one line",
+            "    d / Ctrl-D         Half page down",
+            "    u / Ctrl-U         Half page up",
+            "    Space / PgDn       Page down",
+            "    b / PgUp           Page up",
+            "    g / Home           Go to top",
+            "    G / End            Go to bottom",
+            "    Left / Right       Horizontal scroll",
+            "",
+            "  SEARCH",
+            "    /                  Search forward",
+            "    ?                  Search backward",
+            "    n                  Next match",
+            "    N                  Previous match",
+            "    &                  Filter lines by pattern",
+            "",
+            "  OTHER",
+            "    w                  Toggle line wrap",
+            "    F                  Follow mode (tail -f)",
+            "    h                  Toggle this help",
+            "    q / Esc            Quit",
+        ];
+
+        for row in 0..ch {
+            terminal::move_cursor(buf, row as u16, 0);
+            if row < HELP.len() {
+                let line = HELP[row];
+                let truncated = if line.len() > w { &line[..w] } else { line };
+                buf.extend_from_slice(truncated.as_bytes());
+            }
+            terminal::clear_line(buf);
+        }
+    }
+
     fn render_status(&self, buf: &mut Vec<u8>, w: usize) {
         terminal::move_cursor(buf, self.term_height - 1, 0);
-        // Inverse video for the status bar
         buf.extend_from_slice(b"\x1b[7m");
 
-        let (left, right) = self.build_status_parts();
-
-        let left_w = left.len().min(w);
-        let right_w = right.len().min(w);
-
-        if left_w + right_w < w {
-            buf.extend_from_slice(left.as_bytes());
-            let gap = w - left_w - right_w;
-            for _ in 0..gap {
-                buf.push(b' ');
-            }
-            buf.extend_from_slice(right.as_bytes());
-        } else {
-            // Not enough room — prioritize left, truncate
-            let truncated = &left[..left_w.min(w)];
-            buf.extend_from_slice(truncated.as_bytes());
-            let remaining = w.saturating_sub(left_w);
-            for _ in 0..remaining {
-                buf.push(b' ');
-            }
+        let status = self.build_status();
+        let truncated = if status.len() > w { &status[..w] } else { status.as_str() };
+        buf.extend_from_slice(truncated.as_bytes());
+        let remaining = w.saturating_sub(truncated.len());
+        for _ in 0..remaining {
+            buf.push(b' ');
         }
 
         buf.extend_from_slice(b"\x1b[m");
     }
 
-    fn build_status_parts(&self) -> (String, String) {
-        // --- input modes: just show the prompt on the left, position on right ---
+    fn build_status(&self) -> String {
         if self.mode == Mode::SearchInput {
             let ch = if self.search_dir == SearchDir::Forward { '/' } else { '?' };
-            let left = format!("{}{}", ch, self.search_input.content);
-            return (left, self.position_string());
+            return format!("{}{}", ch, self.search_input.content);
         }
 
         if self.mode == Mode::FilterInput {
-            let left = format!("&{}", self.filter_input.content);
-            return (left, self.position_string());
+            return format!("&{}", self.filter_input.content);
+        }
+
+        if self.mode == Mode::Help {
+            return "h: return".to_string();
         }
 
         if self.mode == Mode::Follow {
-            return ("Waiting for data...".to_string(), self.position_string());
+            return "Waiting for data...".to_string();
         }
 
-        // --- normal mode ---
-        let left = if let Some(ref msg) = self.status_msg {
-            msg.clone()
-        } else {
-            let mut s = String::new();
-            if let Some(ref name) = self.filename {
-                s.push_str(name);
-            }
-            if let Some(ref f) = self.filter {
-                if !s.is_empty() {
-                    s.push(' ');
-                }
-                s.push_str(&format!("[&{}]", f.pattern));
-            }
-            if self.wrap {
-                if !s.is_empty() {
-                    s.push(' ');
-                }
-                s.push_str("[wrap]");
-            }
-            if s.is_empty() {
-                ":".to_string()
-            } else {
-                s
-            }
-        };
-
-        (left, self.position_string())
-    }
-
-    fn position_string(&self) -> String {
-        let ch = self.content_height();
-        let total_display = self.display_line_count();
-
-        if total_display == 0 {
-            return "(empty)".to_string();
+        if let Some(ref msg) = self.status_msg {
+            return msg.clone();
         }
 
-        let at_end = if self.filter.is_some() {
-            self.top_line + ch >= total_display
-        } else {
-            self.buffer.is_finished() && self.top_line + ch >= total_display
-        };
-
-        // Line numbers (1-indexed for display)
-        let first = self.top_line + 1;
-        let last = (self.top_line + ch).min(total_display);
-
-        let mut s = format!("{}-{}", first, last);
-
-        if let Some(total) = if self.filter.is_some() {
-            Some(total_display)
-        } else {
-            self.buffer.line_count()
-        } {
-            s.push_str(&format!("/{}", total));
-
-            if at_end {
-                s.push_str(" (END)");
-            } else if total > 0 {
-                let pct = ((self.top_line + ch) * 100) / total;
-                s.push_str(&format!(" {}%", pct.min(100)));
-            }
+        let mut s = String::new();
+        if let Some(ref name) = self.filename {
+            s.push_str(name);
         }
-
-        s
+        if let Some(ref f) = self.filter {
+            if !s.is_empty() {
+                s.push(' ');
+            }
+            s.push_str(&format!("[&{}]", f.pattern));
+        }
+        if self.wrap {
+            if !s.is_empty() {
+                s.push(' ');
+            }
+            s.push_str("[wrap]");
+        }
+        if s.is_empty() {
+            ":".to_string()
+        } else {
+            s
+        }
     }
 }

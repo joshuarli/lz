@@ -128,15 +128,6 @@ impl LineBuffer {
         self.lines.len()
     }
 
-    /// Total line count, or None if not fully read yet.
-    pub fn line_count(&self) -> Option<usize> {
-        if self.finished {
-            Some(self.lines.len())
-        } else {
-            None
-        }
-    }
-
     pub fn is_finished(&self) -> bool {
         self.finished
     }
@@ -245,7 +236,6 @@ mod tests {
 
         buf.read_all();
         assert!(buf.is_finished());
-        assert_eq!(buf.line_count(), Some(3));
         assert_eq!(buf.len(), 3);
     }
 

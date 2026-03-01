@@ -90,8 +90,10 @@ KEYS:
     d/Ctrl-D    Half page down     u/Ctrl-U    Half page up
     g/Home      Top                G/End       Bottom
     Left/Right  Horizontal scroll  w           Toggle wrap
-    /           Search             n/N         Next/prev match
-    F           Enter follow mode  q/Esc       Quit
+    /           Search forward     ?           Search backward
+    n/N         Next/prev match    &           Filter lines
+    F           Enter follow mode  h           Help
+    q/Esc       Quit
 
 FILE:
     File to view. If omitted or '-', reads stdin.",

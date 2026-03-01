@@ -24,8 +24,11 @@ src/
   input.rs      Key reading and escape sequence parsing
   terminal.rs   Raw termios, alt screen, signals, output helpers
   ansi.rs       ANSI stripping, visible width, color-preserving truncation
-  search.rs     Regex search with smart-case
+  search.rs     Regex/BMH search with smart-case
   history.rs    Persistent search history (Up/Down in search prompt)
+
+bench/
+  run.sh        Benchmark script (lz vs less, uses expect + hyperfine)
 ```
 
 ---
@@ -126,29 +129,34 @@ Key types: `SearchHistory` struct.
 
 ### `search.rs`
 
-Regex search over file content.
+Search over file content with a fast literal path.
 
-- Wraps `regex-lite` with smart-case logic: if the search pattern contains any uppercase letter, the search is case-sensitive; if the pattern is all lowercase, it is case-insensitive. This matches vim and less behavior.
+- Two-tier matching via the `Matcher` enum: `Literal(BMH)` for patterns with no regex metacharacters, `Regex(Regex)` for everything else. The `is_literal()` function detects which path to use.
+- `BMH` struct implements Boyer-Moore-Horspool substring search with a 256-entry bad-character shift table. For literal patterns this skips large chunks of the haystack without examining every byte — dramatically faster than regex for common search terms.
+- Smart-case logic: if the search pattern contains any uppercase letter, the search is case-sensitive; if the pattern is all lowercase, it is case-insensitive. This matches vim and less behavior.
 - Searches on ANSI-stripped text (delegates to `ansi.rs`) so that color codes in the input do not interfere with pattern matching.
 - Returns match byte ranges on the stripped text; `pager.rs` uses these to inject yellow highlighting escapes when rendering.
 - Integrates with `buffer.rs` to scan forward/backward through lines for `n`/`N` navigation.
 
-Key types: `Search` struct holding the compiled `Regex` and the case mode.
+Key types: `Search` struct, `Matcher` enum (`Literal`, `Regex`), `BMH` struct.
 
 ### `pager.rs`
 
 The main event loop and renderer. This is the largest and most central module.
 
-- Three modes: `Normal`, `SearchInput` (typing a search pattern into the prompt at the bottom), and `Follow` (like `tail -f`, live-updating).
-- Rendering: full redraw every frame. Each frame: clear screen, render visible lines top-to-bottom with horizontal scroll offset applied, render status bar at the bottom. Assembled into a single buffer and flushed with one write. No diff-based incremental rendering.
+- Five modes via the `Mode` enum: `Normal`, `SearchInput` (typing a search pattern), `FilterInput` (typing a filter pattern), `Follow` (like `tail -f`), and `Help` (overlay showing keybindings).
+- `SearchDir` enum (`Forward`, `Backward`) tracks whether search was initiated with `/` (forward) or `?` (backward). `n` repeats in the same direction, `N` in the opposite direction.
+- Line filtering: `&` enters `FilterInput` mode. On Enter, builds a `Search` from the pattern and populates `filtered_lines: Vec<usize>` with matching line indices. All rendering and navigation then operate on this filtered subset. Empty pattern clears the filter.
+- Help mode: `h` toggles an overlay displaying all keybindings. `render_help()` draws static help text instead of file content. `h`, `q`, or Escape returns to Normal.
+- Rendering: full redraw every frame. Each frame: clear screen, render visible lines (or help screen) top-to-bottom, render inverse-video status bar at the bottom showing context on the left (filename, filter, wrap state, or input prompt) and position info on the right (line range, total, percentage/END).
 - Horizontal scroll: tracks a column offset, increments/decrements in 8-column steps.
 - Wrap mode: toggled with `w`. When enabled, long lines are wrapped using `unicode-width` for correct column calculation (this is why `pager.rs` depends on the crate directly).
 - Search highlighting: when a search is active, matching spans on each visible line are wrapped in `\x1b[30;43m` (black text on yellow background) and reset afterward.
-- Line editor: the search prompt at the bottom is a simple line editor supporting character input, backspace, cursor movement, and Escape/Enter. Up/Down cycle through search history.
-- Key dispatch table: maps `Key` variants to actions in Normal mode (scroll, search, quit, toggle wrap, enter follow mode, etc.).
+- Line editor: the search/filter prompt at the bottom is a simple line editor supporting character input, backspace, cursor movement, and Escape/Enter. Up/Down cycle through search history (search mode only).
+- Key dispatch table: maps `Key` variants to actions in Normal mode (scroll, search, backward search, filter, quit, toggle wrap, enter follow mode, help, etc.).
 - Signal integration: checks the atomic flags set by signal handlers in `terminal.rs` on each event loop iteration. Handles resize by re-querying terminal dimensions and redrawing; handles TSTP by suspending the process after restoring the terminal.
 
-Key types: `Pager` struct, `Mode` enum (`Normal`, `SearchInput`, `Follow`), `run(config)` free function.
+Key types: `Pager` struct, `Mode` enum (`Normal`, `SearchInput`, `FilterInput`, `Follow`, `Help`), `SearchDir` enum (`Forward`, `Backward`), `LineEditor` struct.
 
 ---
 
@@ -159,7 +167,9 @@ Key types: `Pager` struct, `Mode` enum (`Normal`, `SearchInput`, `Follow`), `run
 - View files and piped stdin
 - Line scroll, half-page scroll, full-page scroll, jump to top/bottom
 - Horizontal scroll in 8-column increments
-- Regex search with smart-case, forward search (`/`), `n`/`N` navigation, yellow highlighting, persistent search history (Up/Down in search prompt)
+- Regex search with smart-case, forward (`/`) and backward (`?`) search, `n`/`N` navigation, yellow highlighting, persistent search history (Up/Down in search prompt)
+- Line filtering (`&`) — show only lines matching a pattern
+- Interactive help screen (`h` key)
 - Wrap toggle (`w` key)
 - Follow mode (`--follow` flag or `F` key, equivalent to `tail -f`)
 - ANSI color pass-through (colors in input are preserved in output)
@@ -172,7 +182,7 @@ Key types: `Pager` struct, `Mode` enum (`Normal`, `SearchInput`, `Follow`), `run
 - No marks or bookmarks
 - No multiple file arguments
 - No line number display
-- No filtering or pipe commands (no `|` prompt)
+- No pipe commands (no `|` prompt)
 - No custom keybindings
 - No mouse support
 - No Windows support
@@ -203,6 +213,9 @@ Arrow keys and other special keys send multi-byte escape sequences (e.g., `\x1b[
 **Smart-case search.**
 If the search pattern is all lowercase, the search is case-insensitive. If it contains any uppercase letter, it is case-sensitive. This matches vim and less behavior and is the expected default for most users.
 
+**Boyer-Moore-Horspool fast path for literal searches.**
+Most real-world searches are literal strings, not regexes. BMH with a 256-entry shift table skips large portions of each line without examining every byte, giving a significant speedup over regex for the common case. The `is_literal()` check detects regex metacharacters; if none are present, the search is routed to BMH instead of `regex-lite`. This is why `search.rs` has the `Matcher` enum dispatching between `Literal` and `Regex`.
+
 **Lazy line loading.**
 Lines are read from the source on demand and cached. The pager does not read the entire file on startup. This gives instant startup for large files and makes stdin streaming natural.
 
@@ -213,6 +226,8 @@ A line longer than 64KB is truncated. This prevents a single pathological line f
 
 ## Build and Test
 
-There are no external test fixtures or scripts. Tests live in the standard Rust `#[cfg(test)]` blocks within each module.
+Tests live in the standard Rust `#[cfg(test)]` blocks within each module.
+
+`bench/run.sh` runs comparative benchmarks against `less` using `expect` and `hyperfine`. It generates a 1M-line test file and measures startup, jump-to-end, search (hit/miss), and page-through scenarios. Requires `expect` and `hyperfine` to be installed; run `cargo build --release` first.
 
 The release binary is small by design. Do not add dependencies without a strong reason. Before adding any crate, check whether the functionality can be implemented directly in a reasonable number of lines.
