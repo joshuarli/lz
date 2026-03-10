@@ -54,10 +54,9 @@ fn parse_args() -> Args {
             "-r" | "--raw" => args.raw_mode = true,
             "--help" | "-h" => args.help = true,
             "--version" | "-V" => args.version = true,
-            s if s.starts_with('-') => {
-                eprintln!("lz: unknown option: {}", s);
-                process::exit(2);
-            }
+            // Silently ignore unknown flags and +commands (e.g. less-style
+            // options passed by programs that assume PAGER is less).
+            s if s.starts_with('-') || s.starts_with('+') => {}
             _ => {
                 if args.filename.is_some() {
                     eprintln!("lz: too many arguments");
@@ -206,18 +205,28 @@ fn run() -> Result<(), String> {
 }
 
 /// Prepopulate a LineBuffer with text that was already read for binary detection.
+/// If the text doesn't end with '\n', the last fragment is stored as a partial
+/// line so it gets joined with the next read from the source.
 fn prepopulate_buffer(lb: &mut buffer::LineBuffer, text: &str) {
     if text.is_empty() {
         return;
     }
     let mut lines: Vec<&str> = text.split('\n').collect();
-    // If text ends with \n, split produces trailing empty — remove it
-    if text.ends_with('\n') {
+    // If text ends with \n, split produces trailing empty — remove it.
+    // Otherwise the last element is an incomplete line fragment.
+    let partial = if text.ends_with('\n') {
         lines.pop();
-    }
+        None
+    } else {
+        lines.pop()
+    };
     for line in lines {
         let l = line.strip_suffix('\r').unwrap_or(line);
         lb.push_line(l.to_string());
+    }
+    if let Some(p) = partial {
+        let l = p.strip_suffix('\r').unwrap_or(p);
+        lb.set_partial(l.to_string());
     }
 }
 
@@ -564,9 +573,11 @@ mod tests {
 
     #[test]
     fn prepopulate_no_trailing_newline() {
+        // "line2" has no trailing \n, so it's stored as a partial (incomplete line)
+        // that will be joined with the next read from the source.
         let mut lb = buffer::LineBuffer::from_lines(Vec::new());
         prepopulate_buffer(&mut lb, "line1\nline2");
-        assert_eq!(lb.lines, vec!["line1", "line2"]);
+        assert_eq!(lb.lines, vec!["line1"]);
     }
 
     #[test]

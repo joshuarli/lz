@@ -22,6 +22,8 @@ pub struct LineBuffer {
     pub lines: Vec<String>,
     source: Option<Source>,
     finished: bool,
+    /// Partial line from prepopulated data (read boundary split a line).
+    partial: Option<String>,
 }
 
 impl LineBuffer {
@@ -30,6 +32,7 @@ impl LineBuffer {
             lines: Vec::new(),
             source: Some(Source::File(BufReader::new(file))),
             finished: false,
+            partial: None,
         }
     }
 
@@ -38,6 +41,7 @@ impl LineBuffer {
             lines: Vec::new(),
             source: Some(Source::Stdin(BufReader::new(stdin))),
             finished: false,
+            partial: None,
         }
     }
 
@@ -55,6 +59,11 @@ impl LineBuffer {
         self.lines.push(line);
     }
 
+    /// Set a partial line fragment that will be prepended to the next line read.
+    pub fn set_partial(&mut self, partial: String) {
+        self.partial = Some(partial);
+    }
+
     /// Create a buffer from pre-existing lines (for testing).
     #[cfg(test)]
     pub fn from_lines(lines: Vec<String>) -> Self {
@@ -62,6 +71,7 @@ impl LineBuffer {
             lines,
             source: None,
             finished: true,
+            partial: None,
         }
     }
 
@@ -77,9 +87,14 @@ impl LineBuffer {
 
         let mut read = 0;
         for _ in 0..count {
-            let mut line = String::new();
+            let mut line = self.partial.take().unwrap_or_default();
             match source.read_line(&mut line) {
                 Ok(0) => {
+                    // EOF — if there's a leftover partial, push it as the last line.
+                    if !line.is_empty() {
+                        self.lines.push(line);
+                        read += 1;
+                    }
                     self.finished = true;
                     break;
                 }
