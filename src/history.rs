@@ -32,7 +32,10 @@ impl SearchHistory {
         if let Some(parent) = path.parent() {
             let _ = fs::create_dir_all(parent);
         }
-        let _ = fs::write(path, self.entries.join("\n") + if self.entries.is_empty() { "" } else { "\n" });
+        let _ = fs::write(
+            path,
+            self.entries.join("\n") + if self.entries.is_empty() { "" } else { "\n" },
+        );
     }
 
     pub fn push(&mut self, pattern: &str) {

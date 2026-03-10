@@ -121,7 +121,13 @@ pub struct Pager {
 }
 
 impl Pager {
-    pub fn new(buffer: LineBuffer, follow: bool, raw_mode: bool, filename: Option<String>, history: SearchHistory) -> Self {
+    pub fn new(
+        buffer: LineBuffer,
+        follow: bool,
+        raw_mode: bool,
+        filename: Option<String>,
+        history: SearchHistory,
+    ) -> Self {
         let (w, h) = terminal::get_terminal_size();
         Pager {
             buffer,
@@ -338,18 +344,16 @@ impl Pager {
                     self.search_input.cursor = self.search_input.content.len();
                 }
             }
-            Key::Down => {
-                match self.history.next() {
-                    Some(entry) => {
-                        self.search_input.content = entry.to_string();
-                        self.search_input.cursor = self.search_input.content.len();
-                    }
-                    None => {
-                        self.search_input.content = self.history.draft().to_string();
-                        self.search_input.cursor = self.search_input.content.len();
-                    }
+            Key::Down => match self.history.next() {
+                Some(entry) => {
+                    self.search_input.content = entry.to_string();
+                    self.search_input.cursor = self.search_input.content.len();
                 }
-            }
+                None => {
+                    self.search_input.content = self.history.draft().to_string();
+                    self.search_input.cursor = self.search_input.content.len();
+                }
+            },
             Key::Backspace => self.search_input.backspace(),
             Key::Delete => self.search_input.delete(),
             Key::Left => self.search_input.move_left(),
@@ -377,7 +381,9 @@ impl Pager {
             None => return,
         };
         let from = if forward {
-            self.current_match_line.map(|l| l + 1).unwrap_or(self.top_line)
+            self.current_match_line
+                .map(|l| l + 1)
+                .unwrap_or(self.top_line)
         } else {
             self.current_match_line.unwrap_or(self.top_line)
         };
@@ -486,10 +492,9 @@ impl Pager {
         let total = self.display_line_count();
         if total <= ch {
             self.top_line = 0;
-        } else if self.top_line > total - ch {
-            if self.filter.is_some() || self.buffer.is_finished() {
-                self.top_line = total - ch;
-            }
+        } else if self.top_line > total - ch && (self.filter.is_some() || self.buffer.is_finished())
+        {
+            self.top_line = total - ch;
         }
     }
 
@@ -507,7 +512,11 @@ impl Pager {
                 } else {
                     visible_width(line)
                 };
-                if vw == 0 { 1 } else { (vw + w - 1) / w }
+                if vw == 0 {
+                    1
+                } else {
+                    vw.div_ceil(w)
+                }
             }
             None => 1,
         }
@@ -657,7 +666,7 @@ impl Pager {
                     let rows_needed = if total_width == 0 {
                         1
                     } else {
-                        (total_width + w - 1) / w
+                        total_width.div_ceil(w)
                     };
 
                     for wrap_row in 0..rows_needed {
@@ -748,8 +757,7 @@ impl Pager {
 
         for row in 0..ch {
             terminal::move_cursor(buf, row as u16, 0);
-            if row < HELP.len() {
-                let line = HELP[row];
+            if let Some(line) = HELP.get(row) {
                 let truncated = if line.len() > w { &line[..w] } else { line };
                 buf.extend_from_slice(truncated.as_bytes());
             }
@@ -762,7 +770,11 @@ impl Pager {
         buf.extend_from_slice(b"\x1b[7m");
 
         let status = self.build_status();
-        let truncated = if status.len() > w { &status[..w] } else { status.as_str() };
+        let truncated = if status.len() > w {
+            &status[..w]
+        } else {
+            status.as_str()
+        };
         buf.extend_from_slice(truncated.as_bytes());
         let remaining = w.saturating_sub(truncated.len());
         for _ in 0..remaining {
@@ -774,7 +786,11 @@ impl Pager {
 
     fn build_status(&self) -> String {
         if self.mode == Mode::SearchInput {
-            let ch = if self.search_dir == SearchDir::Forward { '/' } else { '?' };
+            let ch = if self.search_dir == SearchDir::Forward {
+                '/'
+            } else {
+                '?'
+            };
             return format!("{}{}", ch, self.search_input.content);
         }
 

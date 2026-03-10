@@ -267,9 +267,9 @@ impl KeyReader {
         }
         let mut bytes = [0u8; 4];
         bytes[0] = first;
-        for i in 1..width {
+        for byte in bytes.iter_mut().take(width).skip(1) {
             match self.next_byte_timeout(50)? {
-                Some(b) => bytes[i] = b,
+                Some(b) => *byte = b,
                 None => return Ok(char::REPLACEMENT_CHARACTER),
             }
         }

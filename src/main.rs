@@ -153,10 +153,8 @@ fn run() -> Result<(), String> {
         let mut file = File::open(filename).map_err(|e| format!("{}: {}", filename, e))?;
 
         // Binary check
-        if !args.force {
-            if buffer::LineBuffer::check_binary(&mut file).map_err(|e| e.to_string())? {
-                return Err("Binary file detected. Use --force to view.".to_string());
-            }
+        if !args.force && buffer::LineBuffer::check_binary(&mut file).map_err(|e| e.to_string())? {
+            return Err("Binary file detected. Use --force to view.".to_string());
         }
 
         // Empty check
@@ -345,7 +343,10 @@ mod tests {
     #[test]
     fn parse_multiple_keys_in_sequence() {
         let keys = parse_keys_from_bytes(b"q\x1b[A\x1b[Bj");
-        assert_eq!(keys, vec![Key::Char('q'), Key::Up, Key::Down, Key::Char('j')]);
+        assert_eq!(
+            keys,
+            vec![Key::Char('q'), Key::Up, Key::Down, Key::Char('j')]
+        );
     }
 
     #[test]

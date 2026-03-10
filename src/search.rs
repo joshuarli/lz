@@ -7,7 +7,7 @@ use regex_lite::Regex;
 /// Uses a 256-entry bad-character shift table to skip ahead when a mismatch
 /// occurs. For literal patterns this is dramatically faster than regex because
 /// it can skip over large chunks of the haystack without examining every byte.
-struct BMH {
+struct Bmh {
     /// The needle bytes (lowercased if case-insensitive).
     needle: Vec<u8>,
     /// Bad-character shift table indexed by raw byte value.
@@ -15,7 +15,7 @@ struct BMH {
     case_insensitive: bool,
 }
 
-impl BMH {
+impl Bmh {
     fn new(pattern: &[u8], case_insensitive: bool) -> Self {
         let needle: Vec<u8> = if case_insensitive {
             pattern.iter().map(|b| b.to_ascii_lowercase()).collect()
@@ -25,14 +25,13 @@ impl BMH {
         let n = needle.len();
         let mut shift = [n; 256];
         // Set shift for every byte in the needle except the last.
-        for i in 0..n.saturating_sub(1) {
-            let b = needle[i];
+        for (i, &b) in needle.iter().enumerate().take(n.saturating_sub(1)) {
             shift[b as usize] = n - 1 - i;
             if case_insensitive {
                 shift[b.to_ascii_uppercase() as usize] = n - 1 - i;
             }
         }
-        BMH {
+        Bmh {
             needle,
             shift,
             case_insensitive,
@@ -94,13 +93,29 @@ impl BMH {
 
 /// Returns true if the pattern contains no regex metacharacters.
 fn is_literal(pattern: &str) -> bool {
-    !pattern
-        .bytes()
-        .any(|b| matches!(b, b'\\' | b'.' | b'^' | b'$' | b'*' | b'+' | b'?' | b'(' | b')' | b'[' | b']' | b'{' | b'}' | b'|'))
+    !pattern.bytes().any(|b| {
+        matches!(
+            b,
+            b'\\'
+                | b'.'
+                | b'^'
+                | b'$'
+                | b'*'
+                | b'+'
+                | b'?'
+                | b'('
+                | b')'
+                | b'['
+                | b']'
+                | b'{'
+                | b'}'
+                | b'|'
+        )
+    })
 }
 
 enum Matcher {
-    Literal(BMH),
+    Literal(Box<Bmh>),
     Regex(Regex),
 }
 
@@ -121,15 +136,14 @@ impl Search {
         let case_insensitive = !has_upper;
 
         let matcher = if is_literal(pattern) {
-            Matcher::Literal(BMH::new(pattern.as_bytes(), case_insensitive))
+            Matcher::Literal(Box::new(Bmh::new(pattern.as_bytes(), case_insensitive)))
         } else {
             let regex_pattern = if case_insensitive {
                 format!("(?i){}", pattern)
             } else {
                 pattern.to_string()
             };
-            let regex =
-                Regex::new(&regex_pattern).map_err(|e| format!("Invalid regex: {}", e))?;
+            let regex = Regex::new(&regex_pattern).map_err(|e| format!("Invalid regex: {}", e))?;
             Matcher::Regex(regex)
         };
 
@@ -241,35 +255,35 @@ mod tests {
         assert!(!is_literal("foo\\d"));
     }
 
-    // --- BMH ---
+    // --- Bmh ---
 
     #[test]
     fn bmh_basic_find() {
-        let bmh = BMH::new(b"fox", false);
+        let bmh = Bmh::new(b"fox", false);
         assert_eq!(bmh.find_from(b"the quick brown fox", 0), Some(16));
     }
 
     #[test]
     fn bmh_no_match() {
-        let bmh = BMH::new(b"xyz", false);
+        let bmh = Bmh::new(b"xyz", false);
         assert_eq!(bmh.find_from(b"hello world", 0), None);
     }
 
     #[test]
     fn bmh_at_start() {
-        let bmh = BMH::new(b"the", false);
+        let bmh = Bmh::new(b"the", false);
         assert_eq!(bmh.find_from(b"the quick brown fox", 0), Some(0));
     }
 
     #[test]
     fn bmh_at_end() {
-        let bmh = BMH::new(b"fox", false);
+        let bmh = Bmh::new(b"fox", false);
         assert_eq!(bmh.find_from(b"fox", 0), Some(0));
     }
 
     #[test]
     fn bmh_case_insensitive() {
-        let bmh = BMH::new(b"hello", true);
+        let bmh = Bmh::new(b"hello", true);
         assert!(bmh.is_match(b"HELLO WORLD"));
         assert!(bmh.is_match(b"Hello World"));
         assert!(bmh.is_match(b"hello world"));
@@ -277,7 +291,7 @@ mod tests {
 
     #[test]
     fn bmh_case_sensitive() {
-        let bmh = BMH::new(b"Hello", false);
+        let bmh = Bmh::new(b"Hello", false);
         assert!(bmh.is_match(b"Hello World"));
         assert!(!bmh.is_match(b"hello world"));
         assert!(!bmh.is_match(b"HELLO WORLD"));
@@ -285,37 +299,40 @@ mod tests {
 
     #[test]
     fn bmh_find_all() {
-        let bmh = BMH::new(b"ab", false);
-        assert_eq!(bmh.find_all(b"ab cd ab ef ab"), vec![(0, 2), (6, 8), (12, 14)]);
+        let bmh = Bmh::new(b"ab", false);
+        assert_eq!(
+            bmh.find_all(b"ab cd ab ef ab"),
+            vec![(0, 2), (6, 8), (12, 14)]
+        );
     }
 
     #[test]
     fn bmh_find_all_no_overlap() {
-        let bmh = BMH::new(b"aa", false);
+        let bmh = Bmh::new(b"aa", false);
         assert_eq!(bmh.find_all(b"aaaa"), vec![(0, 2), (2, 4)]);
     }
 
     #[test]
     fn bmh_single_byte() {
-        let bmh = BMH::new(b"x", false);
+        let bmh = Bmh::new(b"x", false);
         assert_eq!(bmh.find_from(b"abcxdef", 0), Some(3));
     }
 
     #[test]
     fn bmh_empty_needle() {
-        let bmh = BMH::new(b"", false);
+        let bmh = Bmh::new(b"", false);
         assert_eq!(bmh.find_from(b"anything", 0), Some(0));
     }
 
     #[test]
     fn bmh_haystack_shorter_than_needle() {
-        let bmh = BMH::new(b"longpattern", false);
+        let bmh = Bmh::new(b"longpattern", false);
         assert_eq!(bmh.find_from(b"short", 0), None);
     }
 
     #[test]
     fn bmh_find_from_offset() {
-        let bmh = BMH::new(b"ab", false);
+        let bmh = Bmh::new(b"ab", false);
         assert_eq!(bmh.find_from(b"ab ab ab", 1), Some(3));
         assert_eq!(bmh.find_from(b"ab ab ab", 4), Some(6));
     }

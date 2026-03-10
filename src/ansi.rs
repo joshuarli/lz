@@ -249,10 +249,7 @@ fn truncate_raw(line: &str, start_col: usize, max_width: usize) -> String {
 
 fn is_sgr_sequence(seq: &str) -> bool {
     let bytes = seq.as_bytes();
-    bytes.len() >= 3
-        && bytes[0] == 0x1b
-        && bytes[1] == b'['
-        && bytes[bytes.len() - 1] == b'm'
+    bytes.len() >= 3 && bytes[0] == 0x1b && bytes[1] == b'[' && bytes[bytes.len() - 1] == b'm'
 }
 
 fn is_sgr_reset(seq: &str) -> bool {
@@ -468,7 +465,7 @@ mod tests {
         assert!(is_sgr_sequence("\x1b[0m"));
         assert!(is_sgr_sequence("\x1b[38;5;196m"));
         assert!(!is_sgr_sequence("\x1b[2J")); // clear screen, not SGR
-        assert!(!is_sgr_sequence("\x1b[H"));  // cursor, not SGR
+        assert!(!is_sgr_sequence("\x1b[H")); // cursor, not SGR
     }
 
     #[test]
