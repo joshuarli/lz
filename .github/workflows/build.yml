@@ -1,0 +1,36 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - 'release/*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build release
+    runs-on: macos-15
+    timeout-minutes: 5
+    defaults:
+      run:
+        shell: bash -euo pipefail {0}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: test and release
+        run: |
+          make test-ci
+          make release
+
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          V="${VERSION#release/}"
+          gh release create "$VERSION" "target/aarch64-apple-darwin/release/lz#lz-${V}-aarch64-apple-darwin" --title "$V"
