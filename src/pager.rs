@@ -766,6 +766,8 @@ impl Pager {
     }
 
     fn render_status(&self, buf: &mut Vec<u8>, w: usize) {
+        const VERSION: &str = concat!("lz ", env!("CARGO_PKG_VERSION"));
+
         terminal::move_cursor(buf, self.term_height - 1, 0);
         buf.extend_from_slice(b"\x1b[7m");
 
@@ -776,9 +778,18 @@ impl Pager {
             status.as_str()
         };
         buf.extend_from_slice(truncated.as_bytes());
-        let remaining = w.saturating_sub(truncated.len());
-        for _ in 0..remaining {
-            buf.push(b' ');
+
+        let used = truncated.len();
+        let right_start = w.saturating_sub(VERSION.len());
+        if right_start > used {
+            for _ in 0..(right_start - used) {
+                buf.push(b' ');
+            }
+            buf.extend_from_slice(VERSION.as_bytes());
+        } else {
+            for _ in 0..w.saturating_sub(used) {
+                buf.push(b' ');
+            }
         }
 
         buf.extend_from_slice(b"\x1b[m");
