@@ -17,6 +17,7 @@ jobs:
       run:
         shell: bash -euo pipefail {0}
     strategy:
+      fail-fast: false
       # Native runners required: -Z build-std makes cross-compilation with
       # `cross` impractical (needs nightly toolchain + rust-src inside the
       # container). Native runners let us build and test identically everywhere.

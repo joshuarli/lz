@@ -21,8 +21,14 @@ const TIOCGWINSZ: u64 = 0x40087468;
 const TIOCGWINSZ: u64 = 0x5413;
 
 const SIGWINCH: i32 = 28;
+#[cfg(target_os = "macos")]
 const SIGTSTP: i32 = 18;
+#[cfg(target_os = "linux")]
+const SIGTSTP: i32 = 20;
+#[cfg(target_os = "macos")]
 const SIGCONT: i32 = 19;
+#[cfg(target_os = "linux")]
+const SIGCONT: i32 = 18;
 const SIGTERM: i32 = 15;
 #[cfg(target_os = "macos")]
 const SIGSTOP: i32 = 17;
@@ -50,6 +56,20 @@ pub struct Termios {
     pub c_cc: [u8; 20],
     pub c_ispeed: u64,
     pub c_ospeed: u64,
+}
+
+#[cfg(target_os = "linux")]
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct Termios {
+    pub c_iflag: u32,
+    pub c_oflag: u32,
+    pub c_cflag: u32,
+    pub c_lflag: u32,
+    pub c_line: u8,
+    pub c_cc: [u8; 32],
+    pub c_ispeed: u32,
+    pub c_ospeed: u32,
 }
 
 #[repr(C)]
@@ -97,17 +117,35 @@ pub fn enable_raw_mode(fd: i32) -> io::Result<()> {
         }
         ORIG_TERMIOS = Some(raw);
 
-        // Input flags: disable BRKINT, ICRNL, INPCK, ISTRIP, IXON
-        raw.c_iflag &= !(0x02 | 0x100 | 0x10 | 0x20 | 0x200);
-        // Output flags: disable OPOST
-        raw.c_oflag &= !0x01;
-        // Control flags: set CS8
-        raw.c_cflag |= 0x300;
-        // Local flags: disable ECHO, ICANON, IEXTEN, ISIG
-        raw.c_lflag &= !(0x08 | 0x100 | 0x400 | 0x80);
-        // VMIN = 1, VTIME = 0
-        raw.c_cc[16] = 1;
-        raw.c_cc[17] = 0;
+        #[cfg(target_os = "macos")]
+        {
+            // Input flags: disable BRKINT, ICRNL, INPCK, ISTRIP, IXON
+            raw.c_iflag &= !(0x02 | 0x100 | 0x10 | 0x20 | 0x200);
+            // Output flags: disable OPOST
+            raw.c_oflag &= !0x01;
+            // Control flags: set CS8
+            raw.c_cflag |= 0x300;
+            // Local flags: disable ECHO, ICANON, IEXTEN, ISIG
+            raw.c_lflag &= !(0x08 | 0x100 | 0x400 | 0x80);
+            // VMIN = 1, VTIME = 0
+            raw.c_cc[16] = 1;
+            raw.c_cc[17] = 0;
+        }
+
+        #[cfg(target_os = "linux")]
+        {
+            // Input flags: disable BRKINT, ICRNL, INPCK, ISTRIP, IXON
+            raw.c_iflag &= !(0x02 | 0x100 | 0x10 | 0x20 | 0x400);
+            // Output flags: disable OPOST
+            raw.c_oflag &= !0x01;
+            // Control flags: set CS8
+            raw.c_cflag |= 0x30;
+            // Local flags: disable ECHO, ICANON, IEXTEN, ISIG
+            raw.c_lflag &= !(0x08 | 0x02 | 0x8000 | 0x01);
+            // VMIN = 1, VTIME = 0
+            raw.c_cc[6] = 1;
+            raw.c_cc[5] = 0;
+        }
 
         if tcsetattr(fd, TCSAFLUSH, &raw) != 0 {
             return Err(io::Error::last_os_error());
