@@ -1,6 +1,5 @@
 NAME   := lz
-ARCH   := $(shell uname -m | sed 's/arm64/aarch64/')
-TARGET := $(ARCH)-apple-darwin
+TARGET := $(shell rustc -vV | awk '/^host:/ {print $$2}')
 
 .PHONY: setup build-dev release install test test-ci pc bump-version
 
@@ -20,7 +19,7 @@ release:
 	  --target $(TARGET)
 
 install: release
-	sudo cp target/$(TARGET)/release/$(NAME) /usr/local/bin/$(NAME)
+	cp target/$(TARGET)/release/$(NAME) ~/usr/bin/$(NAME)
 
 test:
 	cargo test -- --test-threads=4
