@@ -1,13 +1,13 @@
 NAME   := lz
 TARGET := $(shell rustc -vV | awk '/^host:/ {print $$2}')
 
-.PHONY: setup build-dev release install test test-ci pc bump-version
+.PHONY: setup build release install test test-ci pc bump-version
 
 setup:
 	rustup show active-toolchain
 	prek install --install-hooks
 
-build-dev:
+build:
 	cargo build
 
 release:
@@ -22,14 +22,14 @@ install: release
 	cp target/$(TARGET)/release/$(NAME) ~/usr/bin/$(NAME)
 
 test:
-	cargo test -- --test-threads=4
+	@OUT=$$(cargo nextest run 2>&1) || { echo "$$OUT"; exit 1; }
 
 # So we don't do duplicate work (building both debug and release) in CI.
 test-ci:
-	cargo test --release -- --test-threads=4
+	@OUT=$$(cargo nextest run --release 2>&1) || { echo "$$OUT"; exit 1; }
 
 pc:
-	prek run --all-files
+	prek run --quiet --all-files
 
 # Usage: make bump-version [V=x.y.z]
 # Without V, increments the patch version.
