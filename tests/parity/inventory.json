@@ -56,11 +56,12 @@
         "linux-musl"
       ],
       "cases": [
-        "rendering-default-fold"
+        "rendering-default-fold",
+        "rendering-exact-screen-eof"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Finite ASCII default folding passes with semantic autowrap markers. Source streaming, controls, Unicode layout and navigation remain open."
+      "cause": "Finite ASCII folding and an exact-viewport EOF prompt pass. A fully displayed final line triggers only bounded source lookahead. Source cancellation, full geometry and Unicode layout remain open."
     },
     {
       "id": "man-0050",
@@ -1410,11 +1411,13 @@
         "sessions-next-previous",
         "sessions-next-previous-short",
         "sessions-control-next-name",
-        "sessions-next-term"
+        "sessions-next-term",
+        "sessions-remember-positions",
+        "sessions-remember-eof"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Basic CLI file-list next/previous switching passes with file-number/END-next prompts, top placement on later short-file opens, safe filename notation and TERM cleanup under one terminal owner. Counts, boundary errors, per-file state, binary transitions, examine and other session operations remain open."
+      "cause": "CLI next/previous switching, remembered plain-line positions including EOF, file-number/END-next prompts, safe filename notation and TERM cleanup pass under one terminal owner. Counts, boundary errors, wrapped/changed-file positions, other per-file state, binary transitions and examine remain open."
     },
     {
       "id": "man-0367",
@@ -1434,11 +1437,13 @@
         "sessions-next-previous",
         "sessions-next-previous-short",
         "sessions-control-next-name",
-        "sessions-next-term"
+        "sessions-next-term",
+        "sessions-remember-positions",
+        "sessions-remember-eof"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Basic CLI file-list next/previous switching passes with file-number/END-next prompts, top placement on later short-file opens, safe filename notation and TERM cleanup under one terminal owner. Counts, boundary errors, per-file state, binary transitions, examine and other session operations remain open."
+      "cause": "CLI next/previous switching, remembered plain-line positions including EOF, file-number/END-next prompts, safe filename notation and TERM cleanup pass under one terminal owner. Counts, boundary errors, wrapped/changed-file positions, other per-file state, binary transitions and examine remain open."
     },
     {
       "id": "man-0370",

@@ -214,10 +214,12 @@ fn run() -> Result<ExitAction, String> {
 
     let mut file_index = 0;
     let mut initial_display = pager::InitialDisplay::Startup;
+    let mut positions = vec![None; args.filenames.len()];
     let result = loop {
         let files = match pager::FileStatus::new(&args.filenames, file_index, charset) { Ok(files) => files, Err(error) => break Err(error) };
         let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, startup_commands: std::mem::take(&mut args.startup_commands), charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, opened.name, history);
         let result = pager.run(session.keys_mut());
+        positions[file_index] = pager.saved_position();
         history = pager.into_history();
         match result {
             Err(error) => break Err(error),
@@ -236,7 +238,7 @@ fn run() -> Result<ExitAction, String> {
                 Err(error) => break Err(error),
             }
         }
-        initial_display = pager::InitialDisplay::FileSwitch;
+        initial_display = pager::InitialDisplay::FileSwitch(positions[file_index]);
     };
     if let Some(file) = history_file { file.save(&mut history); }
     finish_session(result, session)

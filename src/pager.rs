@@ -148,7 +148,11 @@ impl DisplayLine {
 pub enum PagerExit { Quit, NextFile, PreviousFile }
 
 #[derive(Clone, Copy, PartialEq)]
-pub enum InitialDisplay { Startup, FileSwitch }
+pub enum InitialDisplay { Startup, FileSwitch(Option<SavedPosition>) }
+
+/// A saved source line; wrapped-row and horizontal offsets are not represented.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct SavedPosition { line: usize }
 
 pub struct FileStatus { index: usize, count: usize, next_name: Option<String> }
 
@@ -222,7 +226,7 @@ impl Pager {
         let (w, h) = terminal::get_terminal_size();
         Pager {
             buffer,
-            top_line: 0,
+            top_line: match config.initial_display { InitialDisplay::FileSwitch(Some(position)) => position.line, _ => 0 },
             marks: HashMap::new(),
             left_col: 0,
             wrap: !config.chop,
@@ -254,6 +258,12 @@ impl Pager {
             command_context: CommandContext::StartupUnpositioned,
             bell_requested: false,
         }
+    }
+
+    /// Retain the first displayed source line for a later visit to this file.
+    pub fn saved_position(&self) -> Option<SavedPosition> {
+        if !self.content_painted { return None; }
+        self.display_line_idx(self.top_line).filter(|line| *line < self.buffer.len()).map(|line| SavedPosition { line })
     }
 
     pub fn into_history(mut self) -> SearchHistory {
@@ -930,6 +940,13 @@ impl Pager {
         if !(self.compact_initial && self.buffer.is_finished()) { buf.extend_from_slice(b"\x1b[1m~\x1b[m"); }
     }
 
+    fn probe_after_complete_line(&mut self, line: usize) -> io::Result<()> {
+        if let Some(next) = line.checked_add(1) && self.buffer.len() == next {
+            self.buffer.byte_prefix(next, 0)?;
+        }
+        Ok(())
+    }
+
     fn render_nowrap(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize, first_row: usize) -> io::Result<()> {
         for row in first_row..ch {
             terminal::move_cursor(buf, row as u16, 0);
@@ -946,6 +963,7 @@ impl Pager {
                     let display = fragment.display(self.left_col, content_width.saturating_sub(usize::from(chopped)));
                     self.write_line_with_search(buf, &display);
                     if chopped { buf.extend_from_slice(b"\x1b[7m>\x1b[m"); }
+                    if row + 1 == ch && fragment.complete() { self.probe_after_complete_line(line_idx)?; }
                 }
                 None => self.write_eof_marker(buf),
             }
@@ -980,6 +998,7 @@ impl Pager {
                         }
                     }
                     if screen_row == ch && (rows_needed > available_rows || !fragment.complete()) { buf.extend_from_slice(b" \x08"); }
+                    if screen_row == ch && rows_needed <= available_rows && fragment.complete() { self.probe_after_complete_line(actual)?; }
                     display_idx = display_idx.saturating_add(1);
                 }
                 None => {
@@ -1066,7 +1085,7 @@ impl Pager {
     fn render_status(&self, buf: &mut Vec<u8>, w: usize) {
         terminal::move_cursor(buf, self.term_height - 1, 0);
         let status = self.build_status();
-        let emphasized = (self.filename_prompt && self.filename.is_some()) || status == "(END)" || self.status_msg.is_some();
+        let emphasized = (self.filename_prompt && self.filename.is_some()) || status.starts_with("(END)") || self.status_msg.is_some();
         if emphasized { buf.extend_from_slice(b"\x1b[7m"); }
         let mut suffix_width = 0;
         let mut start = status.len();

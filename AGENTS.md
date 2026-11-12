@@ -185,6 +185,7 @@ The main event loop and renderer. This is the largest and most central module.
 - `SearchDir` enum (`Forward`, `Backward`) tracks whether search was initiated with `/` (forward) or `?` (backward). `n` repeats in the same direction, `N` in the opposite direction.
 - Line filtering: `&` enters `FilterInput` mode. On Enter, builds a `Search` from the pattern and populates `filtered_lines: Vec<usize>` with matching line indices. All rendering and navigation then operate on this filtered subset. Empty pattern clears the filter.
 - Help mode: `h` toggles an overlay displaying all keybindings. `render_help()` draws static help text instead of file content. `h`, `q`, or Escape returns to Normal.
+- A complete line at the bottom of the viewport probes for the next source line with a zero-byte prefix request; this detects exact-viewport EOF without reading a whole following line.
 - Initial short-file content is placed at the bottom with blank unused rows. Empty files keep an interactive EOF view. Explicit startup positioning uses a full paint.
 - Rendering: full redraw every frame. Each frame: clear screen, render visible lines (or help screen) top-to-bottom, render inverse-video status bar at the bottom showing context on the left (filename, filter, wrap state, or input prompt) and position info on the right (line range, total, percentage/END).
 - Horizontal scroll: tracks a column offset, increments/decrements in 8-column steps.
@@ -195,7 +196,7 @@ The main event loop and renderer. This is the largest and most central module.
 - Signal integration: checks the atomic flags set by signal handlers in `terminal.rs` on each event loop iteration. Handles resize by re-querying terminal dimensions and redrawing; handles TSTP by suspending the process after restoring the terminal.
 
 `Pager::new` takes a named `Config` containing startup command bytes, charset and control-display policy,
-chopping, line-number display, search case policy, validated `FileStatus` and an explicit `InitialDisplay` placement. `run` returns `PagerExit`; main opens the requested next/previous file under the same terminal session. `into_history` transfers search history to the next pager. Startup commands use the same key decoder and dispatcher
+chopping, line-number display, search case policy, validated `FileStatus` and an explicit `InitialDisplay` placement. `InitialDisplay::FileSwitch` carries an optional opaque `SavedPosition`, obtained with `saved_position` before transferring history. Main retains one saved logical-line position per CLI file; wrapped-row and horizontal offsets remain open. `run` returns `PagerExit`; main opens the requested next/previous file under the same terminal session. `into_history` transfers search history to the next pager. Startup commands use the same key decoder and dispatcher
 as tty input, before the first frame. Numeric startup positions and `-p` searches
 are supported. A position-dependent startup movement before any jump/search rings
 a bell and discards the remaining command, matching the reference.
