@@ -226,8 +226,13 @@ A line longer than 64KB is truncated. This prevents a single pathological line f
 
 ## Build and Test
 
+- `make build` — debug build; `make test` — quiet test run (`make test-ci` requires a dist binary from `make release`).
+- `make lint` — `cargo clippy --workspace --all-targets -- -D warnings`.
+- `make release` — static release binary at `target/<target>/dist/lz` using the `dist` profile (fat LTO, stripped; builds `std` from source, for musl static by default on Linux). `make verify-release` checks the binary is static and stripped on Linux. Linux CI builds run in the Alpine-based `Dockerfile`.
+- CI is `.github/workflows/ci.yml` (macOS + Linux musl), `lint.yml`, and `release.yml` (dispatch-only pre-release with zips and SHA256SUMS; releases are tagged `release-<sha>`).
+
 Tests live in the standard Rust `#[cfg(test)]` blocks within each module.
 
-`bench/run.sh` runs comparative benchmarks against `less` using `expect` and `hyperfine`. It generates a 1M-line test file and measures startup, jump-to-end, search (hit/miss), and page-through scenarios. Requires `expect` and `hyperfine` to be installed; run `cargo build --release` first.
+`bench/run.sh` runs comparative benchmarks against `less` using `expect` and `hyperfine`. It generates a 1M-line test file and measures startup, jump-to-end, search (hit/miss), and page-through scenarios. Requires `expect` and `hyperfine` to be installed; run `make release` first.
 
 The release binary is small by design. Do not add dependencies without a strong reason. Before adding any crate, check whether the functionality can be implemented directly in a reasonable number of lines.

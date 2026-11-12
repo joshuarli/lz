@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{self, Read};
 use std::os::unix::io::AsRawFd;
 
-extern "C" {
+unsafe extern "C" {
     fn poll(fds: *mut PollFd, nfds: u32, timeout: i32) -> i32;
 }
 
@@ -290,7 +290,7 @@ pub fn parse_keys_from_bytes(bytes: &[u8]) -> Vec<Key> {
     let (read_fd, write_fd) = {
         let mut fds = [0i32; 2];
         unsafe {
-            extern "C" {
+            unsafe extern "C" {
                 fn pipe(fds: *mut i32) -> i32;
             }
             if pipe(fds.as_mut_ptr()) != 0 {

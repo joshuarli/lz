@@ -1,35 +1,58 @@
 NAME   := lz
-TARGET := $(shell rustc -vV | awk '/^host:/ {print $$2}')
+HOST   := $(shell rustc -vV | awk '/^host:/ {print $$2}')
+TARGET ?= $(subst -unknown-linux-gnu,-unknown-linux-musl,$(HOST))
+TARGET_ENV := $(shell printf '%s' "$(TARGET)" | tr '[:lower:]-' '[:upper:]_')
+CARGO_CMD  := $(if $(findstring -linux-musl,$(TARGET)),$(shell command -v musl-cargo 2>/dev/null || printf cargo),cargo)
+cargo = $(if $(findstring -linux-musl,$(TARGET)),,$(if $(filter test,$(1)),CARGO_TARGET_$(TARGET_ENV)_LINKER=clang ,)) MUSL_TARGET="$(TARGET)" MUSL_BUILD_MODE="$(1)" $(CARGO_CMD)
 
-.PHONY: setup build release install test test-ci pc bump-version
+.PHONY: setup build release install test test-ci pc bump-version lint verify-release
 
 setup:
 	rustup show active-toolchain
 	prek install --install-hooks
 
 build:
-	cargo build
+	$(call cargo,dev) build
 
 release:
-	cargo clean -p $(NAME) --release --target $(TARGET)
+	$(call cargo,release-static) clean -p $(NAME) --profile dist --target $(TARGET)
 	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
-	cargo build --release \
+	$(call cargo,release-static) build --profile dist -p $(NAME) \
 	  -Z build-std=std \
 	  -Z build-std-features= \
 	  --target $(TARGET)
 
-install: release
-	cp target/$(TARGET)/release/$(NAME) ~/usr/bin/$(NAME)
-
 test:
-	@OUT=$$(cargo test --quiet -- --test-threads=32 2>&1) || { echo "$$OUT"; exit 1; }
+	$(call cargo,test) test --quiet
 
-# So we don't do duplicate work (building both debug and release) in CI.
 test-ci:
-	@OUT=$$(cargo test --quiet --release -- --test-threads=32 2>&1) || { echo "$$OUT"; exit 1; }
+	@test -x "target/$(TARGET)/dist/$(NAME)" || { echo 'run make release first' >&2; exit 1; }
+	$(call cargo,test) test --quiet --release
+
+verify-release:
+	@test -f "target/$(TARGET)/dist/$(NAME)"
+	@if echo "$(TARGET)" | grep -q -- '-linux-musl$$'; then \
+		command -v readelf >/dev/null || { echo 'readelf is required for release verification'; exit 1; }; \
+		file "target/$(TARGET)/dist/$(NAME)" | grep -Eq 'static-pie linked|statically linked' || { echo 'release is not statically linked'; exit 1; }; \
+		file "target/$(TARGET)/dist/$(NAME)" | grep -q 'stripped' || { echo 'release is not stripped'; exit 1; }; \
+		! readelf -l "target/$(TARGET)/dist/$(NAME)" | grep -q INTERP || { echo 'release has a dynamic ELF interpreter'; exit 1; }; \
+		! readelf -d "target/$(TARGET)/dist/$(NAME)" | grep -q NEEDED || { echo 'release has dynamic dependencies'; exit 1; }; \
+	else \
+		echo "Skipping ELF checks for $(TARGET)"; \
+	fi
+
+install: release
+	@set -eu; \
+	  install_dir="$(HOME)/usr/bin"; \
+	  mkdir -p "$$install_dir"; \
+	  install -m 755 "target/$(TARGET)/dist/$(NAME)" "$$install_dir/$(NAME)"; \
+	  if test "$$(uname -s)" = Darwin; then codesign -fs - "$$install_dir/$(NAME)"; fi
 
 pc:
 	prek run --quiet --all-files
+
+lint:
+	cargo clippy --workspace --all-targets -- -D warnings
 
 # Usage: make bump-version [V=x.y.z]
 # Without V, increments the patch version.
@@ -42,4 +65,3 @@ endif
 	cargo check --quiet 2>/dev/null
 	git add Cargo.toml Cargo.lock
 	git commit -m "bump version to $(V)"
-	git tag "release/$(V)"

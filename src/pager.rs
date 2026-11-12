@@ -443,10 +443,10 @@ impl Pager {
         // Read all lines so we can filter them
         self.buffer.read_all();
         for i in 0..self.buffer.len() {
-            if let Some(line) = self.buffer.lines.get(i) {
-                if filter.is_match(line) {
-                    self.filtered_lines.push(i);
-                }
+            if let Some(line) = self.buffer.lines.get(i)
+                && filter.is_match(line)
+            {
+                self.filtered_lines.push(i);
             }
         }
     }
@@ -698,29 +698,30 @@ impl Pager {
     }
 
     fn write_line_with_search(&self, buf: &mut Vec<u8>, display: &str, line_idx: usize) {
-        if let Some(ref search) = self.search {
-            if let Some(original_line) = self.buffer.lines.get(line_idx) {
-                if search.is_match(original_line) {
-                    let stripped = strip_ansi(display);
-                    let matches = search.find_matches_stripped(&stripped);
-                    if !matches.is_empty() {
-                        let mut result = String::with_capacity(stripped.len() + matches.len() * 16);
-                        let mut last_end = 0;
-                        for (start, end) in &matches {
-                            if *start > last_end {
-                                result.push_str(&stripped[last_end..*start]);
-                            }
-                            result.push_str("\x1b[30;43m");
-                            result.push_str(&stripped[*start..*end]);
-                            result.push_str("\x1b[m");
-                            last_end = *end;
+        if let Some(ref search) = self.search
+            && let Some(original_line) = self.buffer.lines.get(line_idx)
+            && search.is_match(original_line)
+        {
+            {
+                let stripped = strip_ansi(display);
+                let matches = search.find_matches_stripped(&stripped);
+                if !matches.is_empty() {
+                    let mut result = String::with_capacity(stripped.len() + matches.len() * 16);
+                    let mut last_end = 0;
+                    for (start, end) in &matches {
+                        if *start > last_end {
+                            result.push_str(&stripped[last_end..*start]);
                         }
-                        if last_end < stripped.len() {
-                            result.push_str(&stripped[last_end..]);
-                        }
-                        buf.extend_from_slice(result.as_bytes());
-                        return;
+                        result.push_str("\x1b[30;43m");
+                        result.push_str(&stripped[*start..*end]);
+                        result.push_str("\x1b[m");
+                        last_end = *end;
                     }
+                    if last_end < stripped.len() {
+                        result.push_str(&stripped[last_end..]);
+                    }
+                    buf.extend_from_slice(result.as_bytes());
+                    return;
                 }
             }
         }

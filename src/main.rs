@@ -231,7 +231,7 @@ fn prepopulate_buffer(lb: &mut buffer::LineBuffer, text: &str) {
 }
 
 fn atty_stdin() -> bool {
-    extern "C" {
+    unsafe extern "C" {
         fn isatty(fd: i32) -> i32;
     }
     unsafe { isatty(0) != 0 }

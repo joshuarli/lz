@@ -1,0 +1,94 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions: {}
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.head_ref || github.run_id }}"
+  cancel-in-progress: true
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_PROFILE_DEV_DEBUG: 0
+
+defaults:
+  run:
+    shell: bash -euo pipefail {0}
+
+jobs:
+  macos:
+    name: Lint and test (macOS)
+    runs-on: macos-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash -euo pipefail {0}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Rust toolchain
+        run: rustup show active-toolchain
+      - uses: swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: macos-26
+      - name: Lint
+        run: |
+          rustup component add clippy
+          cargo clippy --workspace --all-targets -- -D warnings
+      - name: Test
+        run: cargo test --workspace --lib --tests --no-fail-fast
+
+  linux-musl:
+    name: Lint and test (Linux ${{ matrix.arch }} musl)
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-26.04
+            target: x86_64-unknown-linux-musl
+            platform: linux/amd64
+          - arch: ARM64
+            runner: ubuntu-26.04-arm
+            target: aarch64-unknown-linux-musl
+            platform: linux/arm64
+    defaults:
+      run:
+        shell: bash -euo pipefail {0}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build Linux image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          load: true
+          tags: lz-builder:${{ matrix.target }}
+          cache-from: type=gha,scope=lz-${{ matrix.target }}
+      - name: Lint and test in image
+        run: |
+          docker run --rm --init \
+            --platform "${{ matrix.platform }}" \
+            -e CI \
+            -v "$GITHUB_WORKSPACE:/lz" \
+            -w /lz \
+            lz-builder:${{ matrix.target }} \
+            sh -ec '
+              cargo clippy --workspace --all-targets -- -D warnings
+              make test TARGET=${{ matrix.target }}
+            '

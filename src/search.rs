@@ -198,15 +198,11 @@ impl Search {
         if forward {
             let mut line_idx = from_line;
             loop {
-                match buffer.get_line(line_idx) {
-                    Some(line) => {
-                        if self.is_match(line) {
-                            return Some(line_idx);
-                        }
-                        line_idx += 1;
-                    }
-                    None => return None,
+                let line = buffer.get_line(line_idx)?;
+                if self.is_match(line) {
+                    return Some(line_idx);
                 }
+                line_idx += 1;
             }
         } else {
             if from_line == 0 {
@@ -214,18 +210,14 @@ impl Search {
             }
             let mut line_idx = from_line - 1;
             loop {
-                match buffer.get_line(line_idx) {
-                    Some(line) => {
-                        if self.is_match(line) {
-                            return Some(line_idx);
-                        }
-                        if line_idx == 0 {
-                            return None;
-                        }
-                        line_idx -= 1;
-                    }
-                    None => return None,
+                let line = buffer.get_line(line_idx)?;
+                if self.is_match(line) {
+                    return Some(line_idx);
                 }
+                if line_idx == 0 {
+                    return None;
+                }
+                line_idx -= 1;
             }
         }
     }

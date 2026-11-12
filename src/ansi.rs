@@ -37,14 +37,9 @@ fn escape_seq_len(bytes: &[u8], pos: usize) -> usize {
             }
             bytes.len() - pos
         }
-        0x20..=0x2f => {
-            // Two-byte escape like ESC ( B
-            if pos + 2 < bytes.len() {
-                3
-            } else {
-                2
-            }
-        }
+        // Two-byte escape like ESC ( B; 2 when truncated at end of input
+        0x20..=0x2f if pos + 2 < bytes.len() => 3,
+        0x20..=0x2f => 2,
         _ => 2, // Simple two-byte escape
     }
 }

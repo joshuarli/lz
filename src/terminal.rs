@@ -1,13 +1,13 @@
 use std::io::{self, Write};
 use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 
-extern "C" {
+unsafe extern "C" {
     fn tcgetattr(fd: i32, termios: *mut Termios) -> i32;
     fn tcsetattr(fd: i32, action: i32, termios: *const Termios) -> i32;
     fn ioctl(fd: i32, request: u64, ...) -> i32;
 }
 
-extern "C" {
+unsafe extern "C" {
     fn signal(sig: i32, handler: usize) -> usize;
     fn raise(sig: i32) -> i32;
 }
