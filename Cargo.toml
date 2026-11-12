@@ -35,3 +35,8 @@ inherits = "release"
 lto = "fat"
 codegen-units = 1
 strip = true
+
+[[test]]
+name = "parity"
+path = "tests/parity/main.rs"
+harness = false

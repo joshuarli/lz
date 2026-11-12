@@ -82,3 +82,13 @@ endif
 	cargo check --quiet 2>/dev/null
 	git add Cargo.toml Cargo.lock
 	git commit -m "bump version to $(V)"
+
+.PHONY: parity-setup parity-test
+parity-setup:
+	@mkdir -p "$(CURDIR)/.work/tmp"
+	TMPDIR="$(CURDIR)/.work/tmp" python3 tests/parity/setup.py
+	TMPDIR="$(CURDIR)/.work/tmp" cargo fetch --locked
+
+parity-test:
+	@TMPDIR="$(CURDIR)/.work/tmp" python3 tests/parity/setup.py --verify >/dev/null
+	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo test --test parity -- $(if $(CASE),--case $(CASE),) $(if $(GROUP),--group $(GROUP),) --mode $(if $(MODE),$(MODE),admitted)

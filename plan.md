@@ -5,7 +5,8 @@
 - Execution authorized 2026-11-12; one writer, local commits only, no push.
 - Integration starts at `265e52d`, with unchanged product baseline `2ae5660` and a clean tree.
 - Accepted: S00; all 128 Rust tests pass with unique repository-local history fixtures.
-- Active: S01, redirected file/pipe bytes, errors and exit status; `src/main.rs`, `tests/parity/`, Makefile and test manifests. Acceptance: `make parity-test GROUP=redirected MODE=admit`.
+- Accepted: S01 redirected pilot: 13 strict cases pass (file/completed pipe text, empty, binary, invalid bytes, controls; missing/directory/special diagnostics). Both isolated 668/POSIX builds verified on macOS arm64. Baseline mismatches reproduced before repair.
+- Active: S02, pinned PTY dependency and JSON runner/selftests in test manifests and `tests/parity/`; acceptance `make parity-selftest`. Delivery limiter: implementation; continue serially.
 - Next: S01 redirected output and pinned reference setup. Linux, other macOS architecture, quiet-host timing and remote CI remain unproved.
 
 ## Charter

@@ -17,7 +17,9 @@ lz [OPTIONS] [FILE]
 cat file.txt | lz
 ```
 
-If no file is given and stdin is a pipe, `lz` reads from stdin.
+If no file is given and stdin is a pipe, `lz` reads from stdin. Redirected stdout copies input bytes without terminal setup, including binary and invalid UTF-8 content.
+
+The less 668 parity campaign is in progress; interactive behavior still differs. Run `make parity-setup` once to build the checksum-pinned POSIX reference, then `make parity-test GROUP=redirected MODE=admit` for strict offline byte, diagnostic and exit comparisons. References and fixture worlds stay under `.work/`; neither reference is installed.
 
 ## Options
 

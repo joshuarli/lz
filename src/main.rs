@@ -1,7 +1,7 @@
 use lz::{buffer, history, input, pager, terminal};
 
 use std::fs::File;
-use std::io::{self, Read};
+use std::io::{self, IsTerminal, Read, Write};
 use std::process;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -109,7 +109,34 @@ fn run() -> Result<(), String> {
 
     let is_stdin = args.filename.is_none() || args.stdin_explicit;
 
-    // If stdin is a tty and no file given, that's an error
+    if !io::stdout().is_terminal() {
+        let mut output = io::stdout().lock();
+        if is_stdin {
+            io::copy(&mut io::stdin().lock(), &mut output).map_err(|error| error.to_string())?;
+        } else {
+            let filename = args.filename.as_ref().unwrap();
+            match File::open(filename) {
+                Ok(mut file) => {
+                    let metadata = file.metadata().map_err(|error| error.to_string())?;
+                    if metadata.is_dir() {
+                        writeln!(output, "{} is a directory", filename).map_err(|error| error.to_string())?;
+                    } else if !metadata.is_file() && !args.force {
+                        writeln!(output, "{} is not a regular file (use -f to see it)", filename).map_err(|error| error.to_string())?;
+                    } else {
+                        io::copy(&mut file, &mut output).map_err(|error| error.to_string())?;
+                    }
+                }
+                Err(error) => {
+                    let message = error.to_string();
+                    let message = message.rsplit_once(" (os error ").map_or(message.as_str(), |(text, _)| text);
+                    writeln!(output, "{}: {}", filename, message).map_err(|error| error.to_string())?;
+                }
+            }
+        }
+        output.flush().map_err(|error| error.to_string())?;
+        return Ok(());
+    }
+
     if is_stdin && atty_stdin() && !args.stdin_explicit {
         eprintln!("lz: missing filename (use '-' for stdin)");
         process::exit(2);
