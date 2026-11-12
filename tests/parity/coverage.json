@@ -57,7 +57,7 @@
   },
   "metadata": {
     "architecture": "aarch64",
-    "executables": "3eae25bfbbae31d45cee68143100a22ac41c49f65efc808521a3a36cbd80ee2d  /Users/josh/d/lz/target/debug/lz\n9b683f6ef4d83ec0fcab0c04221fbb16b067adb75301a79c1f103ba8882dad08  /Users/josh/d/lz/.work/tools/less-668/darwin-arm64/ordinary/less\n",
+    "executables": "2f87814a24abb13d80e0db0cabb22fc0507fdbca8c1a4d56ba4871e0f40c8189  /Users/josh/d/lz/target/debug/lz\n9b683f6ef4d83ec0fcab0c04221fbb16b067adb75301a79c1f103ba8882dad08  /Users/josh/d/lz/.work/tools/less-668/darwin-arm64/ordinary/less\n",
     "locale": "per scenario",
     "oracle": {
       "archive_sha256": "2819f55564d86d542abbecafd82ff61e819a3eec967faa36cd3e68f1596a44b8",
@@ -84,23 +84,23 @@
       "terminfo_sha256": "afa3a445f5f0d981aecba3f5e7515365ae39eb4ffdb926720542207df3aa1e14"
     },
     "platform": "macos",
-    "sources": "2b4d2f8f573732526c9ca1f2ecbb6bd2b2c13dda0d39514794b8f868aa9b880a  /Users/josh/d/lz/Cargo.lock\nd45e606844a9551690c123071f29632e139b2c74df5abdfd1d6ead47a49261bd  /Users/josh/d/lz/Cargo.toml\n987b0bba8f1ed236ece48051a32315d2bfc34453e903b1b850f02c32d7b6779d  /Users/josh/d/lz/rust-toolchain.toml\n57935946de41af694c0fccb1e9f05e9ad60f3a76aae4583c1342448e1cfd9737  /Users/josh/d/lz/src/ansi.rs\nf65b248aafe4a0e51c8faaaf0e7d03c8f6568bbf6a0cc9995fec5dc9f95d7aa8  /Users/josh/d/lz/src/buffer.rs\n4eb38d3777e4e7eb2341ad2074d7c9e9ce77388a97aee60f7eb44f5c3770b66e  /Users/josh/d/lz/src/charset.rs\nde7a8acdb25c450c0c4fabaf55c3359366231b8e5ab1e79c8a2372077cb0fad8  /Users/josh/d/lz/src/history.rs\n7da84e2b94a0bb67757617cd95ca2b80b078ac68e94467cf107928e61c1caacb  /Users/josh/d/lz/src/input.rs\n064852bca3a9f5c9dce329d780532f6cd2fd6897db93105fd40a439e15f07ca8  /Users/josh/d/lz/src/layout.rs\ne6cc60cd18ee379b2930f6813714c37d55fa67a8b45e6384fbeee545a7917184  /Users/josh/d/lz/src/lib.rs\ne47efca25dc5336785abb3d2f732e098d9c91280be52b5de8040f88b9a2fcf00  /Users/josh/d/lz/src/main.rs\nc0ecbf3a46c0dcc2b119c1ade54470d33ee4fc47df34bc97633bace0f8dfc1be  /Users/josh/d/lz/src/options.rs\n4dd6713c3b64cba7fe3f3b14d956acfd528ff15ab5a433225503059f95e69a46  /Users/josh/d/lz/src/pager.rs\n84fe0a66e733f8ccdd42ff816ccc3a69e9ae6b66ef235b3cf601e0bb2e1884ba  /Users/josh/d/lz/src/readiness.rs\n9030cd69d64fcc915a4af0533451a0546d4c312ef46830a77d126a1b0b7f9284  /Users/josh/d/lz/src/search.rs\n88077b5c60059f0eeb9dbeaafd55dd9f5140e5304a1d8d996dc8729f58879deb  /Users/josh/d/lz/src/security.rs\n5a649e96bb8330cc20d644b99deda0f7b0414396f5a8ed6ec41c3e9356c54ea0  /Users/josh/d/lz/src/storage.rs\n8d2b486db2abc325e8d7ee66b64abfa56ff88a365a999b5f89ffa1c9a5784959  /Users/josh/d/lz/src/terminal.rs\nfeb7424d6e5a063bea148d4c0f6468e551d893d8ccb0684d9c218cf55495ed80  /Users/josh/d/lz/tests/parity/cases.json\nbcca3bdf6bea164aaba128988188bc697d847ac0df4b4d4c77bdc4863479e914  /Users/josh/d/lz/tests/parity/fixtures.rs\n613a84dd4a4da4c11f3b3bc35dd1a2fe2ecf6e692ac4ca0548bb57df43b700c7  /Users/josh/d/lz/tests/parity/interactive.rs\n692c454a6fc717f12ebe987e97773c044c640f5084861e37d28ac65db482554b  /Users/josh/d/lz/tests/parity/inventory.json\n2b954a4c503e578970108f4e1ecf1e2a33c54a1b15f0db3e6f1265434e14775d  /Users/josh/d/lz/tests/parity/inventory.rs\nf9164592d848fec197eb2d9a74cdafd57e5f427111f85674b19906c1e0a5a6a4  /Users/josh/d/lz/tests/parity/main.rs\ncc9b8ac9080cfcc1bdab8ae86c936aa9c4af94a9786269e7da44da9dc64992d0  /Users/josh/d/lz/tests/parity/prepare_inventory.py\n1c2123ede3c184ba2d681875e0b725a3b50cfb1d4b39570e9a59fe2f9edd9f77  /Users/josh/d/lz/tests/parity/setup.py\n6f559ec3effefd9b1af9d2122d50dcf2824a788e5e35ba4940effc54d2bb24ec  /Users/josh/d/lz/tests/parity/stdio.rs\n4a7c598b561499397b71b9d86c1927323a1e20a24ed602b5029611c58b0bdcf4  /Users/josh/d/lz/tests/parity/supervisor.rs\ned6716e6981bc58d946d77a693579340dd87a9c00bf63b9b337495b7a5e39f63  /Users/josh/d/lz/tests/parity/upstream.py\n",
+    "sources": "17ed0905c04d50a6176696e7d5c786bb5a134fa5f2fa2ba233852b9fe53ea886  /Users/josh/d/lz/Cargo.lock\ne25e807b0ee2b8dc81ba2cacc0d6c2ce0762492d864536aafda7b7d4b3e4be3f  /Users/josh/d/lz/Cargo.toml\n987b0bba8f1ed236ece48051a32315d2bfc34453e903b1b850f02c32d7b6779d  /Users/josh/d/lz/rust-toolchain.toml\n57935946de41af694c0fccb1e9f05e9ad60f3a76aae4583c1342448e1cfd9737  /Users/josh/d/lz/src/ansi.rs\nf65b248aafe4a0e51c8faaaf0e7d03c8f6568bbf6a0cc9995fec5dc9f95d7aa8  /Users/josh/d/lz/src/buffer.rs\n4eb38d3777e4e7eb2341ad2074d7c9e9ce77388a97aee60f7eb44f5c3770b66e  /Users/josh/d/lz/src/charset.rs\nde7a8acdb25c450c0c4fabaf55c3359366231b8e5ab1e79c8a2372077cb0fad8  /Users/josh/d/lz/src/history.rs\n7da84e2b94a0bb67757617cd95ca2b80b078ac68e94467cf107928e61c1caacb  /Users/josh/d/lz/src/input.rs\n064852bca3a9f5c9dce329d780532f6cd2fd6897db93105fd40a439e15f07ca8  /Users/josh/d/lz/src/layout.rs\ne6cc60cd18ee379b2930f6813714c37d55fa67a8b45e6384fbeee545a7917184  /Users/josh/d/lz/src/lib.rs\ne47efca25dc5336785abb3d2f732e098d9c91280be52b5de8040f88b9a2fcf00  /Users/josh/d/lz/src/main.rs\nc0ecbf3a46c0dcc2b119c1ade54470d33ee4fc47df34bc97633bace0f8dfc1be  /Users/josh/d/lz/src/options.rs\n4dd6713c3b64cba7fe3f3b14d956acfd528ff15ab5a433225503059f95e69a46  /Users/josh/d/lz/src/pager.rs\n84fe0a66e733f8ccdd42ff816ccc3a69e9ae6b66ef235b3cf601e0bb2e1884ba  /Users/josh/d/lz/src/readiness.rs\n686db319528aa5d3534d8b0c703c35b3cb862695f75eca878b80a6ed58bd9ca6  /Users/josh/d/lz/src/search.rs\n88077b5c60059f0eeb9dbeaafd55dd9f5140e5304a1d8d996dc8729f58879deb  /Users/josh/d/lz/src/security.rs\n5a649e96bb8330cc20d644b99deda0f7b0414396f5a8ed6ec41c3e9356c54ea0  /Users/josh/d/lz/src/storage.rs\n8d2b486db2abc325e8d7ee66b64abfa56ff88a365a999b5f89ffa1c9a5784959  /Users/josh/d/lz/src/terminal.rs\na079dfd9f3b5a670c2a6cb8de1ef7525d62d259745f28d54980e3d4bfe6b0df1  /Users/josh/d/lz/tests/parity/cases.json\nbcca3bdf6bea164aaba128988188bc697d847ac0df4b4d4c77bdc4863479e914  /Users/josh/d/lz/tests/parity/fixtures.rs\n613a84dd4a4da4c11f3b3bc35dd1a2fe2ecf6e692ac4ca0548bb57df43b700c7  /Users/josh/d/lz/tests/parity/interactive.rs\n0b94b645c59e4173f7a7d29ad960212e55b783c1150b4489f8ab4c43acba914a  /Users/josh/d/lz/tests/parity/inventory.json\n2b954a4c503e578970108f4e1ecf1e2a33c54a1b15f0db3e6f1265434e14775d  /Users/josh/d/lz/tests/parity/inventory.rs\nf9164592d848fec197eb2d9a74cdafd57e5f427111f85674b19906c1e0a5a6a4  /Users/josh/d/lz/tests/parity/main.rs\ncc9b8ac9080cfcc1bdab8ae86c936aa9c4af94a9786269e7da44da9dc64992d0  /Users/josh/d/lz/tests/parity/prepare_inventory.py\n1c2123ede3c184ba2d681875e0b725a3b50cfb1d4b39570e9a59fe2f9edd9f77  /Users/josh/d/lz/tests/parity/setup.py\n6f559ec3effefd9b1af9d2122d50dcf2824a788e5e35ba4940effc54d2bb24ec  /Users/josh/d/lz/tests/parity/stdio.rs\n4a7c598b561499397b71b9d86c1927323a1e20a24ed602b5029611c58b0bdcf4  /Users/josh/d/lz/tests/parity/supervisor.rs\ned6716e6981bc58d946d77a693579340dd87a9c00bf63b9b337495b7a5e39f63  /Users/josh/d/lz/tests/parity/upstream.py\n",
     "term": "xterm-256color"
   },
   "outcomes": {
     "baseline": {
       "harness-error": 0,
-      "mismatch": 187,
+      "mismatch": 190,
       "needs-environment": 1,
       "pass": 3,
-      "total": 191
+      "total": 194
     },
     "current": {
       "harness-error": 0,
       "mismatch": 1,
       "needs-environment": 1,
-      "pass": 189,
-      "total": 191
+      "pass": 192,
+      "total": 194
     }
   },
   "upstream": {

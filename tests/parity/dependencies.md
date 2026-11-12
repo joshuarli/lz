@@ -1,6 +1,33 @@
 # Parity test dependencies
 
-The production dependency graph remains `regex-lite` and `unicode-width`.
+The production graph is `regex-automata` 0.4.18, its parser
+`regex-syntax` 0.8.11, and `unicode-width` 0.2.2. The first two are
+MIT OR Apache-2.0 crates from the Rust regex project. Their local manifests,
+licenses, PikeVM implementation and source identity were inspected. The
+automata crate records source commit `e6ad938198e68339a593f85d228f2d44cb54718f`.
+The replacement is pinned and builds offline from the existing cache.
+
+`regex-lite` cannot expose the all-match execution needed for POSIX
+leftmost-longest highlighting. A portable standard-library implementation
+does not provide regexes. Two PikeVM policies share one compiled NFA: locate
+the earliest start, then find the longest match anchored there. This avoids
+writing another regex compiler or adding a system C regex dependency.
+Default features, DFA engines and literal accelerator dependencies are
+disabled; enabled features are std, syntax, nfa-pikevm, unicode-case,
+unicode-perl and unicode-word-boundary. `cargo tree --edges normal` shows
+only the three runtime packages above. The lock has 65 packages, including
+inactive optional and target-only packages. `regex-lite` remains needed by
+test-only rustybench.
+
+On macOS arm64, the S08a dist build grew from 268,992 to 533,440 bytes.
+Both use the pinned toolchain and the repository dist recipe. The result
+remains below the plan's 2 MiB budget. One version-query RSS observation
+was 1,998,848 bytes before and 2,113,536 after; this is not proof for
+interactive or large-input memory gates. Logs and binaries are retained
+under `.work/tmp/s08a-*`. Clean-build, startup and runtime timing gates
+are deferred: `perf-gate-ready` rejected a hot process tree in another
+project. No timing result from that interval counts as a pass.
+S14's complete workflow, resource and performance gates remain open.
 
 The S02 runner pins MIT-licensed `laputa-ptytest` 0.4.0 to commit
 `2efca1cffe9f4f19bddb7208643c18de63bbbc41` (2026-11-11). Its Unix process-group

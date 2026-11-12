@@ -2,7 +2,7 @@
 
 A minimal, fast pager — like `less`, but smaller.
 
-Two dependencies (`regex-lite`, `unicode-width`). No crossterm, no termion, no clap. Unix only.
+Two direct dependencies (`regex-automata`, `unicode-width`); the regex parser adds `regex-syntax`. No crossterm, no termion, no clap. Unix only.
 
 ## Install
 
@@ -49,7 +49,7 @@ The less 668 parity campaign is in progress; interactive behavior still differs.
 | `-?`, `--help` | Show help |
 | `-V`, `--version` | Show version |
 
-Search is case-sensitive by default. Simple `-i` and `-I` entries in `LESS` apply before the command line. `-+i` resets the case policy. Unknown and ambiguous CLI options emit diagnostics while redirected file copying continues. Option parsing stops at the first filename. Numeric and string arguments are consumed by one parser, including missing-value and overflow diagnostics. `-h` takes a number. Lines fold by default. `-S` shows an inverse right-edge marker for chopped content. `-N` displays line numbers. Full option effects and Unicode case-folding parity remain open.
+Search is case-sensitive by default. Regex highlighting selects the longest match at the earliest position for the tested POSIX alternatives. Full POSIX dialect, diagnostics and Unicode parity remain open. Simple `-i` and `-I` entries in `LESS` apply before the command line. `-+i` resets the case policy. Unknown and ambiguous CLI options emit diagnostics while redirected file copying continues. Option parsing stops at the first filename. Numeric and string arguments are consumed by one parser, including missing-value and overflow diagnostics. `-h` takes a number. Lines fold by default. `-S` shows an inverse right-edge marker for chopped content. `-N` displays line numbers. Full option effects and Unicode case-folding parity remain open.
 
 ## Keyboard Shortcuts
 

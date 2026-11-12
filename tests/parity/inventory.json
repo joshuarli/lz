@@ -832,11 +832,14 @@
       ],
       "cases": [
         "upstream-seq-search",
-        "search-case-default"
+        "search-case-default",
+        "search-posix-longest-0",
+        "search-posix-longest-1",
+        "search-posix-longest-2"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Plain ASCII literal search/highlight and default sensitivity pass; POSIX dialect, modifiers, colors and layout interactions remain untested"
+      "cause": "Literal search and named ASCII POSIX leftmost-longest alternatives pass; full dialect, diagnostics, Unicode, modifiers, colors and layout interactions remain open"
     },
     {
       "id": "man-0220",

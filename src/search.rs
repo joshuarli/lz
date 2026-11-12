@@ -1,6 +1,7 @@
 use crate::ansi::strip_ansi;
 use crate::buffer::LineBuffer;
-use regex_lite::Regex;
+use regex_automata::{Anchored, Input, MatchKind, nfa::thompson::pikevm::{Cache, PikeVM}};
+use std::sync::Mutex;
 
 /// Boyer-Moore-Horspool substring searcher.
 ///
@@ -116,7 +117,53 @@ fn is_literal(pattern: &str) -> bool {
 
 enum Matcher {
     Literal(Box<Bmh>),
-    Regex(Regex),
+    Regex(Box<RegexMatcher>),
+}
+
+struct RegexMatcher {
+    first: PikeVM,
+    longest: PikeVM,
+    caches: Mutex<RegexCaches>,
+}
+
+struct RegexCaches { first: Cache, longest: Cache }
+
+impl RegexMatcher {
+    fn new(pattern: &str, case_insensitive: bool) -> Result<Self, String> {
+        let first = PikeVM::builder()
+            .syntax(regex_automata::util::syntax::Config::new().case_insensitive(case_insensitive))
+            .build(pattern).map_err(|error| format!("Invalid regex: {error}"))?;
+        let longest = PikeVM::builder().configure(PikeVM::config().match_kind(MatchKind::All))
+            .build_from_nfa(first.get_nfa().clone()).map_err(|error| format!("Invalid regex: {error}"))?;
+        let caches = Mutex::new(RegexCaches { first: first.create_cache(), longest: longest.create_cache() });
+        Ok(Self { first, longest, caches })
+    }
+
+    fn is_match(&self, text: &str) -> bool {
+        let mut caches = self.caches.lock().unwrap_or_else(|error| error.into_inner());
+        self.first.is_match(&mut caches.first, text)
+    }
+
+    fn find_all(&self, text: &str) -> Vec<(usize, usize)> {
+        let mut caches = self.caches.lock().unwrap_or_else(|error| error.into_inner());
+        let mut matches = Vec::new();
+        let mut from = 0;
+        let mut previous_end = None;
+        while let Some(first) = self.first.find(&mut caches.first, Input::new(text).range(from..)) {
+            // POSIX selects the longest match at the earliest start, independent of alternative order.
+            let found = self.longest.find(&mut caches.longest, Input::new(text).range(first.start()..).anchored(Anchored::Yes)).unwrap();
+            let (start, end) = (found.start(), found.end());
+            if start != end || previous_end != Some(end) {
+                matches.push((start, end));
+                previous_end = Some(end);
+            }
+            if start == end {
+                let Some(character) = text[end..].chars().next() else { break; };
+                from = end + character.len_utf8();
+            } else { from = end; }
+        }
+        matches
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -148,13 +195,7 @@ impl Search {
         let matcher = if is_literal(pattern) {
             Matcher::Literal(Box::new(Bmh::new(pattern.as_bytes(), case_insensitive)))
         } else {
-            let regex_pattern = if case_insensitive {
-                format!("(?i){}", pattern)
-            } else {
-                pattern.to_string()
-            };
-            let regex = Regex::new(&regex_pattern).map_err(|e| format!("Invalid regex: {}", e))?;
-            Matcher::Regex(regex)
+            Matcher::Regex(Box::new(RegexMatcher::new(pattern, case_insensitive)?))
         };
 
         Ok(Search {
@@ -190,10 +231,7 @@ impl Search {
     pub fn find_matches_stripped(&self, stripped: &str) -> Vec<(usize, usize)> {
         match &self.matcher {
             Matcher::Literal(bmh) => bmh.find_all(stripped.as_bytes()),
-            Matcher::Regex(regex) => regex
-                .find_iter(stripped)
-                .map(|m| (m.start(), m.end()))
-                .collect(),
+            Matcher::Regex(regex) => regex.find_all(stripped),
         }
     }
 
@@ -386,6 +424,24 @@ mod tests {
     }
 
     // --- find_matches ---
+
+    #[test]
+    fn regex_selects_longest_at_leftmost_position() {
+        for pattern in ["a|ab", "ab|a", "(a|ab)+"] {
+            let search = Search::new(pattern, CaseSensitivity::Sensitive).unwrap();
+            assert_eq!(search.find_matches("xab ab"), vec![(1, 3), (4, 6)]);
+        }
+        let search = Search::new("b|a.*z", CaseSensitivity::Sensitive).unwrap();
+        assert_eq!(search.find_matches("abz b"), vec![(0, 3), (4, 5)]);
+    }
+
+    #[test]
+    fn regex_keeps_anchors_context_and_advances_empty_unicode_matches() {
+        let search = Search::new("^a|ab", CaseSensitivity::Sensitive).unwrap();
+        assert_eq!(search.find_matches("aa ab"), vec![(0, 1), (3, 5)]);
+        let search = Search::new("x*", CaseSensitivity::Sensitive).unwrap();
+        assert_eq!(search.find_matches("éx"), vec![(0, 0), (2, 3)]);
+    }
 
     #[test]
     fn matches_plain_text() {

@@ -6,7 +6,7 @@ This document is written for AI agents working on the lz codebase. It covers arc
 
 ## What lz Is
 
-lz is a minimal, fast pager (like `less`) written in Rust. It targets the common 90% of `less` usage without the full complexity. It is Unix-only and has exactly two dependencies: `regex-lite` and `unicode-width`. Everything else — terminal control, key input, signal handling — is done via direct libc FFI or standard library primitives.
+lz is a minimal, fast pager (like `less`) written in Rust. The active parity campaign targets the documented less 668 surface; see `plan.md` for its scope and remaining proof. It is Unix-only and has two direct runtime dependencies: `regex-automata` and `unicode-width`; `regex-syntax` is the regex parser. Everything else — terminal control, key input, signal handling — is done via direct libc FFI or standard library primitives.
 
 The design philosophy is small binary, simple code, zero unnecessary dependencies. `plan.md` now authorizes a less 668 parity campaign that supersedes the intentional omissions below; those sections describe the current interactive implementation, not the target contract. Redirected stdout already copies arbitrary input bytes before any terminal or binary detection. `make parity-setup` builds isolated ordinary/instrumented references; `make parity-test GROUP=redirected MODE=admit` compares redirected behavior offline.
 
@@ -164,7 +164,7 @@ Key types: `SearchHistory` owns input history; `HistoryFile` owns persistence po
 
 Search over file content with a fast literal path.
 
-- Two-tier matching via the `Matcher` enum: `Literal(BMH)` for patterns with no regex metacharacters, `Regex(Regex)` for everything else. The `is_literal()` function detects which path to use.
+- Two-tier matching via the `Matcher` enum: `Literal(BMH)` for patterns with no regex metacharacters, `Regex(Box<RegexMatcher>)` for everything else. The `is_literal()` function detects which path to use.
 - `BMH` struct implements Boyer-Moore-Horspool substring search with a 256-entry bad-character shift table. For literal patterns this skips large chunks of the haystack without examining every byte — dramatically faster than regex for common search terms.
 - Case policy is explicit: sensitive by default, smart case with `-i`, and insensitive with `-I`. `Search::new(pattern, CaseSensitivity)` receives the resolved policy. The literal folding path is ASCII-only; Unicode folding parity is unproved.
 - Searches on ANSI-stripped text (delegates to `ansi.rs`) so that color codes in the input do not interfere with pattern matching.
@@ -254,7 +254,7 @@ Arrow keys and other special keys send multi-byte escape sequences (e.g., `\x1b[
 Search is case-sensitive by default. `-i` enables smart case, and `-I` always ignores case. Simple case flags in `LESS` apply before CLI overrides. Unicode case parity remains unproved.
 
 **Boyer-Moore-Horspool fast path for literal searches.**
-Most real-world searches are literal strings, not regexes. BMH with a 256-entry shift table skips large portions of each line without examining every byte, giving a significant speedup over regex for the common case. The `is_literal()` check detects regex metacharacters; if none are present, the search is routed to BMH instead of `regex-lite`. This is why `search.rs` has the `Matcher` enum dispatching between `Literal` and `Regex`.
+Most real-world searches are literal strings, not regexes. BMH with a 256-entry shift table skips large portions of each line without examining every byte, giving a significant speedup over regex for the common case. The `is_literal()` check detects regex metacharacters; if none are present, the search is routed to BMH instead of the regex automaton. This is why `search.rs` has the `Matcher` enum dispatching between `Literal` and `Regex`.
 
 **Lazy line loading.**
 Display reads bounded prefixes from seekable files or retained stream bytes. Line indexes spill to disk after a fixed in-memory allowance.

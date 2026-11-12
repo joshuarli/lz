@@ -5,7 +5,7 @@ edition = "2024"
 description = "A minimal, fast pager"
 
 [dependencies]
-regex-lite = "0.1"
+regex-automata = { version = "=0.4.18", default-features = false, features = ["std", "syntax", "nfa-pikevm", "unicode-case", "unicode-perl", "unicode-word-boundary"] }
 unicode-width = "0.2"
 
 [dev-dependencies]
