@@ -7447,6 +7447,31 @@
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
       "cause": "Strict cases cover five versus six binary units, the 256-byte boundary, UTF-8 controls and malformed runs, common SGR sampling under -R, filename presentation and explicit charset/alias precedence. Detection and filename questions share one typed policy. Other charsets/custom definitions, locale validity, nonstandard UTF-8 scalar forms and other color-safe controls remain open."
+    },
+    {
+      "id": "invocation-command-overflow",
+      "family": "invocation",
+      "title": "Numeric command overflow pauses safely and resumes the pending command",
+      "anchor": {
+        "file": "cmdbuf.c",
+        "line": 1313,
+        "text": "\t\t\terror(\"Integer is too big\", NULL_PARG);"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [
+        "invocation-startup-overflow",
+        "invocation-startup-overflow-resume",
+        "invocation-startup-overflow-remainder",
+        "invocation-startup-overflow-long",
+        "invocation-interactive-overflow"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "An unsigned-size prefix reached unchecked row arithmetic and panicked. Prefixes now retain signed-64 overflow state until command dispatch, show the modal oracle error and preserve startup remainders. Startup quit/resume/long input and interactive recovery match, including the redundant top-jump bell. Candidate-only safety also covers large legal position arithmetic. Other jump targets and out-of-file seek diagnostics remain open in S07."
     }
   ],
   "upstream": [

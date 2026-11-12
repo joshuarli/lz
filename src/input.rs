@@ -45,6 +45,13 @@ impl KeyReader {
 
     pub(crate) fn has_command_input(&self) -> bool { (self.command.position() as usize) < self.command.get_ref().len() }
 
+    pub(crate) fn take_command_input(&mut self) -> Vec<u8> {
+        let position = self.command.position() as usize;
+        let mut bytes = std::mem::take(self.command.get_mut());
+        self.command.set_position(0);
+        bytes.split_off(position)
+    }
+
     fn command_byte(&mut self) -> Option<u8> {
         let position = self.command.position() as usize;
         let byte = self.command.get_ref().get(position).copied()?;

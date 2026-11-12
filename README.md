@@ -23,6 +23,8 @@ If no file is given and stdin is a pipe, `lz` reads from stdin. Redirected stdou
 
 Binary files ask before alternate-screen entry. Refuse with `n` or Enter, or quit with `Q`. Detection samples the first 256 bytes and prompts after more than five binary units. ASCII and UTF-8 selection also controls filename formatting. Common SGR escapes are excluded from the sample with `-R`. Other charsets, customized definitions, nonstandard UTF-8 forms and accepted binary display remain unfinished.
 
+Oversized numeric prefixes show a dismissible error. Enter resumes the pending command without losing the rest of a startup command.
+
 Empty files keep an interactive EOF view. Initial short-file content appears at the bottom, with unused rows blank. An explicit startup position uses a full paint.
 
 Initial display reads bounded line prefixes from disk-backed source storage. Streamed input and large line indexes use owned anonymous spill files. Source bytes are retained intact. Whole-line search, wrapped navigation and exact malformed-byte display remain unfinished.

@@ -171,7 +171,7 @@ Key types: `Search` struct, `Matcher` enum (`Literal`, `Regex`), `BMH` struct.
 
 The main event loop and renderer. This is the largest and most central module.
 
-- Five modes via the `Mode` enum: `Normal`, `SearchInput` (typing a search pattern), `FilterInput` (typing a filter pattern), `Follow` (like `tail -f`), and `Help` (overlay showing keybindings).
+- Modes via the `Mode` enum: `Normal`, `SearchInput` (typing a search pattern), `FilterInput` (typing a filter pattern), `Follow` (like `tail -f`), `Help` (overlay showing keybindings), and `CommandError` (a pending command paused for acknowledgment).
 - `SearchDir` enum (`Forward`, `Backward`) tracks whether search was initiated with `/` (forward) or `?` (backward). `n` repeats in the same direction, `N` in the opposite direction.
 - Line filtering: `&` enters `FilterInput` mode. On Enter, builds a `Search` from the pattern and populates `filtered_lines: Vec<usize>` with matching line indices. All rendering and navigation then operate on this filtered subset. Empty pattern clears the filter.
 - Help mode: `h` toggles an overlay displaying all keybindings. `render_help()` draws static help text instead of file content. `h`, `q`, or Escape returns to Normal.

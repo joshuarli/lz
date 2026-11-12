@@ -1,4 +1,5 @@
 use std::io::{self, Write};
+use std::collections::VecDeque;
 
 use crate::ansi::{strip_ansi, truncate_to_width, visible_width};
 use crate::buffer::{LineBuffer, LineFragment};
@@ -7,13 +8,14 @@ use crate::input::{Key, KeyReader};
 use crate::search::{CaseSensitivity, Search};
 use crate::terminal;
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone)]
 enum Mode {
     Normal,
     SearchInput,
     FilterInput,
     Follow,
     Help,
+    CommandError(CommandError),
 }
 
 #[derive(PartialEq, Clone, Copy)]
@@ -101,6 +103,12 @@ impl LineEditor {
 #[derive(Clone, Copy, PartialEq)]
 enum CommandContext { StartupUnpositioned, StartupPositioned, StartupAborted, Interactive }
 
+#[derive(Clone, PartialEq)]
+struct CommandError { command: Key, context: CommandContext, remainder: Vec<u8> }
+
+#[derive(Clone, Copy, PartialEq)]
+enum NumericPrefix { Empty, Value(usize), Overflow }
+
 pub struct Config {
     pub startup_commands: Vec<Vec<u8>>,
     pub raw_mode: bool,
@@ -133,8 +141,9 @@ pub struct Pager {
     filename: Option<String>,
     filename_prompt: bool,
     compact_initial: bool,
-    startup_commands: Vec<Vec<u8>>,
-    numeric_prefix: Option<usize>,
+    startup_commands: VecDeque<Vec<u8>>,
+    numeric_prefix: NumericPrefix,
+    content_painted: bool,
     command_context: CommandContext,
     bell_requested: bool,
 }
@@ -171,8 +180,9 @@ impl Pager {
             filename,
             filename_prompt: true,
             compact_initial: config.startup_commands.is_empty(),
-            startup_commands: config.startup_commands,
-            numeric_prefix: None,
+            startup_commands: config.startup_commands.into(),
+            numeric_prefix: NumericPrefix::Empty,
+            content_painted: false,
             command_context: CommandContext::StartupUnpositioned,
             bell_requested: false,
         }
@@ -190,23 +200,38 @@ impl Pager {
         }
     }
 
-    pub fn run(&mut self, keys: &mut KeyReader) -> io::Result<()> {
-        for command in std::mem::take(&mut self.startup_commands) {
+    fn run_startup_commands(&mut self, keys: &mut KeyReader) -> io::Result<bool> {
+        while let Some(command) = self.startup_commands.pop_front() {
             keys.set_command_input(command);
             while keys.has_command_input() {
-                if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return Ok(()); }
-                if self.handle_key(keys.read_key()?) { return Ok(()); }
+                if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return Ok(true); }
+                if self.handle_key(keys.read_key()?) { return Ok(true); }
+                if matches!(self.mode, Mode::CommandError(_)) { break; }
                 if self.command_context == CommandContext::StartupAborted { keys.set_command_input(Vec::new()); break; }
+            }
+            if let Mode::CommandError(error) = &mut self.mode {
+                error.remainder = keys.take_command_input();
+                return Ok(false);
             }
             if self.command_context == CommandContext::StartupAborted { self.command_context = CommandContext::StartupUnpositioned; continue; }
             if matches!(self.mode, Mode::SearchInput | Mode::FilterInput) { self.handle_key(Key::Enter); }
-            else if self.numeric_prefix.is_some() { self.handle_normal_key(Key::Char('g')); }
+            else if self.numeric_prefix != NumericPrefix::Empty { self.handle_normal_key(Key::Char('g')); }
+            if matches!(self.mode, Mode::CommandError(_)) { return Ok(false); }
         }
         self.filename_prompt = true;
         self.command_context = CommandContext::Interactive;
+        Ok(false)
+    }
+
+    pub fn run(&mut self, keys: &mut KeyReader) -> io::Result<()> {
+        if self.run_startup_commands(keys)? { return Ok(()); }
 
         let mut redraw = true;
         loop {
+            if self.command_context != CommandContext::Interactive && !matches!(self.mode, Mode::CommandError(_)) {
+                if self.run_startup_commands(keys)? { return Ok(()); }
+                redraw = true;
+            }
             if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 {
                 return Ok(());
             }
@@ -255,7 +280,7 @@ impl Pager {
     }
 
     fn handle_key(&mut self, key: Key) -> bool {
-        match self.mode {
+        match self.mode.clone() {
             Mode::Normal => self.handle_normal_key(key),
             Mode::SearchInput => {
                 self.handle_search_input_key(key);
@@ -273,6 +298,16 @@ impl Pager {
                 false
             }
             Mode::Follow => self.handle_follow_key(key),
+            Mode::CommandError(error) => {
+                self.mode = Mode::Normal;
+                self.command_context = error.context;
+                self.status_msg = None;
+                if self.handle_normal_key(error.command) { return true; }
+                if self.command_context == CommandContext::StartupAborted { self.command_context = CommandContext::StartupUnpositioned; }
+                else if !error.remainder.is_empty() { self.startup_commands.push_front(error.remainder); }
+                if !matches!(key, Key::Enter | Key::Char(' ') | Key::Ctrl('c')) { return self.handle_key(key); }
+                false
+            }
         }
     }
 
@@ -280,12 +315,21 @@ impl Pager {
         self.filename_prompt = false;
         self.status_msg = None;
         if let Key::Char(character @ '0'..='9') = key {
-            let value = self.numeric_prefix.unwrap_or(0).checked_mul(10).and_then(|value| value.checked_add(character as usize - '0' as usize));
-            if let Some(value) = value { self.numeric_prefix = Some(value); }
-            else { self.numeric_prefix = None; self.status_msg = Some("Number too large".into()); }
+            let previous = match self.numeric_prefix { NumericPrefix::Empty => Some(0), NumericPrefix::Value(value) => Some(value), NumericPrefix::Overflow => None };
+            let value = previous.and_then(|value| value.checked_mul(10)).and_then(|value| value.checked_add(character as usize - '0' as usize))
+                .filter(|value| *value <= i64::MAX as usize);
+            self.numeric_prefix = value.map_or(NumericPrefix::Overflow, NumericPrefix::Value);
             return false;
         }
-        let count = self.numeric_prefix.take();
+        let count = match std::mem::replace(&mut self.numeric_prefix, NumericPrefix::Empty) {
+            NumericPrefix::Empty => None,
+            NumericPrefix::Value(value) => Some(value),
+            NumericPrefix::Overflow => {
+                self.mode = Mode::CommandError(CommandError { command: key, context: self.command_context, remainder: Vec::new() });
+                self.status_msg = Some("Integer is too big  (press RETURN)".into());
+                return false;
+            }
+        };
         if self.command_context == CommandContext::StartupUnpositioned
             && matches!(key, Key::Char('j' | 'k' | 'd' | 'u' | 'b' | ' ') | Key::Down | Key::Up | Key::Enter | Key::PageDown | Key::PageUp | Key::Ctrl('d' | 'u' | 'b' | 'f')) {
             self.command_context = CommandContext::StartupAborted;
@@ -315,7 +359,9 @@ impl Pager {
             }
             Key::Char('g') | Key::Home => {
                 self.position_initialized();
-                self.top_line = count.unwrap_or(1).saturating_sub(1);
+                let target = count.unwrap_or(1).saturating_sub(1);
+                if self.command_context == CommandContext::Interactive && self.content_painted && self.top_line == target { self.bell_requested = true; }
+                self.top_line = target;
                 self.buffer.get_line(self.top_line);
                 self.left_col = 0;
             }
@@ -326,7 +372,7 @@ impl Pager {
             }
             Key::Right => {
                 if !self.wrap {
-                    self.left_col += 8;
+                    self.left_col = self.left_col.saturating_add(8);
                 }
             }
             Key::Left => {
@@ -526,7 +572,7 @@ impl Pager {
             self.scroll_down_wrapped(lines);
             return;
         }
-        self.top_line += lines;
+        self.top_line = self.top_line.saturating_add(lines);
         self.clamp_top_line();
     }
 
@@ -551,7 +597,7 @@ impl Pager {
     fn clamp_top_line(&mut self) {
         let ch = self.content_height();
         if self.filter.is_none() {
-            self.buffer.get_line(self.top_line + ch);
+            self.buffer.get_line(self.top_line.saturating_add(ch));
         }
 
         let total = self.display_line_count();
@@ -592,7 +638,7 @@ impl Pager {
             let rows = self.wrapped_line_rows(self.top_line);
             if screen_rows >= rows {
                 screen_rows -= rows;
-                self.top_line += 1;
+                self.top_line = self.top_line.saturating_add(1);
                 if self.buffer.get_line(self.top_line).is_none() {
                     self.top_line = self.top_line.saturating_sub(1);
                     break;
@@ -648,6 +694,14 @@ impl Pager {
         buf.extend_from_slice(b"\x1b[?25l");
         terminal::move_cursor(&mut buf, 0, 0);
 
+        if matches!(self.mode, Mode::CommandError(_)) {
+            if !self.content_painted { for row in 0..ch { terminal::move_cursor(&mut buf, row as u16, 0); terminal::clear_line(&mut buf); } }
+            self.render_status(&mut buf, w);
+            buf.extend_from_slice(b"\x1b[?25h");
+            let mut stdout = io::stdout().lock();
+            stdout.write_all(&buf)?;
+            return stdout.flush();
+        }
         let first_row = if self.mode == Mode::Help { 0 } else { self.initial_content_row(w, ch)? };
         for row in 0..first_row { terminal::move_cursor(&mut buf, row as u16, 0); terminal::clear_line(&mut buf); }
         if self.mode == Mode::Help {
@@ -661,6 +715,7 @@ impl Pager {
         if let Some(error) = self.buffer.take_error() { return Err(error); }
         self.render_status(&mut buf, w);
         self.compact_initial = false;
+        self.content_painted = true;
         buf.extend_from_slice(b"\x1b[?25h");
 
         let mut stdout = io::stdout().lock();
@@ -780,14 +835,14 @@ impl Pager {
                         if wrap_row + 1 == rows_needed && fragment.complete { terminal::clear_line(buf); }
                     }
                     if screen_row == ch && (rows_needed > available_rows || !fragment.complete) { buf.extend_from_slice(b" \x08"); }
-                    display_idx += 1;
+                    display_idx = display_idx.saturating_add(1);
                 }
                 None => {
                     terminal::move_cursor(buf, screen_row as u16, 0);
                     self.write_eof_marker(buf);
                     terminal::clear_line(buf);
                     screen_row += 1;
-                    display_idx += 1;
+                    display_idx = display_idx.saturating_add(1);
                 }
             }
         }
@@ -905,7 +960,7 @@ impl Pager {
             return msg.clone();
         }
 
-        if self.buffer.is_finished() && self.top_line + self.content_height() >= self.display_line_count() {
+        if self.buffer.is_finished() && self.top_line.saturating_add(self.content_height()) >= self.display_line_count() {
             return if self.filename_prompt { self.filename.as_ref().map_or_else(|| "(END)".to_owned(), |name| format!("{name} (END)")) } else { "(END)".to_owned() };
         }
         if self.filename_prompt {

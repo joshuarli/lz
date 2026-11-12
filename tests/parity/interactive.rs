@@ -246,6 +246,13 @@ pub fn selftest() -> Result<()> {
     let b = execute(&reference, &case)?;
     if let Some(diff) = first_difference(&comparable(&a), &comparable(&b), "observation") { return Err(format!("oracle self-comparison: {diff}").into()); }
     if a["exit"] != format!("{:?}", ExitStatus::Code(0)) { return Err("oracle quit exit differs".into()); }
+    let mut large_navigation = case.clone();
+    large_navigation.id = "candidate-large-navigation-safety".into();
+    large_navigation.args = vec!["-S".into(), "+9223372036854775807g9223372036854775807j".into(), "input".into()];
+    large_navigation.events = vec![Event::Checkpoint { ready:"(END)".into(), row:Some(7) }, Event::Send { bytes:b"q".to_vec() }];
+    let large_navigation = execute(Path::new(env!("CARGO_BIN_EXE_lz")), &large_navigation)?;
+    if large_navigation["exit"] != format!("{:?}", ExitStatus::Code(0)) { return Err("large legal navigation counts did not exit cleanly".into()); }
+    println!("candidate large-position arithmetic remains bounded and restores the terminal; out-of-file seek diagnostics remain a separate parity item");
     let mut hangup = case.clone();
     hangup.id = "candidate-hangup-safety".into();
     hangup.fixture = b"x".to_vec().into();
@@ -255,7 +262,7 @@ pub fn selftest() -> Result<()> {
         return Err("candidate did not restore its terminal and preserve HUP signal death".into());
     }
     println!("candidate HUP safety: represented modes restored, signal death preserved; oracle leak remains a parked divergence");
-    let report = json!({"candidate_hangup_safety": hangup, "primary_transition":primary_transition, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location", "pipe-argv-env-foreground", "pipe-code-signal", "pipe-timeout-reap", "queued-input-retention", "plain-text-hidden-control"], "oracle_a": a, "oracle_b": b});
+    let report = json!({"candidate_hangup_safety": hangup, "candidate_large_navigation_safety":large_navigation, "primary_transition":primary_transition, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location", "pipe-argv-env-foreground", "pipe-code-signal", "pipe-timeout-reap", "queued-input-retention", "plain-text-hidden-control"], "oracle_a": a, "oracle_b": b});
     let path = super::stdio::world()?.keep().join("selftest.json");
     fs::write(&path, serde_json::to_vec_pretty(&report)?)?;
     println!("oracle independent-world startup/quit/lifecycle self-comparison passes; {}", path.display());
