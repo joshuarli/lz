@@ -88,7 +88,11 @@ impl SearchHistory {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
+    fn fixture() -> tempfile::TempDir {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join(".work/tmp");
+        fs::create_dir_all(&root).unwrap();
+        tempfile::tempdir_in(root).unwrap()
+    }
 
     fn empty_history() -> SearchHistory {
         SearchHistory {
@@ -189,15 +193,15 @@ mod tests {
 
     #[test]
     fn load_nonexistent_returns_empty() {
-        let h = SearchHistory::load(Path::new("/tmp/lz-test-nonexistent-12345"));
+        let dir = fixture();
+        let h = SearchHistory::load(&dir.path().join("missing"));
         assert!(h.entries.is_empty());
     }
 
     #[test]
     fn save_and_load_roundtrip() {
-        let dir = PathBuf::from("/tmp/lz-test-history-roundtrip");
-        let path = dir.join("history");
-        let _ = fs::remove_dir_all(&dir);
+        let dir = fixture();
+        let path = dir.path().join("history");
 
         let mut h = empty_history();
         h.push("first");
@@ -207,19 +211,16 @@ mod tests {
         let h2 = SearchHistory::load(&path);
         assert_eq!(h2.entries, vec!["first", "second"]);
 
-        let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]
     fn load_skips_empty_lines() {
-        let dir = PathBuf::from("/tmp/lz-test-history-empty-lines");
-        let path = dir.join("history");
-        let _ = fs::create_dir_all(&dir);
+        let dir = fixture();
+        let path = dir.path().join("history");
         fs::write(&path, "a\n\nb\n\n").unwrap();
 
         let h = SearchHistory::load(&path);
         assert_eq!(h.entries, vec!["a", "b"]);
 
-        let _ = fs::remove_dir_all(&dir);
     }
 }

@@ -2,12 +2,11 @@
 
 ## Status
 
-- Goal: implement the documented Unix behavior of less 668 in native Rust, with differential evidence for every inventory entry.
-- Baseline product revision: `2ae5660205fb1b114610750ede846845196872ee` (`master`). No campaign slice is accepted yet.
-- Baseline: 125 Rust tests pass and Clippy passes on that revision. Three history tests need isolation before a full run. No differential suite exists yet.
-- Red or parked slices: none. Linux proof and quiet-host performance proof remain environment-dependent.
-- Next: S00, isolate history tests. Then S01 must deliver redirected-output parity with the smallest reference runner.
-- Launch only after an explicit execution instruction. First command: `git status --short`. Preserve concurrent edits and rebase the baseline before attributing failures.
+- Execution authorized 2026-11-12; one writer, local commits only, no push.
+- Integration starts at `265e52d`, with unchanged product baseline `2ae5660` and a clean tree.
+- Accepted: S00; all 128 Rust tests pass with unique repository-local history fixtures.
+- Active: S01, redirected file/pipe bytes, errors and exit status; `src/main.rs`, `tests/parity/`, Makefile and test manifests. Acceptance: `make parity-test GROUP=redirected MODE=admit`.
+- Next: S01 redirected output and pinned reference setup. Linux, other macOS architecture, quiet-host timing and remote CI remain unproved.
 
 ## Charter
 
