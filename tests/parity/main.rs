@@ -1,3 +1,4 @@
+mod fixtures;
 mod inventory;
 mod interactive;
 mod stdio;
@@ -11,6 +12,7 @@ use std::os::unix::ffi::OsStringExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use stdio::root;
+use fixtures::Fixture;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -21,15 +23,22 @@ impl std::fmt::Display for NeedsEnvironment {
 }
 impl std::error::Error for NeedsEnvironment {}
 
-fn write_fixture(path: &Path, bytes: &[u8]) -> Result<()> {
+fn write_fixture(path: &Path, fixture: &Fixture) -> Result<()> {
     use std::os::unix::ffi::OsStrExt;
-    if let Err(error) = fs::write(path, bytes) {
-        if cfg!(target_os = "macos") && error.raw_os_error() == Some(92)
-            && path.file_name().is_some_and(|name| std::str::from_utf8(name.as_bytes()).is_err()) {
-            return Err(Box::new(NeedsEnvironment("host filesystem rejects invalid UTF-8 fixture names (EILSEQ); repeat on a byte-preserving Unix filesystem".into())));
+    fixture.validate()?;
+    let file = match fs::File::create(path) {
+        Ok(file) => file,
+        Err(error) => {
+            if cfg!(target_os = "macos") && error.raw_os_error() == Some(92)
+                && path.file_name().is_some_and(|name| std::str::from_utf8(name.as_bytes()).is_err()) {
+                return Err(Box::new(NeedsEnvironment("host filesystem rejects invalid UTF-8 fixture names (EILSEQ); repeat on a byte-preserving Unix filesystem".into())));
+            }
+            return Err(error.into());
         }
-        return Err(error.into());
-    }
+    };
+    let mut output = std::io::BufWriter::new(file);
+    fixture.write_to(&mut output)?;
+    std::io::Write::flush(&mut output)?;
     Ok(())
 }
 
@@ -40,7 +49,7 @@ struct Case {
     family: String,
     admitted: bool,
     source: String,
-    fixture: Vec<u8>,
+    fixture: Fixture,
     args: Vec<Argument>,
     fixture_name: Vec<u8>,
     files: BTreeMap<String, Vec<u8>>,

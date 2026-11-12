@@ -33,8 +33,14 @@ fn files(root: &Path) -> Result<Value> {
                 result.insert(name, json!({"symlink": fs::read_link(path)?.as_os_str().as_encoded_bytes()}));
             } else if kind.is_dir() { walk(base, &path, result)?; }
             else if kind.is_file() {
-                if entry.metadata()?.len() > 64 * 1024 * 1024 { return Err("side-effect capture limit".into()); }
-                result.insert(name, json!({"bytes": fs::read(path)?}));
+                let length = entry.metadata()?.len();
+                if length > 64 * 1024 {
+                    let output = std::process::Command::new("/usr/bin/shasum").args(["-a", "256"]).stdin(fs::File::open(path)?).output()?;
+                    if !output.status.success() { return Err("file-effect hash failed".into()); }
+                    let digest = std::str::from_utf8(&output.stdout)?.split_whitespace().next().ok_or("missing file-effect hash")?;
+                    if digest.len() != 64 || !digest.bytes().all(|byte| byte.is_ascii_hexdigit()) { return Err("invalid file-effect hash".into()); }
+                    result.insert(name, json!({"sha256": digest, "length": length}));
+                } else { result.insert(name, json!({"bytes": fs::read(path)?})); }
             } else { return Err("unrepresented side-effect file type".into()); }
         }
         Ok(())
@@ -102,9 +108,26 @@ pub fn fixture(fault: &str) -> Result<()> {
 }
 
 pub fn selftest() -> Result<()> {
+    super::fixtures::selftest()?;
+    {
+        use std::io::{Seek, SeekFrom};
+        let world = super::stdio::world()?;
+        let path = world.path().join("large-effect");
+        let fixture = super::fixtures::Fixture::Repeated(super::fixtures::Repeat { repeat: vec![0, 255, 13, 10, 42], count: 20_003, suffix: b"tail".to_vec() });
+        super::write_fixture(&path, &fixture)?;
+        let before = files(world.path())?;
+        if before["large-effect"].get("bytes").is_some() || before["large-effect"]["sha256"].as_str().is_none_or(|hash| hash.len() != 64) {
+            return Err("large file effect was not captured with a bounded digest".into());
+        }
+        let mut file = OpenOptions::new().write(true).open(path)?;
+        file.seek(SeekFrom::End(-1))?;
+        file.write_all(&[0])?;
+        if before == files(world.path())? { return Err("same-length large file mutation was missed".into()); }
+        println!("bounded file-effect capture detects a same-length suffix mutation");
+    }
     let candidate = std::env::current_exe()?;
     let mut case = Case { id: "selftest".into(), family: "harness".into(), admitted: false, source: "pty".into(),
-        fixture: vec![], fixture_name: b"input".to_vec(), files: BTreeMap::new(), args: vec!["--fixture".into(), "none".into()], env: BTreeMap::new(), size: [40, 8], locale: "C".into(),
+        fixture: vec![].into(), fixture_name: b"input".to_vec(), files: BTreeMap::new(), args: vec!["--fixture".into(), "none".into()], env: BTreeMap::new(), size: [40, 8], locale: "C".into(),
         events: vec![Event::Checkpoint { ready: "pro".into(), row: None }, Event::Send { bytes: b"q\n".to_vec() }] };
     let mut invalid = serde_json::to_value(&case)?;
     invalid.as_object_mut().unwrap().insert("typo".into(), json!(true));
@@ -117,8 +140,8 @@ pub fn selftest() -> Result<()> {
     if comparable(&oracle_diagnostic) == comparable(&wrong_diagnostic) { return Err("diagnostic identity normalization hid a wrong option".into()); }
     if comparable(&json!({"stdout": b"less --help".to_vec()})) == comparable(&json!({"stdout": b"lz --help".to_vec()})) { return Err("identity normalization escaped its identified location".into()); }
     println!("diagnostic program token normalized only at its identified location; negative controls pass");
-    let expected_diagnostic = super::stdio::redirected(&candidate, b"", "file", &["--stdio-fixture".into(), "none".into()], b"input", &BTreeMap::new())?;
-    let dropped = super::stdio::redirected(&candidate, b"", "file", &["--stdio-fixture".into(), "drop-error".into()], b"input", &BTreeMap::new())?;
+    let expected_diagnostic = super::stdio::redirected(&candidate, &Vec::new().into(), "file", &["--stdio-fixture".into(), "none".into()], b"input", &BTreeMap::new())?;
+    let dropped = super::stdio::redirected(&candidate, &Vec::new().into(), "file", &["--stdio-fixture".into(), "drop-error".into()], b"input", &BTreeMap::new())?;
     let difference = first_difference(&expected_diagnostic, &dropped, "observation").ok_or("dropped error missed")?;
     if !difference.contains("stderr") { return Err("dropped error detected at wrong observation".into()); }
     println!("detected dropped stderr diagnostic; unknown fields/events rejected");
@@ -135,7 +158,7 @@ pub fn selftest() -> Result<()> {
     if !execute(&candidate, &case).is_err_and(|error| error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. }))) { return Err("timeout mutation was missed or failed for another reason".into()); }
     println!("detected bounded timeout; PTY owner cleaned up child");
     case.id = "oracle-selftest".into();
-    case.fixture = (1..81).map(|n| format!("{n:06} reference parity\n")).collect::<String>().into_bytes();
+    case.fixture = (1..81).map(|n| format!("{n:06} reference parity\n")).collect::<String>().into_bytes().into();
     case.args = vec!["input".into()];
     case.events = vec![Event::Checkpoint { ready: "000001".into(), row: None }, Event::Send { bytes: b"q".to_vec() }];
     let reference = super::oracle();
@@ -145,14 +168,14 @@ pub fn selftest() -> Result<()> {
     if a["exit"] != format!("{:?}", ExitStatus::Code(0)) { return Err("oracle quit exit differs".into()); }
     let mut hangup = case.clone();
     hangup.id = "candidate-hangup-safety".into();
-    hangup.fixture = b"x".to_vec();
+    hangup.fixture = b"x".to_vec().into();
     hangup.events = vec![Event::Checkpoint { ready: "x".into(), row: Some(0) }, Event::Signal { number: 1 }];
     let hangup = execute(Path::new(env!("CARGO_BIN_EXE_lz")), &hangup)?;
     if hangup["exit"] != format!("{:?}", ExitStatus::Signal(1)) || hangup["restored"] != true {
         return Err("candidate did not restore its terminal and preserve HUP signal death".into());
     }
     println!("candidate HUP safety: represented modes restored, signal death preserved; oracle leak remains a parked divergence");
-    let report = json!({"candidate_hangup_safety": hangup, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr"], "oracle_a": a, "oracle_b": b});
+    let report = json!({"candidate_hangup_safety": hangup, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location"], "oracle_a": a, "oracle_b": b});
     let path = super::stdio::world()?.keep().join("selftest.json");
     fs::write(&path, serde_json::to_vec_pretty(&report)?)?;
     println!("oracle independent-world startup/quit/lifecycle self-comparison passes; {}", path.display());
