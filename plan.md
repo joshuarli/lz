@@ -7,7 +7,8 @@
 - Accepted: S00; all 128 Rust tests pass with unique repository-local history fixtures.
 - Accepted: S01 redirected pilot: 13 strict cases pass (file/completed pipe text, empty, binary, invalid bytes, controls; missing/directory/special diagnostics). Both isolated 668/POSIX builds verified on macOS arm64. Baseline mismatches reproduced before repair.
 - Accepted: S02: pinned PTY runner, independent worlds and full represented semantic snapshots; offline oracle self-comparison and seven mutation controls pass. Typed JSON rejects unknown fields/events. Dependency review: `tests/parity/dependencies.md`.
-- Active: S03 inventory and upstream translations in `tests/parity/`; acceptance `make parity-inventory-check`. Implementation limits delivery; continue serially. All admitted 13 cases and Clippy remain green.
+- Accepted: S03: 377 anchored manual/source entries (373 Unix applicable), all 14 instrumented upstream tests pass, two generic subsequences translated. Current corpus: 13 pass/3 discovery mismatches; frozen baseline: 2 pass/14 mismatches, no harness errors. Full Rust tests, Clippy and admitted corpus pass. Coverage: `tests/parity/coverage.md`.
+- Active: S04a, startup prompt/cursor/application modes and one terminal owner; owns `src/main.rs`, `src/terminal.rs`, `src/pager.rs` startup and matching invocation cases. Acceptance: `make parity-test CASE=startup-quit`, then admitted regressions. Prerequisite S03 met; later S04 option/parser work remains required. Continue serially; implementation is the limiter.
 - Next: S01 redirected output and pinned reference setup. Linux, other macOS architecture, quiet-host timing and remote CI remain unproved.
 
 ## Charter

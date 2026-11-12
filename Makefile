@@ -96,3 +96,19 @@ parity-test:
 .PHONY: parity-selftest
 parity-selftest:
 	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo test --test parity -- --selftest
+
+.PHONY: parity-baseline parity-inventory-check parity-report parity-upstream
+parity-baseline:
+	@mkdir -p "$(CURDIR)/.work/tools/baseline-source" "$(CURDIR)/.work/tmp"
+	@if test ! -f "$(CURDIR)/.work/tools/baseline-source/Cargo.toml"; then git archive 2ae5660205fb1b114610750ede846845196872ee | tar -x -C "$(CURDIR)/.work/tools/baseline-source"; fi
+	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo build --locked --manifest-path "$(CURDIR)/.work/tools/baseline-source/Cargo.toml" --target-dir "$(CURDIR)/.work/tools/baseline-target"
+	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo test --test parity -- --baseline --mode all
+
+parity-inventory-check:
+	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo test --test parity -- --inventory-check
+
+parity-report:
+	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo test --test parity -- --report
+
+parity-upstream:
+	TMPDIR="$(CURDIR)/.work/tmp" python3 tests/parity/upstream.py

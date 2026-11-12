@@ -1,3 +1,4 @@
+mod inventory;
 mod interactive;
 mod stdio;
 
@@ -30,7 +31,7 @@ struct Case {
 #[serde(tag = "type", rename_all = "kebab-case", deny_unknown_fields)]
 enum Event {
     Send { bytes: Vec<u8> },
-    Checkpoint { ready: String },
+    Checkpoint { ready: String, row: Option<usize> },
     Resize { columns: u16, rows: u16 },
     Signal { number: i32 },
     Append { bytes: Vec<u8> },
@@ -76,16 +77,16 @@ fn digest(paths: &[PathBuf]) -> Result<String> {
 fn metadata(candidate: &Path) -> Result<Value> {
     let reference = oracle();
     let reference_root = reference.parent().unwrap().parent().unwrap();
-    let source_files = Command::new("git").args(["ls-files", "-z", "src", "tests/parity", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml"]).current_dir(root()).output()?;
+    let source_files = Command::new("git").args(["ls-files", "-z", "src", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml"]).current_dir(root()).output()?;
     if !source_files.status.success() { return Err("cannot enumerate source files".into()); }
     let mut paths = Vec::new();
     for part in source_files.stdout.split(|b| *b == 0).filter(|p| !p.is_empty()) {
         paths.push(root().join(std::str::from_utf8(part)?));
     }
-    let mut pending = vec![root().join("tests/parity/cases.json")];
+    let mut pending = vec![root().join("tests/parity/cases.json"), root().join("tests/parity/inventory.json")];
     for entry in fs::read_dir(root().join("tests/parity"))? {
         let entry = entry?;
-        if entry.file_type()?.is_file() && entry.path().extension().is_some_and(|e| e == "rs") { pending.push(entry.path()); }
+        if entry.file_type()?.is_file() && entry.path().extension().is_some_and(|e| e == "rs" || e == "py") { pending.push(entry.path()); }
     }
     paths.extend(pending);
     paths.sort(); paths.dedup();
@@ -125,18 +126,21 @@ fn comparable(observation: &Value) -> Value {
 fn run(args: &[String]) -> Result<()> {
     let value = |key: &str| args.windows(2).find(|pair| pair[0] == key).map(|pair| pair[1].as_str());
     let mode = value("--mode").unwrap_or("admitted");
+    if args.iter().any(|s| s == "--inventory-check" || s == "--report") { return inventory::check_and_report(); }
     if !matches!(mode, "admit" | "admitted" | "all") { return Err("unknown mode".into()); }
     let mut i = 0;
     while i < args.len() {
-        if !matches!(args[i].as_str(), "--case" | "--group" | "--mode" | "--selftest") { return Err(format!("unknown argument {}", args[i]).into()); }
-        if args[i] == "--selftest" { i += 1; } else {
+        if !matches!(args[i].as_str(), "--case" | "--group" | "--mode" | "--selftest" | "--baseline") { return Err(format!("unknown argument {}", args[i]).into()); }
+        if matches!(args[i].as_str(), "--selftest" | "--baseline") { i += 1; } else {
             if i + 1 == args.len() { return Err("missing argument value".into()); }
             i += 2;
         }
     }
     if args.iter().any(|s| s == "--selftest") { return interactive::selftest(); }
     let reference = oracle();
-    let candidate = Path::new(env!("CARGO_BIN_EXE_lz"));
+    let baseline = args.iter().any(|s| s == "--baseline");
+    let candidate_path = if baseline { root().join(".work/tools/baseline-target/debug/lz") } else { PathBuf::from(env!("CARGO_BIN_EXE_lz")) };
+    let candidate = candidate_path.as_path();
     let cases = cases()?;
     if value("--case").is_some_and(|id| !cases.iter().any(|case| case.id == id)) || value("--group").is_some_and(|group| !cases.iter().any(|case| case.family == group)) { return Err("unknown case or group".into()); }
     let selected: Vec<_> = cases.iter().filter(|case| {
@@ -150,6 +154,8 @@ fn run(args: &[String]) -> Result<()> {
     let result_dir = stdio::world()?.keep();
     let mut results = Vec::new();
     let mut failed = false;
+    let mut harness_error = false;
+    let full_corpus = selected.len() == cases.len();
     for case in selected {
         let result = (|| -> Result<Value> {
             let expected = execute(&reference, case)?;
@@ -166,13 +172,15 @@ fn run(args: &[String]) -> Result<()> {
             failed = true;
             eprintln!("{}\nreproduce: make parity-test CASE={}", result.get("difference").unwrap_or(&result["error"]), case.id);
         }
+        harness_error |= result["outcome"] == "harness-error";
         results.push(result);
     }
-    let report = json!({"metadata": meta, "results": results});
+    let report = json!({"metadata": meta, "results": results, "candidate_kind": if baseline { "baseline-2ae5660" } else { "current" }});
     fs::write(result_dir.join("results.json"), serde_json::to_vec_pretty(&report)?)?;
     fs::write(root().join(".work/parity-latest"), result_dir.as_os_str().as_encoded_bytes())?;
+    if full_corpus { fs::write(root().join(if baseline { ".work/parity-baseline" } else { ".work/parity-current" }), result_dir.as_os_str().as_encoded_bytes())?; }
     println!("evidence: {}", result_dir.display());
-    if failed { return Err("differential suite failed; retained observations and reproduction commands".into()); }
+    if failed && (!baseline || harness_error) { return Err("differential suite failed; retained observations and reproduction commands".into()); }
     Ok(())
 }
 

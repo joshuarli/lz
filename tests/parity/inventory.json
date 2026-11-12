@@ -1,0 +1,7308 @@
+{
+  "reference_sha256": "2819f55564d86d542abbecafd82ff61e819a3eec967faa36cd3e68f1596a44b8",
+  "entries": [
+    {
+      "id": "man-0003",
+      "family": "invocation",
+      "title": "NAME",
+      "anchor": {
+        "file": "less.nro",
+        "line": 3,
+        "text": ".SH NAME"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0005",
+      "family": "invocation",
+      "title": "SYNOPSIS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 5,
+        "text": ".SH SYNOPSIS"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [
+        "startup-quit"
+      ],
+      "implementation": "partial",
+      "evidence": "known incompatible",
+      "cause": "Strict PTY comparison exposes startup prompt/cursor/modes discrepancy; command edges remain untested"
+    },
+    {
+      "id": "man-0026",
+      "family": "sources",
+      "title": "DESCRIPTION",
+      "anchor": {
+        "file": "less.nro",
+        "line": 26,
+        "text": ".SH DESCRIPTION"
+      },
+      "slice": "S05",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0050",
+      "family": "navigation",
+      "title": "COMMANDS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 50,
+        "text": ".SH COMMANDS"
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0054",
+      "family": "navigation",
+      "title": "h or H",
+      "anchor": {
+        "file": "less.nro",
+        "line": 54,
+        "text": ".IP \"h or H\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0057",
+      "family": "navigation",
+      "title": "SPACE or \\(haV or f or \\(haF",
+      "anchor": {
+        "file": "less.nro",
+        "line": 57,
+        "text": ".IP \"SPACE or \\(haV or f or \\(haF\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0061",
+      "family": "navigation",
+      "title": "z",
+      "anchor": {
+        "file": "less.nro",
+        "line": 61,
+        "text": ".IP \"z\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0063",
+      "family": "navigation",
+      "title": "ESC-SPACE",
+      "anchor": {
+        "file": "less.nro",
+        "line": 63,
+        "text": ".IP \"ESC-SPACE\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0066",
+      "family": "navigation",
+      "title": "ENTER or RETURN or \\(haN or e or \\(haE or j or \\(haJ",
+      "anchor": {
+        "file": "less.nro",
+        "line": 66,
+        "text": ".IP \"ENTER or RETURN or \\(haN or e or \\(haE or j or \\(haJ\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [
+        "upstream-version-navigation"
+      ],
+      "implementation": "partial",
+      "evidence": "known incompatible",
+      "cause": "Strict PTY comparison exposes startup prompt/cursor/modes discrepancy; command edges remain untested"
+    },
+    {
+      "id": "man-0069",
+      "family": "navigation",
+      "title": "d or \\(haD",
+      "anchor": {
+        "file": "less.nro",
+        "line": 69,
+        "text": ".IP \"d or \\(haD\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0073",
+      "family": "navigation",
+      "title": "b or \\(haB or ESC-v",
+      "anchor": {
+        "file": "less.nro",
+        "line": 73,
+        "text": ".IP \"b or \\(haB or ESC-v\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0076",
+      "family": "navigation",
+      "title": "w",
+      "anchor": {
+        "file": "less.nro",
+        "line": 76,
+        "text": ".IP \"w\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0078",
+      "family": "navigation",
+      "title": "y or \\(haY or \\(haP or k or \\(haK",
+      "anchor": {
+        "file": "less.nro",
+        "line": 78,
+        "text": ".IP \"y or \\(haY or \\(haP or k or \\(haK\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0082",
+      "family": "navigation",
+      "title": "u or \\(haU",
+      "anchor": {
+        "file": "less.nro",
+        "line": 82,
+        "text": ".IP \"u or \\(haU\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0086",
+      "family": "navigation",
+      "title": "J",
+      "anchor": {
+        "file": "less.nro",
+        "line": 86,
+        "text": ".IP \"J\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0088",
+      "family": "navigation",
+      "title": "K or Y",
+      "anchor": {
+        "file": "less.nro",
+        "line": 88,
+        "text": ".IP \"K or Y\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0090",
+      "family": "navigation",
+      "title": "ESC-) or RIGHTARROW",
+      "anchor": {
+        "file": "less.nro",
+        "line": 90,
+        "text": ".IP \"ESC-) or RIGHTARROW\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0097",
+      "family": "navigation",
+      "title": "ESC-( or LEFTARROW",
+      "anchor": {
+        "file": "less.nro",
+        "line": 97,
+        "text": ".IP \"ESC-( or LEFTARROW\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0102",
+      "family": "navigation",
+      "title": "ESC-} or \\(haRIGHTARROW",
+      "anchor": {
+        "file": "less.nro",
+        "line": 102,
+        "text": ".IP \"ESC-} or \\(haRIGHTARROW\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0104",
+      "family": "navigation",
+      "title": "ESC-{ or \\(haLEFTARROW",
+      "anchor": {
+        "file": "less.nro",
+        "line": 104,
+        "text": ".IP \"ESC-{ or \\(haLEFTARROW\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0106",
+      "family": "navigation",
+      "title": "r or \\(haR or \\(haL",
+      "anchor": {
+        "file": "less.nro",
+        "line": 106,
+        "text": ".IP \"r or \\(haR or \\(haL\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0108",
+      "family": "sessions",
+      "title": "R",
+      "anchor": {
+        "file": "less.nro",
+        "line": 108,
+        "text": ".IP R"
+      },
+      "slice": "S09",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0112",
+      "family": "sessions",
+      "title": "F",
+      "anchor": {
+        "file": "less.nro",
+        "line": 112,
+        "text": ".IP \"F\""
+      },
+      "slice": "S09",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0127",
+      "family": "sessions",
+      "title": "ESC-F",
+      "anchor": {
+        "file": "less.nro",
+        "line": 127,
+        "text": ".IP \"ESC-F\""
+      },
+      "slice": "S09",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0131",
+      "family": "navigation",
+      "title": "g or < or ESC-<",
+      "anchor": {
+        "file": "less.nro",
+        "line": 131,
+        "text": ".IP \"g or < or ESC-<\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0134",
+      "family": "navigation",
+      "title": "G or > or ESC->",
+      "anchor": {
+        "file": "less.nro",
+        "line": 134,
+        "text": ".IP \"G or > or ESC->\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0139",
+      "family": "sessions",
+      "title": "ESC-G",
+      "anchor": {
+        "file": "less.nro",
+        "line": 139,
+        "text": ".IP \"ESC-G\""
+      },
+      "slice": "S09",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0142",
+      "family": "navigation",
+      "title": "p or %",
+      "anchor": {
+        "file": "less.nro",
+        "line": 142,
+        "text": ".IP \"p or %\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0145",
+      "family": "navigation",
+      "title": "P",
+      "anchor": {
+        "file": "less.nro",
+        "line": 145,
+        "text": ".IP \"P\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0147",
+      "family": "navigation",
+      "title": "{",
+      "anchor": {
+        "file": "less.nro",
+        "line": 147,
+        "text": ".IP \"{\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0155",
+      "family": "navigation",
+      "title": "}",
+      "anchor": {
+        "file": "less.nro",
+        "line": 155,
+        "text": ".IP \"}\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0163",
+      "family": "navigation",
+      "title": "(",
+      "anchor": {
+        "file": "less.nro",
+        "line": 163,
+        "text": ".IP \"(\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0165",
+      "family": "navigation",
+      "title": ")",
+      "anchor": {
+        "file": "less.nro",
+        "line": 165,
+        "text": ".IP \")\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0167",
+      "family": "navigation",
+      "title": "[",
+      "anchor": {
+        "file": "less.nro",
+        "line": 167,
+        "text": ".IP \"[\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0169",
+      "family": "navigation",
+      "title": "]",
+      "anchor": {
+        "file": "less.nro",
+        "line": 169,
+        "text": ".IP \"]\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0171",
+      "family": "navigation",
+      "title": "ESC-\\(haF",
+      "anchor": {
+        "file": "less.nro",
+        "line": 171,
+        "text": ".IP \"ESC-\\(haF\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0177",
+      "family": "navigation",
+      "title": "ESC-\\(haB",
+      "anchor": {
+        "file": "less.nro",
+        "line": 177,
+        "text": ".IP \"ESC-\\(haB\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0183",
+      "family": "navigation",
+      "title": "m",
+      "anchor": {
+        "file": "less.nro",
+        "line": 183,
+        "text": ".IP m"
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0188",
+      "family": "navigation",
+      "title": "M",
+      "anchor": {
+        "file": "less.nro",
+        "line": 188,
+        "text": ".IP M"
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0191",
+      "family": "navigation",
+      "title": "\\(aq",
+      "anchor": {
+        "file": "less.nro",
+        "line": 191,
+        "text": ".IP \"\\(aq\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0201",
+      "family": "navigation",
+      "title": "\\(haX\\(haX",
+      "anchor": {
+        "file": "less.nro",
+        "line": 201,
+        "text": ".IP \"\\(haX\\(haX\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0203",
+      "family": "navigation",
+      "title": "ESC-m",
+      "anchor": {
+        "file": "less.nro",
+        "line": 203,
+        "text": ".IP \"ESC-m\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0206",
+      "family": "search",
+      "title": "/pattern",
+      "anchor": {
+        "file": "less.nro",
+        "line": 206,
+        "text": ".IP /pattern"
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [
+        "upstream-seq-search"
+      ],
+      "implementation": "partial",
+      "evidence": "known incompatible",
+      "cause": "Strict PTY comparison exposes startup prompt/cursor/modes discrepancy; command edges remain untested"
+    },
+    {
+      "id": "man-0220",
+      "family": "search",
+      "title": "\\(haN or !",
+      "anchor": {
+        "file": "less.nro",
+        "line": 220,
+        "text": ".IP \"\\(haN or !\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0222",
+      "family": "search",
+      "title": "\\(haE or *",
+      "anchor": {
+        "file": "less.nro",
+        "line": 222,
+        "text": ".IP \"\\(haE or *\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0227",
+      "family": "search",
+      "title": "\\(haF or @",
+      "anchor": {
+        "file": "less.nro",
+        "line": 227,
+        "text": ".IP \"\\(haF or @\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0232",
+      "family": "search",
+      "title": "\\(haK",
+      "anchor": {
+        "file": "less.nro",
+        "line": 232,
+        "text": ".IP \"\\(haK\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0235",
+      "family": "search",
+      "title": "\\(haR",
+      "anchor": {
+        "file": "less.nro",
+        "line": 235,
+        "text": ".IP \"\\(haR\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0238",
+      "family": "search",
+      "title": "\\(haS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 238,
+        "text": ".IP \"\\(haS\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0248",
+      "family": "search",
+      "title": "\\(haW",
+      "anchor": {
+        "file": "less.nro",
+        "line": 248,
+        "text": ".IP \"\\(haW\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0254",
+      "family": "search",
+      "title": "\\(haL",
+      "anchor": {
+        "file": "less.nro",
+        "line": 254,
+        "text": ".IP \"\\(haL\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0258",
+      "family": "search",
+      "title": "?pattern",
+      "anchor": {
+        "file": "less.nro",
+        "line": 258,
+        "text": ".IP ?pattern"
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0265",
+      "family": "search",
+      "title": "\\(haN or !",
+      "anchor": {
+        "file": "less.nro",
+        "line": 265,
+        "text": ".IP \"\\(haN or !\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0267",
+      "family": "search",
+      "title": "\\(haE or *",
+      "anchor": {
+        "file": "less.nro",
+        "line": 267,
+        "text": ".IP \"\\(haE or *\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0272",
+      "family": "search",
+      "title": "\\(haF or @",
+      "anchor": {
+        "file": "less.nro",
+        "line": 272,
+        "text": ".IP \"\\(haF or @\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0277",
+      "family": "search",
+      "title": "\\(haK",
+      "anchor": {
+        "file": "less.nro",
+        "line": 277,
+        "text": ".IP \"\\(haK\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0279",
+      "family": "search",
+      "title": "\\(haR",
+      "anchor": {
+        "file": "less.nro",
+        "line": 279,
+        "text": ".IP \"\\(haR\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0281",
+      "family": "search",
+      "title": "\\(haS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 281,
+        "text": ".IP \"\\(haS\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0283",
+      "family": "search",
+      "title": "\\(haW",
+      "anchor": {
+        "file": "less.nro",
+        "line": 283,
+        "text": ".IP \"\\(haW\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0289",
+      "family": "search",
+      "title": "ESC-/pattern",
+      "anchor": {
+        "file": "less.nro",
+        "line": 289,
+        "text": ".IP \"ESC-/pattern\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0291",
+      "family": "search",
+      "title": "ESC-?pattern",
+      "anchor": {
+        "file": "less.nro",
+        "line": 291,
+        "text": ".IP \"ESC-?pattern\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0293",
+      "family": "search",
+      "title": "n",
+      "anchor": {
+        "file": "less.nro",
+        "line": 293,
+        "text": ".IP n"
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0302",
+      "family": "search",
+      "title": "N",
+      "anchor": {
+        "file": "less.nro",
+        "line": 302,
+        "text": ".IP N"
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0304",
+      "family": "search",
+      "title": "ESC-n",
+      "anchor": {
+        "file": "less.nro",
+        "line": 304,
+        "text": ".IP \"ESC-n\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0307",
+      "family": "search",
+      "title": "ESC-N",
+      "anchor": {
+        "file": "less.nro",
+        "line": 307,
+        "text": ".IP \"ESC-N\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0310",
+      "family": "search",
+      "title": "ESC-u",
+      "anchor": {
+        "file": "less.nro",
+        "line": 310,
+        "text": ".IP \"ESC-u\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0318",
+      "family": "search",
+      "title": "ESC-U",
+      "anchor": {
+        "file": "less.nro",
+        "line": 318,
+        "text": ".IP \"ESC-U\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0322",
+      "family": "search",
+      "title": "&pattern",
+      "anchor": {
+        "file": "less.nro",
+        "line": 322,
+        "text": ".IP \"&pattern\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0335",
+      "family": "search",
+      "title": "\\(haN or !",
+      "anchor": {
+        "file": "less.nro",
+        "line": 335,
+        "text": ".IP \"\\(haN or !\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0337",
+      "family": "search",
+      "title": "\\(haR",
+      "anchor": {
+        "file": "less.nro",
+        "line": 337,
+        "text": ".IP \"\\(haR\""
+      },
+      "slice": "S08",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0341",
+      "family": "sessions",
+      "title": ":e [filename]",
+      "anchor": {
+        "file": "less.nro",
+        "line": 341,
+        "text": ".IP \":e [filename]\""
+      },
+      "slice": "S09",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0360",
+      "family": "sessions",
+      "title": "\\(haX\\(haV or E",
+      "anchor": {
+        "file": "less.nro",
+        "line": 360,
+        "text": ".IP \"\\(haX\\(haV or E\""
+      },
+      "slice": "S09",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0364",
+      "family": "sessions",
+      "title": ":n",
+      "anchor": {
+        "file": "less.nro",
+        "line": 364,
+        "text": ".IP \":n\""
+      },
+      "slice": "S09",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0367",
+      "family": "sessions",
+      "title": ":p",
+      "anchor": {
+        "file": "less.nro",
+        "line": 367,
+        "text": ".IP \":p\""
+      },
+      "slice": "S09",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0370",
+      "family": "sessions",
+      "title": ":x",
+      "anchor": {
+        "file": "less.nro",
+        "line": 370,
+        "text": ".IP \":x\""
+      },
+      "slice": "S09",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0373",
+      "family": "sessions",
+      "title": ":d",
+      "anchor": {
+        "file": "less.nro",
+        "line": 373,
+        "text": ".IP \":d\""
+      },
+      "slice": "S09",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0375",
+      "family": "integrations",
+      "title": "t",
+      "anchor": {
+        "file": "less.nro",
+        "line": 375,
+        "text": ".IP \"t\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0378",
+      "family": "integrations",
+      "title": "T",
+      "anchor": {
+        "file": "less.nro",
+        "line": 378,
+        "text": ".IP \"T\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0380",
+      "family": "navigation",
+      "title": "\\(haO\\(haN or \\(haOn",
+      "anchor": {
+        "file": "less.nro",
+        "line": 380,
+        "text": ".IP \"\\(haO\\(haN or \\(haOn\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0382",
+      "family": "navigation",
+      "title": "\\(haO\\(haP or \\(haOp",
+      "anchor": {
+        "file": "less.nro",
+        "line": 382,
+        "text": ".IP \"\\(haO\\(haP or \\(haOp\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0384",
+      "family": "navigation",
+      "title": "\\(haO\\(haL or \\(haOl",
+      "anchor": {
+        "file": "less.nro",
+        "line": 384,
+        "text": ".IP \"\\(haO\\(haL or \\(haOl\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0386",
+      "family": "navigation",
+      "title": "= or \\(haG or :f",
+      "anchor": {
+        "file": "less.nro",
+        "line": 386,
+        "text": ".IP \"= or \\(haG or :f\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0393",
+      "family": "navigation",
+      "title": "\\-",
+      "anchor": {
+        "file": "less.nro",
+        "line": 393,
+        "text": ".IP \\-"
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0404",
+      "family": "navigation",
+      "title": "\\-\\-",
+      "anchor": {
+        "file": "less.nro",
+        "line": 404,
+        "text": ".IP \\-\\-"
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0410",
+      "family": "navigation",
+      "title": "\\-+",
+      "anchor": {
+        "file": "less.nro",
+        "line": 410,
+        "text": ".IP \\-+"
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0417",
+      "family": "navigation",
+      "title": "\\-\\-+",
+      "anchor": {
+        "file": "less.nro",
+        "line": 417,
+        "text": ".IP \\-\\-+"
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0420",
+      "family": "navigation",
+      "title": "\\-!",
+      "anchor": {
+        "file": "less.nro",
+        "line": 420,
+        "text": ".IP \\-!"
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0425",
+      "family": "navigation",
+      "title": "\\-\\-!",
+      "anchor": {
+        "file": "less.nro",
+        "line": 425,
+        "text": ".IP \\-\\-!"
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0428",
+      "family": "navigation",
+      "title": "_",
+      "anchor": {
+        "file": "less.nro",
+        "line": 428,
+        "text": ".IP _"
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0433",
+      "family": "navigation",
+      "title": "__",
+      "anchor": {
+        "file": "less.nro",
+        "line": 433,
+        "text": ".IP __"
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0438",
+      "family": "navigation",
+      "title": "+cmd",
+      "anchor": {
+        "file": "less.nro",
+        "line": 438,
+        "text": ".IP +cmd"
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0444",
+      "family": "navigation",
+      "title": "V",
+      "anchor": {
+        "file": "less.nro",
+        "line": 444,
+        "text": ".IP V"
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0448",
+      "family": "navigation",
+      "title": "q or Q or :q or :Q or ZZ",
+      "anchor": {
+        "file": "less.nro",
+        "line": 448,
+        "text": ".IP \"q or Q or :q or :Q or ZZ\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0456",
+      "family": "integrations",
+      "title": "v",
+      "anchor": {
+        "file": "less.nro",
+        "line": 456,
+        "text": ".IP v"
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0462",
+      "family": "integrations",
+      "title": "! shell-command",
+      "anchor": {
+        "file": "less.nro",
+        "line": 462,
+        "text": ".IP \"! shell-command\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0474",
+      "family": "integrations",
+      "title": "# shell-command",
+      "anchor": {
+        "file": "less.nro",
+        "line": 474,
+        "text": ".IP \"# shell-command\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0478",
+      "family": "integrations",
+      "title": "| <m> shell-command",
+      "anchor": {
+        "file": "less.nro",
+        "line": 478,
+        "text": ".IP \"| <m> shell-command\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0489",
+      "family": "integrations",
+      "title": "s filename",
+      "anchor": {
+        "file": "less.nro",
+        "line": 489,
+        "text": ".IP \"s filename\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0492",
+      "family": "integrations",
+      "title": "\\(haO\\(haO",
+      "anchor": {
+        "file": "less.nro",
+        "line": 492,
+        "text": ".IP \"\\(haO\\(haO\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0508",
+      "family": "navigation",
+      "title": "1.",
+      "anchor": {
+        "file": "less.nro",
+        "line": 508,
+        "text": ".IP 1."
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0512",
+      "family": "navigation",
+      "title": "2.",
+      "anchor": {
+        "file": "less.nro",
+        "line": 512,
+        "text": ".IP 2."
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0555",
+      "family": "navigation",
+      "title": "\\(haX",
+      "anchor": {
+        "file": "less.nro",
+        "line": 555,
+        "text": ".IP \"\\(haX\""
+      },
+      "slice": "S07",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0574",
+      "family": "invocation",
+      "title": "OPTIONS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 574,
+        "text": ".SH OPTIONS"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0629",
+      "family": "invocation",
+      "title": "\\-? or \\-\\-help",
+      "anchor": {
+        "file": "less.nro",
+        "line": 629,
+        "text": ".IP \"\\-? or \\-\\-help\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0635",
+      "family": "invocation",
+      "title": "\\-a or \\-\\-search-skip-screen",
+      "anchor": {
+        "file": "less.nro",
+        "line": 635,
+        "text": ".IP \"\\-a or \\-\\-search-skip-screen\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0645",
+      "family": "invocation",
+      "title": "\\-A or \\-\\-SEARCH-SKIP-SCREEN",
+      "anchor": {
+        "file": "less.nro",
+        "line": 645,
+        "text": ".IP \"\\-A or \\-\\-SEARCH-SKIP-SCREEN\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0654",
+      "family": "invocation",
+      "title": "\\-b\\fIn\\fP or \\-\\-buffers=\\fIn\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 654,
+        "text": ".IP \"\\-b\\fIn\\fP or \\-\\-buffers=\\fIn\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0664",
+      "family": "invocation",
+      "title": "\\-B or \\-\\-auto-buffers",
+      "anchor": {
+        "file": "less.nro",
+        "line": 664,
+        "text": ".IP \"\\-B or \\-\\-auto-buffers\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0677",
+      "family": "invocation",
+      "title": "\\-c or \\-\\-clear-screen",
+      "anchor": {
+        "file": "less.nro",
+        "line": 677,
+        "text": ".IP \"\\-c or \\-\\-clear-screen\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0681",
+      "family": "invocation",
+      "title": "\\-C or \\-\\-CLEAR-SCREEN",
+      "anchor": {
+        "file": "less.nro",
+        "line": 681,
+        "text": ".IP \"\\-C or \\-\\-CLEAR-SCREEN\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0684",
+      "family": "invocation",
+      "title": "\\-d or \\-\\-dumb",
+      "anchor": {
+        "file": "less.nro",
+        "line": 684,
+        "text": ".IP \"\\-d or \\-\\-dumb\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0692",
+      "family": "invocation",
+      "title": "\\-D\\fBx\\fP\\fIcolor\\fP or \\-\\-color=\\fBx\\fP\\fIcolor\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 692,
+        "text": ".IP \"\\-D\\fBx\\fP\\fIcolor\\fP or \\-\\-color=\\fBx\\fP\\fIcolor\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0697",
+      "family": "invocation",
+      "title": "B",
+      "anchor": {
+        "file": "less.nro",
+        "line": 697,
+        "text": ".IP \"B\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0699",
+      "family": "invocation",
+      "title": "C",
+      "anchor": {
+        "file": "less.nro",
+        "line": 699,
+        "text": ".IP \"C\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0701",
+      "family": "invocation",
+      "title": "E",
+      "anchor": {
+        "file": "less.nro",
+        "line": 701,
+        "text": ".IP \"E\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0703",
+      "family": "invocation",
+      "title": "H",
+      "anchor": {
+        "file": "less.nro",
+        "line": 703,
+        "text": ".IP \"H\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0705",
+      "family": "invocation",
+      "title": "M",
+      "anchor": {
+        "file": "less.nro",
+        "line": 705,
+        "text": ".IP \"M\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0707",
+      "family": "invocation",
+      "title": "N",
+      "anchor": {
+        "file": "less.nro",
+        "line": 707,
+        "text": ".IP \"N\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0709",
+      "family": "invocation",
+      "title": "P",
+      "anchor": {
+        "file": "less.nro",
+        "line": 709,
+        "text": ".IP \"P\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0711",
+      "family": "invocation",
+      "title": "R",
+      "anchor": {
+        "file": "less.nro",
+        "line": 711,
+        "text": ".IP \"R\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0713",
+      "family": "invocation",
+      "title": "S",
+      "anchor": {
+        "file": "less.nro",
+        "line": 713,
+        "text": ".IP \"S\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0715",
+      "family": "invocation",
+      "title": "W",
+      "anchor": {
+        "file": "less.nro",
+        "line": 715,
+        "text": ".IP \"W\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0717",
+      "family": "invocation",
+      "title": "1-5",
+      "anchor": {
+        "file": "less.nro",
+        "line": 717,
+        "text": ".IP \"1-5\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0724",
+      "family": "invocation",
+      "title": "d",
+      "anchor": {
+        "file": "less.nro",
+        "line": 724,
+        "text": ".IP \"d\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0726",
+      "family": "invocation",
+      "title": "k",
+      "anchor": {
+        "file": "less.nro",
+        "line": 726,
+        "text": ".IP \"k\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0728",
+      "family": "invocation",
+      "title": "s",
+      "anchor": {
+        "file": "less.nro",
+        "line": 728,
+        "text": ".IP \"s\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0730",
+      "family": "invocation",
+      "title": "u",
+      "anchor": {
+        "file": "less.nro",
+        "line": 730,
+        "text": ".IP \"u\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0758",
+      "family": "invocation",
+      "title": "b",
+      "anchor": {
+        "file": "less.nro",
+        "line": 758,
+        "text": ".IP \"b\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0760",
+      "family": "invocation",
+      "title": "c",
+      "anchor": {
+        "file": "less.nro",
+        "line": 760,
+        "text": ".IP \"c\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0762",
+      "family": "invocation",
+      "title": "g",
+      "anchor": {
+        "file": "less.nro",
+        "line": 762,
+        "text": ".IP \"g\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0764",
+      "family": "invocation",
+      "title": "k",
+      "anchor": {
+        "file": "less.nro",
+        "line": 764,
+        "text": ".IP \"k\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0766",
+      "family": "invocation",
+      "title": "m",
+      "anchor": {
+        "file": "less.nro",
+        "line": 766,
+        "text": ".IP \"m\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0768",
+      "family": "invocation",
+      "title": "r",
+      "anchor": {
+        "file": "less.nro",
+        "line": 768,
+        "text": ".IP \"r\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0770",
+      "family": "invocation",
+      "title": "w",
+      "anchor": {
+        "file": "less.nro",
+        "line": 770,
+        "text": ".IP \"w\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0772",
+      "family": "invocation",
+      "title": "y",
+      "anchor": {
+        "file": "less.nro",
+        "line": 772,
+        "text": ".IP \"y\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0795",
+      "family": "invocation",
+      "title": "s or ~",
+      "anchor": {
+        "file": "less.nro",
+        "line": 795,
+        "text": ".IP \"s or ~\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0797",
+      "family": "invocation",
+      "title": "u or _",
+      "anchor": {
+        "file": "less.nro",
+        "line": 797,
+        "text": ".IP \"u or _\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0799",
+      "family": "invocation",
+      "title": "d or *",
+      "anchor": {
+        "file": "less.nro",
+        "line": 799,
+        "text": ".IP \"d or *\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0801",
+      "family": "invocation",
+      "title": "l or &",
+      "anchor": {
+        "file": "less.nro",
+        "line": 801,
+        "text": ".IP \"l or &\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0806",
+      "family": "invocation",
+      "title": "\\(bu",
+      "anchor": {
+        "file": "less.nro",
+        "line": 806,
+        "text": ".IP \\(bu"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0809",
+      "family": "invocation",
+      "title": "\\(bu",
+      "anchor": {
+        "file": "less.nro",
+        "line": 809,
+        "text": ".IP \\(bu"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0813",
+      "family": "invocation",
+      "title": "\\(bu",
+      "anchor": {
+        "file": "less.nro",
+        "line": 813,
+        "text": ".IP \\(bu"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0829",
+      "family": "invocation",
+      "title": "\\(bu",
+      "anchor": {
+        "file": "less.nro",
+        "line": 829,
+        "text": ".IP \\(bu"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0832",
+      "family": "invocation",
+      "title": "\\(bu",
+      "anchor": {
+        "file": "less.nro",
+        "line": 832,
+        "text": ".IP \\(bu"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0835",
+      "family": "invocation",
+      "title": "\\(bu",
+      "anchor": {
+        "file": "less.nro",
+        "line": 835,
+        "text": ".IP \\(bu"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0844",
+      "family": "invocation",
+      "title": "\\-e or \\-\\-quit-at-eof",
+      "anchor": {
+        "file": "less.nro",
+        "line": 844,
+        "text": ".IP \"\\-e or \\-\\-quit-at-eof\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0852",
+      "family": "invocation",
+      "title": "\\-E or \\-\\-QUIT-AT-EOF",
+      "anchor": {
+        "file": "less.nro",
+        "line": 852,
+        "text": ".IP \"\\-E or \\-\\-QUIT-AT-EOF\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0856",
+      "family": "invocation",
+      "title": "\\-f or \\-\\-force",
+      "anchor": {
+        "file": "less.nro",
+        "line": 856,
+        "text": ".IP \"\\-f or \\-\\-force\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0865",
+      "family": "invocation",
+      "title": "\\-F or \\-\\-quit-if-one-screen",
+      "anchor": {
+        "file": "less.nro",
+        "line": 865,
+        "text": ".IP \"\\-F or \\-\\-quit-if-one-screen\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0870",
+      "family": "invocation",
+      "title": "\\-g or \\-\\-hilite-search",
+      "anchor": {
+        "file": "less.nro",
+        "line": 870,
+        "text": ".IP \"\\-g or \\-\\-hilite-search\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0879",
+      "family": "invocation",
+      "title": "\\-G or \\-\\-HILITE-SEARCH",
+      "anchor": {
+        "file": "less.nro",
+        "line": 879,
+        "text": ".IP \"\\-G or \\-\\-HILITE-SEARCH\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0881",
+      "family": "invocation",
+      "title": "\\-h\\fIn\\fP or \\-\\-max-back-scroll=\\fIn\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 881,
+        "text": ".IP \"\\-h\\fIn\\fP or \\-\\-max-back-scroll=\\fIn\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0887",
+      "family": "invocation",
+      "title": "\\-i or \\-\\-ignore-case",
+      "anchor": {
+        "file": "less.nro",
+        "line": 887,
+        "text": ".IP \"\\-i or \\-\\-ignore-case\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0894",
+      "family": "invocation",
+      "title": "\\-I or \\-\\-IGNORE-CASE",
+      "anchor": {
+        "file": "less.nro",
+        "line": 894,
+        "text": ".IP \"\\-I or \\-\\-IGNORE-CASE\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0897",
+      "family": "invocation",
+      "title": "\\-j\\fIn\\fP or \\-\\-jump-target=\\fIn\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 897,
+        "text": ".IP \"\\-j\\fIn\\fP or \\-\\-jump-target=\\fIn\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0931",
+      "family": "invocation",
+      "title": "\\-J or \\-\\-status-column",
+      "anchor": {
+        "file": "less.nro",
+        "line": 931,
+        "text": ".IP \"\\-J or \\-\\-status-column\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0935",
+      "family": "invocation",
+      "title": ">",
+      "anchor": {
+        "file": "less.nro",
+        "line": 935,
+        "text": ".IP \">\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0939",
+      "family": "invocation",
+      "title": "<",
+      "anchor": {
+        "file": "less.nro",
+        "line": 939,
+        "text": ".IP \"<\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0943",
+      "family": "invocation",
+      "title": "=",
+      "anchor": {
+        "file": "less.nro",
+        "line": 943,
+        "text": ".IP \"=\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0946",
+      "family": "invocation",
+      "title": "*",
+      "anchor": {
+        "file": "less.nro",
+        "line": 946,
+        "text": ".IP \"*\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0949",
+      "family": "invocation",
+      "title": "a-z, A-Z",
+      "anchor": {
+        "file": "less.nro",
+        "line": 949,
+        "text": ".IP \"a-z, A-Z\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0952",
+      "family": "invocation",
+      "title": "\\-k\\fIfilename\\fP or \\-\\-lesskey-file=\\fIfilename\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 952,
+        "text": ".IP \"\\-k\\fIfilename\\fP or \\-\\-lesskey-file=\\fIfilename\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0965",
+      "family": "invocation",
+      "title": "\\-\\-lesskey-src=\\fIfilename\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 965,
+        "text": ".IP \"\\-\\-lesskey-src=\\fIfilename\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-0991",
+      "family": "invocation",
+      "title": "\\-\\-lesskey-content=\\fItext\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 991,
+        "text": ".IP \"\\-\\-lesskey-content=\\fItext\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1010",
+      "family": "invocation",
+      "title": "\\-K or \\-\\-quit-on-intr",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1010,
+        "text": ".IP \"\\-K or \\-\\-quit-on-intr\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1020",
+      "family": "invocation",
+      "title": "\\-L or \\-\\-no-lessopen",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1020,
+        "text": ".IP \"\\-L or \\-\\-no-lessopen\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1027",
+      "family": "invocation",
+      "title": "\\-m or \\-\\-long-prompt",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1027,
+        "text": ".IP \"\\-m or \\-\\-long-prompt\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1036",
+      "family": "invocation",
+      "title": "\\-M or \\-\\-LONG-PROMPT",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1036,
+        "text": ".IP \"\\-M or \\-\\-LONG-PROMPT\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1041",
+      "family": "invocation",
+      "title": "\\-n or \\-\\-line-numbers",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1041,
+        "text": ".IP \"\\-n or \\-\\-line-numbers\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1051",
+      "family": "invocation",
+      "title": "\\-N or \\-\\-LINE-NUMBERS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1051,
+        "text": ".IP \"\\-N or \\-\\-LINE-NUMBERS\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1054",
+      "family": "invocation",
+      "title": "\\-o\\fIfilename\\fP or \\-\\-log-file=\\fIfilename\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1054,
+        "text": ".IP \"\\-o\\fIfilename\\fP or \\-\\-log-file=\\fIfilename\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1063",
+      "family": "invocation",
+      "title": "\\-O\\fIfilename\\fP or \\-\\-LOG-FILE=\\fIfilename\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1063,
+        "text": ".IP \"\\-O\\fIfilename\\fP or \\-\\-LOG-FILE=\\fIfilename\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1074",
+      "family": "invocation",
+      "title": "\\-p\\fIpattern\\fP or \\-\\-pattern=\\fIpattern\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1074,
+        "text": ".IP \"\\-p\\fIpattern\\fP or \\-\\-pattern=\\fIpattern\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1080",
+      "family": "invocation",
+      "title": "\\-P\\fIprompt\\fP or \\-\\-prompt=\\fIprompt\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1080,
+        "text": ".IP \"\\-P\\fIprompt\\fP or \\-\\-prompt=\\fIprompt\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1100",
+      "family": "invocation",
+      "title": "\\-q or \\-\\-quiet or \\-\\-silent",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1100,
+        "text": ".IP \"\\-q or \\-\\-quiet or \\-\\-silent\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1109",
+      "family": "invocation",
+      "title": "\\-Q or \\-\\-QUIET or \\-\\-SILENT",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1109,
+        "text": ".IP \"\\-Q or \\-\\-QUIET or \\-\\-SILENT\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1114",
+      "family": "invocation",
+      "title": "\\-r or \\-\\-raw-control-chars",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1114,
+        "text": ".IP \"\\-r or \\-\\-raw-control-chars\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1128",
+      "family": "invocation",
+      "title": "\\-R or \\-\\-RAW-CONTROL-CHARS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1128,
+        "text": ".IP \"\\-R or \\-\\-RAW-CONTROL-CHARS\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1163",
+      "family": "invocation",
+      "title": "\\-s or \\-\\-squeeze-blank-lines",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1163,
+        "text": ".IP \"\\-s or \\-\\-squeeze-blank-lines\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1168",
+      "family": "invocation",
+      "title": "\\-S or \\-\\-chop-long-lines",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1168,
+        "text": ".IP \"\\-S or \\-\\-chop-long-lines\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1176",
+      "family": "invocation",
+      "title": "\\-t\\fItag\\fP or \\-\\-tag=\\fItag\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1176,
+        "text": ".IP \"\\-t\\fItag\\fP or \\-\\-tag=\\fItag\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1197",
+      "family": "invocation",
+      "title": "\\-T\\fItagsfile\\fP or \\-\\-tag-file=\\fItagsfile\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1197,
+        "text": ".IP \"\\-T\\fItagsfile\\fP or \\-\\-tag-file=\\fItagsfile\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1199",
+      "family": "invocation",
+      "title": "\\-u or \\-\\-underline-special",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1199,
+        "text": ".IP \"\\-u or \\-\\-underline-special\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1202",
+      "family": "invocation",
+      "title": "\\-U or \\-\\-UNDERLINE-SPECIAL",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1202,
+        "text": ".IP \"\\-U or \\-\\-UNDERLINE-SPECIAL\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1226",
+      "family": "invocation",
+      "title": "\\-V or \\-\\-version",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1226,
+        "text": ".IP \"\\-V or \\-\\-version\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1229",
+      "family": "invocation",
+      "title": "\\-w or \\-\\-hilite-unread",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1229,
+        "text": ".IP \"\\-w or \\-\\-hilite-unread\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1241",
+      "family": "invocation",
+      "title": "\\-W or \\-\\-HILITE-UNREAD",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1241,
+        "text": ".IP \"\\-W or \\-\\-HILITE-UNREAD\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1244",
+      "family": "invocation",
+      "title": "\\-x\\fIn\\fP,...\\& or \\-\\-tabs=\\fIn\\fP,...",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1244,
+        "text": ".IP \"\\-x\\fIn\\fP,...\\& or \\-\\-tabs=\\fIn\\fP,...\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1252",
+      "family": "invocation",
+      "title": "\\-X or \\-\\-no-init",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1252,
+        "text": ".IP \"\\-X or \\-\\-no-init\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1257",
+      "family": "invocation",
+      "title": "\\-y\\fIn\\fP or \\-\\-max-forw-scroll=\\fIn\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1257,
+        "text": ".IP \"\\-y\\fIn\\fP or \\-\\-max-forw-scroll=\\fIn\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1264",
+      "family": "invocation",
+      "title": "\\-z\\fIn\\fP or \\-\\-window=\\fIn\\fP or \\-\\fIn\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1264,
+        "text": ".IP \"\\-z\\fIn\\fP or \\-\\-window=\\fIn\\fP or \\-\\fIn\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1278",
+      "family": "invocation",
+      "title": "\\-\\(dq\\fIcc\\fP\\ or\\ \\-\\-quotes=\\fIcc\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1278,
+        "text": ".IP \"\\-\\(dq\\fIcc\\fP\\ or\\ \\-\\-quotes=\\fIcc\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1292",
+      "family": "invocation",
+      "title": "\\-\\(ti or \\-\\-tilde",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1292,
+        "text": ".IP \"\\-\\(ti or \\-\\-tilde\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1295",
+      "family": "invocation",
+      "title": "\\-# or \\-\\-shift",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1295,
+        "text": ".IP \"\\-# or \\-\\-shift\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1305",
+      "family": "invocation",
+      "title": "\\-\\-exit-follow-on-close",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1305,
+        "text": ".IP \"\\-\\-exit-follow-on-close\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1310",
+      "family": "invocation",
+      "title": "\\-\\-file-size",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1310,
+        "text": ".IP \"\\-\\-file-size\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1318",
+      "family": "invocation",
+      "title": "\\-\\-follow-name",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1318,
+        "text": ".IP \"\\-\\-follow-name\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1331",
+      "family": "invocation",
+      "title": "\\-\\-header=\\fIL\\fP,\\fIC\\fP,\\fIN\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1331,
+        "text": ".IP \"\\-\\-header=\\fIL\\fP,\\fIC\\fP,\\fIN\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1357",
+      "family": "invocation",
+      "title": "\\-\\-incsearch",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1357,
+        "text": ".IP \"\\-\\-incsearch\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1362",
+      "family": "invocation",
+      "title": "\\-\\-intr=\\fIc\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1362,
+        "text": ".IP \"\\-\\-intr=\\fIc\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1369",
+      "family": "invocation",
+      "title": "\\-\\-line-num-width=\\fIn\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1369,
+        "text": ".IP \"\\-\\-line-num-width=\\fIn\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1373",
+      "family": "invocation",
+      "title": "\\-\\-match-shift=\\fIn\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1373,
+        "text": ".IP \"\\-\\-match-shift=\\fIn\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1388",
+      "family": "invocation",
+      "title": "\\-\\-modelines=\\fIn\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1388,
+        "text": ".IP \"\\-\\-modelines=\\fIn\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1415",
+      "family": "invocation",
+      "title": "\\-\\-mouse",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1415,
+        "text": ".IP \"\\-\\-mouse\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1430",
+      "family": "invocation",
+      "title": "\\-\\-MOUSE",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1430,
+        "text": ".IP \"\\-\\-MOUSE\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1433",
+      "family": "invocation",
+      "title": "\\-\\-no-keypad",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1433,
+        "text": ".IP \"\\-\\-no-keypad\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1438",
+      "family": "invocation",
+      "title": "\\-\\-no-histdups",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1438,
+        "text": ".IP \"\\-\\-no-histdups\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1444",
+      "family": "invocation",
+      "title": "\\-\\-no-number-headers",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1444,
+        "text": ".IP \"\\-\\-no-number-headers\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1447",
+      "family": "invocation",
+      "title": "\\-\\-no-search-header-lines",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1447,
+        "text": ".IP \"\\-\\-no-search-header-lines\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1449",
+      "family": "invocation",
+      "title": "\\-\\-no-search-header-columns",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1449,
+        "text": ".IP \"\\-\\-no-search-header-columns\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1451",
+      "family": "invocation",
+      "title": "\\-\\-no-search-headers",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1451,
+        "text": ".IP \"\\-\\-no-search-headers\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1453",
+      "family": "invocation",
+      "title": "\\-\\-no-vbell",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1453,
+        "text": ".IP \"\\-\\-no-vbell\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1455",
+      "family": "invocation",
+      "title": "\\-\\-proc-backspace",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1455,
+        "text": ".IP \"\\-\\-proc-backspace\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1464",
+      "family": "invocation",
+      "title": "\\-\\-PROC-BACKSPACE",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1464,
+        "text": ".IP \"\\-\\-PROC-BACKSPACE\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1467",
+      "family": "invocation",
+      "title": "\\-\\-proc-return",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1467,
+        "text": ".IP \"\\-\\-proc-return\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1474",
+      "family": "invocation",
+      "title": "\\-\\-PROC-RETURN",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1474,
+        "text": ".IP \"\\-\\-PROC-RETURN\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1477",
+      "family": "invocation",
+      "title": "\\-\\-proc-tab",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1477,
+        "text": ".IP \"\\-\\-proc-tab\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1483",
+      "family": "invocation",
+      "title": "\\-\\-PROC-TAB",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1483,
+        "text": ".IP \"\\-\\-PROC-TAB\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1486",
+      "family": "invocation",
+      "title": "\\-\\-redraw-on-quit",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1486,
+        "text": ".IP \"\\-\\-redraw-on-quit\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1494",
+      "family": "invocation",
+      "title": "\\-\\-rscroll=\\fIc\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1494,
+        "text": ".IP \"\\-\\-rscroll=\\fIc\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1499",
+      "family": "invocation",
+      "title": "\\-\\-save-marks",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1499,
+        "text": ".IP \"\\-\\-save-marks\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1503",
+      "family": "invocation",
+      "title": "\\-\\-search-options=\\fI...\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1503,
+        "text": ".IP \"\\-\\-search-options=\\fI...\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1515",
+      "family": "invocation",
+      "title": "\\-\\-show-preproc-errors",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1515,
+        "text": ".IP \"\\-\\-show-preproc-errors\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1520",
+      "family": "invocation",
+      "title": "\\-\\-status-col-width=\\fIn\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1520,
+        "text": ".IP \"\\-\\-status-col-width=\\fIn\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1523",
+      "family": "invocation",
+      "title": "\\-\\-status-line",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1523,
+        "text": ".IP \"\\-\\-status-line\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1529",
+      "family": "invocation",
+      "title": "\\-\\-use-backslash",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1529,
+        "text": ".IP \"\\-\\-use-backslash\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1534",
+      "family": "invocation",
+      "title": "\\-\\-use-color",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1534,
+        "text": ".IP \"\\-\\-use-color\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1542",
+      "family": "invocation",
+      "title": "\\-\\-wheel-lines=\\fIn\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1542,
+        "text": ".IP \"\\-\\-wheel-lines=\\fIn\\fP\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1546",
+      "family": "invocation",
+      "title": "\\-\\-wordwrap",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1546,
+        "text": ".IP \"\\-\\-wordwrap\""
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1551",
+      "family": "invocation",
+      "title": "\\-\\-",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1551,
+        "text": ".IP \\-\\-"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1555",
+      "family": "invocation",
+      "title": "+",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1555,
+        "text": ".IP +"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1571",
+      "family": "configuration",
+      "title": "LINE EDITING",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1571,
+        "text": ".SH \"LINE EDITING\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1583",
+      "family": "configuration",
+      "title": "LEFTARROW [ ESC-h ]",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1583,
+        "text": ".IP \"LEFTARROW [ ESC-h ]\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1585",
+      "family": "configuration",
+      "title": "RIGHTARROW [ ESC-l ]",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1585,
+        "text": ".IP \"RIGHTARROW [ ESC-l ]\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1587",
+      "family": "configuration",
+      "title": "\\(haLEFTARROW [ ESC-b or ESC-LEFTARROW ]",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1587,
+        "text": ".IP \"\\(haLEFTARROW [ ESC-b or ESC-LEFTARROW ]\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1590",
+      "family": "configuration",
+      "title": "\\(haRIGHTARROW [ ESC-w or ESC-RIGHTARROW ]",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1590,
+        "text": ".IP \"\\(haRIGHTARROW [ ESC-w or ESC-RIGHTARROW ]\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1593",
+      "family": "configuration",
+      "title": "HOME [ ESC-0 ]",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1593,
+        "text": ".IP \"HOME [ ESC-0 ]\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1595",
+      "family": "configuration",
+      "title": "END [ ESC-$ ]",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1595,
+        "text": ".IP \"END [ ESC-$ ]\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1597",
+      "family": "configuration",
+      "title": "BACKSPACE",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1597,
+        "text": ".IP \"BACKSPACE\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1600",
+      "family": "configuration",
+      "title": "DELETE or [ ESC-x ]",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1600,
+        "text": ".IP \"DELETE or [ ESC-x ]\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1602",
+      "family": "configuration",
+      "title": "\\(haBACKSPACE [ ESC-BACKSPACE ]",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1602,
+        "text": ".IP \"\\(haBACKSPACE [ ESC-BACKSPACE ]\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1605",
+      "family": "configuration",
+      "title": "\\(haDELETE [ ESC-X or ESC-DELETE ]",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1605,
+        "text": ".IP \"\\(haDELETE [ ESC-X or ESC-DELETE ]\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1608",
+      "family": "configuration",
+      "title": "UPARROW [ ESC-k ]",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1608,
+        "text": ".IP \"UPARROW [ ESC-k ]\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1612",
+      "family": "configuration",
+      "title": "DOWNARROW [ ESC-j ]",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1612,
+        "text": ".IP \"DOWNARROW [ ESC-j ]\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1616",
+      "family": "configuration",
+      "title": "TAB",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1616,
+        "text": ".IP \"TAB\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1625",
+      "family": "configuration",
+      "title": "BACKTAB [ ESC-TAB ]",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1625,
+        "text": ".IP \"BACKTAB [ ESC-TAB ]\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1627",
+      "family": "configuration",
+      "title": "\\(haL",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1627,
+        "text": ".IP \"\\(haL\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1631",
+      "family": "configuration",
+      "title": "\\(haU (Unix and OS/2) or ESC (MS-DOS and Windows)",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1631,
+        "text": ".IP \"\\(haU (Unix and OS/2) or ESC (MS-DOS and Windows)\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1636",
+      "family": "configuration",
+      "title": "\\(haG",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1636,
+        "text": ".IP \"\\(haG\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1639",
+      "family": "configuration",
+      "title": "KEY BINDINGS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1639,
+        "text": ".SH \"KEY BINDINGS\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1700",
+      "family": "integrations",
+      "title": "INPUT PREPROCESSOR",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1700,
+        "text": ".SH \"INPUT PREPROCESSOR\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1869",
+      "family": "rendering",
+      "title": "NATIONAL CHARACTER SETS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1869,
+        "text": ".SH \"NATIONAL CHARACTER SETS\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1871",
+      "family": "rendering",
+      "title": "normal characters",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1871,
+        "text": ".IP \"normal characters\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1873",
+      "family": "rendering",
+      "title": "control characters",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1873,
+        "text": ".IP \"control characters\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1876",
+      "family": "rendering",
+      "title": "binary characters",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1876,
+        "text": ".IP \"binary characters\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1884",
+      "family": "rendering",
+      "title": "ascii",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1884,
+        "text": ".IP ascii"
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1888",
+      "family": "rendering",
+      "title": "iso8859",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1888,
+        "text": ".IP iso8859"
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1892",
+      "family": "rendering",
+      "title": "latin1",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1892,
+        "text": ".IP latin1"
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1894",
+      "family": "rendering",
+      "title": "latin9",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1894,
+        "text": ".IP latin9"
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1896",
+      "family": "rendering",
+      "title": "dos",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1896,
+        "text": ".IP dos"
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1898",
+      "family": "rendering",
+      "title": "ebcdic",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1898,
+        "text": ".IP ebcdic"
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1900",
+      "family": "rendering",
+      "title": "IBM-1047",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1900,
+        "text": ".IP IBM-1047"
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1905",
+      "family": "rendering",
+      "title": "koi8-r",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1905,
+        "text": ".IP koi8-r"
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1907",
+      "family": "rendering",
+      "title": "next",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1907,
+        "text": ".IP next"
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1909",
+      "family": "rendering",
+      "title": "utf-8",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1909,
+        "text": ".IP utf-8"
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-1913",
+      "family": "rendering",
+      "title": "windows",
+      "anchor": {
+        "file": "less.nro",
+        "line": 1913,
+        "text": ".IP windows"
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2025",
+      "family": "rendering",
+      "title": "p",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2025,
+        "text": ".IP \"p\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2027",
+      "family": "rendering",
+      "title": "w",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2027,
+        "text": ".IP \"w\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2029",
+      "family": "rendering",
+      "title": "b",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2029,
+        "text": ".IP \"b\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2031",
+      "family": "rendering",
+      "title": "c",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2031,
+        "text": ".IP \"c\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2042",
+      "family": "rendering",
+      "title": "PROMPTS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2042,
+        "text": ".SH \"PROMPTS\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2054",
+      "family": "rendering",
+      "title": "%b\\fIX\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2054,
+        "text": ".IP \"%b\\fIX\\fP\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2064",
+      "family": "rendering",
+      "title": "%B",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2064,
+        "text": ".IP \"%B\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2066",
+      "family": "rendering",
+      "title": "%c",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2066,
+        "text": ".IP \"%c\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2069",
+      "family": "rendering",
+      "title": "%d\\fIX\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2069,
+        "text": ".IP \"%d\\fIX\\fP\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2072",
+      "family": "rendering",
+      "title": "%D",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2072,
+        "text": ".IP \"%D\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2075",
+      "family": "rendering",
+      "title": "%E",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2075,
+        "text": ".IP \"%E\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2079",
+      "family": "rendering",
+      "title": "%f",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2079,
+        "text": ".IP \"%f\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2081",
+      "family": "rendering",
+      "title": "%F",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2081,
+        "text": ".IP \"%F\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2083",
+      "family": "rendering",
+      "title": "%g",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2083,
+        "text": ".IP \"%g\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2087",
+      "family": "rendering",
+      "title": "%i",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2087,
+        "text": ".IP \"%i\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2090",
+      "family": "rendering",
+      "title": "%l\\fIX\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2090,
+        "text": ".IP \"%l\\fIX\\fP\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2093",
+      "family": "rendering",
+      "title": "%L",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2093,
+        "text": ".IP \"%L\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2095",
+      "family": "rendering",
+      "title": "%m",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2095,
+        "text": ".IP \"%m\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2097",
+      "family": "rendering",
+      "title": "%o",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2097,
+        "text": ".IP \"%o\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2101",
+      "family": "rendering",
+      "title": "%p\\fIX\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2101,
+        "text": ".IP \"%p\\fIX\\fP\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2104",
+      "family": "rendering",
+      "title": "%P\\fIX\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2104,
+        "text": ".IP \"%P\\fIX\\fP\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2107",
+      "family": "rendering",
+      "title": "%s",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2107,
+        "text": ".IP \"%s\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2109",
+      "family": "rendering",
+      "title": "%t",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2109,
+        "text": ".IP \"%t\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2112",
+      "family": "rendering",
+      "title": "%T",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2112,
+        "text": ".IP \"%T\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2116",
+      "family": "rendering",
+      "title": "%x",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2116,
+        "text": ".IP \"%x\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2134",
+      "family": "rendering",
+      "title": "?a",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2134,
+        "text": ".IP \"?a\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2136",
+      "family": "rendering",
+      "title": "?b\\fIX\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2136,
+        "text": ".IP \"?b\\fIX\\fP\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2138",
+      "family": "rendering",
+      "title": "?B",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2138,
+        "text": ".IP \"?B\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2140",
+      "family": "rendering",
+      "title": "?c",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2140,
+        "text": ".IP \"?c\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2142",
+      "family": "rendering",
+      "title": "?d\\fIX\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2142,
+        "text": ".IP \"?d\\fIX\\fP\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2144",
+      "family": "rendering",
+      "title": "?e",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2144,
+        "text": ".IP \"?e\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2146",
+      "family": "rendering",
+      "title": "?f",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2146,
+        "text": ".IP \"?f\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2149",
+      "family": "rendering",
+      "title": "?l\\fIX\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2149,
+        "text": ".IP \"?l\\fIX\\fP\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2151",
+      "family": "rendering",
+      "title": "?L",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2151,
+        "text": ".IP \"?L\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2153",
+      "family": "rendering",
+      "title": "?m",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2153,
+        "text": ".IP \"?m\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2155",
+      "family": "rendering",
+      "title": "?n",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2155,
+        "text": ".IP \"?n\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2157",
+      "family": "rendering",
+      "title": "?p\\fIX\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2157,
+        "text": ".IP \"?p\\fIX\\fP\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2160",
+      "family": "rendering",
+      "title": "?P\\fIX\\fP",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2160,
+        "text": ".IP \"?P\\fIX\\fP\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2163",
+      "family": "rendering",
+      "title": "?s",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2163,
+        "text": ".IP \"?s\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2165",
+      "family": "rendering",
+      "title": "?x",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2165,
+        "text": ".IP \"?x\""
+      },
+      "slice": "S06",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2236",
+      "family": "integrations",
+      "title": "SECURITY",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2236,
+        "text": ".SH SECURITY"
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2241",
+      "family": "integrations",
+      "title": "edit\" 10",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2241,
+        "text": ".IP \"edit\" 10"
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2243",
+      "family": "integrations",
+      "title": "examine",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2243,
+        "text": ".IP \"examine\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2245",
+      "family": "integrations",
+      "title": "glob",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2245,
+        "text": ".IP \"glob\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2249",
+      "family": "integrations",
+      "title": "history",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2249,
+        "text": ".IP \"history\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2251",
+      "family": "integrations",
+      "title": "lesskey",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2251,
+        "text": ".IP \"lesskey\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2253",
+      "family": "integrations",
+      "title": "lessopen",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2253,
+        "text": ".IP \"lessopen\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2255",
+      "family": "integrations",
+      "title": "logfile",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2255,
+        "text": ".IP \"logfile\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2257",
+      "family": "integrations",
+      "title": "osc8",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2257,
+        "text": ".IP \"osc8\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2259",
+      "family": "integrations",
+      "title": "pipe",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2259,
+        "text": ".IP \"pipe\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2261",
+      "family": "integrations",
+      "title": "shell",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2261,
+        "text": ".IP \"shell\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2263",
+      "family": "integrations",
+      "title": "stop",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2263,
+        "text": ".IP \"stop\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2267",
+      "family": "integrations",
+      "title": "tags",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2267,
+        "text": ".IP \"tags\""
+      },
+      "slice": "S11",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2288",
+      "family": "configuration",
+      "title": "COMPATIBILITY WITH MORE",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2288,
+        "text": ".SH \"COMPATIBILITY WITH MORE\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2320",
+      "family": "configuration",
+      "title": "ENVIRONMENT VARIABLES",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2320,
+        "text": ".SH \"ENVIRONMENT VARIABLES\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2329",
+      "family": "configuration",
+      "title": "COLUMNS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2329,
+        "text": ".IP COLUMNS"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2335",
+      "family": "configuration",
+      "title": "EDITOR",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2335,
+        "text": ".IP EDITOR"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2337",
+      "family": "configuration",
+      "title": "HOME",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2337,
+        "text": ".IP HOME"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2340",
+      "family": "configuration",
+      "title": "HOMEDRIVE, HOMEPATH",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2340,
+        "text": ".IP \"HOMEDRIVE, HOMEPATH\""
+      },
+      "slice": "S10",
+      "platforms": [],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "Outside Unix scope: platform-specific documented configuration"
+    },
+    {
+      "id": "man-2344",
+      "family": "configuration",
+      "title": "INIT",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2344,
+        "text": ".IP INIT"
+      },
+      "slice": "S10",
+      "platforms": [],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "Outside Unix scope: platform-specific documented configuration"
+    },
+    {
+      "id": "man-2346",
+      "family": "configuration",
+      "title": "LANG",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2346,
+        "text": ".IP LANG"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2348",
+      "family": "configuration",
+      "title": "LC_CTYPE",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2348,
+        "text": ".IP LC_CTYPE"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2350",
+      "family": "configuration",
+      "title": "LESS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2350,
+        "text": ".IP LESS"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2354",
+      "family": "configuration",
+      "title": "LESSANSIENDCHARS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2354,
+        "text": ".IP LESSANSIENDCHARS"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2357",
+      "family": "configuration",
+      "title": "LESSANSIMIDCHARS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2357,
+        "text": ".IP LESSANSIMIDCHARS"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2361",
+      "family": "configuration",
+      "title": "LESSBINFMT",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2361,
+        "text": ".IP LESSBINFMT"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2363",
+      "family": "configuration",
+      "title": "LESSCHARDEF",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2363,
+        "text": ".IP LESSCHARDEF"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2365",
+      "family": "configuration",
+      "title": "LESSCHARSET",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2365,
+        "text": ".IP LESSCHARSET"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2367",
+      "family": "configuration",
+      "title": "LESSCLOSE",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2367,
+        "text": ".IP LESSCLOSE"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2369",
+      "family": "configuration",
+      "title": "LESSECHO",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2369,
+        "text": ".IP LESSECHO"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2373",
+      "family": "configuration",
+      "title": "LESSEDIT",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2373,
+        "text": ".IP LESSEDIT"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2376",
+      "family": "configuration",
+      "title": "LESSGLOBALTAGS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2376,
+        "text": ".IP LESSGLOBALTAGS"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2381",
+      "family": "configuration",
+      "title": "LESSHISTFILE",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2381,
+        "text": ".IP LESSHISTFILE"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2388",
+      "family": "configuration",
+      "title": "Linux and Unix",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2388,
+        "text": ".IP \"Linux and Unix\""
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2391",
+      "family": "configuration",
+      "title": "Windows and MS-DOS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2391,
+        "text": ".IP \"Windows and MS-DOS\""
+      },
+      "slice": "S10",
+      "platforms": [],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "Outside Unix scope: platform-specific documented configuration"
+    },
+    {
+      "id": "man-2393",
+      "family": "configuration",
+      "title": "OS/2",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2393,
+        "text": ".IP \"OS/2\""
+      },
+      "slice": "S10",
+      "platforms": [],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "Outside Unix scope: platform-specific documented configuration"
+    },
+    {
+      "id": "man-2396",
+      "family": "configuration",
+      "title": "LESSHISTSIZE",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2396,
+        "text": ".IP LESSHISTSIZE"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2399",
+      "family": "configuration",
+      "title": "LESSKEYIN",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2399,
+        "text": ".IP LESSKEYIN"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2403",
+      "family": "configuration",
+      "title": "LESSKEY",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2403,
+        "text": ".IP LESSKEY"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2407",
+      "family": "configuration",
+      "title": "LESSKEY_CONTENT",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2407,
+        "text": ".IP LESSKEY_CONTENT"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2409",
+      "family": "configuration",
+      "title": "LESSKEYIN_SYSTEM",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2409,
+        "text": ".IP LESSKEYIN_SYSTEM"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2413",
+      "family": "configuration",
+      "title": "LESSKEY_SYSTEM",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2413,
+        "text": ".IP LESSKEY_SYSTEM"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2417",
+      "family": "configuration",
+      "title": "LESSMETACHARS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2417,
+        "text": ".IP LESSMETACHARS"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2419",
+      "family": "configuration",
+      "title": "LESSMETAESCAPE",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2419,
+        "text": ".IP LESSMETAESCAPE"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2424",
+      "family": "configuration",
+      "title": "LESSOPEN",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2424,
+        "text": ".IP LESSOPEN"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2426",
+      "family": "configuration",
+      "title": "LESSSECURE",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2426,
+        "text": ".IP LESSSECURE"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2429",
+      "family": "configuration",
+      "title": "LESSSECURE_ALLOW",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2429,
+        "text": ".IP LESSSECURE_ALLOW"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2432",
+      "family": "configuration",
+      "title": "LESSSEPARATOR",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2432,
+        "text": ".IP LESSSEPARATOR"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2434",
+      "family": "configuration",
+      "title": "LESSUTFBINFMT",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2434,
+        "text": ".IP LESSUTFBINFMT"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2436",
+      "family": "configuration",
+      "title": "LESSUTFCHARDEF ",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2436,
+        "text": ".IP LESSUTFCHARDEF "
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2438",
+      "family": "configuration",
+      "title": "LESS_COLUMNS",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2438,
+        "text": ".IP LESS_COLUMNS"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2446",
+      "family": "configuration",
+      "title": "LESS_LINES",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2446,
+        "text": ".IP LESS_LINES"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2458",
+      "family": "configuration",
+      "title": "LESS_DATA_DELAY",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2458,
+        "text": ".IP LESS_DATA_DELAY"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2462",
+      "family": "configuration",
+      "title": "LESS_IS_MORE",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2462,
+        "text": ".IP LESS_IS_MORE"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2466",
+      "family": "configuration",
+      "title": "LESS_OSC8_xxx",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2466,
+        "text": ".IP LESS_OSC8_xxx"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2469",
+      "family": "configuration",
+      "title": "LESS_OSC8_ANY",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2469,
+        "text": ".IP LESS_OSC8_ANY"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2472",
+      "family": "configuration",
+      "title": "LESS_TERMCAP_xx",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2472,
+        "text": ".IP LESS_TERMCAP_xx"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2475",
+      "family": "configuration",
+      "title": "LESS_UNSUPPORT",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2475,
+        "text": ".IP LESS_UNSUPPORT"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2482",
+      "family": "configuration",
+      "title": "LINES",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2482,
+        "text": ".IP LINES"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2488",
+      "family": "configuration",
+      "title": "MORE",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2488,
+        "text": ".IP MORE"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2493",
+      "family": "configuration",
+      "title": "PATH",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2493,
+        "text": ".IP PATH"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2496",
+      "family": "configuration",
+      "title": "SHELL",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2496,
+        "text": ".IP SHELL"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2498",
+      "family": "configuration",
+      "title": "TERM",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2498,
+        "text": ".IP TERM"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2502",
+      "family": "configuration",
+      "title": "VISUAL",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2502,
+        "text": ".IP VISUAL"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2504",
+      "family": "configuration",
+      "title": "XDG_CONFIG_HOME",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2504,
+        "text": ".IP XDG_CONFIG_HOME"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2508",
+      "family": "configuration",
+      "title": "XDG_DATA_HOME",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2508,
+        "text": ".IP XDG_DATA_HOME"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "man-2510",
+      "family": "configuration",
+      "title": "XDG_STATE_HOME",
+      "anchor": {
+        "file": "less.nro",
+        "line": 2510,
+        "text": ".IP XDG_STATE_HOME"
+      },
+      "slice": "S10",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "source-redirected",
+      "family": "sources",
+      "title": "Nonterminal copy and diagnostics",
+      "anchor": {
+        "file": "main.c",
+        "line": 1,
+        "text": "/*"
+      },
+      "slice": "S01",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [
+        "redirected-file-text",
+        "redirected-pipe-text",
+        "redirected-file-empty",
+        "redirected-pipe-empty",
+        "redirected-file-binary",
+        "redirected-pipe-binary",
+        "redirected-file-invalid",
+        "redirected-pipe-invalid",
+        "redirected-file-controls",
+        "redirected-pipe-controls",
+        "redirected-missing",
+        "redirected-directory",
+        "redirected-special"
+      ],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Other platforms remain unproved"
+    },
+    {
+      "id": "source-bytes",
+      "family": "sources",
+      "title": "Byte-preserving seekable/nonseekable sources",
+      "anchor": {
+        "file": "ch.c",
+        "line": 1,
+        "text": "/*"
+      },
+      "slice": "S05",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "terminal-lifecycle",
+      "family": "lifecycle",
+      "title": "Signal, suspend, resume and terminal ownership",
+      "anchor": {
+        "file": "signal.c",
+        "line": 1,
+        "text": "/*"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    },
+    {
+      "id": "input-boundaries",
+      "family": "lifecycle",
+      "title": "Keyboard decoding and read interruption",
+      "anchor": {
+        "file": "ttyin.c",
+        "line": 1,
+        "text": "/*"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [],
+      "implementation": "unassessed",
+      "evidence": "not tested",
+      "cause": "No distinguishing differential scenario yet"
+    }
+  ],
+  "upstream": [
+    {
+      "id": "chinese1",
+      "file": "lesstest/lt/chinese1.lt",
+      "sha256": "d81a2c4d23f16ab28169e62f7be6dbf54090a1d0ea332f7ba7f9453b0afae1d7",
+      "instrumented": "pass",
+      "cases": [],
+      "disposition": "pending translation",
+      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+    },
+    {
+      "id": "colorbars",
+      "file": "lesstest/lt/colorbars.lt",
+      "sha256": "31955351b939e145948079a5a040a5590f061b01b9361698209381a7d57ff132",
+      "instrumented": "pass",
+      "cases": [],
+      "disposition": "pending translation",
+      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+    },
+    {
+      "id": "github216",
+      "file": "lesstest/lt/github216.lt",
+      "sha256": "be52c067c160617c62bfa9da92efbbc293a083448389bd6faa1916fff05e1923",
+      "instrumented": "pass",
+      "cases": [],
+      "disposition": "pending translation",
+      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+    },
+    {
+      "id": "github265",
+      "file": "lesstest/lt/github265.lt",
+      "sha256": "e2630f8448edac31de364a75eb6583d3b6e84aa4ef03529a75ffb50a0621a97e",
+      "instrumented": "pass",
+      "cases": [],
+      "disposition": "pending translation",
+      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+    },
+    {
+      "id": "github329",
+      "file": "lesstest/lt/github329.lt",
+      "sha256": "0ad82fedb3404fd731fdfffd2fa28116f588e0aae1377c3be3ea8277f574edc0",
+      "instrumented": "pass",
+      "cases": [],
+      "disposition": "pending translation",
+      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+    },
+    {
+      "id": "hdr-unicode",
+      "file": "lesstest/lt/hdr-unicode.lt",
+      "sha256": "d743492b1aa3a4fd42ba7ebeef03b200fd1ea7fa727341b4bfca87997184df54",
+      "instrumented": "pass",
+      "cases": [],
+      "disposition": "pending translation",
+      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+    },
+    {
+      "id": "hdr-unicode1",
+      "file": "lesstest/lt/hdr-unicode1.lt",
+      "sha256": "0b101640b65391c52011b31b6c7634686885af8439578ba12ce2565b12152f32",
+      "instrumented": "pass",
+      "cases": [],
+      "disposition": "pending translation",
+      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+    },
+    {
+      "id": "proc-special",
+      "file": "lesstest/lt/proc-special.lt",
+      "sha256": "1ecbcd1572e8905dac74f6f3776be082ae016aafb228cfead7e49156a23a7eb4",
+      "instrumented": "pass",
+      "cases": [],
+      "disposition": "pending translation",
+      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+    },
+    {
+      "id": "search-hist",
+      "file": "lesstest/lt/search-hist.lt",
+      "sha256": "222c4e0c05793e83c4e696784dbf0d30070f209dbf5b7d55f75b1381a81a7be2",
+      "instrumented": "pass",
+      "cases": [],
+      "disposition": "pending translation",
+      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+    },
+    {
+      "id": "seq200",
+      "file": "lesstest/lt/seq200.lt",
+      "sha256": "b0c1c45cf8d8003eed4bba16923d9f5787a08cc97ae55f1770aeda2287372001",
+      "instrumented": "pass",
+      "cases": [
+        "upstream-seq-search"
+      ],
+      "disposition": "partial translation",
+      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+    },
+    {
+      "id": "subsearch",
+      "file": "lesstest/lt/subsearch.lt",
+      "sha256": "785413f1e8553d61aad3a2f079d1d6bb2773b7b2b6714b209a26b26edfc043ea",
+      "instrumented": "pass",
+      "cases": [],
+      "disposition": "pending translation",
+      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+    },
+    {
+      "id": "table-50x200",
+      "file": "lesstest/lt/table-50x200.lt",
+      "sha256": "9d2567d2d606af42f2b4d5a02ab9a6463e1cde43a1b7f614f8d026fd8216cef5",
+      "instrumented": "pass",
+      "cases": [],
+      "disposition": "pending translation",
+      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+    },
+    {
+      "id": "utf8-2.txt",
+      "file": "lesstest/lt/utf8-2.txt.lt",
+      "sha256": "def0b49526232eaf2a3cc544bfde56190b488cbdc82bf8c4e830cea58537d91a",
+      "instrumented": "pass",
+      "cases": [],
+      "disposition": "pending translation",
+      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+    },
+    {
+      "id": "version.c",
+      "file": "lesstest/lt/version.c.lt",
+      "sha256": "0598be1d4961a45e74befc0c9b20ccf974dc00b5bb20988b9de0d1f032f1cbc1",
+      "instrumented": "pass",
+      "cases": [
+        "upstream-version-navigation"
+      ],
+      "disposition": "partial translation",
+      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+    }
+  ]
+}

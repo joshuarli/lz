@@ -59,9 +59,9 @@ pub fn execute(binary: &Path, case: &Case) -> Result<Value> {
     for event in &case.events {
         match event {
             Event::Send { bytes } => terminal.send_bytes(checkpoint_deadline(), bytes)?,
-            Event::Checkpoint { ready } => {
+            Event::Checkpoint { ready, row } => {
                 let deadline = checkpoint_deadline();
-                terminal.wait_for_screen(deadline, ready, |screen| screen.contains(ready))?;
+                terminal.wait_for_screen(deadline, ready, |screen| row.map_or_else(|| screen.contains(ready), |row| screen.row(row).is_some_and(|text| text.contains(ready))))?;
                 if !terminal.wait_for_quiescence(deadline, Duration::from_millis(20))? { return Err("harness-error: no output quiescence".into()); }
                 checkpoints.push(json!({"screen": screen(&terminal.screen()), "files": files(&world)?, "bells": terminal.raw_output().iter().filter(|b| **b == 7).count()}));
             }
@@ -103,7 +103,7 @@ pub fn selftest() -> Result<()> {
     let candidate = std::env::current_exe()?;
     let mut case = Case { id: "selftest".into(), family: "harness".into(), admitted: false, source: "pty".into(),
         fixture: vec![], args: vec!["--fixture".into(), "none".into()], env: BTreeMap::new(), size: [40, 8], locale: "C".into(),
-        events: vec![Event::Checkpoint { ready: "pro".into() }, Event::Send { bytes: b"q\n".to_vec() }] };
+        events: vec![Event::Checkpoint { ready: "pro".into(), row: None }, Event::Send { bytes: b"q\n".to_vec() }] };
     let mut invalid = serde_json::to_value(&case)?;
     invalid.as_object_mut().unwrap().insert("typo".into(), json!(true));
     if serde_json::from_value::<Case>(invalid).is_ok() { return Err("unknown scenario field accepted".into()); }
@@ -128,7 +128,7 @@ pub fn selftest() -> Result<()> {
     case.id = "oracle-selftest".into();
     case.fixture = (1..81).map(|n| format!("{n:06} reference parity\n")).collect::<String>().into_bytes();
     case.args = vec!["input".into()];
-    case.events = vec![Event::Checkpoint { ready: "000001".into() }, Event::Send { bytes: b"q".to_vec() }];
+    case.events = vec![Event::Checkpoint { ready: "000001".into(), row: None }, Event::Send { bytes: b"q".to_vec() }];
     let reference = super::oracle();
     let a = execute(&reference, &case)?;
     let b = execute(&reference, &case)?;
