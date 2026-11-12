@@ -1392,10 +1392,15 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "sessions-next-previous",
+        "sessions-next-previous-short",
+        "sessions-control-next-name",
+        "sessions-next-term"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Basic CLI file-list next/previous switching passes with file-number/END-next prompts, top placement on later short-file opens, safe filename notation and TERM cleanup under one terminal owner. Counts, boundary errors, per-file state, binary transitions, examine and other session operations remain open."
     },
     {
       "id": "man-0367",
@@ -1411,10 +1416,15 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "sessions-next-previous",
+        "sessions-next-previous-short",
+        "sessions-control-next-name",
+        "sessions-next-term"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Basic CLI file-list next/previous switching passes with file-number/END-next prompts, top placement on later short-file opens, safe filename notation and TERM cleanup under one terminal owner. Counts, boundary errors, per-file state, binary transitions, examine and other session operations remain open."
     },
     {
       "id": "man-0370",

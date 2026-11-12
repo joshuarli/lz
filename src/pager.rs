@@ -17,6 +17,7 @@ enum Mode {
     FilterInput,
     Follow,
     Help,
+    FileCommand,
     CommandError(CommandError),
 }
 
@@ -129,7 +130,31 @@ impl DisplayLine {
     } }
 }
 
+#[derive(Clone, Copy)]
+pub enum PagerExit { Quit, NextFile, PreviousFile }
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum InitialDisplay { Startup, FileSwitch }
+
+pub struct FileStatus { index: usize, count: usize, next_name: Option<String> }
+
+impl FileStatus {
+    /// Build file-list prompt context for a zero-based index in a nonempty list.
+    pub fn new(names: &[std::ffi::OsString], index: usize, charset: Charset) -> io::Result<Self> {
+        use std::os::unix::ffi::OsStrExt;
+        if index >= names.len() { return Err(io::Error::new(io::ErrorKind::InvalidInput, "file index is outside the file list")); }
+        let next_name = names.get(index + 1).map(|name| {
+            let mut bytes = Vec::new();
+            charset.write_filename(name.as_bytes(), &mut bytes)?;
+            String::from_utf8(bytes).map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))
+        }).transpose()?;
+        Ok(Self { index, count: names.len(), next_name })
+    }
+}
+
 pub struct Config {
+    pub files: FileStatus,
+    pub initial_display: InitialDisplay,
     pub startup_commands: Vec<Vec<u8>>,
     pub charset: Charset,
     pub controls: ControlDisplay,
@@ -166,6 +191,8 @@ pub struct Pager {
     startup_commands: VecDeque<Vec<u8>>,
     numeric_prefix: NumericPrefix,
     content_painted: bool,
+    files: FileStatus,
+    exit: PagerExit,
     command_context: CommandContext,
     bell_requested: bool,
 }
@@ -202,18 +229,18 @@ impl Pager {
             status_msg: None,
             filename,
             filename_prompt: true,
-            compact_initial: config.startup_commands.is_empty(),
+            compact_initial: config.initial_display == InitialDisplay::Startup && config.startup_commands.is_empty(),
             startup_commands: config.startup_commands.into(),
             numeric_prefix: NumericPrefix::Empty,
             content_painted: false,
+            files: config.files,
+            exit: PagerExit::Quit,
             command_context: CommandContext::StartupUnpositioned,
             bell_requested: false,
         }
     }
 
-    pub fn history(&self) -> &SearchHistory {
-        &self.history
-    }
+    pub fn into_history(self) -> SearchHistory { self.history }
 
     fn content_height(&self) -> usize {
         if self.term_height > 1 {
@@ -246,17 +273,17 @@ impl Pager {
         Ok(false)
     }
 
-    pub fn run(&mut self, keys: &mut KeyReader) -> io::Result<()> {
-        if self.run_startup_commands(keys)? { return Ok(()); }
+    pub fn run(&mut self, keys: &mut KeyReader) -> io::Result<PagerExit> {
+        if self.run_startup_commands(keys)? { return Ok(self.exit); }
 
         let mut redraw = true;
         loop {
             if self.command_context != CommandContext::Interactive && !matches!(self.mode, Mode::CommandError(_)) {
-                if self.run_startup_commands(keys)? { return Ok(()); }
+                if self.run_startup_commands(keys)? { return Ok(self.exit); }
                 redraw = true;
             }
             if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 {
-                return Ok(());
+                return Ok(self.exit);
             }
             if terminal::TSTP_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst) {
                 terminal::handle_suspend();
@@ -297,7 +324,7 @@ impl Pager {
 
             redraw = true;
             if self.handle_key(key) {
-                return Ok(());
+                return Ok(self.exit);
             }
         }
     }
@@ -305,6 +332,19 @@ impl Pager {
     fn handle_key(&mut self, key: Key) -> bool {
         match self.mode.clone() {
             Mode::Normal => self.handle_normal_key(key),
+            Mode::FileCommand => {
+                self.mode = Mode::Normal;
+                match key {
+                    Key::Char('n') if self.files.index + 1 < self.files.count => { self.exit = PagerExit::NextFile; return true; }
+                    Key::Char('p') if self.files.index > 0 => { self.exit = PagerExit::PreviousFile; return true; }
+                    Key::Char('q') => return true,
+                    Key::Char('n') => self.status_msg = Some("No next file  (press RETURN)".into()),
+                    Key::Char('p') => self.status_msg = Some("No previous file  (press RETURN)".into()),
+                    Key::Escape => {},
+                    _ => self.bell_requested = true,
+                }
+                false
+            }
             Mode::SearchInput => {
                 self.handle_search_input_key(key);
                 false
@@ -361,6 +401,7 @@ impl Pager {
         }
         match key {
             Key::Char('q') | Key::Ctrl('c') | Key::Escape => return true,
+            Key::Char(':') => self.mode = Mode::FileCommand,
 
             Key::Char('j') | Key::Down | Key::Enter => self.scroll_down(count.unwrap_or(1)),
             Key::Char('k') | Key::Up => self.scroll_up(count.unwrap_or(1)),
@@ -1001,12 +1042,16 @@ impl Pager {
             return msg.clone();
         }
 
+        let name = self.filename.as_ref().map(|name| {
+            if self.files.count > 1 { format!("{name} (file {} of {})", self.files.index + 1, self.files.count) } else { name.clone() }
+        });
         if self.buffer.is_finished() && self.top_line.saturating_add(self.content_height()) >= self.display_line_count() {
-            return if self.filename_prompt { self.filename.as_ref().map_or_else(|| "(END)".to_owned(), |name| format!("{name} (END)")) } else { "(END)".to_owned() };
+            let mut status = if self.filename_prompt { name.map_or_else(|| "(END)".to_owned(), |name| format!("{name} (END)")) } else { "(END)".to_owned() };
+            if let Some(next) = &self.files.next_name { status.push_str(&format!(" - Next: {next}")); }
+            return status;
         }
-        if self.filename_prompt {
-            return self.filename.clone().unwrap_or_else(|| ":".to_owned());
-        }
+        if self.filename_prompt { return name.unwrap_or_else(|| ":".to_owned()); }
+
         ":".to_owned()
     }
 }

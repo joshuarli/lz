@@ -79,7 +79,7 @@ parsing a documented name does not establish full CLI parity.
 
 Entry point and CLI argument parsing.
 
-- Hand-rolled argument parsing (no clap). Handles `--follow`, `--force`, `-r`/`--raw`, `-h`/`--help`, `-V`/`--version`, `--`, `-` (explicit stdin), and a positional file argument.
+- Hand-rolled argument parsing (no clap). Handles `--follow`, `--force`, `-r`/`--raw`, `-h`/`--help`, `-V`/`--version`, `--`, `-` (explicit stdin), and positional file arguments.
 - Installs a panic hook that restores the terminal (exits alt screen, disables raw mode) before printing the panic message, so a crash does not leave the terminal broken.
 - Calls into `pager::run()` with a constructed config.
 
@@ -188,7 +188,7 @@ The main event loop and renderer. This is the largest and most central module.
 - Signal integration: checks the atomic flags set by signal handlers in `terminal.rs` on each event loop iteration. Handles resize by re-querying terminal dimensions and redrawing; handles TSTP by suspending the process after restoring the terminal.
 
 `Pager::new` takes a named `Config` containing startup command bytes, charset and control-display policy,
-chopping, line-number display and search case policy. Startup commands use the same key decoder and dispatcher
+chopping, line-number display, search case policy, validated `FileStatus` and an explicit `InitialDisplay` placement. `run` returns `PagerExit`; main opens the requested next/previous file under the same terminal session. `into_history` transfers search history to the next pager. Startup commands use the same key decoder and dispatcher
 as tty input, before the first frame. Numeric startup positions and `-p` searches
 are supported. A position-dependent startup movement before any jump/search rings
 a bell and discards the remaining command, matching the reference.
@@ -217,7 +217,6 @@ Key types: `Pager` struct, `Mode` enum (`Normal`, `SearchInput`, `FilterInput`, 
 ### What lz Intentionally Does Not Do
 
 - No marks or bookmarks
-- No multiple file arguments
 - Line-number options beyond the implemented -N gutter remain incomplete
 - No pipe commands (no `|` prompt)
 - No custom keybindings
