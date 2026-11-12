@@ -106067,5 +106067,253 @@
       116
     ],
     "files": {}
+  },
+  {
+    "id": "sources-binary-refusal",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          110
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "plain-text"
+  },
+  {
+    "id": "sources-binary-quit",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          81
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "plain-text"
+  },
+  {
+    "id": "sources-binary-enter",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          13
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "plain-text"
+  },
+  {
+    "id": "sources-binary-control-name",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      {
+        "bytes": [
+          98,
+          27,
+          91,
+          51,
+          49,
+          109,
+          10,
+          127,
+          32,
+          34,
+          113
+        ]
+      }
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          110
+        ]
+      }
+    ],
+    "fixture_name": [
+      98,
+      27,
+      91,
+      51,
+      49,
+      109,
+      10,
+      127,
+      32,
+      34,
+      113
+    ],
+    "files": {},
+    "trace_check": "plain-text"
+  },
+  {
+    "id": "sources-binary-term",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "signal",
+        "number": 15
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "plain-text"
   }
 ]

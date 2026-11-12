@@ -42,7 +42,48 @@ FILE:
     );
 }
 
-enum ExitAction { Success, Terminated, Hangup }
+enum ExitAction { Success, FileError, Terminated, Hangup }
+
+enum BinaryAnswer { Open, Refuse, Quit }
+
+fn confirm_binary(name: &std::ffi::OsStr, keys: &mut lz::input::KeyReader) -> io::Result<BinaryAnswer> {
+    let mut output = io::stdout().lock();
+    output.write_all(b"\"")?;
+    for &byte in name.as_bytes() {
+        match byte {
+            27 => output.write_all(b"ESC")?,
+            0..=31 | 127 => output.write_all(&[b'^', byte ^ 0x40])?,
+            32..=126 => output.write_all(&[byte])?,
+            _ => write!(output, "<{byte:02X}>")?,
+        }
+    }
+    output.write_all(b"\" may be a binary file.  See it anyway? ")?;
+    output.flush()?;
+    let answer = loop {
+        if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return Ok(BinaryAnswer::Refuse); }
+        if let Some(key) = keys.read_key_timeout(100)? {
+            break match key { lz::input::Key::Char('y' | 'Y') => BinaryAnswer::Open,
+                lz::input::Key::Char('Q') => BinaryAnswer::Quit, _ => BinaryAnswer::Refuse };
+        }
+    };
+    output.write_all(b"\r\n")?;
+    output.flush()?;
+    Ok(answer)
+}
+
+fn finish_session(result: io::Result<ExitAction>, session: terminal::Session) -> Result<ExitAction, String> {
+    let cleanup = session.finish();
+    match (result, cleanup) {
+        (Ok(action), Ok(())) => match terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) {
+            0 => Ok(action),
+            15 => Ok(ExitAction::Terminated),
+            1 => Ok(ExitAction::Hangup),
+            signal => Err(format!("unexpected termination signal: {signal}")),
+        },
+        (Err(error), Ok(())) | (Ok(_), Err(error)) => Err(error.to_string()),
+        (Err(error), Err(cleanup)) => Err(format!("{error}; terminal restoration: {cleanup}")),
+    }
+}
 
 fn run() -> Result<ExitAction, String> {
     let argv: Vec<OsString> = std::env::args_os().skip(1).collect();
@@ -107,22 +148,33 @@ fn run() -> Result<ExitAction, String> {
         process::exit(2);
     }
 
+    let mut binary_name = None;
     let (buf, display_name) = if is_stdin {
         (buffer::LineBuffer::from_stdin(io::stdin()).map_err(|error| error.to_string())?, None)
     } else {
         let filename = &args.filenames[0];
         let mut file = File::open(filename).map_err(|e| format!("{}: {}", filename.to_string_lossy(), e))?;
 
-        // Binary check
         if !args.force && buffer::LineBuffer::check_binary(&mut file).map_err(|e| e.to_string())? {
-            return Err("Binary file detected. Use --force to view.".to_string());
+            binary_name = Some(filename.clone());
         }
 
         let lb = buffer::LineBuffer::from_file(file);
         (lb, Some(filename.to_string_lossy().into_owned()))
     };
 
-    let mut session = terminal::Session::start().map_err(|error| error.to_string())?;
+    let screen = if binary_name.is_some() { terminal::Screen::Primary } else { terminal::Screen::Alternate };
+    let mut session = terminal::Session::start(screen).map_err(|error| error.to_string())?;
+    if let Some(name) = binary_name {
+        match confirm_binary(&name, session.keys_mut()) {
+            Ok(BinaryAnswer::Refuse) => return finish_session(Ok(ExitAction::FileError), session),
+            Ok(BinaryAnswer::Quit) => return finish_session(Ok(ExitAction::Success), session),
+            Err(error) => return finish_session(Err(error), session),
+            Ok(BinaryAnswer::Open) => {
+                if let Err(error) = session.enter_alternate_screen() { return finish_session(Err(error), session); }
+            }
+        }
+    }
 
     // Load search history
     let history_path = if std::env::var_os("LESSHISTFILE").is_some_and(|value| value == "-") { None } else { Some({
@@ -139,17 +191,7 @@ fn run() -> Result<ExitAction, String> {
     let result = pager.run(session.keys_mut());
 
     if let Some(path) = history_path { pager.history().save(&path); }
-    let cleanup = session.finish();
-    match (result, cleanup) {
-        (Ok(()), Ok(())) => match terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) {
-            0 => Ok(ExitAction::Success),
-            15 => Ok(ExitAction::Terminated),
-            1 => Ok(ExitAction::Hangup),
-            signal => Err(format!("unexpected termination signal: {signal}")),
-        },
-        (Err(error), Ok(())) | (Ok(()), Err(error)) => Err(error.to_string()),
-        (Err(error), Err(cleanup)) => Err(format!("{error}; terminal restoration: {cleanup}")),
-    }
+    finish_session(result.map(|()| ExitAction::Success), session)
 }
 
 fn atty_stdin() -> bool {
@@ -169,6 +211,7 @@ fn main() {
 
     match run() {
         Ok(ExitAction::Success) => process::exit(0),
+        Ok(ExitAction::FileError) => process::exit(1),
         Ok(ExitAction::Terminated) => process::exit(15),
         Ok(ExitAction::Hangup) => {
             unsafe extern "C" { fn signal(number: i32, handler: usize) -> usize; fn raise(number: i32) -> i32; }

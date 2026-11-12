@@ -24,6 +24,13 @@ impl std::fmt::Display for NeedsEnvironment {
 }
 impl std::error::Error for NeedsEnvironment {}
 
+#[derive(Debug)]
+struct TraceViolation(&'static str);
+impl std::fmt::Display for TraceViolation {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { formatter.write_str(self.0) }
+}
+impl std::error::Error for TraceViolation {}
+
 fn write_fixture(path: &Path, fixture: &Fixture) -> Result<()> {
     use std::os::unix::ffi::OsStrExt;
     fixture.validate()?;
@@ -58,7 +65,13 @@ struct Case {
     size: [u16; 2],
     locale: String,
     events: Vec<Event>,
+    #[serde(default)]
+    trace_check: TraceCheck,
 }
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+enum TraceCheck { #[default] Captured, PlainText }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
@@ -102,7 +115,7 @@ fn cases() -> Result<Vec<Case>> {
         if case.size.contains(&0) || !matches!(case.locale.as_str(), "C" | "en_US.UTF-8" | "C.UTF-8") {
             return Err("invalid geometry or locale".into());
         }
-        if !case.source.starts_with("pty") && (!case.events.is_empty() || !case.env.is_empty() || case.locale != "C") {
+        if !case.source.starts_with("pty") && (!case.events.is_empty() || !case.env.is_empty() || case.locale != "C" || !matches!(case.trace_check, TraceCheck::Captured)) {
             return Err("stdio pilot does not yet support events/env/Unicode locales".into());
         }
     }
@@ -233,8 +246,8 @@ fn run(args: &[String]) -> Result<()> {
             let expected = execute(&reference, case)?;
             let actual = match execute(candidate, case) {
                 Ok(actual) => actual,
-                Err(error) if error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. } | ptytest::PtyTestError::SnapshotMismatch { .. })) => {
-                    return Ok(json!({"case": case, "outcome": "mismatch", "expected": expected, "actual_error": error.to_string(), "actual_error_detail": format!("{error:#?}"), "difference": "candidate failed readiness, termination or terminal restoration after the oracle completed"}));
+                Err(error) if error.is::<TraceViolation>() || error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. } | ptytest::PtyTestError::SnapshotMismatch { .. })) => {
+                    return Ok(json!({"case": case, "outcome": "mismatch", "expected": expected, "actual_error": error.to_string(), "actual_error_detail": format!("{error:#?}"), "difference": "candidate failed a readiness, lifecycle or trace assertion after the oracle completed"}));
                 }
                 Err(error) => return Err(error),
             };

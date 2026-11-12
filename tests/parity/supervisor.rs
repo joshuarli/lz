@@ -243,6 +243,13 @@ pub fn run(binary: &Path, fixture: &Path, manifest: &Path, args: &[std::ffi::OsS
     std::process::exit(status.code().ok_or("missing supervised exit code")?);
 }
 
+fn wait_probe_input(keys: &mut lz::input::KeyReader) -> io::Result<()> {
+    loop {
+        if lz::terminal::TERMINATION_SIGNAL.load(Ordering::SeqCst) != 0 { return Ok(()); }
+        if keys.read_key_timeout(100)?.is_some() { return Ok(()); }
+    }
+}
+
 pub fn probe(args: &[std::ffi::OsString]) -> Result<()> {
     let mut bytes = [0; 11];
     io::stdin().read_exact(&mut bytes)?;
@@ -258,23 +265,30 @@ pub fn probe(args: &[std::ffi::OsString]) -> Result<()> {
         io::stdout().flush()?;
         loop { std::thread::park(); }
     }
-    let mut session = lz::terminal::Session::start()?;
+    let primary = args.first().is_some_and(|arg| arg == "primary");
+    let mut session = lz::terminal::Session::start(if primary { lz::terminal::Screen::Primary } else { lz::terminal::Screen::Alternate })?;
     print!("probe");
     io::stdout().flush()?;
     if args.first().is_some_and(|arg| arg == "queued") {
         let mut command = [0];
         tty.read_exact(&mut command)?;
         session.finish()?;
-        let session = lz::terminal::Session::start()?;
+        let session = lz::terminal::Session::start(lz::terminal::Screen::Alternate)?;
         let mut queued = [0; 9];
         tty.read_exact(&mut queued)?;
         session.finish()?;
         fs::write("queued-input", queued)?;
         return Ok(());
     }
-    loop {
-        if lz::terminal::TERMINATION_SIGNAL.load(Ordering::SeqCst) != 0 { break; }
-        if session.keys_mut().read_key_timeout(100)?.is_some() { break; }
+    wait_probe_input(session.keys_mut())?;
+    if primary && lz::terminal::TERMINATION_SIGNAL.load(Ordering::SeqCst) == 0 {
+        session.enter_alternate_screen()?;
+        if !session.enter_alternate_screen().is_err_and(|error| error.kind() == io::ErrorKind::AlreadyExists) {
+            return Err("a session acquired the alternate screen twice".into());
+        }
+        print!("alternate");
+        io::stdout().flush()?;
+        wait_probe_input(session.keys_mut())?;
     }
     session.finish()?;
     if args.first().is_some_and(|arg| arg == "signal") || lz::terminal::TERMINATION_SIGNAL.load(Ordering::SeqCst) == 15 {

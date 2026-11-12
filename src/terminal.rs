@@ -280,20 +280,28 @@ pub struct Session {
     previous_handlers: Vec<(i32, usize)>,
 }
 
+#[derive(Clone, Copy)]
+pub enum Screen { Primary, Alternate }
+
 impl Session {
-    pub fn start() -> io::Result<Self> {
+    pub fn start(screen: Screen) -> io::Result<Self> {
         let keys = crate::input::KeyReader::new()?;
         SESSION_ACTIVE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).map_err(|_| io::Error::other("a terminal session is already active"))?;
         TERMINATION_SIGNAL.store(0, Ordering::SeqCst);
         let mut session = Self { keys, previous_handlers: Vec::new() };
         session.previous_handlers = install_signal_handlers()?;
         enable_raw_mode(session.keys.fd())?;
+        if matches!(screen, Screen::Alternate) { session.enter_alternate_screen()?; }
+        Ok(session)
+    }
+
+    pub fn enter_alternate_screen(&mut self) -> io::Result<()> {
+        if ALT_SCREEN.load(Ordering::SeqCst) { return Err(io::Error::new(io::ErrorKind::AlreadyExists, "alternate screen already acquired")); }
         let mut stdout = io::stdout().lock();
         enter_alt_screen(&mut stdout)?;
         APPLICATION_MODES.store(true, Ordering::SeqCst);
         stdout.write_all(b"\x1b[?1h\x1b=")?;
-        stdout.flush()?;
-        Ok(session)
+        stdout.flush()
     }
 
     pub fn keys_mut(&mut self) -> &mut crate::input::KeyReader { &mut self.keys }

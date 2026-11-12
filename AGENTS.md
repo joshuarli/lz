@@ -103,7 +103,7 @@ All raw terminal interaction via libc FFI.
 - Signal handling: `SIGWINCH` (terminal resize), `SIGTSTP` (Ctrl-Z suspend), `SIGCONT` (resume after suspend), `SIGTERM` (clean exit). Signals are caught via `signal()` or `sigaction` FFI calls; handlers set atomic flags that the event loop checks.
 - Buffered output helpers: wraps `stdout` writes so that each rendered frame is assembled in memory and flushed with a single `write()` syscall.
 
-Key types: `Terminal` struct (owns the termios state and the write buffer).
+Key types: `Session` owns keyboard input and signal dispositions. `Session::start(Screen::Primary)` acquires raw input without alternate or application modes. `enter_alternate_screen` acquires those modes once. `Screen::Alternate` enters them during startup.
 
 ### `input.rs`
 

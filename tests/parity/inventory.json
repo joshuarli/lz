@@ -7385,6 +7385,31 @@
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
       "cause": "Zero-byte files enter the pager. Initial short-file content is placed at the bottom with blank unused rows, while an explicit startup position uses a full paint and bold EOF markers. Strict empty, chop, numbered, newline-only, one-text-line and +g scenarios pass. Reflow, headers, tiny geometry and later short-file navigation remain open."
+    },
+    {
+      "id": "source-binary-refusal",
+      "family": "sources",
+      "title": "Refuse a binary file before acquiring the alternate screen",
+      "anchor": {
+        "file": "edit.c",
+        "line": 554,
+        "text": "\t\t\t\t\tanswer = query(\"\\\"%s\\\" may be a binary file.  See it anyway? \", &parg);"
+      },
+      "slice": "S05",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [
+        "sources-binary-refusal",
+        "sources-binary-quit",
+        "sources-binary-enter",
+        "sources-binary-control-name",
+        "sources-binary-term"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Under locale C, n/Enter refuse with code 1, uppercase Q quits with code 0 and TERM exits with code 15 on the primary screen. Filename control bytes are printable and plain-text trace assertions reject hidden controls. Staged session controls verify primary-to-alternate acquisition, duplicate-entry refusal and cleanup. Binary detection boundaries, Unicode filename presentation, accepted binary rendering and other query lifecycle interactions remain open."
     }
   ],
   "upstream": [

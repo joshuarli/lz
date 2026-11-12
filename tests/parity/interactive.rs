@@ -97,6 +97,12 @@ fn execute_with_manifest(binary: &Path, case: &Case, manifest: &Path) -> Result<
     let final_screen = screen(&terminal.screen());
     let input = terminal.raw_input().to_vec();
     let output = terminal.raw_output().to_vec();
+    if matches!(case.trace_check, super::TraceCheck::PlainText) {
+        let text = std::str::from_utf8(&output).map_err(|_| super::TraceViolation("plain-text trace is not valid UTF-8"))?;
+        if text.chars().any(|character| character.is_control() && !matches!(character, '\r' | '\n')) {
+            return Err(super::TraceViolation("plain-text trace contains a terminal control").into());
+        }
+    }
     let finished = terminal.finish(Deadline::from_instant(total.min(Instant::now() + Duration::from_secs(1))))?;
     if status != finished { return Err("harness-error: wait and finish exit status differ".into()); }
     if case.source == "pty-pipe" { super::supervisor::assert_cleanup(manifest)?; }
@@ -140,7 +146,7 @@ pub fn selftest() -> Result<()> {
     let candidate = std::env::current_exe()?;
     let mut case = Case { id: "selftest".into(), family: "harness".into(), admitted: false, source: "pty".into(),
         fixture: vec![].into(), fixture_name: b"input".to_vec(), files: BTreeMap::new(), args: vec!["--fixture".into(), "none".into()], env: BTreeMap::new(), size: [40, 8], locale: "C".into(),
-        events: vec![Event::Checkpoint { ready: "pro".into(), row: None }, Event::Send { bytes: b"q\n".to_vec() }] };
+        events: vec![Event::Checkpoint { ready: "pro".into(), row: None }, Event::Send { bytes: b"q\n".to_vec() }], trace_check:super::TraceCheck::Captured };
     let mut pipe_case = case.clone();
     pipe_case.source = "pty-pipe".into();
     pipe_case.fixture = b"owned data\n".to_vec().into();
@@ -167,6 +173,18 @@ pub fn selftest() -> Result<()> {
     let pipe = execute(&candidate, &pipe_case)?;
     if pipe["exit"] != format!("{:?}", ExitStatus::Signal(15)) { return Err("supervisor failed to forward explicit termination".into()); }
     println!("supervisor argv/env/stdin/foreground, code 7, signal 15 and explicit TERM controls pass");
+    pipe_case.args[1] = "primary".into();
+    pipe_case.events = vec![Event::Checkpoint { ready:"probe".into(), row:None }, Event::Send { bytes: b"n".to_vec() },
+        Event::Checkpoint { ready:"alternate".into(), row:None }, Event::Send { bytes: b"q".to_vec() }];
+    let primary_transition = execute(&candidate, &pipe_case)?;
+    if primary_transition["checkpoints"].as_array().is_none_or(|frames| frames.len() != 2) { return Err("missing staged terminal checkpoints".into()); }
+    for (index, enabled) in [(0, false), (1, true)] {
+        let modes = primary_transition["checkpoints"][index]["screen"]["modes"].as_str().ok_or("missing staged terminal modes")?;
+        for field in ["alternate_screen", "application_cursor", "application_keypad"] {
+            if !modes.contains(&format!("{field}: {enabled}")) { return Err(format!("staged terminal acquisition failed: {field}").into()); }
+        }
+    }
+    println!("primary screen acquires no alternate/application modes; explicit transition acquires them once and restores them");
     pipe_case.args[1] = "queued".into();
     pipe_case.events = vec![Event::Checkpoint { ready:"probe".into(), row:None }, Event::Send { bytes:b"qretained\n".to_vec() }];
     let queued = execute(&candidate, &pipe_case)?;
@@ -203,6 +221,12 @@ pub fn selftest() -> Result<()> {
     println!("detected dropped stderr diagnostic; unknown fields/events rejected");
     let expected = execute(&candidate, &case)?;
     if comparable(&expected) != comparable(&execute(&candidate, &case)?) { return Err("independent fixture self-comparison failed".into()); }
+    let mut plain = case.clone();
+    plain.trace_check = super::TraceCheck::PlainText;
+    if !execute(&candidate, &plain).is_err_and(|error| error.is::<super::TraceViolation>()) {
+        return Err("plain-text trace check missed a known screen-clearing control".into());
+    }
+    println!("plain-text trace check rejects an otherwise successful fixture with hidden controls");
     for (fault, observation) in [("output", "text"), ("attribute", "attributes"), ("cursor", "cursor"), ("exit", "exit"), ("effect", "files")] {
         case.args[1] = fault.into();
         let actual = execute(&candidate, &case)?;
@@ -225,13 +249,13 @@ pub fn selftest() -> Result<()> {
     let mut hangup = case.clone();
     hangup.id = "candidate-hangup-safety".into();
     hangup.fixture = b"x".to_vec().into();
-    hangup.events = vec![Event::Checkpoint { ready: "x".into(), row: Some(0) }, Event::Signal { number: 1 }];
+    hangup.events = vec![Event::Checkpoint { ready: "input (END)".into(), row: Some(7) }, Event::Signal { number: 1 }];
     let hangup = execute(Path::new(env!("CARGO_BIN_EXE_lz")), &hangup)?;
     if hangup["exit"] != format!("{:?}", ExitStatus::Signal(1)) || hangup["restored"] != true {
         return Err("candidate did not restore its terminal and preserve HUP signal death".into());
     }
     println!("candidate HUP safety: represented modes restored, signal death preserved; oracle leak remains a parked divergence");
-    let report = json!({"candidate_hangup_safety": hangup, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location", "pipe-argv-env-foreground", "pipe-code-signal", "pipe-timeout-reap", "queued-input-retention"], "oracle_a": a, "oracle_b": b});
+    let report = json!({"candidate_hangup_safety": hangup, "primary_transition":primary_transition, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location", "pipe-argv-env-foreground", "pipe-code-signal", "pipe-timeout-reap", "queued-input-retention", "plain-text-hidden-control"], "oracle_a": a, "oracle_b": b});
     let path = super::stdio::world()?.keep().join("selftest.json");
     fs::write(&path, serde_json::to_vec_pretty(&report)?)?;
     println!("oracle independent-world startup/quit/lifecycle self-comparison passes; {}", path.display());
