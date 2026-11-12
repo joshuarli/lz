@@ -5,7 +5,10 @@ TARGET_ENV := $(shell printf '%s' "$(TARGET)" | tr '[:lower:]-' '[:upper:]_')
 CARGO_CMD  := $(if $(findstring -linux-musl,$(TARGET)),$(shell command -v musl-cargo 2>/dev/null || printf cargo),cargo)
 cargo = $(if $(findstring -linux-musl,$(TARGET)),,$(if $(filter test,$(1)),CARGO_TARGET_$(TARGET_ENV)_LINKER=clang ,)) MUSL_TARGET="$(TARGET)" MUSL_BUILD_MODE="$(1)" $(CARGO_CMD)
 
-.PHONY: setup build release install test test-ci pc bump-version lint verify-release
+RUSTYBENCH_DEFAULT := $(CURDIR)/.work/tools/bin/rustybench
+RUSTYBENCH ?= "$(RUSTYBENCH_DEFAULT)"
+
+.PHONY: setup build release install test test-ci pc bump-version lint verify-release bench bench-syscalls rustybench
 
 setup:
 	rustup show active-toolchain
@@ -53,6 +56,20 @@ pc:
 
 lint:
 	cargo clippy --workspace --all-targets -- -D warnings
+
+ifeq ($(RUSTYBENCH),"$(RUSTYBENCH_DEFAULT)")
+bench bench-syscalls: rustybench
+endif
+
+rustybench:
+	@mkdir -p "$(CURDIR)/.work/tmp" "$(CURDIR)/.work/tools"
+	@if test ! -x "$(RUSTYBENCH_DEFAULT)"; then TMPDIR="$(CURDIR)/.work/tmp" cargo install rustybench --version 0.3.0 --locked --root "$(CURDIR)/.work/tools"; fi
+
+bench:
+	@TMPDIR="$(CURDIR)/.work/tmp" $(RUSTYBENCH) baseline --root "$(CURDIR)" --baseline "$(CURDIR)/benches/baseline.json" -- cargo bench --bench bench
+
+bench-syscalls:
+	@TMPDIR="$(CURDIR)/.work/tmp" $(RUSTYBENCH) syscalls --root "$(CURDIR)"
 
 # Usage: make bump-version [V=x.y.z]
 # Without V, increments the patch version.

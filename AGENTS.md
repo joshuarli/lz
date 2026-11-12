@@ -18,6 +18,7 @@ All source lives in `src/`:
 
 ```
 src/
+  lib.rs        Library root (modules below) and binary test suite
   main.rs       CLI entry point, arg parsing, panic hook
   pager.rs      Main event loop and rendering
   buffer.rs     Lazy streaming line buffer
@@ -27,8 +28,9 @@ src/
   search.rs     Regex/BMH search with smart-case
   history.rs    Persistent search history (Up/Down in search prompt)
 
-bench/
-  run.sh        Benchmark script (lz vs less, uses expect + hyperfine)
+benches/
+  bench.rs      rustybench harness (buffer scan, search, ANSI/width hot paths)
+  baseline.json Baseline for `make bench`
 ```
 
 ---
@@ -37,23 +39,26 @@ bench/
 
 ```
 main.rs
-  ├── history.rs
-  └── pager.rs
-        ├── buffer.rs
-        ├── history.rs
-        ├── input.rs
-        ├── search.rs
-        │     ├── ansi.rs
-        │     └── buffer.rs
-        ├── terminal.rs
-        ├── ansi.rs
-        └── unicode-width (crate)
+  └── lz (the library)
+
+lib.rs
+  ├── pager.rs
+  │     ├── buffer.rs
+  │     ├── history.rs
+  │     ├── input.rs
+  │     ├── search.rs
+  │     │     ├── ansi.rs
+  │     │     └── buffer.rs
+  │     ├── terminal.rs
+  │     ├── ansi.rs
+  │     └── unicode-width (crate)
+  └── history.rs
 
 ansi.rs
   └── unicode-width (crate)
 ```
 
-`main.rs` is the only binary entry point. `pager.rs` owns the event loop and pulls in everything else. `search.rs` and `ansi.rs` are utility modules used by multiple callers. `terminal.rs` and `input.rs` are low-level I/O modules with no upward dependencies. `history.rs` is a standalone utility used by both `main.rs` (load/save) and `pager.rs` (cycling).
+`main.rs` is a thin binary that links `lib.rs`; `benches/bench.rs` also links the library. `pager.rs` owns the event loop and pulls in everything else. `search.rs` and `ansi.rs` are utility modules used by multiple callers. `terminal.rs` and `input.rs` are low-level I/O modules with no upward dependencies. `history.rs` is a standalone utility used by both `main.rs` (load/save) and `pager.rs` (cycling).
 
 ---
 
@@ -233,6 +238,6 @@ A line longer than 64KB is truncated. This prevents a single pathological line f
 
 Tests live in the standard Rust `#[cfg(test)]` blocks within each module.
 
-`bench/run.sh` runs comparative benchmarks against `less` using `expect` and `hyperfine`. It generates a 1M-line test file and measures startup, jump-to-end, search (hit/miss), and page-through scenarios. Requires `expect` and `hyperfine` to be installed; run `make release` first.
+`cargo bench --bench bench` runs the rustybench harness in `benches/bench.rs` (buffer scanning, literal/regex search, and ANSI/width hot paths). `make bench` re-runs it against `benches/baseline.json` and rewrites that file; `make bench-syscalls` reports syscall counts on Linux.
 
 The release binary is small by design. Do not add dependencies without a strong reason. Before adding any crate, check whether the functionality can be implemented directly in a reasonable number of lines.
