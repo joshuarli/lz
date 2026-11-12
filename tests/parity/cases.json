@@ -273,7 +273,7 @@
   {
     "id": "startup-quit",
     "family": "invocation",
-    "admitted": false,
+    "admitted": true,
     "source": "pty",
     "fixture": [
       48,
@@ -2223,7 +2223,7 @@
   {
     "id": "upstream-version-navigation",
     "family": "navigation",
-    "admitted": false,
+    "admitted": true,
     "source": "pty",
     "fixture": [
       47,

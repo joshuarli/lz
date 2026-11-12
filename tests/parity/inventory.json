@@ -38,8 +38,8 @@
         "startup-quit"
       ],
       "implementation": "partial",
-      "evidence": "known incompatible",
-      "cause": "Strict PTY comparison exposes startup prompt/cursor/modes discrepancy; command edges remain untested"
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named startup/navigation scenarios pass on macOS arm64; other forms, boundaries and platforms remain untested"
     },
     {
       "id": "man-0026",
@@ -173,8 +173,8 @@
         "upstream-version-navigation"
       ],
       "implementation": "partial",
-      "evidence": "known incompatible",
-      "cause": "Strict PTY comparison exposes startup prompt/cursor/modes discrepancy; command edges remain untested"
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named startup/navigation scenarios pass on macOS arm64; other forms, boundaries and platforms remain untested"
     },
     {
       "id": "man-0069",

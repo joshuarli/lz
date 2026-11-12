@@ -3,6 +3,7 @@ use std::path::Path;
 
 const MAX_ENTRIES: usize = 100;
 
+#[derive(Default)]
 pub struct SearchHistory {
     entries: Vec<String>,
     cursor: usize,

@@ -118,6 +118,7 @@ pub struct Pager {
     raw_mode: bool,
     status_msg: Option<String>,
     filename: Option<String>,
+    filename_prompt: bool,
 }
 
 impl Pager {
@@ -149,6 +150,7 @@ impl Pager {
             raw_mode,
             status_msg: None,
             filename,
+            filename_prompt: true,
         }
     }
 
@@ -235,6 +237,7 @@ impl Pager {
     }
 
     fn handle_normal_key(&mut self, key: Key) -> bool {
+        self.filename_prompt = false;
         self.status_msg = None;
         match key {
             Key::Char('q') | Key::Ctrl('c') | Key::Escape => return true,
@@ -591,6 +594,7 @@ impl Pager {
         }
 
         self.render_status(&mut buf, w);
+        buf.extend_from_slice(b"\x1b[?25h");
 
         let mut stdout = io::stdout().lock();
         stdout.write_all(&buf)?;
@@ -767,33 +771,20 @@ impl Pager {
     }
 
     fn render_status(&self, buf: &mut Vec<u8>, w: usize) {
-        const VERSION: &str = concat!("lz ", env!("CARGO_PKG_VERSION"));
-
         terminal::move_cursor(buf, self.term_height - 1, 0);
-        buf.extend_from_slice(b"\x1b[7m");
-
         let status = self.build_status();
-        let truncated = if status.len() > w {
-            &status[..w]
-        } else {
-            status.as_str()
-        };
-        buf.extend_from_slice(truncated.as_bytes());
-
-        let used = truncated.len();
-        let right_start = w.saturating_sub(VERSION.len());
-        if right_start > used {
-            for _ in 0..(right_start - used) {
-                buf.push(b' ');
-            }
-            buf.extend_from_slice(VERSION.as_bytes());
-        } else {
-            for _ in 0..w.saturating_sub(used) {
-                buf.push(b' ');
-            }
+        let emphasized = self.filename_prompt || status == "(END)" || self.status_msg.is_some();
+        if emphasized { buf.extend_from_slice(b"\x1b[7m"); }
+        let mut columns = 0;
+        for character in status.chars() {
+            let width = unicode_width::UnicodeWidthChar::width(character).unwrap_or(0);
+            if columns + width > w { break; }
+            let mut bytes = [0; 4];
+            buf.extend_from_slice(character.encode_utf8(&mut bytes).as_bytes());
+            columns += width;
         }
-
         buf.extend_from_slice(b"\x1b[m");
+        terminal::clear_line(buf);
     }
 
     fn build_status(&self) -> String {
@@ -822,26 +813,12 @@ impl Pager {
             return msg.clone();
         }
 
-        let mut s = String::new();
-        if let Some(ref name) = self.filename {
-            s.push_str(name);
+        if self.buffer.is_finished() && self.top_line + self.content_height() >= self.display_line_count() {
+            return "(END)".to_owned();
         }
-        if let Some(ref f) = self.filter {
-            if !s.is_empty() {
-                s.push(' ');
-            }
-            s.push_str(&format!("[&{}]", f.pattern));
+        if self.filename_prompt {
+            return self.filename.clone().unwrap_or_else(|| ":".to_owned());
         }
-        if self.wrap {
-            if !s.is_empty() {
-                s.push(' ');
-            }
-            s.push_str("[wrap]");
-        }
-        if s.is_empty() {
-            ":".to_string()
-        } else {
-            s
-        }
+        ":".to_owned()
     }
 }

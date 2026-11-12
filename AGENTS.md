@@ -76,6 +76,12 @@ Key types: none (thin glue layer).
 
 ### `terminal.rs`
 
+`Session::start` owns the `KeyReader` tty and acquired modes. Use `keys_mut` for
+input and `finish` to observe restoration errors; Drop also unwinds partial setup.
+Raw-mode helpers and signal installation are private. Startup enables application
+cursor/keypad modes and leaves the prompt cursor visible. `LESSHISTFILE=-` disables
+legacy history reads and writes. The default history format still awaits S10.
+
 All raw terminal interaction via libc FFI.
 
 - Sets and restores raw termios mode by calling `tcgetattr` / `tcsetattr` directly through libc. No crossterm, no termion.

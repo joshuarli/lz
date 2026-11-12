@@ -1,4 +1,4 @@
-use lz::{buffer, history, input, pager, terminal};
+use lz::{buffer, history, pager, terminal};
 
 use std::fs::File;
 use std::io::{self, IsTerminal, Read, Write};
@@ -191,38 +191,29 @@ fn run() -> Result<(), String> {
         (lb, Some(filename.clone()))
     };
 
-    // Open /dev/tty for key input
-    let mut keys = input::KeyReader::new().map_err(|e| format!("Cannot open /dev/tty: {}", e))?;
-
-    // Set up terminal
-    terminal::install_signal_handlers();
-    terminal::enable_raw_mode(keys.fd()).map_err(|e| format!("Cannot enable raw mode: {}", e))?;
-
-    let mut stdout = io::stdout();
-    terminal::enter_alt_screen(&mut stdout).ok();
-    terminal::hide_cursor(&mut stdout).ok();
+    let mut session = terminal::Session::start().map_err(|error| error.to_string())?;
 
     // Load search history
-    let history_path = {
+    let history_path = if std::env::var_os("LESSHISTFILE").is_some_and(|value| value == "-") { None } else { Some({
         let state_dir = std::env::var("XDG_STATE_HOME").ok().unwrap_or_else(|| {
             let home = std::env::var("HOME").unwrap_or_else(|_| String::from("~"));
             format!("{}/.local/state", home)
         });
         std::path::PathBuf::from(state_dir).join("lz/history")
-    };
-    let history = history::SearchHistory::load(&history_path);
+    }) };
+    let history = history_path.as_deref().map(history::SearchHistory::load).unwrap_or_default();
 
     // Run pager
     let mut pager = pager::Pager::new(buf, args.follow, args.raw_mode, display_name, history);
-    let result = pager.run(&mut keys);
+    let result = pager.run(session.keys_mut());
 
-    // Save search history before restoring terminal
-    pager.history().save(&history_path);
-
-    // Restore terminal (always, even on error)
-    terminal::restore_terminal();
-
-    result.map_err(|e| e.to_string())
+    if let Some(path) = history_path { pager.history().save(&path); }
+    let cleanup = session.finish();
+    match (result, cleanup) {
+        (Ok(()), Ok(())) => Ok(()),
+        (Err(error), Ok(())) | (Ok(()), Err(error)) => Err(error.to_string()),
+        (Err(error), Err(cleanup)) => Err(format!("{error}; terminal restoration: {cleanup}")),
+    }
 }
 
 fn atty_stdin() -> bool {
