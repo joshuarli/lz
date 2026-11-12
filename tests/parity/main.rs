@@ -1,4 +1,5 @@
 mod fixtures;
+mod fuzz;
 mod inventory;
 mod interactive;
 mod stdio;
@@ -262,6 +263,7 @@ fn run(args: &[String]) -> Result<()> {
     let value = |key: &str| args.windows(2).find(|pair| pair[0] == key).map(|pair| pair[1].as_str());
     let mode = value("--mode").unwrap_or("admitted");
     if args.iter().any(|s| s == "--inventory-check" || s == "--report") { return inventory::check_and_report(); }
+    if args.iter().any(|s| s == "--fuzz") { return fuzz::run(args, &oracle(), Path::new(env!("CARGO_BIN_EXE_lz"))); }
     if !matches!(mode, "admit" | "admitted" | "all") { return Err("unknown mode".into()); }
     let mut i = 0;
     while i < args.len() {
@@ -271,7 +273,7 @@ fn run(args: &[String]) -> Result<()> {
             i += 2;
         }
     }
-    if args.iter().any(|s| s == "--selftest") { return interactive::selftest(); }
+    if args.iter().any(|s| s == "--selftest") { interactive::selftest()?; return fuzz::selftest(); }
     let reference = oracle();
     let baseline = args.iter().any(|s| s == "--baseline");
     let candidate_path = if baseline { root().join(".work/tools/baseline-target/debug/lz") } else { PathBuf::from(env!("CARGO_BIN_EXE_lz")) };

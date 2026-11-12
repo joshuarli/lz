@@ -53,3 +53,10 @@ compiler or product performance claim. Both `perf-gate-ready` checks exited 0.
 Command: `CARGO_NET_OFFLINE=true RUSTC_WRAPPER=kache /usr/bin/time -p cargo test
 --test parity --no-run --target-dir .work/tmp/s02-clean-target`. The timing log
 is `.work/tmp/s02-build-time.txt`. S14's product timing and size gates remain open.
+
+The generated navigation runner adds no Cargo dependency. It uses the host
+`gzip` tool to retain complete observations without accumulating uncompressed
+screen snapshots. A scoped child owner closes compression input, checks exit,
+and reaps on errors; the selftest verifies decompression round-trip. The same
+four-worker collector retains case order and drains each in-flight batch before
+stopping on failure.

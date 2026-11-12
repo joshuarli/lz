@@ -12,7 +12,7 @@ use std::time::{Duration, Instant};
 const LIMIT: Duration = Duration::from_secs(10);
 const TRACE_LIMIT: u64 = 64 * 1024 * 1024;
 
-struct OwnedChild(Child);
+pub(super) struct OwnedChild(pub(super) Child);
 
 impl Drop for OwnedChild {
     fn drop(&mut self) {

@@ -112,3 +112,8 @@ parity-report:
 
 parity-upstream:
 	TMPDIR="$(CURDIR)/.work/tmp" python3 tests/parity/upstream.py
+
+.PHONY: parity-fuzz
+parity-fuzz:
+	@TMPDIR="$(CURDIR)/.work/tmp" python3 tests/parity/setup.py --verify >/dev/null
+	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo test --test parity -- --fuzz --seed $(if $(SEED),$(SEED),0) --cases $(if $(CASES),$(CASES),50)
