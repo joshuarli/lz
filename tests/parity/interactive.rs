@@ -165,8 +165,10 @@ pub fn selftest() -> Result<()> {
     ready.id = "parallel-ready".into();
     let mut following = ready.clone();
     following.id = "parallel-following".into();
-    let parallel = super::collect_cases(&[&blocked, &ready, &following], 2, |case| super::observe_case(&candidate, &candidate, case));
-    for (index, id, outcome) in [(0, "parallel-timeout", "harness-error"), (1, "parallel-ready", "pass"), (2, "parallel-following", "pass")] {
+    let mut fourth = ready.clone();
+    fourth.id = "parallel-fourth".into();
+    let parallel = super::collect_cases(&[&blocked, &ready, &following, &fourth], 4, |case| super::observe_case(&candidate, &candidate, case));
+    for (index, id, outcome) in [(0, "parallel-timeout", "harness-error"), (1, "parallel-ready", "pass"), (2, "parallel-following", "pass"), (3, "parallel-fourth", "pass")] {
         if parallel[index]["case"]["id"] != id || parallel[index]["outcome"] != outcome {
             return Err("parallel collection lost, reordered or reclassified a case".into());
         }

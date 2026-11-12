@@ -287,7 +287,7 @@ fn run(args: &[String]) -> Result<()> {
     if selected.is_empty() { return Err("no selected cases".into()); }
     let meta = metadata(candidate)?;
     let result_dir = stdio::world()?.keep();
-    let results = collect_cases(&selected, if baseline { 2 } else { 1 }, |case| observe_case(&reference, candidate, case));
+    let results = collect_cases(&selected, if baseline { 4 } else { 1 }, |case| observe_case(&reference, candidate, case));
     let mut failed = false;
     let mut harness_error = false;
     let full_corpus = selected.len() == cases.len();
