@@ -38,7 +38,10 @@ inspected locally; changing it requires the plan's regression and dependency che
 The lock adds five packages: `laputa-ptytest`, `rustc-hash` 2.1.3,
 `vt100` 0.18.1, `vte` 0.15.0 and `arrayvec` 0.7.8. Their manifests declare
 MIT, Apache-2.0, or a choice of these licenses. `libc` 0.2.182 was already
-locked and remains test-only. `itoa` advances from 1.0.17 to 1.0.19 to meet
+locked and remains test-only. S12b makes that same version a direct test dependency
+for the platform rusage ABI, wait4, page-size constants and Darwin process usage.
+Its MIT/Apache-2.0 source declarations were checked against the local SDK. No
+package or production dependency is added by that promotion. `itoa` advances from 1.0.17 to 1.0.19 to meet
 vt100's requirement. The full lock has 62 packages, including target-only ones,
 versus 57 before S02.
 

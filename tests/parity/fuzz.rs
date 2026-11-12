@@ -66,7 +66,7 @@ fn generate(seed: u64) -> Case {
     events.push(Event::Send { bytes: vec![b'q'] });
     Case {
         id: format!("fuzz-navigation-{seed:016x}"), family: "navigation".into(), admitted: false,
-        source: "pty".into(), fixture: fixture.into(), args: vec![Argument::from("input")],
+        source: "pty".into(), pty_rss_limit: Default::default(), fixture: fixture.into(), args: vec![Argument::from("input")],
         fixture_name: b"input".to_vec(), files: BTreeMap::new(), env: BTreeMap::new(),
         size, locale: "C".into(), events, trace_check: TraceCheck::Captured,
     }
@@ -186,8 +186,8 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
     fs::write(directory.join("summary.json"), serde_json::to_vec_pretty(&json!({
         "metadata":meta,"seed":seed,"requested":count,"executed":summaries.len(),"oracle_only":oracle_only,"results":summaries,
         "grammar":"ASCII logical-line movement and ordinary in-file marks; eight actions; 40x12 or 80x24",
-        "limits":{"case_seconds":10,"trace_bytes":64*1024*1024,"actions":8,"workers":4,"reduction_attempts":8},
-        "open_limits":["RSS enforcement","owned-spill accounting","adversarial/Unicode/stream/resize/helper grammar"]
+        "limits":{"case_seconds":10,"trace_bytes":64*1024*1024,"pty_rss_bytes":u64::from(super::resources::RssLimit::default()),"actions":8,"workers":4,"reduction_attempts":8},
+        "open_limits":["stdio/helper/producer RSS enforcement","owned-spill accounting","adversarial/Unicode/stream/resize/helper grammar"]
     }))?)?;
     fs::write(stdio::root().join(".work/parity-fuzz-latest"), directory.as_os_str().as_encoded_bytes())?;
     fs::write(stdio::root().join(if oracle_only { ".work/parity-fuzz-oracle" } else { ".work/parity-fuzz-current" }), directory.as_os_str().as_encoded_bytes())?;

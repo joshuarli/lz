@@ -1,3 +1,4 @@
+mod resources;
 mod fixtures;
 mod fuzz;
 mod inventory;
@@ -58,6 +59,8 @@ struct Case {
     family: String,
     admitted: bool,
     source: String,
+    #[serde(default)]
+    pty_rss_limit: resources::RssLimit,
     fixture: Fixture,
     args: Vec<Argument>,
     fixture_name: Vec<u8>,
@@ -129,9 +132,16 @@ fn oracle() -> PathBuf {
     root().join(format!(".work/tools/less-668/{os}-{arch}/ordinary/less"))
 }
 
-fn execute(binary: &Path, case: &Case) -> Result<Value> {
-    if case.source.starts_with("pty") { interactive::execute(binary, case) }
-    else { Ok(stdio::redirected(binary, &case.fixture, &case.source, &case.args.iter().map(Argument::os_string).collect::<Vec<_>>(), &case.fixture_name, &case.files)?) }
+struct Execution { observation: Value, resources: Option<resources::Record> }
+
+fn execute(binary: &Path, case: &Case) -> Result<Execution> {
+    if case.source.starts_with("pty") {
+        let (observation, resources) = interactive::execute_recorded(binary, case)?;
+        Ok(Execution { observation, resources: Some(resources) })
+    } else {
+        let observation = stdio::redirected(binary, &case.fixture, &case.source, &case.args.iter().map(Argument::os_string).collect::<Vec<_>>(), &case.fixture_name, &case.files)?;
+        Ok(Execution { observation, resources: None })
+    }
 }
 
 fn digest(paths: &[PathBuf]) -> Result<String> {
@@ -209,26 +219,31 @@ fn comparable(observation: &Value) -> Value {
     value
 }
 
+fn execution_error(case: &Case, error: &(dyn std::error::Error + 'static), side: &str) -> Value {
+    let oracle_leak = side == "oracle" && (error.is::<interactive::KernelViolation>() || error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::SnapshotMismatch { path, .. } if path == Path::new("terminal-baseline"))));
+    json!({"case":case,"outcome":if error.is::<NeedsEnvironment>() { "needs-environment" } else if oracle_leak { "mismatch" } else { "harness-error" },
+        "side":side,"error":error.to_string(),"error_detail":format!("{error:#?}"),
+        "difference":if oracle_leak { Some("oracle does not restore represented terminal modes; preserve as explicit divergence, never reproduce the leak") } else { None }})
+}
+
 fn observe_case(reference: &Path, candidate: &Path, case: &Case) -> Value {
-    let result = (|| -> Result<Value> {
-        let expected = execute(reference, case)?;
-        let actual = match execute(candidate, case) {
-            Ok(actual) => actual,
-            Err(error) if error.is::<TraceViolation>() || error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. } | ptytest::PtyTestError::SnapshotMismatch { .. })) => {
-                return Ok(json!({"case": case, "outcome": "mismatch", "expected": expected, "actual_error": error.to_string(), "actual_error_detail": format!("{error:#?}"), "difference": "candidate failed a readiness, lifecycle or trace assertion after the oracle completed"}));
-            }
-            Err(error) => return Err(error),
-        };
-        let difference = first_difference(&comparable(&expected), &comparable(&actual), "observation");
-        Ok(json!({"case": case, "outcome": if difference.is_some() { "mismatch" } else { "pass" }, "expected": expected, "actual": actual, "difference": difference}))
-    })();
-    match result {
-        Ok(result) => result,
-        Err(error) => {
-            let oracle_leak = error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::SnapshotMismatch { path, .. } if path == Path::new("terminal-baseline")));
-            json!({"case": case, "outcome": if error.is::<NeedsEnvironment>() { "needs-environment" } else if oracle_leak { "mismatch" } else { "harness-error" }, "side": "oracle", "error": error.to_string(), "error_detail": format!("{error:#?}"), "difference": if oracle_leak { Some("oracle does not restore represented terminal modes; preserve as explicit divergence, never reproduce the leak") } else { None }})
-        },
-    }
+    let expected = match execute(reference, case) {
+        Ok(expected) => expected,
+        Err(error) => return execution_error(case, error.as_ref(), "oracle"),
+    };
+    let actual = match execute(candidate, case) {
+        Ok(actual) => actual,
+        Err(error) if error.is::<TraceViolation>() || error.is::<resources::Violation>() || error.is::<interactive::KernelViolation>() || error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. } | ptytest::PtyTestError::SnapshotMismatch { .. })) => {
+            return json!({"case":case,"outcome":"mismatch","expected":expected.observation,"resources":{"oracle":expected.resources},
+                "actual_error":error.to_string(),"actual_error_detail":format!("{error:#?}"),
+                "difference":"candidate failed a readiness, lifecycle, trace or resource assertion after the oracle completed"});
+        }
+        Err(error) => return execution_error(case, error.as_ref(), "candidate"),
+    };
+    let difference = first_difference(&comparable(&expected.observation), &comparable(&actual.observation), "observation");
+    json!({"case":case,"outcome":if difference.is_some() { "mismatch" } else { "pass" },
+        "expected":expected.observation,"actual":actual.observation,
+        "resources":{"oracle":expected.resources,"candidate":actual.resources},"difference":difference})
 }
 
 fn collect_cases(cases: &[&Case], workers: usize, observe: impl Fn(&Case) -> Value + Sync) -> Vec<Value> {
@@ -273,7 +288,7 @@ fn run(args: &[String]) -> Result<()> {
             i += 2;
         }
     }
-    if args.iter().any(|s| s == "--selftest") { interactive::selftest()?; return fuzz::selftest(); }
+    if args.iter().any(|s| s == "--selftest") { interactive::selftest()?; fuzz::selftest()?; return resources::selftest(); }
     let reference = oracle();
     let baseline = args.iter().any(|s| s == "--baseline");
     let candidate_path = if baseline { root().join(".work/tools/baseline-target/debug/lz") } else { PathBuf::from(env!("CARGO_BIN_EXE_lz")) };
@@ -313,8 +328,14 @@ fn run(args: &[String]) -> Result<()> {
 fn main() -> Result<()> {
     let raw_args: Vec<_> = std::env::args_os().skip(1).collect();
     if raw_args.first().is_some_and(|arg| arg == "--pipe-supervisor") {
-        if raw_args.len() < 4 { return Err("missing supervisor arguments".into()); }
-        return supervisor::run(Path::new(&raw_args[1]), Path::new(&raw_args[2]), Path::new(&raw_args[3]), &raw_args[4..]);
+        if raw_args.len() < 5 { return Err("missing supervisor arguments".into()); }
+        let limit = raw_args[4].to_str().ok_or("non-UTF-8 RSS limit")?.parse::<u64>()?.try_into()?;
+        return supervisor::run(Path::new(&raw_args[1]), Some(Path::new(&raw_args[2])), Path::new(&raw_args[3]), &raw_args[5..], limit);
+    }
+    if raw_args.first().is_some_and(|arg| arg == "--file-supervisor") {
+        if raw_args.len() < 4 { return Err("missing file supervisor arguments".into()); }
+        let limit = raw_args[3].to_str().ok_or("non-UTF-8 RSS limit")?.parse::<u64>()?.try_into()?;
+        return supervisor::run(Path::new(&raw_args[1]), None, Path::new(&raw_args[2]), &raw_args[4..], limit);
     }
     if raw_args.first().is_some_and(|arg| arg == "--pipe-producer") { return supervisor::producer(Path::new(raw_args.get(1).ok_or("missing producer fixture")?)); }
     if raw_args.first().is_some_and(|arg| arg == "--pipe-probe") { return supervisor::probe(&raw_args[1..]); }

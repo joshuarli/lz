@@ -15,7 +15,6 @@ unsafe extern "C" {
     fn getpgrp() -> i32;
     fn tcsetpgrp(fd: i32, group: i32) -> i32;
     fn tcgetpgrp(fd: i32) -> i32;
-    fn waitpid(pid: i32, status: *mut i32, options: i32) -> i32;
     fn raise(number: i32) -> i32;
     fn tcgetattr(fd: i32, state: *mut lz::terminal::Termios) -> i32;
     fn tcsetattr(fd: i32, action: i32, state: *const lz::terminal::Termios) -> i32;
@@ -155,19 +154,25 @@ pub fn producer(path: &Path) -> Result<()> {
     loop { std::thread::park(); }
 }
 
-pub fn run(binary: &Path, fixture: &Path, manifest: &Path, args: &[std::ffi::OsString]) -> Result<()> {
+pub fn run(binary: &Path, fixture: Option<&Path>, manifest: &Path, args: &[std::ffi::OsString], limit: super::resources::RssLimit) -> Result<()> {
     let forwarded = [1, 2, 3, 15, 28, JOB_SIGNALS[0], JOB_SIGNALS[1]];
     for number in forwarded { disposition(number, remember as *const () as usize)?; }
     for number in &JOB_SIGNALS[2..] { disposition(*number, 1)?; }
     let tty = File::options().read(true).write(true).open("/dev/tty")?;
     let fd = tty.as_raw_fd();
     let baseline = termios(fd)?;
-    let producer = Command::new(std::env::current_exe()?).args([std::ffi::OsStr::new("--pipe-producer"), fixture.as_os_str()])
-        .stdin(Stdio::null()).stdout(Stdio::piped()).process_group(0).spawn()?;
-    let mut producer = GroupChild { child: producer, reaped: false };
-    record_groups(manifest, &[producer.child.id()])?;
+    let mut resources = super::resources::Record::new(limit);
+    resources.save(manifest)?;
+    let mut producer = if let Some(fixture) = fixture {
+        let child = Command::new(std::env::current_exe()?).args([std::ffi::OsStr::new("--pipe-producer"), fixture.as_os_str()])
+            .stdin(Stdio::null()).stdout(Stdio::piped()).process_group(0).spawn()?;
+        Some(GroupChild { child, reaped: false })
+    } else { None };
+    let mut groups: Vec<_> = producer.iter().map(|producer| producer.child.id()).collect();
+    record_groups(manifest, &groups)?;
     let mut command = Command::new(binary);
-    command.args(args).stdin(producer.child.stdout.take().ok_or("missing producer pipe")?).process_group(0);
+    command.args(args).process_group(0);
+    if let Some(producer) = &mut producer { command.stdin(producer.child.stdout.take().ok_or("missing producer pipe")?); }
     // SAFETY: tcsetpgrp/getpgrp/signal are async-signal-safe. fd is inherited until exec; all dispositions are reset before exec.
     unsafe {
         command.pre_exec(move || {
@@ -180,7 +185,8 @@ pub fn run(binary: &Path, fixture: &Path, manifest: &Path, args: &[std::ffi::OsS
     }
     let child = command.spawn()?;
     let mut pager = GroupChild { child, reaped: false };
-    record_groups(manifest, &[producer.child.id(), pager.child.id()])?;
+    groups.push(pager.child.id());
+    record_groups(manifest, &groups)?;
     // SAFETY: fd is an owned controlling tty descriptor, and getpgrp returns the current process group.
     let foreground = unsafe { tcgetpgrp(fd) } == pager.child.id() as i32;
     let deadline = Instant::now() + Duration::from_secs(9);
@@ -188,6 +194,12 @@ pub fn run(binary: &Path, fixture: &Path, manifest: &Path, args: &[std::ffi::OsS
     let mut stops = 0;
     let mut continues = 0;
     let status = loop {
+        let was_exceeded = resources.exceeded();
+        match super::resources::resident(pager.child.id()) {
+            Ok(bytes) => resources.note_live(bytes),
+            Err(error) => { resources.fail(&error); resources.save(manifest)?; return Err(error.into()); }
+        }
+        if !was_exceeded && resources.exceeded() { resources.save(manifest)?; group_signal(pager.child.id(), 9)?; }
         let pending = SIGNALS.swap(0, Ordering::SeqCst);
         for number in forwarded {
             if pending & (1 << number) != 0 {
@@ -199,8 +211,10 @@ pub fn run(binary: &Path, fixture: &Path, manifest: &Path, args: &[std::ffi::OsS
             group_signal(pager.child.id(), 9)?;
         }
         let mut status = 0;
-        // SAFETY: pager is an owned direct child, status is writable, and the flags only request nonblocking status observations.
-        let result = unsafe { waitpid(pager.child.id() as i32, &mut status, 1 | 2 | CONTINUED) };
+        // SAFETY: rusage is a writable platform record; wait4 writes it only for this owned direct child.
+        let mut usage: libc::rusage = unsafe { std::mem::zeroed() };
+        // SAFETY: pager remains owned until reaped, and status/rusage are writable for the nonblocking observation.
+        let result = unsafe { libc::wait4(pager.child.id() as i32, &mut status, 1 | 2 | CONTINUED, &mut usage) };
         if result < 0 {
             let error = io::Error::last_os_error();
             if error.kind() != io::ErrorKind::Interrupted { return Err(error.into()); }
@@ -210,20 +224,35 @@ pub fn run(binary: &Path, fixture: &Path, manifest: &Path, args: &[std::ffi::OsS
                 stops += 1;
                 // SAFETY: SIGSTOP deliberately mirrors the owned pager's stopped state; the harness can resume the supervisor group.
                 if unsafe { raise(STOP) } != 0 { return Err(io::Error::last_os_error().into()); }
-            } else { pager.reaped = true; break ExitStatus::from_raw(status); }
+            } else {
+                pager.reaped = true;
+                resources.finish(super::resources::reaped_peak(&usage)?);
+                resources.save(manifest)?;
+                break ExitStatus::from_raw(status);
+            }
         }
         if Instant::now() >= deadline { return Err("supervised pager exceeded its 9-second deadline".into()); }
         std::thread::sleep(Duration::from_millis(2));
     };
-    let producer_held_open = producer.child.try_wait()?.is_none();
-    producer.stop_and_reap()?;
-    fs::write("producer-state", b"stopped-and-reaped")?;
+    let producer_held_open = if let Some(producer) = &mut producer {
+        let held = producer.child.try_wait()?.is_none();
+        producer.stop_and_reap()?;
+        fs::write("producer-state", b"stopped-and-reaped")?;
+        held
+    } else { false };
     let after = termios(fd)?;
     let restored = same_termios(&baseline, &after);
-    let record = |state: &lz::terminal::Termios| json!({"flags":[state.c_iflag,state.c_oflag,state.c_cflag,state.c_lflag],
-        "characters":state.c_cc.to_vec(),"speeds":[state.c_ispeed,state.c_ospeed]});
-    fs::write("supervisor-state", serde_json::to_vec(&json!({"foreground":foreground,"producer_held_open":producer_held_open,
-        "producer_reaped": producer.reaped,"pager_reaped":pager.reaped,"kernel_restored":restored,
+    let record = |state: &lz::terminal::Termios| {
+        let value = json!({"flags":[state.c_iflag,state.c_oflag,state.c_cflag,state.c_lflag],
+            "characters":state.c_cc.to_vec(),"speeds":[state.c_ispeed,state.c_ospeed]});
+        #[cfg(target_os = "linux")]
+        { let mut value = value; value["line_discipline"] = json!(state.c_line); value }
+        #[cfg(target_os = "macos")]
+        { value }
+    };
+    let state_path = if producer.is_some() { PathBuf::from("supervisor-state") } else { manifest.with_extension("state") };
+    fs::write(state_path, serde_json::to_vec(&json!({"foreground":foreground,"producer_held_open":producer_held_open,
+        "producer_reaped": producer.as_ref().is_some_and(|producer| producer.reaped),"pager_reaped":pager.reaped,"kernel_restored":restored,
         "kernel_before":record(&baseline),"kernel_after":record(&after),
         "code":status.code(),"signal":status.signal(),"stops":stops,"continues":continues}))?)?;
     // SAFETY: the supervisor owns the controlling tty, ignores SIGTTOU, and retakes its own process group after the pager has exited.
@@ -232,7 +261,7 @@ pub fn run(binary: &Path, fixture: &Path, manifest: &Path, args: &[std::ffi::OsS
         // SAFETY: baseline was returned by tcgetattr for this descriptor. Restore after recording the failure so it remains observable.
         if unsafe { tcsetattr(fd, 0, &baseline) } < 0 { return Err(io::Error::last_os_error().into()); }
     }
-    record_groups(&manifest.with_extension("finished"), &[producer.child.id(), pager.child.id()])?;
+    record_groups(&manifest.with_extension("finished"), &groups)?;
     record_groups(manifest, &[])?;
     if let Some(number) = status.signal() {
         disposition(number, 0)?;
@@ -265,6 +294,11 @@ pub fn probe(args: &[std::ffi::OsString]) -> Result<()> {
         io::stdout().flush()?;
         loop { std::thread::park(); }
     }
+    let _memory = if args.first().is_some_and(|arg| arg == "memory") {
+        let mut bytes = vec![0u8; 64 * 1024 * 1024];
+        bytes.fill(0x5a);
+        Some(std::hint::black_box(bytes))
+    } else { None };
     let primary = args.first().is_some_and(|arg| arg == "primary");
     let mut session = lz::terminal::Session::start(if primary { lz::terminal::Screen::Primary } else { lz::terminal::Screen::Alternate })?;
     print!("probe");
@@ -300,10 +334,10 @@ pub fn probe(args: &[std::ffi::OsString]) -> Result<()> {
     Ok(())
 }
 
-pub fn assert_cleanup(manifest: &Path) -> Result<()> {
+pub fn assert_cleanup(manifest: &Path, expected_children: usize) -> Result<()> {
     let active: Vec<u32> = serde_json::from_slice(&fs::read(manifest)?)?;
     let finished: Vec<u32> = serde_json::from_slice(&fs::read(manifest.with_extension("finished"))?)?;
-    if !active.is_empty() || finished.len() != 2 { return Err("supervisor did not finish reaping both children".into()); }
+    if !active.is_empty() || finished.len() != expected_children { return Err("supervisor did not finish reaping its owned children".into()); }
     for pid in finished {
         // SAFETY: signal zero only queries a previously owned group, without sending a signal.
         if unsafe { kill(-(pid as i32), 0) } == 0 { return Err("supervisor left a live process group".into()); }

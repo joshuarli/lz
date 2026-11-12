@@ -9,6 +9,7 @@ regex-automata = { version = "=0.4.18", default-features = false, features = ["s
 unicode-width = "0.2"
 
 [dev-dependencies]
+libc = "=0.2.182"
 tempfile = "3"
 rustybench = "0.4"
 laputa-ptytest = { git = "https://github.com/laputa-systems/ptytest", rev = "2efca1cffe9f4f19bddb7208643c18de63bbbc41" }

@@ -9,6 +9,15 @@ use std::os::unix::ffi::OsStringExt;
 use std::os::unix::fs::PermissionsExt;
 use std::time::{Duration, Instant};
 
+#[derive(Debug)]
+pub(super) struct KernelViolation { state: Value, input: Vec<u8>, output: Vec<u8> }
+impl std::fmt::Display for KernelViolation {
+    fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(output, "kernel terminal state was not restored before supervisor repair; {} input bytes, {} output bytes; state={}", self.input.len(), self.output.len(), self.state)
+    }
+}
+impl std::error::Error for KernelViolation {}
+
 fn screen(snapshot: &ScreenSnapshot) -> Value {
     let rows: Vec<_> = (0..snapshot.row_count()).map(|row| {
         let cells: Vec<_> = (0..snapshot.size().columns() as usize).map(|column| {
@@ -54,11 +63,26 @@ fn files(root: &Path) -> Result<Value> {
 }
 
 pub fn execute(binary: &Path, case: &Case) -> Result<Value> {
+    execute_recorded(binary, case).map(|(observation, _)| observation)
+}
+
+pub(super) fn execute_recorded(binary: &Path, case: &Case) -> Result<(Value, super::resources::Record)> {
     let supervisor_world = super::stdio::world()?;
-    execute_with_manifest(binary, case, &supervisor_world.path().join("groups"))
+    execute_recorded_with_manifest(binary, case, &supervisor_world.path().join("groups"))
 }
 
 fn execute_with_manifest(binary: &Path, case: &Case, manifest: &Path) -> Result<Value> {
+    execute_recorded_with_manifest(binary, case, manifest).map(|(observation, _)| observation)
+}
+
+fn execute_recorded_with_manifest(binary: &Path, case: &Case, manifest: &Path) -> Result<(Value, super::resources::Record)> {
+    let result = execute_supervised(binary, case, manifest);
+    let record = super::resources::check(manifest, result.is_ok())?;
+    let observation = result?;
+    Ok((observation, record.ok_or("missing successful RSS accounting")?))
+}
+
+fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Value> {
     let environment = if case.locale == "C" { TestEnv::hermetic_ascii()? } else { TestEnv::hermetic_utf8(&case.locale)? };
     let mut environment = environment.env("LESSHISTFILE", "-");
     for (key, value) in &case.env { environment = environment.env(key, value); }
@@ -72,9 +96,12 @@ fn execute_with_manifest(binary: &Path, case: &Case, manifest: &Path) -> Result<
     let _cleanup = super::supervisor::Cleanup::new(manifest.to_owned());
     let command = if case.source == "pty-pipe" {
         CommandSpec::new(std::env::current_exe()?).arg("--pipe-supervisor").arg(binary)
-            .arg(std::ffi::OsString::from_vec(case.fixture_name.clone())).arg(manifest)
+            .arg(std::ffi::OsString::from_vec(case.fixture_name.clone())).arg(manifest).arg(u64::from(case.pty_rss_limit).to_string())
             .args(case.args.iter().map(Argument::os_string)).current_dir(&world)
-    } else { CommandSpec::new(binary).args(case.args.iter().map(Argument::os_string)).current_dir(&world) };
+    } else {
+        CommandSpec::new(std::env::current_exe()?).arg("--file-supervisor").arg(binary).arg(manifest)
+            .arg(u64::from(case.pty_rss_limit).to_string()).args(case.args.iter().map(Argument::os_string)).current_dir(&world)
+    };
     let scenario = Scenario::new(&case.id)?.command(command)
         .size(Size::new(case.size[0], case.size[1])?).environment(environment).trace_limit(64 * 1024 * 1024);
     let mut terminal = PtyTest::spawn(scenario)?;
@@ -99,6 +126,13 @@ fn execute_with_manifest(binary: &Path, case: &Case, manifest: &Path) -> Result<
         }
     }
     let status = terminal.wait_for_exit(checkpoint_deadline())?;
+    let state_path = if case.source == "pty-pipe" { world.join("supervisor-state") } else { manifest.with_extension("state") };
+    let state: Value = serde_json::from_slice(&fs::read(state_path)?)?;
+    if !state["kernel_before"].is_object() || !state["kernel_after"].is_object() { return Err("harness-error: missing kernel terminal observations".into()); }
+    if state["kernel_restored"] != true {
+        return Err(Box::new(KernelViolation { state, input:terminal.raw_input().to_vec(), output:terminal.raw_output().to_vec() }));
+    }
+    let kernel = json!({"before":state["kernel_before"],"after":state["kernel_after"],"restored":state["kernel_restored"]});
     terminal.assert_terminal_restored(&baseline)?;
     let effects = files(&world)?;
     let final_screen = screen(&terminal.screen());
@@ -112,12 +146,22 @@ fn execute_with_manifest(binary: &Path, case: &Case, manifest: &Path) -> Result<
     }
     let finished = terminal.finish(Deadline::from_instant(total.min(Instant::now() + Duration::from_secs(1))))?;
     if status != finished { return Err("harness-error: wait and finish exit status differ".into()); }
-    if case.source == "pty-pipe" { super::supervisor::assert_cleanup(manifest)?; }
+    super::supervisor::assert_cleanup(manifest, if case.source == "pty-pipe" { 2 } else { 1 })?;
     Ok(json!({"checkpoints": checkpoints, "exit": format!("{status:?}"), "final_screen": final_screen,
-        "files": effects, "raw_input": input, "raw_output": output, "restored": true}))
+        "files": effects, "raw_input": input, "raw_output": output, "restored": true, "kernel_terminal":kernel}))
 }
 
 pub fn fixture(fault: &str) -> Result<()> {
+    if matches!(fault, "kernel-restored" | "kernel-leak") {
+        let mut session = lz::terminal::Session::start(lz::terminal::Screen::Primary)?;
+        print!("probe");
+        std::io::stdout().flush()?;
+        session.keys_mut().read_key()?;
+        if fault == "kernel-leak" { std::process::exit(0); }
+        session.finish()?;
+        return Ok(());
+    }
+
     let mut stdout = std::io::stdout().lock();
     write!(stdout, "\x1b[2J\x1b[H")?;
     if fault == "attribute" { write!(stdout, "\x1b[31m")?; }
@@ -155,7 +199,7 @@ pub fn selftest() -> Result<()> {
         println!("bounded file-effect capture detects a same-length suffix mutation");
     }
     let candidate = std::env::current_exe()?;
-    let mut case = Case { id: "selftest".into(), family: "harness".into(), admitted: false, source: "pty".into(),
+    let mut case = Case { id: "selftest".into(), family: "harness".into(), admitted: false, source: "pty".into(), pty_rss_limit: Default::default(),
         fixture: vec![].into(), fixture_name: b"input".to_vec(), files: BTreeMap::new(), args: vec!["--fixture".into(), "none".into()], env: BTreeMap::new(), size: [40, 8], locale: "C".into(),
         events: vec![Event::Checkpoint { ready: "pro".into(), row: None }, Event::Send { bytes: b"q\n".to_vec() }], trace_check:super::TraceCheck::Captured };
     let mut blocked = case.clone();
@@ -228,7 +272,7 @@ pub fn selftest() -> Result<()> {
     if !timeout.is_err_and(|error| error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. }))) {
         return Err("supervisor timeout control did not time out at the PTY boundary".into());
     }
-    super::supervisor::assert_cleanup(&manifest)?;
+    super::supervisor::assert_cleanup(&manifest, 2)?;
     if start.elapsed() > Duration::from_secs(5) { return Err("supervisor cancellation exceeded checkpoint plus escalation bound".into()); }
     println!("pipe supervisor preserves raw argv, env, foreground group, stdin and exit/signal status; open producer and ignored-TERM child are reaped on cancellation");
     let mut invalid = serde_json::to_value(&case)?;
