@@ -119,7 +119,7 @@ fn digest(paths: &[PathBuf]) -> Result<String> {
 fn metadata(candidate: &Path) -> Result<Value> {
     let reference = oracle();
     let reference_root = reference.parent().unwrap().parent().unwrap();
-    let source_files = Command::new("git").args(["ls-files", "-z", "src", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml"]).current_dir(root()).output()?;
+    let source_files = Command::new("git").args(["ls-files", "-co", "--exclude-standard", "-z", "src", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml"]).current_dir(root()).output()?;
     if !source_files.status.success() { return Err("cannot enumerate source files".into()); }
     let mut paths = Vec::new();
     for part in source_files.stdout.split(|b| *b == 0).filter(|p| !p.is_empty()) {
@@ -161,7 +161,27 @@ fn first_difference(expected: &Value, actual: &Value, path: &str) -> Option<Stri
 
 fn comparable(observation: &Value) -> Value {
     let mut value = observation.clone();
-    if let Some(object) = value.as_object_mut() { object.remove("raw_input"); object.remove("raw_output"); }
+    if let Some(object) = value.as_object_mut() {
+        object.remove("raw_input"); object.remove("raw_output");
+        if let Some(stderr) = object.get_mut("stderr")
+            && let Ok(bytes) = serde_json::from_value::<Vec<u8>>(stderr.clone()) {
+            let mut normalized = Vec::new();
+            for line in bytes.split_inclusive(|byte| *byte == b'\n') {
+                let mut replacement = None;
+                for program in [b"less".as_slice(), b"lz".as_slice()] {
+                    let suffix = [b" (\"".as_slice(), program, b" --help\" for help)\n".as_slice()].concat();
+                    if let Some(prefix) = line.strip_suffix(suffix.as_slice())
+                        && ((prefix.starts_with(b"There is no ") && prefix.ends_with(b" option"))
+                            || prefix.ends_with(b" is an ambiguous abbreviation")) {
+                        replacement = Some([prefix, b" (\"<program> --help\" for help)\n".as_slice()].concat());
+                        break;
+                    }
+                }
+                normalized.extend_from_slice(replacement.as_deref().unwrap_or(line));
+            }
+            *stderr = json!(normalized);
+        }
+    }
     value
 }
 

@@ -20,6 +20,7 @@ All source lives in `src/`:
 src/
   lib.rs        Library root (modules below) and binary test suite
   main.rs       CLI entry point, arg parsing, panic hook
+  options.rs    Binary-only CLI option-name diagnostics
   pager.rs      Main event loop and rendering
   buffer.rs     Lazy streaming line buffer
   input.rs      Key reading and escape sequence parsing
@@ -65,6 +66,11 @@ ansi.rs
 ## Module Responsibilities
 
 ### `main.rs`
+
+`options.rs` owns the documented option-name registry and diagnoses unknown or
+ambiguous CLI flags before the first filename. Diagnostics do not suppress
+redirected file copying. Numeric/string errors and most option effects remain
+unimplemented. This registry validates names; it does not establish full CLI parity.
 
 Entry point and CLI argument parsing.
 

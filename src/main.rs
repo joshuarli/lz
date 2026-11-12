@@ -1,3 +1,5 @@
+mod options;
+
 use lz::{buffer, history, pager, terminal};
 use lz::search::CaseSensitivity;
 
@@ -33,7 +35,7 @@ fn case_option(bytes: &[u8]) -> Option<CaseSensitivity> {
     }
 }
 
-fn parse_args() -> Args {
+fn parse_args(argv: Vec<OsString>) -> Args {
     let mut args = Args {
         follow: false,
         force: false,
@@ -52,11 +54,11 @@ fn parse_args() -> Args {
         }
     }
 
-    let argv: Vec<OsString> = std::env::args_os().skip(1).collect();
     let mut end_of_flags = false;
 
     for arg in &argv {
         if end_of_flags {
+            if arg == "-" { args.stdin_explicit = true; }
             args.filenames.push(arg.clone());
             continue;
         }
@@ -65,14 +67,14 @@ fn parse_args() -> Args {
 
         match arg.as_bytes() {
             b"--" => end_of_flags = true,
-            b"-" => { args.stdin_explicit = true; args.filenames.push(arg.clone()); }
+            b"-" => { args.stdin_explicit = true; args.filenames.push(arg.clone()); end_of_flags = true; }
             b"--follow" => args.follow = true,
             b"-f" | b"--force" => args.force = true,
             b"-r" | b"--raw" => args.raw_mode = true,
             b"--help" | b"-h" => args.help = true,
             b"--version" | b"-V" => args.version = true,
             value if value.starts_with(b"-") || value.starts_with(b"+") => {}
-            _ => args.filenames.push(arg.clone()),
+            _ => { args.filenames.push(arg.clone()); end_of_flags = true; }
         }
     }
     if args.filenames.is_empty() { args.filenames.push("-".into()); }
@@ -121,7 +123,11 @@ FILE:
 enum ExitAction { Success, Terminated, Hangup }
 
 fn run() -> Result<ExitAction, String> {
-    let args = parse_args();
+    let argv: Vec<OsString> = std::env::args_os().skip(1).collect();
+    for diagnostic in options::diagnose(&argv) {
+        diagnostic.write(&mut io::stderr().lock()).map_err(|error| error.to_string())?;
+    }
+    let args = parse_args(argv);
 
     if args.help {
         print_help();

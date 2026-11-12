@@ -66174,5 +66174,357 @@
       116
     ],
     "files": {}
+  },
+  {
+    "id": "invocation-unknown-short",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-Z",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-unknown-combined",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-SZ",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-unknown-long",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "--bogus",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-ambiguous-long",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "--qui",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-ambiguous-upper",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "--Quit",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-unknown-value",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "--bogus=x",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-literal-dash",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "--",
+      "-Z"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-multiple-errors",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-Z",
+      "-Y",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-option-after-file",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "input",
+      "--bogus"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   }
 ]

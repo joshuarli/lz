@@ -7237,6 +7237,35 @@
       "implementation": "partial",
       "evidence": "known incompatible",
       "cause": "Pinned ordinary macOS oracle dies on SIGHUP without restoring alternate-screen/application modes. Reproduction: make parity-test CASE=lifecycle-hup (one byte x, then HUP). Safety forbids copying this leak. Candidate restores represented modes then dies from HUP; independent safety selftest passes. Park on parity/S04c-hup. Retry only after an explicit owner ruling on the reference defect; never silently change the oracle."
+    },
+    {
+      "id": "invocation-option-errors",
+      "family": "invocation",
+      "title": "Unknown and ambiguous CLI option diagnostics",
+      "anchor": {
+        "file": "option.c",
+        "line": 1,
+        "text": "/*"
+      },
+      "slice": "S04",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [
+        "invocation-unknown-short",
+        "invocation-unknown-combined",
+        "invocation-unknown-long",
+        "invocation-ambiguous-long",
+        "invocation-ambiguous-upper",
+        "invocation-unknown-value",
+        "invocation-literal-dash",
+        "invocation-multiple-errors",
+        "invocation-option-after-file"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named ASCII diagnostics, continued redirected copying, multiple errors and first-filename boundary pass. Only the diagnostic help-command program token is normalized. Full parser grammar, known-option effects and numeric/string errors remain open."
     }
   ],
   "upstream": [

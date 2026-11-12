@@ -110,6 +110,13 @@ pub fn selftest() -> Result<()> {
     invalid.as_object_mut().unwrap().insert("typo".into(), json!(true));
     if serde_json::from_value::<Case>(invalid).is_ok() { return Err("unknown scenario field accepted".into()); }
     if serde_json::from_value::<Event>(json!({"type": "typo"})).is_ok() { return Err("unknown event accepted".into()); }
+    let oracle_diagnostic = json!({"stderr": b"There is no -Z option (\"less --help\" for help)\n".to_vec()});
+    let candidate_diagnostic = json!({"stderr": b"There is no -Z option (\"lz --help\" for help)\n".to_vec()});
+    if comparable(&oracle_diagnostic) != comparable(&candidate_diagnostic) { return Err("identified diagnostic identity field differs".into()); }
+    let wrong_diagnostic = json!({"stderr": b"There is no -Y option (\"lz --help\" for help)\n".to_vec()});
+    if comparable(&oracle_diagnostic) == comparable(&wrong_diagnostic) { return Err("diagnostic identity normalization hid a wrong option".into()); }
+    if comparable(&json!({"stdout": b"less --help".to_vec()})) == comparable(&json!({"stdout": b"lz --help".to_vec()})) { return Err("identity normalization escaped its identified location".into()); }
+    println!("diagnostic program token normalized only at its identified location; negative controls pass");
     let expected_diagnostic = super::stdio::redirected(&candidate, b"", "file", &["--stdio-fixture".into(), "none".into()], b"input", &BTreeMap::new())?;
     let dropped = super::stdio::redirected(&candidate, b"", "file", &["--stdio-fixture".into(), "drop-error".into()], b"input", &BTreeMap::new())?;
     let difference = first_difference(&expected_diagnostic, &dropped, "observation").ok_or("dropped error missed")?;

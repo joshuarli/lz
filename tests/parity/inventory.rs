@@ -127,7 +127,7 @@ pub fn check_and_report() -> Result<()> {
         markdown.push_str(&format!("| {name} | {} | {} | {} | {} | {} |\n", count("pass"), count("mismatch"), count("harness-error"), count("needs-environment"), outcomes.len()));
         result_counts.insert(*name, json!({"pass":count("pass"),"mismatch":count("mismatch"),"harness-error":count("harness-error"),"needs-environment":count("needs-environment"),"total":outcomes.len()}));
     }
-    markdown.push_str("\nAll 14 instrumented upstream tests pass against instrumented less. Two have partial generic VT translations; twelve await translation. These are oracle validation results, not lz passes. Discovery mismatches remain strict failures in `make parity-test MODE=all`. No identity normalization is currently applied.\n");
+    markdown.push_str("\nAll 14 instrumented upstream tests pass against instrumented less. Two have partial generic VT translations; twelve await translation. These are oracle validation results, not lz passes. Discovery mismatches remain strict failures in `make parity-test MODE=all`. Identity normalization changes only the exact program token in recognized option-diagnostic help hints. Other diagnostic bytes and all other locations remain strict.\n");
     fs::write(root().join("tests/parity/coverage.md"), markdown)?;
     fs::write(root().join("tests/parity/coverage.json"), serde_json::to_vec_pretty(&json!({"counts":counts,"outcomes":result_counts,"metadata":current["metadata"],"upstream":upstream_run}))?)?;
     println!("{} inventory entries; 14 upstream dispositions; all {} scenarios accounted for on current and baseline", inventory.entries.len(), ids.len());

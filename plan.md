@@ -14,7 +14,8 @@
 - Accepted: S04c TERM while idle: fix candidate-only blocking-read hang; exit 15 and represented cleanup now match oracle. Idle waits check readiness without repainting; Darwin uses `select` because `poll` rejects `/dev/tty` with `POLLNVAL`, while Linux retains `poll`. HUP safety restores represented modes and preserves signal death, independently tested.
 - Parked: `oracle-hup-leak` / `parity/S04c-hup`: one-byte file then HUP proves the pinned oracle leaks alternate-screen/application modes. Safety forbids reproducing it; strict case remains a mismatch. Retry only after an explicit owner ruling on this reference defect. Native termios, suspend/resume and inherited-signal proof remain open.
 - Accepted: S08b: explicit sensitive/smart/insensitive ASCII search policy, exact `-i`/`-I`, combined case flags, simple LESS defaults, CLI override and reset. Eight distinguishing scenarios pass. Public search/pager constructors now require named policy; all affected benchmark callers compile.
-- Next local: S04d parser diagnostics; then S05 bounded byte storage, S06 layout, S07 commands, remaining S08 semantics, S09 sessions, S10 configuration, S11 integrations, S12–S15 acceptance/closure. All remain actionable; implementation limits delivery. Next exact command: `make parity-test GROUP=search MODE=admitted`. Full families and parity are incomplete.
+- Accepted: S04d CLI diagnostics: unknown short/long/combined flags, ambiguous lowercase/uppercase, full unknown =value text, continued redirected copying, multiple errors and first-filename parsing boundary. Nine cases pass; identity normalization covers only the exact program token in recognized diagnostic help hints, with negative controls.
+- Incomplete: locally actionable S04 option semantics/numeric/string errors, S05–S07, remaining S08–S11 and S12–S15 work remain. Next exact command: `make parity-test GROUP=invocation MODE=admitted`, then add the `-h` missing/invalid-number oracle cases. No family-wide or full-parity claim.
 - Next: S01 redirected output and pinned reference setup. Linux, other macOS architecture, quiet-host timing and remote CI remain unproved.
 
 ## Charter
@@ -296,7 +297,7 @@ These checks do not block other local work. The executor replaces an entry with 
 
 ## Execution boundary and non-goals
 
-The current request is preflight only: edit this draft and verify its foundations. It does not launch the campaign. A later execution instruction permits repository implementation, isolated reference downloads/builds, owned fixture effects, local commits, and the parity-specific CI edits O2 describes. No push, publish, deployment, host package installation, external-repository edit, or uncontrolled helper execution is included.
+The owner authorized unattended execution on 2026-11-12, through local deliverables with local commits and no push. This execution grant permits repository implementation, isolated reference downloads/builds, owned fixture effects, local commits, and the parity-specific CI edits O2 describes. No push, publish, deployment, host package installation, external-repository edit, or uncontrolled helper execution is included.
 
 Keep production native Rust. Do not wrap, embed, or execute upstream less in production. Test support may use native terminal libraries and fixture processes. Do not add a production system-library dependency under the guise of a test adapter.
 
