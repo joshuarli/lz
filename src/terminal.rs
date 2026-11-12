@@ -14,7 +14,7 @@ unsafe extern "C" {
 }
 
 const STDOUT_FD: i32 = 1;
-const TCSAFLUSH: i32 = 2;
+const TCSADRAIN: i32 = 1;
 
 #[cfg(target_os = "macos")]
 const TIOCGWINSZ: u64 = 0x40087468;
@@ -161,7 +161,7 @@ fn enable_raw_mode(fd: i32) -> io::Result<()> {
             raw.c_cc[5] = 0;
         }
 
-        if tcsetattr(fd, TCSAFLUSH, &raw) != 0 {
+        if tcsetattr(fd, TCSADRAIN, &raw) != 0 {
             return Err(io::Error::last_os_error());
         }
     }
@@ -173,7 +173,7 @@ fn disable_raw_mode() -> io::Result<()> {
     let original = *ORIG_TERMIOS.lock().map_err(|_| io::Error::other("terminal state lock poisoned"))?;
     if fd >= 0 && let Some(original) = original {
         // SAFETY: the active session owns fd and original has the platform termios layout.
-        if unsafe { tcsetattr(fd, TCSAFLUSH, &original) } != 0 { return Err(io::Error::last_os_error()); }
+        if unsafe { tcsetattr(fd, TCSADRAIN, &original) } != 0 { return Err(io::Error::last_os_error()); }
     }
     Ok(())
 }
@@ -255,7 +255,7 @@ fn restore_acquired_terminal() -> io::Result<()> {
                 drop(saved);
                 if let Some(original) = original {
                     // SAFETY: the session owns fd until after restoration and saved its termios before changing it.
-                    if unsafe { tcsetattr(fd, TCSAFLUSH, &original) } != 0 { failure = Some(io::Error::last_os_error()); }
+                    if unsafe { tcsetattr(fd, TCSADRAIN, &original) } != 0 { failure = Some(io::Error::last_os_error()); }
                 }
             }
             Err(_) => { failure = Some(io::Error::other("terminal state lock poisoned")); }

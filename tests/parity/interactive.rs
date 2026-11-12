@@ -167,6 +167,11 @@ pub fn selftest() -> Result<()> {
     let pipe = execute(&candidate, &pipe_case)?;
     if pipe["exit"] != format!("{:?}", ExitStatus::Signal(15)) { return Err("supervisor failed to forward explicit termination".into()); }
     println!("supervisor argv/env/stdin/foreground, code 7, signal 15 and explicit TERM controls pass");
+    pipe_case.args[1] = "queued".into();
+    pipe_case.events = vec![Event::Checkpoint { ready:"probe".into(), row:None }, Event::Send { bytes:b"qretained\n".to_vec() }];
+    let queued = execute(&candidate, &pipe_case)?;
+    if queued["files"]["queued-input"]["bytes"] != json!(b"retained\n") { return Err("terminal restoration discarded queued input".into()); }
+    println!("terminal restoration and reentry preserve queued tty input for the next reader");
     pipe_case.args[1] = "hang".into();
     pipe_case.events = vec![Event::Checkpoint { ready:"probe".into(), row:None }];
     let supervisor_world = super::stdio::world()?;
@@ -226,7 +231,7 @@ pub fn selftest() -> Result<()> {
         return Err("candidate did not restore its terminal and preserve HUP signal death".into());
     }
     println!("candidate HUP safety: represented modes restored, signal death preserved; oracle leak remains a parked divergence");
-    let report = json!({"candidate_hangup_safety": hangup, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location", "pipe-argv-env-foreground", "pipe-code-signal", "pipe-timeout-reap"], "oracle_a": a, "oracle_b": b});
+    let report = json!({"candidate_hangup_safety": hangup, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location", "pipe-argv-env-foreground", "pipe-code-signal", "pipe-timeout-reap", "queued-input-retention"], "oracle_a": a, "oracle_b": b});
     let path = super::stdio::world()?.keep().join("selftest.json");
     fs::write(&path, serde_json::to_vec_pretty(&report)?)?;
     println!("oracle independent-world startup/quit/lifecycle self-comparison passes; {}", path.display());

@@ -97,7 +97,7 @@ legacy history reads and writes. The default history format still awaits S10.
 
 All raw terminal interaction via libc FFI.
 
-- Sets and restores raw termios mode by calling `tcgetattr` / `tcsetattr` directly through libc. No crossterm, no termion.
+- Sets and restores raw termios mode through direct `tcgetattr` and `tcsetattr` FFI. Mode changes drain output and preserve queued input. No crossterm or termion.
 - Manages the alternate screen (`\x1b[?1049h` / `\x1b[?1049l`).
 - Cursor control: hide/show, absolute positioning.
 - Signal handling: `SIGWINCH` (terminal resize), `SIGTSTP` (Ctrl-Z suspend), `SIGCONT` (resume after suspend), `SIGTERM` (clean exit). Signals are caught via `signal()` or `sigaction` FFI calls; handlers set atomic flags that the event loop checks.
