@@ -169,7 +169,7 @@ fn run() -> Result<ExitAction, String> {
     let history = history_path.as_deref().map(history::SearchHistory::load).unwrap_or_default();
 
     // Run pager
-    let mut pager = pager::Pager::new(buf, pager::Config { follow: args.follow, raw_mode: args.raw_mode, search_case: args.search_case }, display_name, history);
+    let mut pager = pager::Pager::new(buf, pager::Config { startup_commands: args.startup_commands, raw_mode: args.raw_mode, search_case: args.search_case }, display_name, history);
     let result = pager.run(session.keys_mut());
 
     if let Some(path) = history_path { pager.history().save(&path); }

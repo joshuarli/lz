@@ -179,7 +179,11 @@ The main event loop and renderer. This is the largest and most central module.
 - Key dispatch table: maps `Key` variants to actions in Normal mode (scroll, search, backward search, filter, quit, toggle wrap, enter follow mode, help, etc.).
 - Signal integration: checks the atomic flags set by signal handlers in `terminal.rs` on each event loop iteration. Handles resize by re-querying terminal dimensions and redrawing; handles TSTP by suspending the process after restoring the terminal.
 
-`Pager::new` takes a named `Config` containing follow, raw rendering and search case policy.
+`Pager::new` takes a named `Config` containing startup command bytes, raw rendering
+and search case policy. Startup commands use the same key decoder and dispatcher
+as tty input, before the first frame. Numeric startup positions and `-p` searches
+are supported. A position-dependent startup movement before any jump/search rings
+a bell and discards the remaining command, matching the reference.
 
 Key types: `Pager` struct, `Mode` enum (`Normal`, `SearchInput`, `FilterInput`, `Follow`, `Help`), `SearchDir` enum (`Forward`, `Backward`), `LineEditor` struct.
 

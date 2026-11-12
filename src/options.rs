@@ -111,7 +111,7 @@ impl Diagnostic {
 pub(super) enum Action { Page, Help, Version, Stop }
 
 pub(super) struct Args {
-    pub follow: bool,
+    pub startup_commands: Vec<Vec<u8>>,
     pub force: bool,
     pub raw_mode: bool,
     pub search_case: CaseSensitivity,
@@ -123,7 +123,7 @@ pub(super) struct Args {
 
 impl Default for Args {
     fn default() -> Self {
-        Self { follow: false, force: false, raw_mode: false, search_case: CaseSensitivity::Sensitive,
+        Self { startup_commands: Vec::new(), force: false, raw_mode: false, search_case: CaseSensitivity::Sensitive,
             filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
@@ -182,7 +182,11 @@ impl Scanner {
     fn value(&mut self, option: &OptionSpec, payload: &[u8], label: Vec<u8>) -> usize {
         match option.value {
             ValueKind::Flag => 0,
-            ValueKind::Text => payload.iter().position(|byte| *byte == b'$').unwrap_or(payload.len()),
+            ValueKind::Text => {
+                let end = payload.iter().position(|byte| *byte == b'$').unwrap_or(payload.len());
+                if option.names[0] == "pattern" { self.args.startup_commands.push([b"/".as_slice(), &payload[..end]].concat()); }
+                end
+            },
             ValueKind::Number => match scan_number(payload) {
                 NumberScan::Number(bytes) => bytes,
                 NumberScan::Missing => { self.args.diagnostics.push(Diagnostic::InvalidNumber(label)); 0 }
@@ -199,7 +203,12 @@ impl Scanner {
             cursor += 1;
             match byte {
                 b' ' | b'\t' | b'$' => continue,
-                b'+' => { if &word[cursor..] == b"F" { self.args.follow = true; } return; }
+                b'+' => {
+                    let end = word[cursor..].iter().position(|byte| *byte == b'$').map_or(word.len(), |end| cursor + end);
+                    self.args.startup_commands.push(word[cursor..end].to_vec());
+                    cursor = end;
+                    continue;
+                }
                 b'-' if word.get(cursor) != Some(&b'-') => {
                     reset = word.get(cursor) == Some(&b'+');
                     cursor += usize::from(reset);

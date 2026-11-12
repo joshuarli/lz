@@ -1732,10 +1732,19 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-startup-number",
+        "invocation-startup-line-command",
+        "invocation-startup-end-command",
+        "invocation-startup-movement-command",
+        "invocation-startup-layout-0",
+        "invocation-startup-layout-1",
+        "invocation-startup-layout-2",
+        "invocation-startup-layout-3"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Startup line, end and movement commands pass through the shared keyboard decoder before the first screen. Movement before an initial position rings one bell and discards that command. Remaining commands, every-file scope and interactions remain open."
     },
     {
       "id": "man-0444",
@@ -3322,11 +3331,14 @@
       "cases": [
         "invocation-missing-string",
         "invocation-string-separate",
-        "invocation-string-inline"
+        "invocation-string-inline",
+        "invocation-startup-pattern-short",
+        "invocation-startup-pattern-long",
+        "invocation-startup-search-command"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "String value consumption and missing-value diagnostics pass in redirected scenarios; startup search policy remains open."
+      "cause": "Missing and consumed string arguments plus initial literal search pass in named redirected/PTY cases. Regex error, offsets and multi-file interactions remain open."
     },
     {
       "id": "man-1080",
@@ -4425,10 +4437,19 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-startup-number",
+        "invocation-startup-line-command",
+        "invocation-startup-end-command",
+        "invocation-startup-movement-command",
+        "invocation-startup-layout-0",
+        "invocation-startup-layout-1",
+        "invocation-startup-layout-2",
+        "invocation-startup-layout-3"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Startup line, end and movement commands pass through the shared keyboard decoder before the first screen. Movement before an initial position rings one bell and discards that command. Remaining commands, every-file scope and interactions remain open."
     },
     {
       "id": "man-1571",

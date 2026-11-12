@@ -51,6 +51,7 @@ pub struct KeyReader {
     buf: [u8; 64],
     pos: usize,
     len: usize,
+    command: io::Cursor<Vec<u8>>,
 }
 
 impl KeyReader {
@@ -61,7 +62,19 @@ impl KeyReader {
             buf: [0; 64],
             pos: 0,
             len: 0,
+            command: io::Cursor::new(Vec::new()),
         })
+    }
+
+    pub(crate) fn set_command_input(&mut self, bytes: Vec<u8>) { self.command = io::Cursor::new(bytes); }
+
+    pub(crate) fn has_command_input(&self) -> bool { (self.command.position() as usize) < self.command.get_ref().len() }
+
+    fn command_byte(&mut self) -> Option<u8> {
+        let position = self.command.position() as usize;
+        let byte = self.command.get_ref().get(position).copied()?;
+        self.command.set_position((position + 1) as u64);
+        Some(byte)
     }
 
     /// Raw fd for the tty, used to set raw mode on the correct fd.
@@ -88,6 +101,7 @@ impl KeyReader {
 
     /// Get next byte from internal buffer, refilling via blocking read if empty.
     fn next_byte_blocking(&mut self) -> io::Result<u8> {
+        if let Some(byte) = self.command_byte() { return Ok(byte); }
         if self.pos < self.len {
             let b = self.buf[self.pos];
             self.pos += 1;
@@ -102,6 +116,7 @@ impl KeyReader {
 
     /// Get next byte from internal buffer, refilling via timed poll+read if empty.
     fn next_byte_timeout(&mut self, timeout_ms: i32) -> io::Result<Option<u8>> {
+        if let Some(byte) = self.command_byte() { return Ok(Some(byte)); }
         if self.pos < self.len {
             let b = self.buf[self.pos];
             self.pos += 1;
@@ -340,6 +355,7 @@ pub fn parse_keys_from_bytes(bytes: &[u8]) -> Vec<Key> {
         buf: [0; 64],
         pos: 0,
         len: 0,
+        command: io::Cursor::new(Vec::new()),
     };
 
     let mut keys = Vec::new();

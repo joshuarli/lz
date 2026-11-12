@@ -15,6 +15,8 @@ cargo install --path .
 ```
 lz [OPTIONS] [FILE]
 cat file.txt | lz
+lz +120 file.txt
+lz -p pattern file.txt
 ```
 
 If no file is given and stdin is a pipe, `lz` reads from stdin. Redirected stdout copies input bytes without terminal setup, including binary and invalid UTF-8 content. It concatenates multiple files and explicit `-` stdin entries in order, de-duplicating resolved paths as less does. Interactive multiple-file sessions remain unimplemented.

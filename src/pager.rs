@@ -98,8 +98,11 @@ impl LineEditor {
     }
 }
 
+#[derive(Clone, Copy, PartialEq)]
+enum CommandContext { StartupUnpositioned, StartupPositioned, StartupAborted, Interactive }
+
 pub struct Config {
-    pub follow: bool,
+    pub startup_commands: Vec<Vec<u8>>,
     pub raw_mode: bool,
     pub search_case: CaseSensitivity,
 }
@@ -126,6 +129,10 @@ pub struct Pager {
     status_msg: Option<String>,
     filename: Option<String>,
     filename_prompt: bool,
+    startup_commands: Vec<Vec<u8>>,
+    numeric_prefix: Option<usize>,
+    command_context: CommandContext,
+    bell_requested: bool,
 }
 
 impl Pager {
@@ -145,7 +152,7 @@ impl Pager {
             search_case: config.search_case,
             search_dir: SearchDir::Forward,
             current_match_line: None,
-            mode: if config.follow { Mode::Follow } else { Mode::Normal },
+            mode: Mode::Normal,
             search_input: LineEditor::new(),
             filter_input: LineEditor::new(),
             filter: None,
@@ -153,11 +160,15 @@ impl Pager {
             history,
             term_width: w,
             term_height: h,
-            follow: config.follow,
+            follow: false,
             raw_mode: config.raw_mode,
             status_msg: None,
             filename,
             filename_prompt: true,
+            startup_commands: config.startup_commands,
+            numeric_prefix: None,
+            command_context: CommandContext::StartupUnpositioned,
+            bell_requested: false,
         }
     }
 
@@ -174,10 +185,19 @@ impl Pager {
     }
 
     pub fn run(&mut self, keys: &mut KeyReader) -> io::Result<()> {
-        if self.follow {
-            self.buffer.read_all();
-            self.scroll_to_bottom();
+        for command in std::mem::take(&mut self.startup_commands) {
+            keys.set_command_input(command);
+            while keys.has_command_input() {
+                if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return Ok(()); }
+                if self.handle_key(keys.read_key()?) { return Ok(()); }
+                if self.command_context == CommandContext::StartupAborted { keys.set_command_input(Vec::new()); break; }
+            }
+            if self.command_context == CommandContext::StartupAborted { self.command_context = CommandContext::StartupUnpositioned; continue; }
+            if matches!(self.mode, Mode::SearchInput | Mode::FilterInput) { self.handle_key(Key::Enter); }
+            else if self.numeric_prefix.is_some() { self.handle_normal_key(Key::Char('g')); }
         }
+        self.filename_prompt = true;
+        self.command_context = CommandContext::Interactive;
 
         let mut redraw = true;
         loop {
@@ -251,34 +271,50 @@ impl Pager {
     fn handle_normal_key(&mut self, key: Key) -> bool {
         self.filename_prompt = false;
         self.status_msg = None;
+        if let Key::Char(character @ '0'..='9') = key {
+            let value = self.numeric_prefix.unwrap_or(0).checked_mul(10).and_then(|value| value.checked_add(character as usize - '0' as usize));
+            if let Some(value) = value { self.numeric_prefix = Some(value); }
+            else { self.numeric_prefix = None; self.status_msg = Some("Number too large".into()); }
+            return false;
+        }
+        let count = self.numeric_prefix.take();
+        if self.command_context == CommandContext::StartupUnpositioned
+            && matches!(key, Key::Char('j' | 'k' | 'd' | 'u' | 'b' | ' ') | Key::Down | Key::Up | Key::Enter | Key::PageDown | Key::PageUp | Key::Ctrl('d' | 'u' | 'b' | 'f')) {
+            self.command_context = CommandContext::StartupAborted;
+            self.bell_requested = true;
+            return false;
+        }
         match key {
             Key::Char('q') | Key::Ctrl('c') | Key::Escape => return true,
 
-            Key::Char('j') | Key::Down | Key::Enter => self.scroll_down(1),
-            Key::Char('k') | Key::Up => self.scroll_up(1),
+            Key::Char('j') | Key::Down | Key::Enter => self.scroll_down(count.unwrap_or(1)),
+            Key::Char('k') | Key::Up => self.scroll_up(count.unwrap_or(1)),
             Key::Char('d') | Key::Ctrl('d') => {
                 let half = self.content_height() / 2;
-                self.scroll_down(half.max(1));
+                self.scroll_down(count.unwrap_or(half.max(1)));
             }
             Key::Char('u') | Key::Ctrl('u') => {
                 let half = self.content_height() / 2;
-                self.scroll_up(half.max(1));
+                self.scroll_up(count.unwrap_or(half.max(1)));
             }
             Key::Char(' ') | Key::PageDown | Key::Ctrl('f') => {
                 let page = self.content_height().saturating_sub(1).max(1);
-                self.scroll_down(page);
+                self.scroll_down(count.unwrap_or(page));
             }
             Key::Char('b') | Key::PageUp | Key::Ctrl('b') => {
                 let page = self.content_height().saturating_sub(1).max(1);
-                self.scroll_up(page);
+                self.scroll_up(count.unwrap_or(page));
             }
             Key::Char('g') | Key::Home => {
-                self.top_line = 0;
+                self.position_initialized();
+                self.top_line = count.unwrap_or(1).saturating_sub(1);
+                self.buffer.get_line(self.top_line);
                 self.left_col = 0;
             }
             Key::Char('G') | Key::End => {
-                self.buffer.read_all();
-                self.scroll_to_bottom();
+                self.position_initialized();
+                if let Some(count) = count { self.top_line = count.saturating_sub(1); self.buffer.get_line(self.top_line); }
+                else { self.buffer.read_all(); self.scroll_to_bottom(); }
             }
             Key::Right => {
                 if !self.wrap {
@@ -313,6 +349,7 @@ impl Pager {
                 self.left_col = 0;
             }
             Key::Char('F') => {
+                self.position_initialized();
                 self.mode = Mode::Follow;
                 self.follow = true;
                 self.buffer.read_all();
@@ -324,6 +361,10 @@ impl Pager {
             _ => {}
         }
         false
+    }
+
+    fn position_initialized(&mut self) {
+        if self.command_context == CommandContext::StartupUnpositioned { self.command_context = CommandContext::StartupPositioned; }
     }
 
     fn handle_follow_key(&mut self, key: Key) -> bool {
@@ -404,6 +445,7 @@ impl Pager {
         };
         match search.find_next_line(&mut self.buffer, from, forward) {
             Some(line) => {
+                self.position_initialized();
                 self.current_match_line = Some(line);
                 self.top_line = line;
             }
@@ -594,6 +636,7 @@ impl Pager {
         let w = self.term_width as usize;
         let ch = self.content_height();
 
+        if self.bell_requested { buf.push(7); self.bell_requested = false; }
         buf.extend_from_slice(b"\x1b[?25l");
         terminal::move_cursor(&mut buf, 0, 0);
 
@@ -826,7 +869,7 @@ impl Pager {
         }
 
         if self.buffer.is_finished() && self.top_line + self.content_height() >= self.display_line_count() {
-            return "(END)".to_owned();
+            return if self.filename_prompt { self.filename.as_ref().map_or_else(|| "(END)".to_owned(), |name| format!("{name} (END)")) } else { "(END)".to_owned() };
         }
         if self.filename_prompt {
             return self.filename.clone().unwrap_or_else(|| ":".to_owned());
