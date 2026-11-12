@@ -95,7 +95,7 @@ TERM exits 15 after cleanup, matching the pinned oracle. HUP restores represente
 modes and re-raises HUP; this is an explicit safety divergence from the oracle's
 terminal leak, parked in the parity register. Startup enables application
 cursor/keypad modes and leaves the prompt cursor visible. `LESSHISTFILE=-` disables
-legacy history reads and writes. The default history format still awaits S10.
+history reads and writes. `HistoryFile` now resolves the 668 default/explicit path and format; legacy lz history stays unread and untouched.
 
 All raw terminal interaction via libc FFI.
 
@@ -147,15 +147,15 @@ Key types: `ControlDisplay`; the remaining ANSI functions also serve search and 
 
 ### `history.rs`
 
-Persistent search history.
+Persistent search history in the less format.
 
-- Stores up to 100 search patterns in `$XDG_STATE_HOME/lz/history` (default `~/.local/state/lz/history`), one pattern per line.
-- Loaded at startup, saved on exit. Failures are silent (missing file = empty history, write failure = no persistence).
-- Deduplicates on push: if a pattern already exists, it is moved to the end.
-- Cursor-based cycling: Up/Down in search input mode walk backward/forward through history. The in-progress input is saved as a "draft" on first Up press and restored when cycling past the newest entry.
-- `main.rs` owns the file path resolution and calls `load`/`save`. `pager.rs` owns the `SearchHistory` instance and calls `push`/`prev`/`next`/`reset_cursor` during search input handling.
+- `HistoryFile` captures path/size policy, searches existing XDG/home destinations, and resolves the save destination again at exit. `LESSHISTFILE=-` or `/dev/null` disables persistence. Secure mode currently suppresses it; individual allowances remain open.
+- Search entries suppress consecutive duplicates. Raw stored bytes survive merge, including shell records. Full command editing and malformed-byte recall remain unfinished.
+- Closing a painted file records a position change separately from accepted search input. Saving rereads the current destination, trims old entries by `LESSHISTSIZE`, writes a private file and renames it atomically. I/O failures are silent.
+- The old `$XDG_STATE_HOME/lz/history` path is not read or migrated. Parent directories are not created for a history destination.
+- Marks, concurrent/interrupted writers and temporary-name collisions still need parity proof.
 
-Key types: `SearchHistory` struct.
+Key types: `SearchHistory` owns input history; `HistoryFile` owns persistence policy. `save` mutates saved-entry flags, and `Pager::into_history` notes the last displayed position.
 
 ### `search.rs`
 

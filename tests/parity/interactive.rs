@@ -6,6 +6,7 @@ use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};
 use std::path::Path;
 use std::os::unix::ffi::OsStringExt;
+use std::os::unix::fs::PermissionsExt;
 use std::time::{Duration, Instant};
 
 fn screen(snapshot: &ScreenSnapshot) -> Value {
@@ -33,14 +34,16 @@ fn files(root: &Path) -> Result<Value> {
                 result.insert(name, json!({"symlink": fs::read_link(path)?.as_os_str().as_encoded_bytes()}));
             } else if kind.is_dir() { walk(base, &path, result)?; }
             else if kind.is_file() {
-                let length = entry.metadata()?.len();
+                let metadata = entry.metadata()?;
+                let length = metadata.len();
+                let mode = metadata.permissions().mode() & 0o7777;
                 if length > 64 * 1024 {
                     let output = std::process::Command::new("/usr/bin/shasum").args(["-a", "256"]).stdin(fs::File::open(path)?).output()?;
                     if !output.status.success() { return Err("file-effect hash failed".into()); }
                     let digest = std::str::from_utf8(&output.stdout)?.split_whitespace().next().ok_or("missing file-effect hash")?;
                     if digest.len() != 64 || !digest.bytes().all(|byte| byte.is_ascii_hexdigit()) { return Err("invalid file-effect hash".into()); }
-                    result.insert(name, json!({"sha256": digest, "length": length}));
-                } else { result.insert(name, json!({"bytes": fs::read(path)?})); }
+                    result.insert(name, json!({"sha256": digest, "length": length, "mode":mode}));
+                } else { result.insert(name, json!({"bytes": fs::read(path)?, "mode":mode})); }
             } else { return Err("unrepresented side-effect file type".into()); }
         }
         Ok(())
@@ -61,7 +64,11 @@ fn execute_with_manifest(binary: &Path, case: &Case, manifest: &Path) -> Result<
     for (key, value) in &case.env { environment = environment.env(key, value); }
     let world = environment.paths().root().to_owned();
     super::write_fixture(&world.join(std::ffi::OsString::from_vec(case.fixture_name.clone())), &case.fixture)?;
-    for (name, bytes) in &case.files { fs::write(world.join(name), bytes)?; }
+    for (name, bytes) in &case.files {
+        let path = world.join(name);
+        if let Some(parent) = path.parent() { fs::create_dir_all(parent)?; }
+        fs::write(path, bytes)?;
+    }
     let _cleanup = super::supervisor::Cleanup::new(manifest.to_owned());
     let command = if case.source == "pty-pipe" {
         CommandSpec::new(std::env::current_exe()?).arg("--pipe-supervisor").arg(binary)
@@ -117,6 +124,10 @@ pub fn fixture(fault: &str) -> Result<()> {
     write!(stdout, "{}", if fault == "output" { "proBe" } else { "probe" })?;
     if fault == "cursor" { write!(stdout, "\x1b[2;2H")?; }
     if fault != "effect" { fs::write("effect", b"expected")?; }
+    if fault == "file-mode" {
+        let mode = fs::metadata("effect")?.permissions().mode() ^ 0o200;
+        fs::set_permissions("effect", fs::Permissions::from_mode(mode))?;
+    }
     stdout.flush()?;
     if fault == "timeout" { loop { std::thread::park(); } }
     let mut byte = [0];
@@ -242,7 +253,7 @@ pub fn selftest() -> Result<()> {
         return Err("plain-text trace check missed a known screen-clearing control".into());
     }
     println!("plain-text trace check rejects an otherwise successful fixture with hidden controls");
-    for (fault, observation) in [("output", "text"), ("attribute", "attributes"), ("cursor", "cursor"), ("exit", "exit"), ("effect", "files")] {
+    for (fault, observation) in [("output", "text"), ("attribute", "attributes"), ("cursor", "cursor"), ("exit", "exit"), ("effect", "files"), ("file-mode", "mode")] {
         case.args[1] = fault.into();
         let actual = execute(&candidate, &case)?;
         let difference = first_difference(&comparable(&expected), &comparable(&actual), "observation").ok_or("mutation was missed")?;
@@ -277,7 +288,7 @@ pub fn selftest() -> Result<()> {
         return Err("candidate did not restore its terminal and preserve HUP signal death".into());
     }
     println!("candidate HUP safety: represented modes restored, signal death preserved; oracle leak remains a parked divergence");
-    let report = json!({"candidate_hangup_safety": hangup, "candidate_large_navigation_safety":large_navigation, "primary_transition":primary_transition, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location", "pipe-argv-env-foreground", "pipe-code-signal", "pipe-timeout-reap", "queued-input-retention", "plain-text-hidden-control", "parallel-order-timeout-drain"], "oracle_a": a, "oracle_b": b});
+    let report = json!({"candidate_hangup_safety": hangup, "candidate_large_navigation_safety":large_navigation, "primary_transition":primary_transition, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location", "pipe-argv-env-foreground", "pipe-code-signal", "pipe-timeout-reap", "queued-input-retention", "plain-text-hidden-control", "parallel-order-timeout-drain", "file-mode"], "oracle_a": a, "oracle_b": b});
     let path = super::stdio::world()?.keep().join("selftest.json");
     fs::write(&path, serde_json::to_vec_pretty(&report)?)?;
     println!("oracle independent-world startup/quit/lifecycle self-comparison passes; {}", path.display());

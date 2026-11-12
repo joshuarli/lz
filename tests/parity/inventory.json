@@ -6561,10 +6561,21 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "configuration-history-create",
+        "configuration-history-merge",
+        "configuration-history-search-only",
+        "configuration-history-unchanged",
+        "configuration-history-default",
+        "configuration-history-legacy-unread",
+        "configuration-history-secure",
+        "configuration-history-recall",
+        "configuration-history-cancel-typed",
+        "configuration-history-home-existing"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Explicit/default history paths, existing-home reuse, raw search/shell records, duplicate search sections, private modes, position-only rewrites, recall/cancel and secure suppression pass. Legacy lz history stays unread and untouched. Atomic save-time merge has direct regression coverage. Marks, concurrent/interrupted writes, temporary-name collisions, secure allowances and full editing semantics remain open."
     },
     {
       "id": "man-2388",
@@ -6631,10 +6642,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "configuration-history-limit"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "A positive LESSHISTSIZE trims old search entries while retaining the current query and shell records. Other numeric forms, boundaries and concurrent writer interactions remain open."
     },
     {
       "id": "man-2399",

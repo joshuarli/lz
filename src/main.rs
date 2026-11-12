@@ -175,15 +175,8 @@ fn run() -> Result<ExitAction, String> {
         }
     }
 
-    // Load search history
-    let history_path = if std::env::var_os("LESSHISTFILE").is_some_and(|value| value == "-") { None } else { Some({
-        let state_dir = std::env::var("XDG_STATE_HOME").ok().unwrap_or_else(|| {
-            let home = std::env::var("HOME").unwrap_or_else(|_| String::from("~"));
-            format!("{}/.local/state", home)
-        });
-        std::path::PathBuf::from(state_dir).join("lz/history")
-    }) };
-    let mut history = history_path.as_deref().map(history::SearchHistory::load).unwrap_or_default();
+    let history_file = history::HistoryFile::from_environment();
+    let mut history = history_file.as_ref().map(history::HistoryFile::load).unwrap_or_default();
 
     let mut file_index = 0;
     let mut initial_display = pager::InitialDisplay::Startup;
@@ -211,7 +204,7 @@ fn run() -> Result<ExitAction, String> {
         }
         initial_display = pager::InitialDisplay::FileSwitch;
     };
-    if let Some(path) = history_path { history.save(&path); }
+    if let Some(file) = history_file { file.save(&mut history); }
     finish_session(result, session)
 }
 

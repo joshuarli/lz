@@ -240,7 +240,10 @@ impl Pager {
         }
     }
 
-    pub fn into_history(self) -> SearchHistory { self.history }
+    pub fn into_history(mut self) -> SearchHistory {
+        if self.content_painted && !self.buffer.is_empty() { self.history.note_position(); }
+        self.history
+    }
 
     fn content_height(&self) -> usize {
         if self.term_height > 1 {
@@ -491,16 +494,13 @@ impl Pager {
 
     fn handle_search_input_key(&mut self, key: Key) {
         match key {
-            Key::Escape | Key::Ctrl('c') => {
-                self.mode = Mode::Normal;
-            }
+            Key::Escape => self.mode = Mode::Normal,
+            Key::Ctrl('c') => { self.history.push(&self.search_input.content); self.mode = Mode::Normal; self.bell_requested = true; }
             Key::Enter => {
                 let pattern = self.search_input.content.clone();
                 self.mode = Mode::Normal;
-                if pattern.is_empty() {
-                    return;
-                }
                 self.history.push(&pattern);
+                if pattern.is_empty() { return; }
                 match Search::new(&pattern, self.search_case) {
                     Ok(s) => {
                         self.search = Some(s);
@@ -516,7 +516,7 @@ impl Pager {
                 if let Some(entry) = self.history.older(&self.search_input.content) {
                     self.search_input.content = entry.to_string();
                     self.search_input.cursor = self.search_input.content.len();
-                }
+                } else { self.bell_requested = true; }
             }
             Key::Down => match self.history.newer() {
                 Some(entry) => {
