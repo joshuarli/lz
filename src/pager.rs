@@ -104,6 +104,8 @@ enum CommandContext { StartupUnpositioned, StartupPositioned, StartupAborted, In
 pub struct Config {
     pub startup_commands: Vec<Vec<u8>>,
     pub raw_mode: bool,
+    pub chop: bool,
+    pub line_numbers: bool,
     pub search_case: CaseSensitivity,
 }
 
@@ -112,6 +114,7 @@ pub struct Pager {
     top_line: usize,
     left_col: usize,
     wrap: bool,
+    line_numbers: bool,
     search: Option<Search>,
     search_case: CaseSensitivity,
     search_dir: SearchDir,
@@ -147,7 +150,8 @@ impl Pager {
             buffer,
             top_line: 0,
             left_col: 0,
-            wrap: false,
+            wrap: !config.chop,
+            line_numbers: config.line_numbers,
             search: None,
             search_case: config.search_case,
             search_dir: SearchDir::Forward,
@@ -676,27 +680,40 @@ impl Pager {
         }
     }
 
+    fn number_gutter(&self, line: usize, width: usize) -> String {
+        if !self.line_numbers { return String::new(); }
+        let gutter = format!("{:>7} ", line + 1);
+        gutter.chars().take(width).collect()
+    }
+
+    fn write_number_gutter(buf: &mut Vec<u8>, gutter: &str) {
+        if let Some(first) = gutter.bytes().position(|byte| byte.is_ascii_digit()) {
+            let last = gutter.bytes().rposition(|byte| byte.is_ascii_digit()).unwrap() + 1;
+            buf.extend_from_slice(&gutter.as_bytes()[..first]);
+            buf.extend_from_slice(b"\x1b[1m");
+            buf.extend_from_slice(&gutter.as_bytes()[first..last]);
+            buf.extend_from_slice(b"\x1b[m");
+            buf.extend_from_slice(&gutter.as_bytes()[last..]);
+        } else { buf.extend_from_slice(gutter.as_bytes()); }
+    }
+
     fn render_nowrap(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize) {
-        // Pre-ensure all lines are loaded so we can borrow buffer.lines directly
-        if self.filter.is_none() {
-            self.buffer.get_line(self.top_line + ch);
-        }
+        if self.filter.is_none() { self.buffer.get_line(self.top_line.saturating_add(ch)); }
         for row in 0..ch {
             terminal::move_cursor(buf, row as u16, 0);
-            let display_idx = self.top_line + row;
-            match self.display_line_idx(display_idx) {
-                Some(line_idx) => match self.buffer.lines.get(line_idx) {
-                    Some(line) => {
-                        let display = truncate_to_width(line, self.left_col, w, self.raw_mode);
-                        self.write_line_with_search(buf, &display, line_idx);
-                    }
-                    None => {
-                        buf.push(b'~');
-                    }
-                },
-                None => {
-                    buf.push(b'~');
+            let display_idx = self.top_line.saturating_add(row);
+            match self.display_line_idx(display_idx).and_then(|index| self.buffer.lines.get(index).map(|line| (index, line))) {
+                Some((line_idx, line)) => {
+                    let gutter = self.number_gutter(line_idx, w);
+                    Self::write_number_gutter(buf, &gutter);
+                    let content_width = w.saturating_sub(gutter.len());
+                    let line_width = if self.raw_mode { unicode_width::UnicodeWidthStr::width(line.as_str()) } else { visible_width(line) };
+                    let chopped = line_width > self.left_col.saturating_add(content_width) && content_width > 0;
+                    let display = truncate_to_width(line, self.left_col, content_width.saturating_sub(usize::from(chopped)), self.raw_mode);
+                    self.write_line_with_search(buf, &display, line_idx);
+                    if chopped { buf.extend_from_slice(b"\x1b[7m>\x1b[m"); }
                 }
+                None => buf.push(b'~'),
             }
             terminal::clear_line(buf);
         }
@@ -705,43 +722,24 @@ impl Pager {
     fn render_wrapped(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize) {
         let mut screen_row = 0;
         let mut display_idx = self.top_line;
-
-        // Pre-ensure a reasonable number of lines are loaded
-        if self.filter.is_none() {
-            self.buffer.get_line(self.top_line + ch);
-        }
-
+        if self.filter.is_none() { self.buffer.get_line(self.top_line.saturating_add(ch)); }
         while screen_row < ch {
             let actual_idx = self.display_line_idx(display_idx);
-            let line_opt = actual_idx.and_then(|i| self.buffer.lines.get(i));
-            match line_opt {
-                Some(line) => {
-                    let actual = actual_idx.unwrap();
-                    let total_width = if self.raw_mode {
-                        unicode_width::UnicodeWidthStr::width(line.as_str())
-                    } else {
-                        visible_width(line)
-                    };
-                    let rows_needed = if total_width == 0 {
-                        1
-                    } else {
-                        total_width.div_ceil(w)
-                    };
-
+            match actual_idx.and_then(|index| self.buffer.lines.get(index).map(|line| (index, line))) {
+                Some((actual, line)) => {
+                    let gutter_width = self.number_gutter(actual, w).len();
+                    let content_width = w.saturating_sub(gutter_width).max(1);
+                    let total_width = if self.raw_mode { unicode_width::UnicodeWidthStr::width(line.as_str()) } else { visible_width(line) };
+                    let rows_needed = total_width.div_ceil(content_width).max(1);
                     for wrap_row in 0..rows_needed {
-                        if screen_row >= ch {
-                            break;
-                        }
-                        terminal::move_cursor(buf, screen_row as u16, 0);
-                        let start_col = wrap_row * w;
-                        let display = truncate_to_width(line, start_col, w, self.raw_mode);
-                        if wrap_row == 0 {
-                            self.write_line_with_search(buf, &display, actual);
-                        } else {
-                            buf.extend_from_slice(display.as_bytes());
-                        }
-                        terminal::clear_line(buf);
+                        if screen_row >= ch { break; }
+                        if wrap_row == 0 { terminal::move_cursor(buf, screen_row as u16, 0); }
+                        let gutter = self.number_gutter(actual, w);
+                        Self::write_number_gutter(buf, &gutter);
+                        let display = truncate_to_width(line, wrap_row * content_width, w.saturating_sub(gutter.len()), self.raw_mode);
+                        self.write_line_with_search(buf, &display, actual);
                         screen_row += 1;
+                        if wrap_row + 1 == rows_needed { terminal::clear_line(buf); }
                     }
                     display_idx += 1;
                 }

@@ -173,14 +173,14 @@ The main event loop and renderer. This is the largest and most central module.
 - Help mode: `h` toggles an overlay displaying all keybindings. `render_help()` draws static help text instead of file content. `h`, `q`, or Escape returns to Normal.
 - Rendering: full redraw every frame. Each frame: clear screen, render visible lines (or help screen) top-to-bottom, render inverse-video status bar at the bottom showing context on the left (filename, filter, wrap state, or input prompt) and position info on the right (line range, total, percentage/END).
 - Horizontal scroll: tracks a column offset, increments/decrements in 8-column steps.
-- Wrap mode: toggled with `w`. When enabled, long lines are wrapped using `unicode-width` for correct column calculation (this is why `pager.rs` depends on the crate directly).
+- Wrap mode: enabled by default and disabled with `-S`. Legacy `w` still toggles it until command parity is finished. When enabled, long lines are wrapped using `unicode-width` for correct column calculation (this is why `pager.rs` depends on the crate directly).
 - Search highlighting: when a search is active, matching spans on each visible line are wrapped in `\x1b[7m` (inverse video) and reset afterward.
 - Line editor: the search/filter prompt at the bottom is a simple line editor supporting character input, backspace, cursor movement, and Escape/Enter. Up/Down cycle through search history (search mode only).
 - Key dispatch table: maps `Key` variants to actions in Normal mode (scroll, search, backward search, filter, quit, toggle wrap, enter follow mode, help, etc.).
 - Signal integration: checks the atomic flags set by signal handlers in `terminal.rs` on each event loop iteration. Handles resize by re-querying terminal dimensions and redrawing; handles TSTP by suspending the process after restoring the terminal.
 
 `Pager::new` takes a named `Config` containing startup command bytes, raw rendering
-and search case policy. Startup commands use the same key decoder and dispatcher
+chopping, line-number display and search case policy. Startup commands use the same key decoder and dispatcher
 as tty input, before the first frame. Numeric startup positions and `-p` searches
 are supported. A position-dependent startup movement before any jump/search rings
 a bell and discards the remaining command, matching the reference.
@@ -210,7 +210,7 @@ Key types: `Pager` struct, `Mode` enum (`Normal`, `SearchInput`, `FilterInput`, 
 
 - No marks or bookmarks
 - No multiple file arguments
-- No line number display
+- Line-number options beyond the implemented -N gutter remain incomplete
 - No pipe commands (no `|` prompt)
 - No custom keybindings
 - No mouse support

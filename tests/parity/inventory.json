@@ -55,10 +55,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "rendering-default-fold"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Finite ASCII default folding passes with semantic autowrap markers. Source streaming, controls, Unicode layout and navigation remain open."
     },
     {
       "id": "man-0050",
@@ -3271,10 +3273,14 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "rendering-numbered",
+        "rendering-numbered-chop",
+        "rendering-numbered-reset"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "-N and -n precedence pass with seven-column bold logical line numbers repeated on wrapped rows. Custom widths, headers and large indices remain open."
     },
     {
       "id": "man-1054",
@@ -3468,10 +3474,15 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "rendering-chop-short",
+        "rendering-chop-long",
+        "rendering-fold-reset",
+        "rendering-numbered-chop"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Default folding, -S chopping, reset and inverse right-edge marker pass for finite ASCII initial screens. Wrapped-row navigation and complex text remain open."
     },
     {
       "id": "man-1176",

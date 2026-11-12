@@ -114,6 +114,8 @@ pub(super) struct Args {
     pub startup_commands: Vec<Vec<u8>>,
     pub force: bool,
     pub raw_mode: bool,
+    pub chop: bool,
+    pub line_numbers: bool,
     pub search_case: CaseSensitivity,
     pub filenames: Vec<OsString>,
     pub stdin_explicit: bool,
@@ -123,7 +125,7 @@ pub(super) struct Args {
 
 impl Default for Args {
     fn default() -> Self {
-        Self { startup_commands: Vec::new(), force: false, raw_mode: false, search_case: CaseSensitivity::Sensitive,
+        Self { startup_commands: Vec::new(), force: false, raw_mode: false, chop: false, line_numbers: false, search_case: CaseSensitivity::Sensitive,
             filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
@@ -175,6 +177,8 @@ impl Scanner {
             "force" => self.args.force = !reset,
             "ignore-case" => self.args.search_case = if reset { CaseSensitivity::Sensitive } else if upper { CaseSensitivity::Insensitive } else { CaseSensitivity::Smart },
             "raw-control-chars" => self.args.raw_mode = !reset && !upper,
+            "chop-long-lines" => self.args.chop = !reset,
+            "line-numbers" => self.args.line_numbers = !reset && upper,
             _ => {}
         }
     }
