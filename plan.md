@@ -6,7 +6,8 @@
 - Integration starts at `265e52d`, with unchanged product baseline `2ae5660` and a clean tree.
 - Accepted: S00; all 128 Rust tests pass with unique repository-local history fixtures.
 - Accepted: S01 redirected pilot: 13 strict cases pass (file/completed pipe text, empty, binary, invalid bytes, controls; missing/directory/special diagnostics). Both isolated 668/POSIX builds verified on macOS arm64. Baseline mismatches reproduced before repair.
-- Active: S02, pinned PTY dependency and JSON runner/selftests in test manifests and `tests/parity/`; acceptance `make parity-selftest`. Delivery limiter: implementation; continue serially.
+- Accepted: S02: pinned PTY runner, independent worlds and full represented semantic snapshots; offline oracle self-comparison and seven mutation controls pass. Typed JSON rejects unknown fields/events. Dependency review: `tests/parity/dependencies.md`.
+- Active: S03 inventory and upstream translations in `tests/parity/`; acceptance `make parity-inventory-check`. Implementation limits delivery; continue serially. All admitted 13 cases and Clippy remain green.
 - Next: S01 redirected output and pinned reference setup. Linux, other macOS architecture, quiet-host timing and remote CI remain unproved.
 
 ## Charter

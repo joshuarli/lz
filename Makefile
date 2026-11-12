@@ -92,3 +92,7 @@ parity-setup:
 parity-test:
 	@TMPDIR="$(CURDIR)/.work/tmp" python3 tests/parity/setup.py --verify >/dev/null
 	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo test --test parity -- $(if $(CASE),--case $(CASE),) $(if $(GROUP),--group $(GROUP),) --mode $(if $(MODE),$(MODE),admitted)
+
+.PHONY: parity-selftest
+parity-selftest:
+	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo test --test parity -- --selftest

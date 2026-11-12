@@ -1,0 +1,273 @@
+[
+  {
+    "id": "redirected-file-text",
+    "family": "redirected",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-pipe-text",
+    "family": "redirected",
+    "admitted": true,
+    "source": "pipe",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-file-empty",
+    "family": "redirected",
+    "admitted": true,
+    "source": "file",
+    "fixture": [],
+    "args": [],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-pipe-empty",
+    "family": "redirected",
+    "admitted": true,
+    "source": "pipe",
+    "fixture": [],
+    "args": [],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-file-binary",
+    "family": "redirected",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      97,
+      0,
+      98,
+      10
+    ],
+    "args": [],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-pipe-binary",
+    "family": "redirected",
+    "admitted": true,
+    "source": "pipe",
+    "fixture": [
+      97,
+      0,
+      98,
+      10
+    ],
+    "args": [],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-file-invalid",
+    "family": "redirected",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      97,
+      255,
+      254,
+      10
+    ],
+    "args": [],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-pipe-invalid",
+    "family": "redirected",
+    "admitted": true,
+    "source": "pipe",
+    "fixture": [
+      97,
+      255,
+      254,
+      10
+    ],
+    "args": [],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-file-controls",
+    "family": "redirected",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      97,
+      13,
+      10,
+      27,
+      91,
+      51,
+      49,
+      109,
+      98,
+      27,
+      91,
+      48,
+      109,
+      10
+    ],
+    "args": [],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-pipe-controls",
+    "family": "redirected",
+    "admitted": true,
+    "source": "pipe",
+    "fixture": [
+      97,
+      13,
+      10,
+      27,
+      91,
+      51,
+      49,
+      109,
+      98,
+      27,
+      91,
+      48,
+      109,
+      10
+    ],
+    "args": [],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-missing",
+    "family": "redirected",
+    "admitted": true,
+    "source": "missing",
+    "fixture": [],
+    "args": [],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-directory",
+    "family": "redirected",
+    "admitted": true,
+    "source": "directory",
+    "fixture": [],
+    "args": [],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-special",
+    "family": "redirected",
+    "admitted": true,
+    "source": "special",
+    "fixture": [],
+    "args": [],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  }
+]

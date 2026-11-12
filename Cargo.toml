@@ -11,6 +11,9 @@ unicode-width = "0.2"
 [dev-dependencies]
 tempfile = "3"
 rustybench = "0.4"
+laputa-ptytest = { git = "https://github.com/laputa-systems/ptytest", rev = "2efca1cffe9f4f19bddb7208643c18de63bbbc41" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 [[bench]]
 name = "bench"
