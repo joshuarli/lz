@@ -14,17 +14,20 @@ impl Default for RssLimit { fn default() -> Self { Self(MAX_RSS) } }
 impl TryFrom<u64> for RssLimit {
     type Error = String;
     fn try_from(value: u64) -> std::result::Result<Self, Self::Error> {
-        if value == 0 || value > MAX_RSS { return Err("RSS limit must be in 1..=536870912 bytes".into()); }
+        if value == 0 || value > MAX_RSS { return Err(format!("RSS limit must be in 1..={MAX_RSS} bytes")); }
         Ok(Self(value))
     }
 }
 impl From<RssLimit> for u64 { fn from(limit: RssLimit) -> Self { limit.0 } }
 
 #[derive(Debug)]
-pub(super) struct Violation { peak: u64, limit: u64 }
+pub(super) enum Violation { Resident { peak: u64, limit: u64 }, Spill { peak: u64, limit: u64 } }
 impl std::fmt::Display for Violation {
     fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(output, "resident memory budget exceeded: {} bytes > {} bytes", self.peak, self.limit)
+        match self {
+            Self::Resident {peak,limit} => write!(output, "resident memory budget exceeded: {peak} bytes > {limit} bytes"),
+            Self::Spill {peak,limit} => write!(output, "owned spill budget exceeded: {peak} bytes > {limit} bytes"),
+        }
     }
 }
 impl std::error::Error for Violation {}
@@ -34,6 +37,8 @@ impl std::error::Error for Violation {}
 pub(super) struct Record {
     limit: RssLimit,
     live_peak: u64,
+    spill_limit: super::spill::Limit,
+    spill_peak: u64,
     kernel_peak: Option<u64>,
     error: Option<String>,
 }
@@ -41,10 +46,11 @@ pub(super) struct Record {
 fn path(manifest: &Path) -> PathBuf { manifest.with_extension("resources.json") }
 
 impl Record {
-    pub(super) fn new(limit: RssLimit) -> Self { Self { limit, live_peak: 0, kernel_peak: None, error: None } }
+    pub(super) fn new(limit: RssLimit, spill_limit: super::spill::Limit) -> Self { Self { limit, spill_limit, spill_peak: 0, live_peak: 0, kernel_peak: None, error: None } }
     pub(super) fn note_live(&mut self, bytes: u64) { self.live_peak = self.live_peak.max(bytes); }
+    pub(super) fn note_spill(&mut self, bytes: u64) { self.spill_peak = self.spill_peak.max(bytes); }
     fn peak(&self) -> u64 { self.live_peak.max(self.kernel_peak.unwrap_or(0)) }
-    pub(super) fn exceeded(&self) -> bool { self.peak() > self.limit.0 }
+    pub(super) fn exceeded(&self) -> bool { self.peak() > self.limit.0 || self.spill_peak > u64::from(self.spill_limit) }
     pub(super) fn finish(&mut self, kernel_peak: u64) { self.kernel_peak = Some(kernel_peak); }
     pub(super) fn fail(&mut self, error: &io::Error) { self.error = Some(error.to_string()); }
     pub(super) fn save(&self, manifest: &Path) -> Result<()> {
@@ -63,8 +69,9 @@ pub(super) fn check(manifest: &Path, successful: bool) -> Result<Option<Record>>
         Err(error) => return Err(error.into()),
     };
     let record: Record = serde_json::from_slice(&bytes)?;
-    if let Some(error) = &record.error { return Err(format!("harness-error: RSS observation failed: {error}").into()); }
-    if record.exceeded() { return Err(Box::new(Violation { peak: record.peak(), limit: record.limit.0 })); }
+    if let Some(error) = &record.error { return Err(format!("harness-error: resource observation failed: {error}").into()); }
+    if record.peak() > record.limit.0 { return Err(Box::new(Violation::Resident { peak: record.peak(), limit: record.limit.0 })); }
+    if record.spill_peak > u64::from(record.spill_limit) { return Err(Box::new(Violation::Spill { peak: record.spill_peak, limit: u64::from(record.spill_limit) })); }
     if successful && (record.kernel_peak.is_none_or(|peak| peak == 0)) { return Err("harness-error: missing completed kernel RSS accounting".into()); }
     Ok(Some(record))
 }
@@ -119,7 +126,7 @@ pub(super) fn selftest() -> Result<()> {
     }
     let mut case = Case {
         id: "rss-control".into(), family:"harness".into(), admitted:false, source:"pty-pipe".into(),
-        pty_rss_limit: RssLimit::default(), fixture: b"owned data\n".to_vec().into(), args: Vec::<Argument>::new(),
+        pty_rss_limit: RssLimit::default(), pty_spill_limit: Default::default(), fixture: b"owned data\n".to_vec().into(), args: Vec::<Argument>::new(),
         fixture_name:b"input".to_vec(), files:BTreeMap::new(), env:BTreeMap::new(), size:[40,8], locale:"C".into(),
         events:vec![Event::Checkpoint {ready:"probe".into(),row:None},Event::Send {bytes:vec![b'q']}],
         trace_check:TraceCheck::Captured,
@@ -133,7 +140,7 @@ pub(super) fn selftest() -> Result<()> {
         return Err("completed kernel RSS evidence was not retained".into());
     }
     let unfinished = control.path().join("unfinished");
-    Record::new(case.pty_rss_limit).save(&unfinished)?;
+    Record::new(case.pty_rss_limit, case.pty_spill_limit).save(&unfinished)?;
     let error = check(&unfinished, true).err().ok_or("unfinished RSS evidence accepted")?;
     let classified = super::execution_error(&case, error.as_ref(), "candidate");
     if classified["outcome"] != "harness-error" || classified["side"] != "candidate" {
@@ -141,7 +148,7 @@ pub(super) fn selftest() -> Result<()> {
     }
     case.pty_rss_limit = (32 * 1024 * 1024).try_into()?;
     let rejected = super::observe_case(&good, &over, &case);
-    if rejected["outcome"] != "mismatch" || !rejected["actual_error_detail"].as_str().is_some_and(|detail| detail.contains("Violation")) {
+    if rejected["outcome"] != "mismatch" || !rejected["actual_error_detail"].as_str().is_some_and(|detail| detail.starts_with("Resident {")) {
         return Err(format!("candidate RSS violation did not retain its mismatch classification: {rejected}").into());
     }
     let oracle_rejected = super::observe_case(&over, &over, &case);
@@ -149,6 +156,40 @@ pub(super) fn selftest() -> Result<()> {
         || !oracle_rejected["error"].as_str().is_some_and(|error| error.contains("resident memory budget exceeded")) {
         return Err(format!("oracle RSS violation was counted as parity: {oracle_rejected}").into());
     }
+    for mode in ["spill", "read-only-spill", "write-only-spill"] {
+        let path = control.path().join(mode);
+        fs::write(&path, format!("#!/bin/sh\nexec '{quoted}' --pipe-probe {mode}\n"))?;
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o700))?;
+        let mut spill_case = case.clone();
+        spill_case.id = format!("{mode}-control");
+        spill_case.pty_rss_limit = RssLimit::default();
+        spill_case.pty_spill_limit = (1536 * 1024).try_into()?;
+        let measured = super::observe_case(&path, &path, &spill_case);
+        let expected = if mode == "read-only-spill" { 0 } else { 1024 * 1024 };
+        if measured["outcome"] != "pass" || measured["resources"]["candidate"]["spill_peak"] != expected {
+            return Err(format!("spill accounting failed for {mode}: outcome={} peak={}", measured["outcome"], measured["resources"]["candidate"]["spill_peak"]).into());
+        }
+    }
+    let mut spill_case = case.clone();
+    spill_case.id = "spill-budget-control".into();
+    spill_case.pty_rss_limit = RssLimit::default();
+    spill_case.pty_spill_limit = (64 * 1024).try_into()?;
+    let spilled = control.path().join("spill");
+    let rejected = super::observe_case(&good, &spilled, &spill_case);
+    if rejected["outcome"] != "mismatch" || !rejected["actual_error_detail"].as_str().is_some_and(|detail| detail.starts_with("Spill {")) {
+        return Err(format!("candidate spill budget did not fail in its own category: {}", rejected["outcome"]).into());
+    }
+    let rejected = super::observe_case(&spilled, &spilled, &spill_case);
+    if rejected["outcome"] != "harness-error" || rejected["side"] != "oracle"
+        || !rejected["error"].as_str().is_some_and(|error| error.contains("owned spill budget exceeded")) {
+        return Err("oracle spill budget was counted as candidate parity".into());
+    }
+    for bytes in [0, u64::from(super::spill::Limit::default()) + 1] {
+        if super::spill::Limit::try_from(bytes).is_ok() || serde_json::from_value::<super::spill::Limit>(json!(bytes)).is_ok() {
+            return Err("invalid spill budget accepted".into());
+        }
+    }
+    println!("anonymous-spill accounting deduplicates inode aliases, excludes deleted read-only inputs, includes write-only files and rejects candidate/oracle budget breaches distinctly");
     for (name, fault) in [("kernel-good", "kernel-restored"), ("kernel-bad", "kernel-leak")] {
         let path = control.path().join(name);
         fs::write(&path, format!("#!/bin/sh\nexec '{quoted}' --fixture {fault}\n"))?;

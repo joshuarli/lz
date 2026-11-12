@@ -96,11 +96,11 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
     let _cleanup = super::supervisor::Cleanup::new(manifest.to_owned());
     let command = if case.source == "pty-pipe" {
         CommandSpec::new(std::env::current_exe()?).arg("--pipe-supervisor").arg(binary)
-            .arg(std::ffi::OsString::from_vec(case.fixture_name.clone())).arg(manifest).arg(u64::from(case.pty_rss_limit).to_string())
+            .arg(std::ffi::OsString::from_vec(case.fixture_name.clone())).arg(manifest).arg(u64::from(case.pty_rss_limit).to_string()).arg(u64::from(case.pty_spill_limit).to_string())
             .args(case.args.iter().map(Argument::os_string)).current_dir(&world)
     } else {
         CommandSpec::new(std::env::current_exe()?).arg("--file-supervisor").arg(binary).arg(manifest)
-            .arg(u64::from(case.pty_rss_limit).to_string()).args(case.args.iter().map(Argument::os_string)).current_dir(&world)
+            .arg(u64::from(case.pty_rss_limit).to_string()).arg(u64::from(case.pty_spill_limit).to_string()).args(case.args.iter().map(Argument::os_string)).current_dir(&world)
     };
     let scenario = Scenario::new(&case.id)?.command(command)
         .size(Size::new(case.size[0], case.size[1])?).environment(environment).trace_limit(64 * 1024 * 1024);
@@ -199,7 +199,7 @@ pub fn selftest() -> Result<()> {
         println!("bounded file-effect capture detects a same-length suffix mutation");
     }
     let candidate = std::env::current_exe()?;
-    let mut case = Case { id: "selftest".into(), family: "harness".into(), admitted: false, source: "pty".into(), pty_rss_limit: Default::default(),
+    let mut case = Case { id: "selftest".into(), family: "harness".into(), admitted: false, source: "pty".into(), pty_rss_limit: Default::default(), pty_spill_limit: Default::default(),
         fixture: vec![].into(), fixture_name: b"input".to_vec(), files: BTreeMap::new(), args: vec!["--fixture".into(), "none".into()], env: BTreeMap::new(), size: [40, 8], locale: "C".into(),
         events: vec![Event::Checkpoint { ready: "pro".into(), row: None }, Event::Send { bytes: b"q\n".to_vec() }], trace_check:super::TraceCheck::Captured };
     let mut blocked = case.clone();

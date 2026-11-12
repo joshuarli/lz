@@ -154,14 +154,14 @@ pub fn producer(path: &Path) -> Result<()> {
     loop { std::thread::park(); }
 }
 
-pub fn run(binary: &Path, fixture: Option<&Path>, manifest: &Path, args: &[std::ffi::OsString], limit: super::resources::RssLimit) -> Result<()> {
+pub fn run(binary: &Path, fixture: Option<&Path>, manifest: &Path, args: &[std::ffi::OsString], limit: super::resources::RssLimit, spill_limit: super::spill::Limit) -> Result<()> {
     let forwarded = [1, 2, 3, 15, 28, JOB_SIGNALS[0], JOB_SIGNALS[1]];
     for number in forwarded { disposition(number, remember as *const () as usize)?; }
     for number in &JOB_SIGNALS[2..] { disposition(*number, 1)?; }
     let tty = File::options().read(true).write(true).open("/dev/tty")?;
     let fd = tty.as_raw_fd();
     let baseline = termios(fd)?;
-    let mut resources = super::resources::Record::new(limit);
+    let mut resources = super::resources::Record::new(limit, spill_limit);
     resources.save(manifest)?;
     let mut producer = if let Some(fixture) = fixture {
         let child = Command::new(std::env::current_exe()?).args([std::ffi::OsStr::new("--pipe-producer"), fixture.as_os_str()])
@@ -197,6 +197,10 @@ pub fn run(binary: &Path, fixture: Option<&Path>, manifest: &Path, args: &[std::
         let was_exceeded = resources.exceeded();
         match super::resources::resident(pager.child.id()) {
             Ok(bytes) => resources.note_live(bytes),
+            Err(error) => { resources.fail(&error); resources.save(manifest)?; return Err(error.into()); }
+        }
+        match super::spill::retained_bytes(pager.child.id()) {
+            Ok(bytes) => resources.note_spill(bytes),
             Err(error) => { resources.fail(&error); resources.save(manifest)?; return Err(error.into()); }
         }
         if !was_exceeded && resources.exceeded() { resources.save(manifest)?; group_signal(pager.child.id(), 9)?; }
@@ -294,6 +298,23 @@ pub fn probe(args: &[std::ffi::OsString]) -> Result<()> {
         io::stdout().flush()?;
         loop { std::thread::park(); }
     }
+    let _spill = if args.first().is_some_and(|arg| arg == "spill") {
+        let file = tempfile::tempfile_in(std::env::temp_dir())?;
+        file.set_len(1024 * 1024)?;
+        Some((file.try_clone()?, file))
+    } else if args.first().is_some_and(|arg| arg == "read-only-spill") {
+        let path = std::env::temp_dir().join("read-only-probe");
+        File::create(&path)?.set_len(1024 * 1024)?;
+        let file = File::open(&path)?;
+        fs::remove_file(path)?;
+        Some((file.try_clone()?, file))
+    } else if args.first().is_some_and(|arg| arg == "write-only-spill") {
+        let path = std::env::temp_dir().join("write-only-probe");
+        let file = File::options().write(true).create_new(true).open(&path)?;
+        file.set_len(1024 * 1024)?;
+        fs::remove_file(path)?;
+        Some((file.try_clone()?, file))
+    } else { None };
     let _memory = if args.first().is_some_and(|arg| arg == "memory") {
         let mut bytes = vec![0u8; 64 * 1024 * 1024];
         bytes.fill(0x5a);

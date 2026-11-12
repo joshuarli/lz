@@ -1,4 +1,5 @@
 mod resources;
+mod spill;
 mod fixtures;
 mod fuzz;
 mod inventory;
@@ -61,6 +62,8 @@ struct Case {
     source: String,
     #[serde(default)]
     pty_rss_limit: resources::RssLimit,
+    #[serde(default)]
+    pty_spill_limit: spill::Limit,
     fixture: Fixture,
     args: Vec<Argument>,
     fixture_name: Vec<u8>,
@@ -328,14 +331,16 @@ fn run(args: &[String]) -> Result<()> {
 fn main() -> Result<()> {
     let raw_args: Vec<_> = std::env::args_os().skip(1).collect();
     if raw_args.first().is_some_and(|arg| arg == "--pipe-supervisor") {
-        if raw_args.len() < 5 { return Err("missing supervisor arguments".into()); }
+        if raw_args.len() < 6 { return Err("missing supervisor arguments".into()); }
         let limit = raw_args[4].to_str().ok_or("non-UTF-8 RSS limit")?.parse::<u64>()?.try_into()?;
-        return supervisor::run(Path::new(&raw_args[1]), Some(Path::new(&raw_args[2])), Path::new(&raw_args[3]), &raw_args[5..], limit);
+        let spill = raw_args[5].to_str().ok_or("non-UTF-8 spill limit")?.parse::<u64>()?.try_into()?;
+        return supervisor::run(Path::new(&raw_args[1]), Some(Path::new(&raw_args[2])), Path::new(&raw_args[3]), &raw_args[6..], limit, spill);
     }
     if raw_args.first().is_some_and(|arg| arg == "--file-supervisor") {
-        if raw_args.len() < 4 { return Err("missing file supervisor arguments".into()); }
+        if raw_args.len() < 5 { return Err("missing file supervisor arguments".into()); }
         let limit = raw_args[3].to_str().ok_or("non-UTF-8 RSS limit")?.parse::<u64>()?.try_into()?;
-        return supervisor::run(Path::new(&raw_args[1]), None, Path::new(&raw_args[2]), &raw_args[4..], limit);
+        let spill = raw_args[4].to_str().ok_or("non-UTF-8 spill limit")?.parse::<u64>()?.try_into()?;
+        return supervisor::run(Path::new(&raw_args[1]), None, Path::new(&raw_args[2]), &raw_args[5..], limit, spill);
     }
     if raw_args.first().is_some_and(|arg| arg == "--pipe-producer") { return supervisor::producer(Path::new(raw_args.get(1).ok_or("missing producer fixture")?)); }
     if raw_args.first().is_some_and(|arg| arg == "--pipe-probe") { return supervisor::probe(&raw_args[1..]); }
