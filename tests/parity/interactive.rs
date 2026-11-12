@@ -147,6 +147,21 @@ pub fn selftest() -> Result<()> {
     let mut case = Case { id: "selftest".into(), family: "harness".into(), admitted: false, source: "pty".into(),
         fixture: vec![].into(), fixture_name: b"input".to_vec(), files: BTreeMap::new(), args: vec!["--fixture".into(), "none".into()], env: BTreeMap::new(), size: [40, 8], locale: "C".into(),
         events: vec![Event::Checkpoint { ready: "pro".into(), row: None }, Event::Send { bytes: b"q\n".to_vec() }], trace_check:super::TraceCheck::Captured };
+    let mut blocked = case.clone();
+    blocked.id = "parallel-timeout".into();
+    blocked.args[1] = "timeout".into();
+    let mut ready = case.clone();
+    ready.id = "parallel-ready".into();
+    let mut following = ready.clone();
+    following.id = "parallel-following".into();
+    let parallel = super::collect_cases(&[&blocked, &ready, &following], 2, |case| super::observe_case(&candidate, &candidate, case));
+    for (index, id, outcome) in [(0, "parallel-timeout", "harness-error"), (1, "parallel-ready", "pass"), (2, "parallel-following", "pass")] {
+        if parallel[index]["case"]["id"] != id || parallel[index]["outcome"] != outcome {
+            return Err("parallel collection lost, reordered or reclassified a case".into());
+        }
+    }
+    if !parallel[0]["error"].as_str().is_some_and(|error| error.contains("timed out")) { return Err("parallel control failed outside its timeout observation".into()); }
+    println!("bounded workers preserve corpus order, independent fixture worlds and timeout classification while draining subsequent cases");
     let mut pipe_case = case.clone();
     pipe_case.source = "pty-pipe".into();
     pipe_case.fixture = b"owned data\n".to_vec().into();
@@ -262,7 +277,7 @@ pub fn selftest() -> Result<()> {
         return Err("candidate did not restore its terminal and preserve HUP signal death".into());
     }
     println!("candidate HUP safety: represented modes restored, signal death preserved; oracle leak remains a parked divergence");
-    let report = json!({"candidate_hangup_safety": hangup, "candidate_large_navigation_safety":large_navigation, "primary_transition":primary_transition, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location", "pipe-argv-env-foreground", "pipe-code-signal", "pipe-timeout-reap", "queued-input-retention", "plain-text-hidden-control"], "oracle_a": a, "oracle_b": b});
+    let report = json!({"candidate_hangup_safety": hangup, "candidate_large_navigation_safety":large_navigation, "primary_transition":primary_transition, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location", "pipe-argv-env-foreground", "pipe-code-signal", "pipe-timeout-reap", "queued-input-retention", "plain-text-hidden-control", "parallel-order-timeout-drain"], "oracle_a": a, "oracle_b": b});
     let path = super::stdio::world()?.keep().join("selftest.json");
     fs::write(&path, serde_json::to_vec_pretty(&report)?)?;
     println!("oracle independent-world startup/quit/lifecycle self-comparison passes; {}", path.display());

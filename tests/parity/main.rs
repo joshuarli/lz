@@ -208,6 +208,56 @@ fn comparable(observation: &Value) -> Value {
     value
 }
 
+fn observe_case(reference: &Path, candidate: &Path, case: &Case) -> Value {
+    let result = (|| -> Result<Value> {
+        let expected = execute(reference, case)?;
+        let actual = match execute(candidate, case) {
+            Ok(actual) => actual,
+            Err(error) if error.is::<TraceViolation>() || error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. } | ptytest::PtyTestError::SnapshotMismatch { .. })) => {
+                return Ok(json!({"case": case, "outcome": "mismatch", "expected": expected, "actual_error": error.to_string(), "actual_error_detail": format!("{error:#?}"), "difference": "candidate failed a readiness, lifecycle or trace assertion after the oracle completed"}));
+            }
+            Err(error) => return Err(error),
+        };
+        let difference = first_difference(&comparable(&expected), &comparable(&actual), "observation");
+        Ok(json!({"case": case, "outcome": if difference.is_some() { "mismatch" } else { "pass" }, "expected": expected, "actual": actual, "difference": difference}))
+    })();
+    match result {
+        Ok(result) => result,
+        Err(error) => {
+            let oracle_leak = error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::SnapshotMismatch { path, .. } if path == Path::new("terminal-baseline")));
+            json!({"case": case, "outcome": if error.is::<NeedsEnvironment>() { "needs-environment" } else if oracle_leak { "mismatch" } else { "harness-error" }, "side": "oracle", "error": error.to_string(), "error_detail": format!("{error:#?}"), "difference": if oracle_leak { Some("oracle does not restore represented terminal modes; preserve as explicit divergence, never reproduce the leak") } else { None }})
+        },
+    }
+}
+
+fn collect_cases(cases: &[&Case], workers: usize, observe: impl Fn(&Case) -> Value + Sync) -> Vec<Value> {
+    use std::sync::{atomic::{AtomicUsize, Ordering}, mpsc::sync_channel};
+    let workers = workers.min(cases.len()).max(1);
+    if workers == 1 { return cases.iter().map(|case| observe(case)).collect(); }
+    let next = AtomicUsize::new(0);
+    std::thread::scope(|scope| {
+        let (sender, receiver) = sync_channel(workers);
+        let mut handles = Vec::new();
+        for _ in 0..workers {
+            let sender = sender.clone();
+            let next = &next;
+            let observe = &observe;
+            handles.push(scope.spawn(move || {
+                loop {
+                    let index = next.fetch_add(1, Ordering::Relaxed);
+                    let Some(case) = cases.get(index) else { break; };
+                    if sender.send((index, observe(case))).is_err() { break; }
+                }
+            }));
+        }
+        drop(sender);
+        let mut results = vec![Value::Null; cases.len()];
+        for (index, result) in receiver { results[index] = result; }
+        for handle in handles { handle.join().expect("parity worker panicked"); }
+        results
+    })
+}
+
 fn run(args: &[String]) -> Result<()> {
     let value = |key: &str| args.windows(2).find(|pair| pair[0] == key).map(|pair| pair[1].as_str());
     let mode = value("--mode").unwrap_or("admitted");
@@ -237,37 +287,17 @@ fn run(args: &[String]) -> Result<()> {
     if selected.is_empty() { return Err("no selected cases".into()); }
     let meta = metadata(candidate)?;
     let result_dir = stdio::world()?.keep();
-    let mut results = Vec::new();
+    let results = collect_cases(&selected, if baseline { 2 } else { 1 }, |case| observe_case(&reference, candidate, case));
     let mut failed = false;
     let mut harness_error = false;
     let full_corpus = selected.len() == cases.len();
-    for case in selected {
-        let result = (|| -> Result<Value> {
-            let expected = execute(&reference, case)?;
-            let actual = match execute(candidate, case) {
-                Ok(actual) => actual,
-                Err(error) if error.is::<TraceViolation>() || error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. } | ptytest::PtyTestError::SnapshotMismatch { .. })) => {
-                    return Ok(json!({"case": case, "outcome": "mismatch", "expected": expected, "actual_error": error.to_string(), "actual_error_detail": format!("{error:#?}"), "difference": "candidate failed a readiness, lifecycle or trace assertion after the oracle completed"}));
-                }
-                Err(error) => return Err(error),
-            };
-            let difference = first_difference(&comparable(&expected), &comparable(&actual), "observation");
-            Ok(json!({"case": case, "outcome": if difference.is_some() { "mismatch" } else { "pass" }, "expected": expected, "actual": actual, "difference": difference}))
-        })();
-        let result = match result {
-            Ok(result) => result,
-            Err(error) => {
-                let oracle_leak = error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::SnapshotMismatch { path, .. } if path == Path::new("terminal-baseline")));
-                json!({"case": case, "outcome": if error.is::<NeedsEnvironment>() { "needs-environment" } else if oracle_leak { "mismatch" } else { "harness-error" }, "side": "oracle", "error": error.to_string(), "error_detail": format!("{error:#?}"), "difference": if oracle_leak { Some("oracle does not restore represented terminal modes; preserve as explicit divergence, never reproduce the leak") } else { None }})
-            },
-        };
+    for (case, result) in selected.iter().zip(&results) {
         println!("{} {}", result["outcome"].as_str().unwrap(), case.id);
         if result["outcome"] != "pass" {
             failed = true;
             eprintln!("{}\nreproduce: make parity-test CASE={}", result.get("difference").filter(|value| !value.is_null()).unwrap_or(&result["error"]), case.id);
         }
         harness_error |= result["outcome"] == "harness-error";
-        results.push(result);
     }
     let report = json!({"metadata": meta, "results": results, "candidate_kind": if baseline { "baseline-2ae5660" } else { "current" }});
     fs::write(result_dir.join("results.json"), serde_json::to_vec_pretty(&report)?)?;
