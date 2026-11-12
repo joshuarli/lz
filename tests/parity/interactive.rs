@@ -1,10 +1,11 @@
-use super::{Case, Event, Result, comparable, first_difference, json};
+use super::{Argument, Case, Event, Result, comparable, first_difference, json};
 use ptytest::{CommandSpec, Deadline, ExitStatus, PtyTest, Scenario, ScreenSnapshot, Size, TestEnv};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};
 use std::path::Path;
+use std::os::unix::ffi::OsStringExt;
 use std::time::{Duration, Instant};
 
 fn screen(snapshot: &ScreenSnapshot) -> Value {
@@ -48,8 +49,9 @@ pub fn execute(binary: &Path, case: &Case) -> Result<Value> {
     let mut environment = environment.env("LESSHISTFILE", "-");
     for (key, value) in &case.env { environment = environment.env(key, value); }
     let world = environment.paths().root().to_owned();
-    fs::write(world.join("input"), &case.fixture)?;
-    let scenario = Scenario::new(&case.id)?.command(CommandSpec::new(binary).args(&case.args).current_dir(&world))
+    super::write_fixture(&world.join(std::ffi::OsString::from_vec(case.fixture_name.clone())), &case.fixture)?;
+    for (name, bytes) in &case.files { fs::write(world.join(name), bytes)?; }
+    let scenario = Scenario::new(&case.id)?.command(CommandSpec::new(binary).args(case.args.iter().map(Argument::os_string)).current_dir(&world))
         .size(Size::new(case.size[0], case.size[1])?).environment(environment).trace_limit(64 * 1024 * 1024);
     let mut terminal = PtyTest::spawn(scenario)?;
     let baseline = terminal.terminal_baseline();
@@ -68,7 +70,7 @@ pub fn execute(binary: &Path, case: &Case) -> Result<Value> {
             Event::Resize { columns, rows } => terminal.resize(Size::new(*columns, *rows)?)?,
             Event::Signal { number } => terminal.signal(*number)?,
             Event::Append { bytes } => {
-                OpenOptions::new().append(true).open(world.join("input"))?.write_all(bytes)?;
+                OpenOptions::new().append(true).open(world.join(std::ffi::OsString::from_vec(case.fixture_name.clone())))?.write_all(bytes)?;
             }
         }
     }
@@ -102,14 +104,14 @@ pub fn fixture(fault: &str) -> Result<()> {
 pub fn selftest() -> Result<()> {
     let candidate = std::env::current_exe()?;
     let mut case = Case { id: "selftest".into(), family: "harness".into(), admitted: false, source: "pty".into(),
-        fixture: vec![], args: vec!["--fixture".into(), "none".into()], env: BTreeMap::new(), size: [40, 8], locale: "C".into(),
+        fixture: vec![], fixture_name: b"input".to_vec(), files: BTreeMap::new(), args: vec!["--fixture".into(), "none".into()], env: BTreeMap::new(), size: [40, 8], locale: "C".into(),
         events: vec![Event::Checkpoint { ready: "pro".into(), row: None }, Event::Send { bytes: b"q\n".to_vec() }] };
     let mut invalid = serde_json::to_value(&case)?;
     invalid.as_object_mut().unwrap().insert("typo".into(), json!(true));
     if serde_json::from_value::<Case>(invalid).is_ok() { return Err("unknown scenario field accepted".into()); }
     if serde_json::from_value::<Event>(json!({"type": "typo"})).is_ok() { return Err("unknown event accepted".into()); }
-    let expected_diagnostic = super::stdio::redirected(&candidate, b"", "file", &["--stdio-fixture".into(), "none".into()])?;
-    let dropped = super::stdio::redirected(&candidate, b"", "file", &["--stdio-fixture".into(), "drop-error".into()])?;
+    let expected_diagnostic = super::stdio::redirected(&candidate, b"", "file", &["--stdio-fixture".into(), "none".into()], b"input", &BTreeMap::new())?;
+    let dropped = super::stdio::redirected(&candidate, b"", "file", &["--stdio-fixture".into(), "drop-error".into()], b"input", &BTreeMap::new())?;
     let difference = first_difference(&expected_diagnostic, &dropped, "observation").ok_or("dropped error missed")?;
     if !difference.contains("stderr") { return Err("dropped error detected at wrong observation".into()); }
     println!("detected dropped stderr diagnostic; unknown fields/events rejected");

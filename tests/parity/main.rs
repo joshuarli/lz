@@ -6,11 +6,32 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
+use std::ffi::OsString;
+use std::os::unix::ffi::OsStringExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use stdio::root;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+#[derive(Debug)]
+struct NeedsEnvironment(String);
+impl std::fmt::Display for NeedsEnvironment {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { formatter.write_str(&self.0) }
+}
+impl std::error::Error for NeedsEnvironment {}
+
+fn write_fixture(path: &Path, bytes: &[u8]) -> Result<()> {
+    use std::os::unix::ffi::OsStrExt;
+    if let Err(error) = fs::write(path, bytes) {
+        if cfg!(target_os = "macos") && error.raw_os_error() == Some(92)
+            && path.file_name().is_some_and(|name| std::str::from_utf8(name.as_bytes()).is_err()) {
+            return Err(Box::new(NeedsEnvironment("host filesystem rejects invalid UTF-8 fixture names (EILSEQ); repeat on a byte-preserving Unix filesystem".into())));
+        }
+        return Err(error.into());
+    }
+    Ok(())
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -20,12 +41,30 @@ struct Case {
     admitted: bool,
     source: String,
     fixture: Vec<u8>,
-    args: Vec<String>,
+    args: Vec<Argument>,
+    fixture_name: Vec<u8>,
+    files: BTreeMap<String, Vec<u8>>,
     env: BTreeMap<String, String>,
     size: [u16; 2],
     locale: String,
     events: Vec<Event>,
 }
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+enum Argument { Text(String), Bytes(ByteArgument) }
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ByteArgument { bytes: Vec<u8> }
+
+impl Argument {
+    fn os_string(&self) -> OsString {
+        match self { Self::Text(text) => text.into(), Self::Bytes(bytes) => OsString::from_vec(bytes.bytes.clone()) }
+    }
+}
+
+impl From<&str> for Argument { fn from(value: &str) -> Self { Self::Text(value.into()) } }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(tag = "type", rename_all = "kebab-case", deny_unknown_fields)]
@@ -44,8 +83,11 @@ fn cases() -> Result<Vec<Case>> {
         if case.id.is_empty() || !case.id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-') || !ids.insert(&case.id) {
             return Err(format!("invalid/duplicate case ID {}", case.id).into());
         }
-        if !matches!(case.source.as_str(), "file" | "pipe" | "missing" | "directory" | "special" | "pty") {
+        if !matches!(case.source.as_str(), "file" | "pipe" | "pty") {
             return Err(format!("unknown source {}", case.source).into());
+        }
+        for name in std::iter::once(OsString::from_vec(case.fixture_name.clone())).chain(case.files.keys().map(OsString::from)) {
+            if name.is_empty() || !Path::new(&name).components().all(|component| matches!(component, std::path::Component::Normal(_))) { return Err("unsafe fixture path".into()); }
         }
         if case.size.contains(&0) || !matches!(case.locale.as_str(), "C" | "en_US.UTF-8" | "C.UTF-8") {
             return Err("invalid geometry or locale".into());
@@ -65,7 +107,7 @@ fn oracle() -> PathBuf {
 
 fn execute(binary: &Path, case: &Case) -> Result<Value> {
     if case.source == "pty" { interactive::execute(binary, case) }
-    else { Ok(stdio::redirected(binary, &case.fixture, &case.source, &case.args)?) }
+    else { Ok(stdio::redirected(binary, &case.fixture, &case.source, &case.args.iter().map(Argument::os_string).collect::<Vec<_>>(), &case.fixture_name, &case.files)?) }
 }
 
 fn digest(paths: &[PathBuf]) -> Result<String> {
@@ -165,7 +207,7 @@ fn run(args: &[String]) -> Result<()> {
         })();
         let result = match result {
             Ok(result) => result,
-            Err(error) => json!({"case": case, "outcome": "harness-error", "error": error.to_string()}),
+            Err(error) => json!({"case": case, "outcome": if error.is::<NeedsEnvironment>() { "needs-environment" } else { "harness-error" }, "error": error.to_string()}),
         };
         println!("{} {}", result["outcome"].as_str().unwrap(), case.id);
         if result["outcome"] != "pass" {

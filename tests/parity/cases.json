@@ -18,14 +18,24 @@
       115,
       116
     ],
-    "args": [],
+    "args": [
+      "input"
+    ],
     "env": {},
     "size": [
       80,
       24
     ],
     "locale": "C",
-    "events": []
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "redirected-pipe-text",
@@ -53,7 +63,15 @@
       24
     ],
     "locale": "C",
-    "events": []
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "redirected-file-empty",
@@ -61,14 +79,24 @@
     "admitted": true,
     "source": "file",
     "fixture": [],
-    "args": [],
+    "args": [
+      "input"
+    ],
     "env": {},
     "size": [
       80,
       24
     ],
     "locale": "C",
-    "events": []
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "redirected-pipe-empty",
@@ -83,7 +111,15 @@
       24
     ],
     "locale": "C",
-    "events": []
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "redirected-file-binary",
@@ -96,14 +132,24 @@
       98,
       10
     ],
-    "args": [],
+    "args": [
+      "input"
+    ],
     "env": {},
     "size": [
       80,
       24
     ],
     "locale": "C",
-    "events": []
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "redirected-pipe-binary",
@@ -123,7 +169,15 @@
       24
     ],
     "locale": "C",
-    "events": []
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "redirected-file-invalid",
@@ -136,14 +190,24 @@
       254,
       10
     ],
-    "args": [],
+    "args": [
+      "input"
+    ],
     "env": {},
     "size": [
       80,
       24
     ],
     "locale": "C",
-    "events": []
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "redirected-pipe-invalid",
@@ -163,7 +227,15 @@
       24
     ],
     "locale": "C",
-    "events": []
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "redirected-file-controls",
@@ -186,14 +258,24 @@
       109,
       10
     ],
-    "args": [],
+    "args": [
+      "input"
+    ],
     "env": {},
     "size": [
       80,
       24
     ],
     "locale": "C",
-    "events": []
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "redirected-pipe-controls",
@@ -223,52 +305,90 @@
       24
     ],
     "locale": "C",
-    "events": []
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "redirected-missing",
     "family": "redirected",
     "admitted": true,
-    "source": "missing",
+    "source": "file",
     "fixture": [],
-    "args": [],
+    "args": [
+      "missing"
+    ],
     "env": {},
     "size": [
       80,
       24
     ],
     "locale": "C",
-    "events": []
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "redirected-directory",
     "family": "redirected",
     "admitted": true,
-    "source": "directory",
+    "source": "file",
     "fixture": [],
-    "args": [],
+    "args": [
+      "."
+    ],
     "env": {},
     "size": [
       80,
       24
     ],
     "locale": "C",
-    "events": []
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "redirected-special",
     "family": "redirected",
     "admitted": true,
-    "source": "special",
+    "source": "file",
     "fixture": [],
-    "args": [],
+    "args": [
+      "/dev/null"
+    ],
     "env": {},
     "size": [
       80,
       24
     ],
     "locale": "C",
-    "events": []
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "startup-quit",
@@ -2218,7 +2338,15 @@
           113
         ]
       }
-    ]
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "upstream-version-navigation",
@@ -53122,7 +53250,15 @@
           113
         ]
       }
-    ]
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   },
   {
     "id": "upstream-seq-search",
@@ -53857,6 +53993,637 @@
           113
         ]
       }
-    ]
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "redirected-multiple",
+    "family": "redirected",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {
+      "other": [
+        111,
+        116,
+        104,
+        101,
+        114,
+        10
+      ]
+    },
+    "args": [
+      "input",
+      "other"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-missing-between",
+    "family": "redirected",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {
+      "other": [
+        111,
+        116,
+        104,
+        101,
+        114,
+        10
+      ]
+    },
+    "args": [
+      "input",
+      "missing",
+      "other"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-stdin-first",
+    "family": "redirected",
+    "admitted": true,
+    "source": "pipe",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {
+      "other": [
+        111,
+        116,
+        104,
+        101,
+        114,
+        10
+      ]
+    },
+    "args": [
+      "-",
+      "other"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-stdin-last",
+    "family": "redirected",
+    "admitted": true,
+    "source": "pipe",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {
+      "other": [
+        111,
+        116,
+        104,
+        101,
+        114,
+        10
+      ]
+    },
+    "args": [
+      "other",
+      "-"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-stdin-middle",
+    "family": "redirected",
+    "admitted": true,
+    "source": "pipe",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {
+      "other": [
+        111,
+        116,
+        104,
+        101,
+        114,
+        10
+      ]
+    },
+    "args": [
+      "other",
+      "-",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-stdin-repeat",
+    "family": "redirected",
+    "admitted": true,
+    "source": "pipe",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {
+      "other": [
+        111,
+        116,
+        104,
+        101,
+        114,
+        10
+      ]
+    },
+    "args": [
+      "-",
+      "-"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-repeat-file",
+    "family": "redirected",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {
+      "other": [
+        111,
+        116,
+        104,
+        101,
+        114,
+        10
+      ]
+    },
+    "args": [
+      "input",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-force-special",
+    "family": "redirected",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {
+      "other": [
+        111,
+        116,
+        104,
+        101,
+        114,
+        10
+      ]
+    },
+    "args": [
+      "-f",
+      "/dev/null"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-double-dash",
+    "family": "redirected",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {
+      "other": [
+        111,
+        116,
+        104,
+        101,
+        114,
+        10
+      ]
+    },
+    "args": [
+      "--",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-nonutf8",
+    "family": "sources",
+    "admitted": false,
+    "source": "file",
+    "fixture": [
+      114,
+      97,
+      119,
+      32,
+      112,
+      97,
+      116,
+      104,
+      10
+    ],
+    "fixture_name": [
+      255,
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "args": [
+      "--",
+      {
+        "bytes": [
+          255,
+          105,
+          110,
+          112,
+          117,
+          116
+        ]
+      }
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-dash-name",
+    "family": "redirected",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      114,
+      97,
+      119,
+      32,
+      112,
+      97,
+      116,
+      104,
+      10
+    ],
+    "fixture_name": [
+      45,
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "args": [
+      "--",
+      {
+        "bytes": [
+          45,
+          105,
+          110,
+          112,
+          117,
+          116
+        ]
+      }
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-resolved-path",
+    "family": "redirected",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {
+      "other": [
+        111,
+        116,
+        104,
+        101,
+        114,
+        10
+      ]
+    },
+    "args": [
+      "input",
+      "./input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-repeat-missing",
+    "family": "redirected",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {
+      "other": [
+        111,
+        116,
+        104,
+        101,
+        114,
+        10
+      ]
+    },
+    "args": [
+      "missing",
+      "missing"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
+  },
+  {
+    "id": "redirected-duplicate-order",
+    "family": "redirected",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {
+      "other": [
+        111,
+        116,
+        104,
+        101,
+        114,
+        10
+      ]
+    },
+    "args": [
+      "input",
+      "other",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": []
   }
 ]

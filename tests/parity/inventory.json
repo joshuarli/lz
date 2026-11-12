@@ -7109,7 +7109,20 @@
         "redirected-pipe-controls",
         "redirected-missing",
         "redirected-directory",
-        "redirected-special"
+        "redirected-special",
+        "redirected-multiple",
+        "redirected-missing-between",
+        "redirected-stdin-first",
+        "redirected-stdin-last",
+        "redirected-stdin-middle",
+        "redirected-stdin-repeat",
+        "redirected-repeat-file",
+        "redirected-force-special",
+        "redirected-double-dash",
+        "redirected-dash-name",
+        "redirected-resolved-path",
+        "redirected-repeat-missing",
+        "redirected-duplicate-order"
       ],
       "implementation": "implemented",
       "evidence": "compatible in the named tested scenarios",
@@ -7129,10 +7142,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
+      "cases": [
+        "redirected-nonutf8"
+      ],
       "implementation": "unassessed",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "macOS fixture filesystem rejects invalid UTF-8 names with EILSEQ before either pager runs; repeat on a byte-preserving Unix filesystem"
     },
     {
       "id": "terminal-lifecycle",

@@ -1,6 +1,8 @@
 use lz::{buffer, history, pager, terminal};
 
 use std::fs::File;
+use std::ffi::OsString;
+use std::os::unix::ffi::OsStrExt;
 use std::io::{self, IsTerminal, Read, Write};
 use std::process;
 
@@ -10,7 +12,7 @@ struct Args {
     follow: bool,
     force: bool,
     raw_mode: bool,
-    filename: Option<String>,
+    filenames: Vec<OsString>,
     stdin_explicit: bool,
     help: bool,
     version: bool,
@@ -21,45 +23,40 @@ fn parse_args() -> Args {
         follow: false,
         force: false,
         raw_mode: false,
-        filename: None,
+        filenames: Vec::new(),
         stdin_explicit: false,
         help: false,
         version: false,
     };
 
-    let argv: Vec<String> = std::env::args().skip(1).collect();
+    let argv: Vec<OsString> = std::env::args_os().skip(1).collect();
     let mut end_of_flags = false;
 
     for arg in &argv {
         if end_of_flags {
-            if args.filename.is_some() {
-                eprintln!("lz: too many arguments");
-                process::exit(2);
-            }
-            args.filename = Some(arg.clone());
+            args.filenames.push(arg.clone());
             continue;
         }
 
-        match arg.as_str() {
-            "--" => end_of_flags = true,
-            "-" => args.stdin_explicit = true,
-            "--follow" => args.follow = true,
-            "--force" => args.force = true,
-            "-r" | "--raw" => args.raw_mode = true,
-            "--help" | "-h" => args.help = true,
-            "--version" | "-V" => args.version = true,
-            // Silently ignore unknown flags and +commands (e.g. less-style
-            // options passed by programs that assume PAGER is less).
-            s if s.starts_with('-') || s.starts_with('+') => {}
-            _ => {
-                if args.filename.is_some() {
-                    eprintln!("lz: too many arguments");
-                    process::exit(2);
-                }
-                args.filename = Some(arg.clone());
-            }
+        match arg.as_bytes() {
+            b"--" => end_of_flags = true,
+            b"-" => { args.stdin_explicit = true; args.filenames.push(arg.clone()); }
+            b"--follow" => args.follow = true,
+            b"-f" | b"--force" => args.force = true,
+            b"-r" | b"--raw" => args.raw_mode = true,
+            b"--help" | b"-h" => args.help = true,
+            b"--version" | b"-V" => args.version = true,
+            value if value.starts_with(b"-") || value.starts_with(b"+") => {}
+            _ => args.filenames.push(arg.clone()),
         }
     }
+    if args.filenames.is_empty() { args.filenames.push("-".into()); }
+    let mut seen = std::collections::BTreeSet::new();
+    args.filenames.retain(|filename| {
+        let resolved = if filename == "-" { std::path::PathBuf::from(filename) }
+            else { std::fs::canonicalize(filename).unwrap_or_else(|_| filename.into()) };
+        seen.insert(resolved)
+    });
 
     args
 }
@@ -107,21 +104,24 @@ fn run() -> Result<(), String> {
         return Ok(());
     }
 
-    let is_stdin = args.filename.is_none() || args.stdin_explicit;
+    let is_stdin = args.filenames.first().is_some_and(|name| name == "-");
 
     if !io::stdout().is_terminal() {
         let mut output = io::stdout().lock();
-        if is_stdin {
-            io::copy(&mut io::stdin().lock(), &mut output).map_err(|error| error.to_string())?;
-        } else {
-            let filename = args.filename.as_ref().unwrap();
+        for filename in &args.filenames {
+            if filename == "-" {
+                io::copy(&mut io::stdin().lock(), &mut output).map_err(|error| error.to_string())?;
+                continue;
+            }
             match File::open(filename) {
                 Ok(mut file) => {
                     let metadata = file.metadata().map_err(|error| error.to_string())?;
                     if metadata.is_dir() {
-                        writeln!(output, "{} is a directory", filename).map_err(|error| error.to_string())?;
+                        output.write_all(filename.as_bytes()).map_err(|error| error.to_string())?;
+                        writeln!(output, " is a directory").map_err(|error| error.to_string())?;
                     } else if !metadata.is_file() && !args.force {
-                        writeln!(output, "{} is not a regular file (use -f to see it)", filename).map_err(|error| error.to_string())?;
+                        output.write_all(filename.as_bytes()).map_err(|error| error.to_string())?;
+                        writeln!(output, " is not a regular file (use -f to see it)").map_err(|error| error.to_string())?;
                     } else {
                         io::copy(&mut file, &mut output).map_err(|error| error.to_string())?;
                     }
@@ -129,12 +129,18 @@ fn run() -> Result<(), String> {
                 Err(error) => {
                     let message = error.to_string();
                     let message = message.rsplit_once(" (os error ").map_or(message.as_str(), |(text, _)| text);
-                    writeln!(output, "{}: {}", filename, message).map_err(|error| error.to_string())?;
+                    output.write_all(filename.as_bytes()).map_err(|error| error.to_string())?;
+                    writeln!(output, ": {}", message).map_err(|error| error.to_string())?;
                 }
             }
         }
         output.flush().map_err(|error| error.to_string())?;
         return Ok(());
+    }
+
+    if args.filenames.len() > 1 {
+        eprintln!("lz: too many arguments");
+        process::exit(2);
     }
 
     if is_stdin && atty_stdin() && !args.stdin_explicit {
@@ -169,8 +175,8 @@ fn run() -> Result<(), String> {
             (lb, None)
         }
     } else {
-        let filename = args.filename.as_ref().unwrap();
-        let mut file = File::open(filename).map_err(|e| format!("{}: {}", filename, e))?;
+        let filename = &args.filenames[0];
+        let mut file = File::open(filename).map_err(|e| format!("{}: {}", filename.to_string_lossy(), e))?;
 
         // Binary check
         if !args.force && buffer::LineBuffer::check_binary(&mut file).map_err(|e| e.to_string())? {
@@ -188,7 +194,7 @@ fn run() -> Result<(), String> {
         }
 
         let lb = buffer::LineBuffer::from_file(file);
-        (lb, Some(filename.clone()))
+        (lb, Some(filename.to_string_lossy().into_owned()))
     };
 
     let mut session = terminal::Session::start().map_err(|error| error.to_string())?;

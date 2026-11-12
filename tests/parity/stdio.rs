@@ -1,5 +1,8 @@
 use std::fs::{self, File};
 use std::io;
+use std::collections::BTreeMap;
+use std::ffi::OsString;
+use std::os::unix::ffi::OsStringExt;
 use std::os::unix::process::{CommandExt, ExitStatusExt};
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
@@ -67,11 +70,12 @@ fn wait(child: &mut Child, paths: &[PathBuf]) -> io::Result<ExitStatus> {
     }
 }
 
-pub fn redirected(binary: &Path, bytes: &[u8], source: &str, args: &[String]) -> io::Result<Value> {
+pub fn redirected(binary: &Path, bytes: &[u8], source: &str, args: &[OsString], fixture_name: &[u8], files: &BTreeMap<String, Vec<u8>>) -> super::Result<Value> {
     let dir = world()?;
     let cwd = dir.path();
-    let fixture = cwd.join("input");
-    fs::write(&fixture, bytes)?;
+    let fixture = cwd.join(OsString::from_vec(fixture_name.to_vec()));
+    for (name, bytes) in files { fs::write(cwd.join(name), bytes)?; }
+    super::write_fixture(&fixture, bytes)?;
     let out = cwd.join("stdout");
     let err = cwd.join("stderr");
     let mut cmd = command(binary, cwd);
@@ -83,7 +87,7 @@ pub fn redirected(binary: &Path, bytes: &[u8], source: &str, args: &[String]) ->
         cmd.stdin(producer.0.stdout.take().unwrap());
         Some(producer)
     } else {
-        cmd.stdin(Stdio::null()).arg(match source { "missing" => "missing", "directory" => ".", "special" => "/dev/null", _ => "input" });
+        cmd.stdin(Stdio::null());
         None
     };
     let mut child = OwnedChild(cmd.spawn()?);
@@ -91,7 +95,7 @@ pub fn redirected(binary: &Path, bytes: &[u8], source: &str, args: &[String]) ->
     if let Some(mut producer) = producer {
         let status = wait(&mut producer.0, &[])?;
         if !status.success() {
-            return Err(io::Error::other("harness-error: producer failed"));
+            return Err(io::Error::other("harness-error: producer failed").into());
         }
     }
     Ok(observed(fs::read(out)?, fs::read(err)?, status))
