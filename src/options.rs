@@ -1,85 +1,97 @@
 use std::ffi::OsString;
 use std::io::{self, Write};
-use std::os::unix::ffi::OsStrExt;
+use std::os::unix::ffi::{OsStrExt, OsStringExt};
+use lz::search::CaseSensitivity;
 
-struct OptionSpec { shorts: &'static [u8], names: &'static [&'static str], value: bool }
+#[derive(Clone, Copy)]
+enum ValueKind { Flag, Number, Text }
+
+struct OptionSpec { shorts: &'static [u8], names: &'static [&'static str], value: ValueKind }
 
 const OPTIONS: &[OptionSpec] = &[
-    OptionSpec { shorts: b"?", names: &["help"], value: false },
-    OptionSpec { shorts: b"aA", names: &["search-skip-screen"], value: false },
-    OptionSpec { shorts: b"b", names: &["buffers"], value: true },
-    OptionSpec { shorts: b"B", names: &["auto-buffers"], value: false },
-    OptionSpec { shorts: b"cC", names: &["clear-screen"], value: false },
-    OptionSpec { shorts: b"d", names: &["dumb"], value: false },
-    OptionSpec { shorts: b"D", names: &["color"], value: true },
-    OptionSpec { shorts: b"eE", names: &["quit-at-eof"], value: false },
-    OptionSpec { shorts: b"f", names: &["force"], value: false },
-    OptionSpec { shorts: b"F", names: &["quit-if-one-screen"], value: false },
-    OptionSpec { shorts: b"gG", names: &["hilite-search"], value: false },
-    OptionSpec { shorts: b"h", names: &["max-back-scroll"], value: true },
-    OptionSpec { shorts: b"iI", names: &["ignore-case"], value: false },
-    OptionSpec { shorts: b"j", names: &["jump-target"], value: true },
-    OptionSpec { shorts: b"J", names: &["status-column"], value: false },
-    OptionSpec { shorts: b"k", names: &["lesskey-file"], value: true },
-    OptionSpec { shorts: b"", names: &["lesskey-src"], value: true },
-    OptionSpec { shorts: b"", names: &["lesskey-content"], value: true },
-    OptionSpec { shorts: b"K", names: &["quit-on-intr"], value: false },
-    OptionSpec { shorts: b"L", names: &["no-lessopen"], value: false },
-    OptionSpec { shorts: b"mM", names: &["long-prompt"], value: false },
-    OptionSpec { shorts: b"nN", names: &["line-numbers"], value: false },
-    OptionSpec { shorts: b"oO", names: &["log-file"], value: true },
-    OptionSpec { shorts: b"p", names: &["pattern"], value: true },
-    OptionSpec { shorts: b"P", names: &["prompt"], value: true },
-    OptionSpec { shorts: b"qQ", names: &["quiet", "silent"], value: false },
-    OptionSpec { shorts: b"rR", names: &["raw-control-chars"], value: false },
-    OptionSpec { shorts: b"s", names: &["squeeze-blank-lines"], value: false },
-    OptionSpec { shorts: b"S", names: &["chop-long-lines"], value: false },
-    OptionSpec { shorts: b"t", names: &["tag"], value: true },
-    OptionSpec { shorts: b"T", names: &["tag-file"], value: true },
-    OptionSpec { shorts: b"uU", names: &["underline-special"], value: false },
-    OptionSpec { shorts: b"V", names: &["version"], value: false },
-    OptionSpec { shorts: b"wW", names: &["hilite-unread"], value: false },
-    OptionSpec { shorts: b"x", names: &["tabs"], value: true },
-    OptionSpec { shorts: b"X", names: &["no-init"], value: false },
-    OptionSpec { shorts: b"y", names: &["max-forw-scroll"], value: true },
-    OptionSpec { shorts: b"z", names: &["window"], value: true },
-    OptionSpec { shorts: b"\"", names: &["quotes"], value: true },
-    OptionSpec { shorts: b"~", names: &["tilde"], value: false },
-    OptionSpec { shorts: b"#", names: &["shift"], value: true },
-    OptionSpec { shorts: b"", names: &["exit-follow-on-close"], value: false },
-    OptionSpec { shorts: b"", names: &["file-size"], value: false },
-    OptionSpec { shorts: b"", names: &["follow-name"], value: false },
-    OptionSpec { shorts: b"", names: &["header"], value: true },
-    OptionSpec { shorts: b"", names: &["incsearch"], value: false },
-    OptionSpec { shorts: b"", names: &["intr"], value: true },
-    OptionSpec { shorts: b"", names: &["line-num-width"], value: true },
-    OptionSpec { shorts: b"", names: &["match-shift"], value: true },
-    OptionSpec { shorts: b"", names: &["modelines"], value: true },
-    OptionSpec { shorts: b"", names: &["mouse"], value: false },
-    OptionSpec { shorts: b"", names: &["no-keypad"], value: false },
-    OptionSpec { shorts: b"", names: &["no-histdups"], value: false },
-    OptionSpec { shorts: b"", names: &["no-number-headers"], value: false },
-    OptionSpec { shorts: b"", names: &["no-search-header-lines"], value: false },
-    OptionSpec { shorts: b"", names: &["no-search-header-columns"], value: false },
-    OptionSpec { shorts: b"", names: &["no-search-headers"], value: false },
-    OptionSpec { shorts: b"", names: &["no-vbell"], value: false },
-    OptionSpec { shorts: b"", names: &["proc-backspace"], value: false },
-    OptionSpec { shorts: b"", names: &["proc-return"], value: false },
-    OptionSpec { shorts: b"", names: &["proc-tab"], value: false },
-    OptionSpec { shorts: b"", names: &["redraw-on-quit"], value: false },
-    OptionSpec { shorts: b"", names: &["rscroll"], value: true },
-    OptionSpec { shorts: b"", names: &["save-marks"], value: false },
-    OptionSpec { shorts: b"", names: &["search-options"], value: true },
-    OptionSpec { shorts: b"", names: &["show-preproc-errors"], value: false },
-    OptionSpec { shorts: b"", names: &["status-col-width"], value: true },
-    OptionSpec { shorts: b"", names: &["status-line"], value: false },
-    OptionSpec { shorts: b"", names: &["use-backslash"], value: false },
-    OptionSpec { shorts: b"", names: &["use-color"], value: false },
-    OptionSpec { shorts: b"", names: &["wheel-lines"], value: true },
-    OptionSpec { shorts: b"", names: &["wordwrap"], value: false },
+    OptionSpec { shorts: b"?", names: &["help"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"aA", names: &["search-skip-screen"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"b", names: &["buffers"], value: ValueKind::Number },
+    OptionSpec { shorts: b"B", names: &["auto-buffers"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"cC", names: &["clear-screen"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"d", names: &["dumb"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"D", names: &["color"], value: ValueKind::Text },
+    OptionSpec { shorts: b"eE", names: &["quit-at-eof"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"f", names: &["force"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"F", names: &["quit-if-one-screen"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"gG", names: &["hilite-search"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"h", names: &["max-back-scroll"], value: ValueKind::Number },
+    OptionSpec { shorts: b"iI", names: &["ignore-case"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"j", names: &["jump-target"], value: ValueKind::Text },
+    OptionSpec { shorts: b"J", names: &["status-column"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"k", names: &["lesskey-file"], value: ValueKind::Text },
+    OptionSpec { shorts: b"", names: &["lesskey-src"], value: ValueKind::Text },
+    OptionSpec { shorts: b"", names: &["lesskey-content"], value: ValueKind::Text },
+    OptionSpec { shorts: b"K", names: &["quit-on-intr"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"L", names: &["no-lessopen"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"mM", names: &["long-prompt"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"nN", names: &["line-numbers"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"oO", names: &["log-file"], value: ValueKind::Text },
+    OptionSpec { shorts: b"p", names: &["pattern"], value: ValueKind::Text },
+    OptionSpec { shorts: b"P", names: &["prompt"], value: ValueKind::Text },
+    OptionSpec { shorts: b"qQ", names: &["quiet", "silent"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"rR", names: &["raw-control-chars"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"s", names: &["squeeze-blank-lines"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"S", names: &["chop-long-lines"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"t", names: &["tag"], value: ValueKind::Text },
+    OptionSpec { shorts: b"T", names: &["tag-file"], value: ValueKind::Text },
+    OptionSpec { shorts: b"uU", names: &["underline-special"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"V", names: &["version"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"wW", names: &["hilite-unread"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"x", names: &["tabs"], value: ValueKind::Text },
+    OptionSpec { shorts: b"X", names: &["no-init"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"y", names: &["max-forw-scroll"], value: ValueKind::Number },
+    OptionSpec { shorts: b"z", names: &["window"], value: ValueKind::Number },
+    OptionSpec { shorts: b"\"", names: &["quotes"], value: ValueKind::Text },
+    OptionSpec { shorts: b"~", names: &["tilde"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"#", names: &["shift"], value: ValueKind::Text },
+    OptionSpec { shorts: b"", names: &["exit-follow-on-close"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["file-size"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["follow-name"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["header"], value: ValueKind::Text },
+    OptionSpec { shorts: b"", names: &["incsearch"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["intr"], value: ValueKind::Text },
+    OptionSpec { shorts: b"", names: &["line-num-width"], value: ValueKind::Number },
+    OptionSpec { shorts: b"", names: &["match-shift"], value: ValueKind::Text },
+    OptionSpec { shorts: b"", names: &["modelines"], value: ValueKind::Number },
+    OptionSpec { shorts: b"", names: &["mouse"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["no-keypad"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["no-histdups"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["no-number-headers"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["no-search-header-lines"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["no-search-header-columns"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["no-search-headers"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["no-vbell"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["proc-backspace"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["proc-return"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["proc-tab"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["redraw-on-quit"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["rscroll"], value: ValueKind::Text },
+    OptionSpec { shorts: b"", names: &["save-marks"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["search-options"], value: ValueKind::Text },
+    OptionSpec { shorts: b"", names: &["show-preproc-errors"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["status-col-width"], value: ValueKind::Number },
+    OptionSpec { shorts: b"", names: &["status-line"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["use-backslash"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["use-color"], value: ValueKind::Flag },
+    OptionSpec { shorts: b"", names: &["wheel-lines"], value: ValueKind::Number },
+    OptionSpec { shorts: b"", names: &["wordwrap"], value: ValueKind::Flag },
 ];
 
-pub(super) enum Diagnostic { UnknownShort(u8), UnknownLong(Vec<u8>), Ambiguous(Vec<u8>) }
+pub(super) enum Diagnostic {
+    UnknownShort(u8),
+    UnknownLong(Vec<u8>),
+    Ambiguous(Vec<u8>),
+    MissingValue(Vec<u8>),
+    InvalidNumber(Vec<u8>),
+    Overflow(Vec<u8>),
+    FlagAssignment(Vec<u8>),
+}
 
 impl Diagnostic {
     pub(super) fn write(&self, output: &mut impl Write) -> io::Result<()> {
@@ -87,8 +99,32 @@ impl Diagnostic {
             Self::UnknownShort(letter) => { output.write_all(b"There is no -")?; output.write_all(&[*letter])?; output.write_all(b" option")?; }
             Self::UnknownLong(name) => { output.write_all(b"There is no ")?; output.write_all(name)?; output.write_all(b" option")?; }
             Self::Ambiguous(name) => { output.write_all(name)?; output.write_all(b" is an ambiguous abbreviation")?; }
+            Self::MissingValue(label) => { output.write_all(b"Value is required after ")?; output.write_all(label)?; return output.write_all(b"\n"); }
+            Self::InvalidNumber(label) => { output.write_all(b"Number is required after ")?; output.write_all(label)?; return output.write_all(b"\n"); }
+            Self::Overflow(label) => { output.write_all(b"Number too large in '")?; output.write_all(label)?; return output.write_all(b"'\n"); }
+            Self::FlagAssignment(name) => { output.write_all(b"The ")?; output.write_all(name)?; return output.write_all(b" option should not be followed by =\n"); }
         }
         output.write_all(b" (\"lz --help\" for help)\n")
+    }
+}
+
+pub(super) enum Action { Page, Help, Version, Stop }
+
+pub(super) struct Args {
+    pub follow: bool,
+    pub force: bool,
+    pub raw_mode: bool,
+    pub search_case: CaseSensitivity,
+    pub filenames: Vec<OsString>,
+    pub stdin_explicit: bool,
+    pub action: Action,
+    pub diagnostics: Vec<Diagnostic>,
+}
+
+impl Default for Args {
+    fn default() -> Self {
+        Self { follow: false, force: false, raw_mode: false, search_case: CaseSensitivity::Sensitive,
+            filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
 
@@ -99,37 +135,136 @@ fn prefix(name: &[u8], option: &str) -> bool {
     else { option.starts_with(name) }
 }
 
-pub(super) fn diagnose(arguments: &[OsString]) -> Vec<Diagnostic> {
-    let mut diagnostics = Vec::new();
-    let mut pending_value = false;
-    for argument in arguments {
-        let argument = argument.as_bytes();
-        if pending_value { pending_value = false; continue; }
-        if argument == b"--" { break; }
-        if argument.starts_with(b"+") && argument.len() > 1 { continue; }
-        if argument.len() < 2 || !argument.starts_with(b"-") { break; }
-        if let Some(long) = argument.strip_prefix(b"--") {
-            let long = long.strip_prefix(b"+").or_else(|| long.strip_prefix(b"!")).unwrap_or(long);
-            let name = long.split(|byte| *byte == b'=').next().unwrap();
-            let exact = OPTIONS.iter().find(|option| option.names.iter().any(|alias| name.len() == alias.len() && prefix(name, alias)));
-            let options: Vec<_> = OPTIONS.iter().filter(|option| option.names.iter().any(|alias| prefix(name, alias))).collect();
-            let option = match exact {
-                Some(option) => option,
-                None if options.len() == 1 => options[0],
-                None if options.is_empty() => { diagnostics.push(Diagnostic::UnknownLong(long.to_vec())); continue; }
-                None => { diagnostics.push(Diagnostic::Ambiguous(long.to_vec())); continue; }
+fn lookup(name: &[u8]) -> Result<&'static OptionSpec, bool> {
+    if let Some(exact) = OPTIONS.iter().find(|option| option.names.iter().any(|alias| name.len() == alias.len() && prefix(name, alias))) { return Ok(exact); }
+    let mut matches = OPTIONS.iter().filter(|option| option.names.iter().any(|alias| prefix(name, alias)));
+    match (matches.next(), matches.next()) { (Some(option), None) => Ok(option), (None, _) => Err(false), _ => Err(true) }
+}
+
+fn description(option: &OptionSpec) -> Vec<u8> {
+    if let Some(letter) = option.shorts.first() {
+        [b"-".as_slice(), &[*letter], b" (--", option.names[0].as_bytes(), b")"].concat()
+    } else { [b"--".as_slice(), option.names[0].as_bytes()].concat() }
+}
+
+enum NumberScan { Number(usize), Missing, Overflow(usize) }
+
+fn scan_number(bytes: &[u8]) -> NumberScan {
+    let leading = bytes.iter().take_while(|byte| byte.is_ascii_whitespace()).count();
+    let sign = usize::from(bytes.get(leading) == Some(&b'-'));
+    let start = leading + sign;
+    let digits = bytes[start..].iter().take_while(|byte| byte.is_ascii_digit()).count();
+    if digits == 0 { return NumberScan::Missing; }
+    let mut value = 0u64;
+    let mut overflow = false;
+    for byte in &bytes[start..start + digits] {
+        value = value.saturating_mul(10).saturating_add(u64::from(byte - b'0'));
+        overflow |= value > i32::MAX as u64;
+    }
+    if overflow { NumberScan::Overflow(start + digits) } else { NumberScan::Number(start + digits) }
+}
+
+#[derive(Default)]
+struct Scanner { args: Args, pending: Option<&'static OptionSpec> }
+
+impl Scanner {
+    fn apply_flag(&mut self, option: &OptionSpec, upper: bool, reset: bool) {
+        match option.names[0] {
+            "help" => self.args.action = Action::Help,
+            "version" => if !matches!(self.args.action, Action::Help) { self.args.action = Action::Version; },
+            "force" => self.args.force = !reset,
+            "ignore-case" => self.args.search_case = if reset { CaseSensitivity::Sensitive } else if upper { CaseSensitivity::Insensitive } else { CaseSensitivity::Smart },
+            "raw-control-chars" => self.args.raw_mode = !reset && !upper,
+            _ => {}
+        }
+    }
+
+    fn value(&mut self, option: &OptionSpec, payload: &[u8], label: Vec<u8>) -> usize {
+        match option.value {
+            ValueKind::Flag => 0,
+            ValueKind::Text => payload.iter().position(|byte| *byte == b'$').unwrap_or(payload.len()),
+            ValueKind::Number => match scan_number(payload) {
+                NumberScan::Number(bytes) => bytes,
+                NumberScan::Missing => { self.args.diagnostics.push(Diagnostic::InvalidNumber(label)); 0 }
+                NumberScan::Overflow(bytes) => { self.args.diagnostics.push(Diagnostic::Overflow(label)); bytes }
+            },
+        }
+    }
+
+    fn word(&mut self, word: &[u8]) {
+        let mut cursor = 0;
+        let mut reset = false;
+        while cursor < word.len() {
+            let byte = word[cursor];
+            cursor += 1;
+            match byte {
+                b' ' | b'\t' | b'$' => continue,
+                b'+' => { if &word[cursor..] == b"F" { self.args.follow = true; } return; }
+                b'-' if word.get(cursor) != Some(&b'-') => {
+                    reset = word.get(cursor) == Some(&b'+');
+                    cursor += usize::from(reset);
+                    continue;
+                }
+                _ => {}
+            }
+            let (option, label, upper) = if byte == b'-' {
+                cursor += 1;
+                if word.get(cursor) == Some(&b'+') { reset = true; cursor += 1; }
+                let start = cursor;
+                while cursor < word.len() && !matches!(word[cursor], b'=' | b' ' | b'\t' | b'$') { cursor += 1; }
+                let name = &word[start..cursor];
+                let option = match lookup(name) {
+                    Ok(option) => option,
+                    Err(ambiguous) => {
+                        self.args.diagnostics.push(if ambiguous { Diagnostic::Ambiguous(word[start..].to_vec()) } else { Diagnostic::UnknownLong(word[start..].to_vec()) });
+                        return;
+                    }
+                };
+                if word.get(cursor) == Some(&b'=') {
+                    if matches!(option.value, ValueKind::Flag) { self.args.diagnostics.push(Diagnostic::FlagAssignment(word[start..].to_vec())); return; }
+                    cursor += 1;
+                }
+                (option, word[start..].to_vec(), name[0].is_ascii_uppercase())
+            } else if byte.is_ascii_digit() {
+                cursor -= 1;
+                (OPTIONS.iter().find(|option| option.shorts.contains(&b'z')).unwrap(), b"-z".to_vec(), false)
+            } else {
+                let Some(option) = OPTIONS.iter().find(|option| option.shorts.contains(&byte)) else { self.args.diagnostics.push(Diagnostic::UnknownShort(byte)); return; };
+                (option, vec![b'-', byte], byte.is_ascii_uppercase())
             };
-            pending_value = option.value && !long.contains(&b'=');
-        } else {
-            let mut flags = &argument[1..];
-            if flags.starts_with(b"+") || flags.starts_with(b"!") { flags = &flags[1..]; }
-            for (index, letter) in flags.iter().enumerate() {
-                if letter.is_ascii_digit() { continue; }
-                let option = OPTIONS.iter().find(|option| option.shorts.contains(letter));
-                let Some(option) = option else { diagnostics.push(Diagnostic::UnknownShort(*letter)); break; };
-                if option.value { pending_value = index + 1 == flags.len(); break; }
+            match option.value {
+                ValueKind::Flag => self.apply_flag(option, upper, reset),
+                ValueKind::Number | ValueKind::Text => {
+                    if cursor == word.len() { self.pending = Some(option); return; }
+                    cursor += self.value(option, &word[cursor..], label);
+                }
             }
         }
     }
-    diagnostics
+}
+
+pub(super) fn parse(arguments: Vec<OsString>, defaults: Option<OsString>) -> Args {
+    let mut scanner = Scanner::default();
+    if let Some(defaults) = defaults { scanner.word(defaults.as_bytes()); }
+    let mut arguments = arguments.into_iter();
+    while let Some(argument) = arguments.next() {
+        let bytes = argument.as_bytes();
+        if bytes == b"--" { scanner.args.filenames.extend(arguments); break; }
+        if let Some(option) = scanner.pending.take() {
+            scanner.value(option, bytes, description(option));
+        } else if bytes.len() > 1 && matches!(bytes[0], b'-' | b'+') {
+            scanner.word(bytes);
+        } else {
+            scanner.args.filenames.push(argument);
+            scanner.args.filenames.extend(arguments);
+            break;
+        }
+    }
+    if let Some(option) = scanner.pending {
+        scanner.args.diagnostics.push(Diagnostic::MissingValue(description(option)));
+        scanner.args.action = Action::Stop;
+    }
+    scanner.args.stdin_explicit = scanner.args.filenames.iter().any(|name| name.as_bytes() == b"-");
+    if scanner.args.filenames.is_empty() { scanner.args.filenames.push(OsString::from_vec(b"-".to_vec())); }
+    scanner.args
 }

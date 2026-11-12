@@ -2891,10 +2891,21 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-missing-number",
+        "invocation-missing-long-number",
+        "invocation-invalid-number-separate",
+        "invocation-invalid-number-inline",
+        "invocation-number-trailing-options",
+        "invocation-number-separate",
+        "invocation-number-inline",
+        "invocation-number-long",
+        "invocation-number-overflow",
+        "invocation-pending-terminator"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Generic numeric parsing and diagnostic boundaries pass; the max-back-scroll runtime policy remains open."
     },
     {
       "id": "man-0887",
@@ -3308,10 +3319,14 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-missing-string",
+        "invocation-string-separate",
+        "invocation-string-inline"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "String value consumption and missing-value diagnostics pass in redirected scenarios; startup search policy remains open."
     },
     {
       "id": "man-1080",
@@ -7236,7 +7251,7 @@
       ],
       "implementation": "partial",
       "evidence": "known incompatible",
-      "cause": "Pinned ordinary macOS oracle dies on SIGHUP without restoring alternate-screen/application modes. Reproduction: make parity-test CASE=lifecycle-hup (one byte x, then HUP). Safety forbids copying this leak. Candidate restores represented modes then dies from HUP; independent safety selftest passes. Park on parity/S04c-hup. Retry only after an explicit owner ruling on the reference defect; never silently change the oracle."
+      "cause": "Owner /yea approves retaining cleanup as an explicit safety divergence. The pinned oracle leaks represented modes on one-byte file then HUP; lz cleanup and signal death have independent safety proof. Retain strict mismatch and parity/S04c-hup. This choice does not establish equivalence or authorize oracle changes."
     },
     {
       "id": "invocation-option-errors",

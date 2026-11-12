@@ -1,7 +1,6 @@
 mod options;
 
 use lz::{buffer, history, pager, terminal};
-use lz::search::CaseSensitivity;
 
 use std::fs::File;
 use std::ffi::OsString;
@@ -11,83 +10,6 @@ use std::process;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-struct Args {
-    follow: bool,
-    force: bool,
-    raw_mode: bool,
-    search_case: CaseSensitivity,
-    filenames: Vec<OsString>,
-    stdin_explicit: bool,
-    help: bool,
-    version: bool,
-}
-
-fn case_option(bytes: &[u8]) -> Option<CaseSensitivity> {
-    match bytes {
-        b"--ignore-case" => Some(CaseSensitivity::Smart),
-        b"--IGNORE-CASE" => Some(CaseSensitivity::Insensitive),
-        b"-+i" | b"-+I" => Some(CaseSensitivity::Sensitive),
-        _ => {
-            let flags = bytes.strip_prefix(b"-")?;
-            if flags.is_empty() || flags.iter().any(|byte| !matches!(byte, b'i' | b'I')) { return None; }
-            Some(if flags.last() == Some(&b'i') { CaseSensitivity::Smart } else { CaseSensitivity::Insensitive })
-        }
-    }
-}
-
-fn parse_args(argv: Vec<OsString>) -> Args {
-    let mut args = Args {
-        follow: false,
-        force: false,
-        raw_mode: false,
-        search_case: CaseSensitivity::default(),
-        filenames: Vec::new(),
-        stdin_explicit: false,
-        help: false,
-        version: false,
-    };
-
-    if let Some(defaults) = std::env::var_os("LESS") {
-        for token in defaults.as_bytes().split(|byte| byte.is_ascii_whitespace()).filter(|token| !token.is_empty()) {
-            let flag = if token.starts_with(b"-") { token.to_vec() } else { [b"-", token].concat() };
-            if let Some(case) = case_option(&flag) { args.search_case = case; }
-        }
-    }
-
-    let mut end_of_flags = false;
-
-    for arg in &argv {
-        if end_of_flags {
-            if arg == "-" { args.stdin_explicit = true; }
-            args.filenames.push(arg.clone());
-            continue;
-        }
-
-        if let Some(case) = case_option(arg.as_bytes()) { args.search_case = case; continue; }
-
-        match arg.as_bytes() {
-            b"--" => end_of_flags = true,
-            b"-" => { args.stdin_explicit = true; args.filenames.push(arg.clone()); end_of_flags = true; }
-            b"--follow" => args.follow = true,
-            b"-f" | b"--force" => args.force = true,
-            b"-r" | b"--raw" => args.raw_mode = true,
-            b"--help" | b"-h" => args.help = true,
-            b"--version" | b"-V" => args.version = true,
-            value if value.starts_with(b"-") || value.starts_with(b"+") => {}
-            _ => { args.filenames.push(arg.clone()); end_of_flags = true; }
-        }
-    }
-    if args.filenames.is_empty() { args.filenames.push("-".into()); }
-    let mut seen = std::collections::BTreeSet::new();
-    args.filenames.retain(|filename| {
-        let resolved = if filename == "-" { std::path::PathBuf::from(filename) }
-            else { std::fs::canonicalize(filename).unwrap_or_else(|_| filename.into()) };
-        seen.insert(resolved)
-    });
-
-    args
-}
-
 fn print_help() {
     println!(
         "lz {} — a minimal pager
@@ -95,12 +17,12 @@ fn print_help() {
 USAGE: lz [OPTIONS] [FILE]
 
 OPTIONS:
-    --follow    Follow mode (like tail -f)
+    +F          Start in follow mode
     -f, --force View binary files
     -i          Ignore ASCII case unless the pattern has uppercase
     -I          Always ignore ASCII case
     -r, --raw   Raw mode (show ANSI escapes literally)
-    -h, --help  Show this help
+    -?, --help  Show this help
     -V, --version  Show version
 
 KEYS:
@@ -124,20 +46,22 @@ enum ExitAction { Success, Terminated, Hangup }
 
 fn run() -> Result<ExitAction, String> {
     let argv: Vec<OsString> = std::env::args_os().skip(1).collect();
-    for diagnostic in options::diagnose(&argv) {
+    let mut args = options::parse(argv, std::env::var_os("LESS"));
+    for diagnostic in &args.diagnostics {
         diagnostic.write(&mut io::stderr().lock()).map_err(|error| error.to_string())?;
     }
-    let args = parse_args(argv);
-
-    if args.help {
-        print_help();
-        return Ok(ExitAction::Success);
+    match args.action {
+        options::Action::Help => { print_help(); return Ok(ExitAction::Success); }
+        options::Action::Version => { println!("lz {}", VERSION); return Ok(ExitAction::Success); }
+        options::Action::Stop => return Ok(ExitAction::Success),
+        options::Action::Page => {}
     }
-
-    if args.version {
-        println!("lz {}", VERSION);
-        return Ok(ExitAction::Success);
-    }
+    let mut seen = std::collections::BTreeSet::new();
+    args.filenames.retain(|filename| {
+        let resolved = if filename == "-" { std::path::PathBuf::from(filename) }
+            else { std::fs::canonicalize(filename).unwrap_or_else(|_| filename.into()) };
+        seen.insert(resolved)
+    });
 
     let is_stdin = args.filenames.first().is_some_and(|name| name == "-");
 

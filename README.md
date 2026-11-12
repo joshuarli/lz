@@ -25,15 +25,15 @@ The less 668 parity campaign is in progress; interactive behavior still differs.
 
 | Flag | Description |
 |---|---|
-| `--follow` | Follow mode (like `tail -f`) |
+| `+F` | Start in follow mode (like `tail -f`) |
 | `-f`, `--force` | View binary files |
 | `-i`, `--ignore-case` | Use smart case for ASCII search |
 | `-I`, `--IGNORE-CASE` | Ignore ASCII search case |
 | `-r`, `--raw` | Show ANSI escapes literally |
-| `-h`, `--help` | Show help |
+| `-?`, `--help` | Show help |
 | `-V`, `--version` | Show version |
 
-Search is case-sensitive by default. Simple `-i` and `-I` entries in `LESS` apply before the command line. `-+i` resets the case policy. Unknown and ambiguous CLI options emit diagnostics while redirected file copying continues. Option parsing stops at the first filename. Full less option syntax and Unicode case-folding parity remain open.
+Search is case-sensitive by default. Simple `-i` and `-I` entries in `LESS` apply before the command line. `-+i` resets the case policy. Unknown and ambiguous CLI options emit diagnostics while redirected file copying continues. Option parsing stops at the first filename. Numeric and string arguments are consumed by one parser, including missing-value and overflow diagnostics. `-h` takes a number. Full option effects and Unicode case-folding parity remain open.
 
 ## Keyboard Shortcuts
 

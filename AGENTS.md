@@ -67,10 +67,11 @@ ansi.rs
 
 ### `main.rs`
 
-`options.rs` owns the documented option-name registry and diagnoses unknown or
-ambiguous CLI flags before the first filename. Diagnostics do not suppress
-redirected file copying. Numeric/string errors and most option effects remain
-unimplemented. This registry validates names; it does not establish full CLI parity.
+`options.rs` owns one byte-preserving parser for option names, numeric and string
+values, LESS defaults and the first-filename boundary. Missing values stop output
+with status 0; other diagnosed option errors allow redirected file copying. `-h`
+takes a number and `-?` requests help. Most option effects remain unimplemented;
+parsing a documented name does not establish full CLI parity.
 
 Entry point and CLI argument parsing.
 

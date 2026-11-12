@@ -66526,5 +66526,591 @@
       116
     ],
     "files": {}
+  },
+  {
+    "id": "invocation-missing-number",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-h"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-missing-long-number",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "--max-back-scroll"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-invalid-number-separate",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-h",
+      "bad",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-invalid-number-inline",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-hbad",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-number-trailing-options",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-h12bad",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-number-separate",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-h",
+      "12",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-number-inline",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-h12",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-number-long",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "--max-back-scroll=12",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-number-overflow",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-h999999999999999999999",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-missing-string",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-p"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-string-separate",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-p",
+      "word",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-string-inline",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-pword",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-flag-assignment",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "--force=value",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-pending-terminator",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-h",
+      "--",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "invocation-unknown-then-missing",
+    "family": "invocation",
+    "admitted": true,
+    "source": "file",
+    "fixture": [
+      111,
+      110,
+      101,
+      10,
+      116,
+      119,
+      111,
+      10,
+      108,
+      97,
+      115,
+      116
+    ],
+    "args": [
+      "-Z",
+      "-h"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   }
 ]
