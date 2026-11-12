@@ -2,6 +2,7 @@ mod fixtures;
 mod inventory;
 mod interactive;
 mod stdio;
+mod supervisor;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -92,7 +93,7 @@ fn cases() -> Result<Vec<Case>> {
         if case.id.is_empty() || !case.id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-') || !ids.insert(&case.id) {
             return Err(format!("invalid/duplicate case ID {}", case.id).into());
         }
-        if !matches!(case.source.as_str(), "file" | "pipe" | "pty") {
+        if !matches!(case.source.as_str(), "file" | "pipe" | "pty" | "pty-pipe") {
             return Err(format!("unknown source {}", case.source).into());
         }
         for name in std::iter::once(OsString::from_vec(case.fixture_name.clone())).chain(case.files.keys().map(OsString::from)) {
@@ -101,7 +102,7 @@ fn cases() -> Result<Vec<Case>> {
         if case.size.contains(&0) || !matches!(case.locale.as_str(), "C" | "en_US.UTF-8" | "C.UTF-8") {
             return Err("invalid geometry or locale".into());
         }
-        if case.source != "pty" && (!case.events.is_empty() || !case.env.is_empty() || case.locale != "C") {
+        if !case.source.starts_with("pty") && (!case.events.is_empty() || !case.env.is_empty() || case.locale != "C") {
             return Err("stdio pilot does not yet support events/env/Unicode locales".into());
         }
     }
@@ -115,7 +116,7 @@ fn oracle() -> PathBuf {
 }
 
 fn execute(binary: &Path, case: &Case) -> Result<Value> {
-    if case.source == "pty" { interactive::execute(binary, case) }
+    if case.source.starts_with("pty") { interactive::execute(binary, case) }
     else { Ok(stdio::redirected(binary, &case.fixture, &case.source, &case.args.iter().map(Argument::os_string).collect::<Vec<_>>(), &case.fixture_name, &case.files)?) }
 }
 
@@ -265,7 +266,14 @@ fn run(args: &[String]) -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    let args: Vec<_> = std::env::args().skip(1).collect();
+    let raw_args: Vec<_> = std::env::args_os().skip(1).collect();
+    if raw_args.first().is_some_and(|arg| arg == "--pipe-supervisor") {
+        if raw_args.len() < 4 { return Err("missing supervisor arguments".into()); }
+        return supervisor::run(Path::new(&raw_args[1]), Path::new(&raw_args[2]), Path::new(&raw_args[3]), &raw_args[4..]);
+    }
+    if raw_args.first().is_some_and(|arg| arg == "--pipe-producer") { return supervisor::producer(Path::new(raw_args.get(1).ok_or("missing producer fixture")?)); }
+    if raw_args.first().is_some_and(|arg| arg == "--pipe-probe") { return supervisor::probe(&raw_args[1..]); }
+    let args: Vec<_> = raw_args.into_iter().map(|arg| arg.into_string().map_err(|_| "non-UTF-8 runner option")).collect::<std::result::Result<_, _>>()?;
     if args.is_empty() { return Ok(()); }
     if args.first().is_some_and(|s| s == "--stdio-fixture") {
         use std::io::Write;

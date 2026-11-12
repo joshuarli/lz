@@ -51,13 +51,24 @@ fn files(root: &Path) -> Result<Value> {
 }
 
 pub fn execute(binary: &Path, case: &Case) -> Result<Value> {
+    let supervisor_world = super::stdio::world()?;
+    execute_with_manifest(binary, case, &supervisor_world.path().join("groups"))
+}
+
+fn execute_with_manifest(binary: &Path, case: &Case, manifest: &Path) -> Result<Value> {
     let environment = if case.locale == "C" { TestEnv::hermetic_ascii()? } else { TestEnv::hermetic_utf8(&case.locale)? };
     let mut environment = environment.env("LESSHISTFILE", "-");
     for (key, value) in &case.env { environment = environment.env(key, value); }
     let world = environment.paths().root().to_owned();
     super::write_fixture(&world.join(std::ffi::OsString::from_vec(case.fixture_name.clone())), &case.fixture)?;
     for (name, bytes) in &case.files { fs::write(world.join(name), bytes)?; }
-    let scenario = Scenario::new(&case.id)?.command(CommandSpec::new(binary).args(case.args.iter().map(Argument::os_string)).current_dir(&world))
+    let _cleanup = super::supervisor::Cleanup::new(manifest.to_owned());
+    let command = if case.source == "pty-pipe" {
+        CommandSpec::new(std::env::current_exe()?).arg("--pipe-supervisor").arg(binary)
+            .arg(std::ffi::OsString::from_vec(case.fixture_name.clone())).arg(manifest)
+            .args(case.args.iter().map(Argument::os_string)).current_dir(&world)
+    } else { CommandSpec::new(binary).args(case.args.iter().map(Argument::os_string)).current_dir(&world) };
+    let scenario = Scenario::new(&case.id)?.command(command)
         .size(Size::new(case.size[0], case.size[1])?).environment(environment).trace_limit(64 * 1024 * 1024);
     let mut terminal = PtyTest::spawn(scenario)?;
     let baseline = terminal.terminal_baseline();
@@ -88,6 +99,7 @@ pub fn execute(binary: &Path, case: &Case) -> Result<Value> {
     let output = terminal.raw_output().to_vec();
     let finished = terminal.finish(Deadline::from_instant(total.min(Instant::now() + Duration::from_secs(1))))?;
     if status != finished { return Err("harness-error: wait and finish exit status differ".into()); }
+    if case.source == "pty-pipe" { super::supervisor::assert_cleanup(manifest)?; }
     Ok(json!({"checkpoints": checkpoints, "exit": format!("{status:?}"), "final_screen": final_screen,
         "files": effects, "raw_input": input, "raw_output": output, "restored": true}))
 }
@@ -129,6 +141,45 @@ pub fn selftest() -> Result<()> {
     let mut case = Case { id: "selftest".into(), family: "harness".into(), admitted: false, source: "pty".into(),
         fixture: vec![].into(), fixture_name: b"input".to_vec(), files: BTreeMap::new(), args: vec!["--fixture".into(), "none".into()], env: BTreeMap::new(), size: [40, 8], locale: "C".into(),
         events: vec![Event::Checkpoint { ready: "pro".into(), row: None }, Event::Send { bytes: b"q\n".to_vec() }] };
+    let mut pipe_case = case.clone();
+    pipe_case.source = "pty-pipe".into();
+    pipe_case.fixture = b"owned data\n".to_vec().into();
+    pipe_case.env.insert("SUPERVISOR_PROBE".into(), "inherited-value".into());
+    pipe_case.args = vec!["--pipe-probe".into(), "exit".into(), super::Argument::Bytes(super::ByteArgument { bytes: vec![255, 32, 39, 36] })];
+    let pipe = execute(&candidate, &pipe_case)?;
+    if pipe["exit"] != format!("{:?}", ExitStatus::Code(7)) { return Err("supervisor changed a nonzero child exit".into()); }
+    let bytes: Vec<u8> = serde_json::from_value(pipe["files"]["pipe-probe"]["bytes"].clone())?;
+    let probe: Value = serde_json::from_slice(&bytes)?;
+    if probe["input"] != json!(b"owned data\n") || probe["args"] != json!([b"exit".to_vec(), vec![255,32,39,36]])
+        || probe["environment"] != json!(b"inherited-value") || probe["foreground"] != true {
+        return Err("supervisor changed stdin, argv, environment or foreground ownership".into());
+    }
+    let bytes: Vec<u8> = serde_json::from_value(pipe["files"]["supervisor-state"]["bytes"].clone())?;
+    let state: Value = serde_json::from_slice(&bytes)?;
+    for field in ["foreground", "producer_held_open", "producer_reaped", "pager_reaped", "kernel_restored"] {
+        if state[field] != true { return Err(format!("supervisor control failed: {field}").into()); }
+    }
+    pipe_case.args[1] = "signal".into();
+    let pipe = execute(&candidate, &pipe_case)?;
+    if pipe["exit"] != format!("{:?}", ExitStatus::Signal(15)) { return Err("supervisor changed child signal death".into()); }
+    pipe_case.args[1] = "wait".into();
+    pipe_case.events = vec![Event::Checkpoint { ready:"probe".into(), row:None }, Event::Signal { number:15 }];
+    let pipe = execute(&candidate, &pipe_case)?;
+    if pipe["exit"] != format!("{:?}", ExitStatus::Signal(15)) { return Err("supervisor failed to forward explicit termination".into()); }
+    println!("supervisor argv/env/stdin/foreground, code 7, signal 15 and explicit TERM controls pass");
+    pipe_case.args[1] = "hang".into();
+    pipe_case.events = vec![Event::Checkpoint { ready:"probe".into(), row:None }];
+    let supervisor_world = super::stdio::world()?;
+    let supervisor_root = supervisor_world.keep();
+    let manifest = supervisor_root.join("groups");
+    let start = Instant::now();
+    let timeout = execute_with_manifest(&candidate, &pipe_case, &manifest);
+    if !timeout.is_err_and(|error| error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. }))) {
+        return Err("supervisor timeout control did not time out at the PTY boundary".into());
+    }
+    super::supervisor::assert_cleanup(&manifest)?;
+    if start.elapsed() > Duration::from_secs(5) { return Err("supervisor cancellation exceeded checkpoint plus escalation bound".into()); }
+    println!("pipe supervisor preserves raw argv, env, foreground group, stdin and exit/signal status; open producer and ignored-TERM child are reaped on cancellation");
     let mut invalid = serde_json::to_value(&case)?;
     invalid.as_object_mut().unwrap().insert("typo".into(), json!(true));
     if serde_json::from_value::<Case>(invalid).is_ok() { return Err("unknown scenario field accepted".into()); }
@@ -175,7 +226,7 @@ pub fn selftest() -> Result<()> {
         return Err("candidate did not restore its terminal and preserve HUP signal death".into());
     }
     println!("candidate HUP safety: represented modes restored, signal death preserved; oracle leak remains a parked divergence");
-    let report = json!({"candidate_hangup_safety": hangup, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location"], "oracle_a": a, "oracle_b": b});
+    let report = json!({"candidate_hangup_safety": hangup, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location", "pipe-argv-env-foreground", "pipe-code-signal", "pipe-timeout-reap"], "oracle_a": a, "oracle_b": b});
     let path = super::stdio::world()?.keep().join("selftest.json");
     fs::write(&path, serde_json::to_vec_pretty(&report)?)?;
     println!("oracle independent-world startup/quit/lifecycle self-comparison passes; {}", path.display());

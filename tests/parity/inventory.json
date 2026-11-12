@@ -7336,6 +7336,29 @@
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
       "cause": "Initial display uses bounded byte prefixes. Strict 16 MiB ASCII and UTF-8 first-screen scenarios pass. Source bytes remain in seekable files or anonymous spools, scanning uses 64 KiB blocks, and line offsets spill after 8192 entries. Whole-line search and wrapped navigation still materialize complete lines; open-producer PTY proof, RSS gates and exact malformed-byte display remain open."
+    },
+    {
+      "id": "source-open-pipes",
+      "family": "sources",
+      "title": "Keyboard and termination responsiveness while a pipe producer stays open",
+      "anchor": {
+        "file": "os.c",
+        "line": 111,
+        "text": "static int check_poll(int fd, int tty)"
+      },
+      "slice": "S05",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [
+        "sources-open-pipe",
+        "sources-open-pipe-term",
+        "sources-open-pipe-lines"
+      ],
+      "implementation": "partial",
+      "evidence": "known incompatible",
+      "cause": "The foreground-group supervisor passes argv/env/input/status/reaping controls. Strict open-pipe discovery distinguishes stdin prompt attributes and kernel termios restoration. lz currently flushes queued input during restoration; a focused preservation repair is required. The long unterminated line uses -n because default oracle line counting waits for more source bytes before showing its prompt."
     }
   ],
   "upstream": [
