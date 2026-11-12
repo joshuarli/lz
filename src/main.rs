@@ -1,5 +1,6 @@
 mod options;
 mod security;
+mod tags;
 
 use lz::{buffer, history, pager, terminal};
 use lz::charset::Charset;
@@ -130,8 +131,6 @@ fn run() -> Result<ExitAction, String> {
         seen.insert(resolved)
     });
 
-    let is_stdin = args.filenames.first().is_some_and(|name| name == "-");
-
     if !io::stdout().is_terminal() {
         let mut output = io::stdout().lock();
         for filename in &args.filenames {
@@ -163,6 +162,18 @@ fn run() -> Result<ExitAction, String> {
         output.flush().map_err(|error| error.to_string())?;
         return Ok(ExitAction::Success);
     }
+
+    if let Some(tag) = &args.tag {
+        if args.stdin_explicit || args.filenames.iter().any(|filename| filename != "-") {
+            eprintln!("No filenames allowed with -t option");
+            return Ok(ExitAction::FileError);
+        }
+        let selected = tags::select(args.tags_file.as_deref().unwrap_or(std::ffi::OsStr::new("tags")), tag)
+            .map_err(|error| error.to_string())?;
+        args.filenames = vec![selected.filename];
+        args.startup_commands.insert(0, format!("{}g", selected.line).into_bytes());
+    }
+    let is_stdin = args.filenames.first().is_some_and(|name| name == "-");
 
     if is_stdin && atty_stdin() && !args.stdin_explicit {
         eprintln!("lz: missing filename (use '-' for stdin)");

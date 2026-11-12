@@ -3535,10 +3535,14 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "integrations-tag-number",
+        "integrations-tag-extended",
+        "integrations-tag-secure-startup"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Numeric startup ctags selection passes, including secure startup; pattern addresses, duplicates, diagnostics and interactive selection remain open"
     },
     {
       "id": "man-1197",
@@ -3554,10 +3558,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "integrations-tag-extended"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Explicit tags file with an extended numeric record passes; quoted paths, GLOBAL formats and other address forms remain open"
     },
     {
       "id": "man-1199",
@@ -6192,10 +6198,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "integrations-tag-secure-startup"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "CLI startup tag selection is allowed under LESSSECURE=1 by the pinned oracle; interactive tag restrictions and allowances remain unimplemented"
     },
     {
       "id": "man-2288",

@@ -113,6 +113,8 @@ pub(super) enum Action { Page, Help, Version, Stop }
 
 pub(super) struct Args {
     pub startup_commands: Vec<Vec<u8>>,
+    pub tag: Option<OsString>,
+    pub tags_file: Option<OsString>,
     pub force: bool,
     pub control_display: ControlDisplay,
     pub chop: bool,
@@ -126,7 +128,7 @@ pub(super) struct Args {
 
 impl Default for Args {
     fn default() -> Self {
-        Self { startup_commands: Vec::new(), force: false, control_display: ControlDisplay::default(), chop: false, line_numbers: false, search_case: CaseSensitivity::Sensitive,
+        Self { startup_commands: Vec::new(), tag: None, tags_file: None, force: false, control_display: ControlDisplay::default(), chop: false, line_numbers: false, search_case: CaseSensitivity::Sensitive,
             filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
@@ -189,7 +191,12 @@ impl Scanner {
             ValueKind::Flag => 0,
             ValueKind::Text => {
                 let end = payload.iter().position(|byte| *byte == b'$').unwrap_or(payload.len());
-                if option.names[0] == "pattern" { self.args.startup_commands.push([b"/".as_slice(), &payload[..end]].concat()); }
+                match option.names[0] {
+                    "pattern" => self.args.startup_commands.push([b"/".as_slice(), &payload[..end]].concat()),
+                    "tag" => self.args.tag = Some(OsString::from_vec(payload[..end].to_vec())),
+                    "tag-file" => self.args.tags_file = Some(OsString::from_vec(payload[..end].to_vec())),
+                    _ => {}
+                }
                 end
             },
             ValueKind::Number => match scan_number(payload) {

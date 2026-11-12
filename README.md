@@ -25,6 +25,8 @@ Binary files ask before alternate-screen entry. Refuse with `n` or Enter, or qui
 
 Ordinary in-file marks use `m` plus a letter and `'` plus that letter. Pressing the apostrophe key twice returns to the last large movement; `'^` and `'$` go to file boundaries. Wrapped positions, cross-file marks and persisted marks remain unfinished.
 
+Startup `-t` selects a numeric ctags address from `tags`; `-T` chooses another tags file. Extended numeric records and the oracle’s secure-startup behavior are covered. Pattern addresses, duplicate matches, interactive tags, tag diagnostics and GLOBAL helpers remain unfinished.
+
 Oversized numeric prefixes show a dismissible error. Enter resumes the pending command without losing the rest of a startup command.
 
 Empty files keep an interactive EOF view. Initial short-file content appears at the bottom, with unused rows blank. An explicit startup position uses a full paint.
