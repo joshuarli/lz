@@ -91,17 +91,19 @@ FILE:
     );
 }
 
-fn run() -> Result<(), String> {
+enum ExitAction { Success, Terminated, Hangup }
+
+fn run() -> Result<ExitAction, String> {
     let args = parse_args();
 
     if args.help {
         print_help();
-        return Ok(());
+        return Ok(ExitAction::Success);
     }
 
     if args.version {
         println!("lz {}", VERSION);
-        return Ok(());
+        return Ok(ExitAction::Success);
     }
 
     let is_stdin = args.filenames.first().is_some_and(|name| name == "-");
@@ -135,7 +137,7 @@ fn run() -> Result<(), String> {
             }
         }
         output.flush().map_err(|error| error.to_string())?;
-        return Ok(());
+        return Ok(ExitAction::Success);
     }
 
     if args.filenames.len() > 1 {
@@ -158,7 +160,7 @@ fn run() -> Result<(), String> {
             let mut handle = stdin.lock();
             let n = handle.read(&mut check_buf).map_err(|e| e.to_string())?;
             if n == 0 {
-                return Ok(()); // Empty input, exit 0
+                return Ok(ExitAction::Success); // Empty input, exit 0
             }
             if check_buf[..n].contains(&0) {
                 return Err("Binary content detected. Use --force to view.".to_string());
@@ -189,7 +191,7 @@ fn run() -> Result<(), String> {
             let size = file.seek(io::SeekFrom::End(0)).unwrap_or(0);
             file.seek(io::SeekFrom::Start(0)).ok();
             if size == 0 {
-                return Ok(()); // Empty file, exit 0
+                return Ok(ExitAction::Success); // Empty file, exit 0
             }
         }
 
@@ -216,7 +218,12 @@ fn run() -> Result<(), String> {
     if let Some(path) = history_path { pager.history().save(&path); }
     let cleanup = session.finish();
     match (result, cleanup) {
-        (Ok(()), Ok(())) => Ok(()),
+        (Ok(()), Ok(())) => match terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) {
+            0 => Ok(ExitAction::Success),
+            15 => Ok(ExitAction::Terminated),
+            1 => Ok(ExitAction::Hangup),
+            signal => Err(format!("unexpected termination signal: {signal}")),
+        },
         (Err(error), Ok(())) | (Ok(()), Err(error)) => Err(error.to_string()),
         (Err(error), Err(cleanup)) => Err(format!("{error}; terminal restoration: {cleanup}")),
     }
@@ -238,7 +245,14 @@ fn main() {
     }));
 
     match run() {
-        Ok(()) => process::exit(0),
+        Ok(ExitAction::Success) => process::exit(0),
+        Ok(ExitAction::Terminated) => process::exit(15),
+        Ok(ExitAction::Hangup) => {
+            unsafe extern "C" { fn signal(number: i32, handler: usize) -> usize; fn raise(number: i32) -> i32; }
+            // SAFETY: signal 1 is SIGHUP on supported Unix targets; 0 restores its default disposition.
+            unsafe { signal(1, 0); raise(1); }
+            process::exit(129);
+        }
         Err(e) => {
             eprintln!("lz: {}", e);
             process::exit(1);

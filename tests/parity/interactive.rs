@@ -136,7 +136,16 @@ pub fn selftest() -> Result<()> {
     let b = execute(&reference, &case)?;
     if let Some(diff) = first_difference(&comparable(&a), &comparable(&b), "observation") { return Err(format!("oracle self-comparison: {diff}").into()); }
     if a["exit"] != format!("{:?}", ExitStatus::Code(0)) { return Err("oracle quit exit differs".into()); }
-    let report = json!({"metadata": super::metadata(&candidate)?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr"], "oracle_a": a, "oracle_b": b});
+    let mut hangup = case.clone();
+    hangup.id = "candidate-hangup-safety".into();
+    hangup.fixture = b"x".to_vec();
+    hangup.events = vec![Event::Checkpoint { ready: "x".into(), row: Some(0) }, Event::Signal { number: 1 }];
+    let hangup = execute(Path::new(env!("CARGO_BIN_EXE_lz")), &hangup)?;
+    if hangup["exit"] != format!("{:?}", ExitStatus::Signal(1)) || hangup["restored"] != true {
+        return Err("candidate did not restore its terminal and preserve HUP signal death".into());
+    }
+    println!("candidate HUP safety: represented modes restored, signal death preserved; oracle leak remains a parked divergence");
+    let report = json!({"candidate_hangup_safety": hangup, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr"], "oracle_a": a, "oracle_b": b});
     let path = super::stdio::world()?.keep().join("selftest.json");
     fs::write(&path, serde_json::to_vec_pretty(&report)?)?;
     println!("oracle independent-world startup/quit/lifecycle self-comparison passes; {}", path.display());

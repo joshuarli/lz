@@ -201,18 +201,27 @@ fn run(args: &[String]) -> Result<()> {
     for case in selected {
         let result = (|| -> Result<Value> {
             let expected = execute(&reference, case)?;
-            let actual = execute(candidate, case)?;
+            let actual = match execute(candidate, case) {
+                Ok(actual) => actual,
+                Err(error) if error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. } | ptytest::PtyTestError::SnapshotMismatch { .. })) => {
+                    return Ok(json!({"case": case, "outcome": "mismatch", "expected": expected, "actual_error": error.to_string(), "actual_error_detail": format!("{error:#?}"), "difference": "candidate failed readiness, termination or terminal restoration after the oracle completed"}));
+                }
+                Err(error) => return Err(error),
+            };
             let difference = first_difference(&comparable(&expected), &comparable(&actual), "observation");
             Ok(json!({"case": case, "outcome": if difference.is_some() { "mismatch" } else { "pass" }, "expected": expected, "actual": actual, "difference": difference}))
         })();
         let result = match result {
             Ok(result) => result,
-            Err(error) => json!({"case": case, "outcome": if error.is::<NeedsEnvironment>() { "needs-environment" } else { "harness-error" }, "error": error.to_string()}),
+            Err(error) => {
+                let oracle_leak = error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::SnapshotMismatch { path, .. } if path == Path::new("terminal-baseline")));
+                json!({"case": case, "outcome": if error.is::<NeedsEnvironment>() { "needs-environment" } else if oracle_leak { "mismatch" } else { "harness-error" }, "side": "oracle", "error": error.to_string(), "error_detail": format!("{error:#?}"), "difference": if oracle_leak { Some("oracle does not restore represented terminal modes; preserve as explicit divergence, never reproduce the leak") } else { None }})
+            },
         };
         println!("{} {}", result["outcome"].as_str().unwrap(), case.id);
         if result["outcome"] != "pass" {
             failed = true;
-            eprintln!("{}\nreproduce: make parity-test CASE={}", result.get("difference").unwrap_or(&result["error"]), case.id);
+            eprintln!("{}\nreproduce: make parity-test CASE={}", result.get("difference").filter(|value| !value.is_null()).unwrap_or(&result["error"]), case.id);
         }
         harness_error |= result["outcome"] == "harness-error";
         results.push(result);

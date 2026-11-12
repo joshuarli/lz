@@ -78,7 +78,11 @@ Key types: none (thin glue layer).
 
 `Session::start` owns the `KeyReader` tty and acquired modes. Use `keys_mut` for
 input and `finish` to observe restoration errors; Drop also unwinds partial setup.
-Raw-mode helpers and signal installation are private. Startup enables application
+Raw-mode helpers and signal installation are private. `TERMINATION_SIGNAL`
+replaces the old boolean TERM flag and preserves the first TERM/HUP request.
+TERM exits 15 after cleanup, matching the pinned oracle. HUP restores represented
+modes and re-raises HUP; this is an explicit safety divergence from the oracle's
+terminal leak, parked in the parity register. Startup enables application
 cursor/keypad modes and leaves the prompt cursor visible. `LESSHISTFILE=-` disables
 legacy history reads and writes. The default history format still awaits S10.
 
@@ -99,6 +103,7 @@ Key event reading from `/dev/tty`.
 - Opens `/dev/tty` directly (not stdin) so that key input works correctly when stdin is a pipe feeding file content.
 - Defines the `Key` enum covering all keys the pager acts on: arrow keys, page up/down, Home/End, printable characters, Ctrl combinations, Escape.
 - Internal 64-byte read buffer: reads up to 64 bytes at once. This is critical for escape sequences — arrow keys send `\x1b[A` as three bytes. Buffering the read means all three bytes arrive in one call, avoiding timing-dependent races where only `\x1b` is read and the rest is lost.
+- Read readiness uses `select` on macOS (`poll` rejects `/dev/tty` with `POLLNVAL`) and `poll` on Linux. Idle key waits allow the pager to observe signal flags without repainting.
 - Escape sequence parser with a 50ms timeout: after seeing `\x1b`, waits up to 50ms for the rest of the sequence before treating it as a bare Escape keypress.
 - Raw mode for the tty fd is set here (separate from the stdout terminal) so that escape sequences arrive as raw bytes even when stdin is redirected.
 

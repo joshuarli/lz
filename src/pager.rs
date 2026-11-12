@@ -172,10 +172,9 @@ impl Pager {
             self.scroll_to_bottom();
         }
 
+        let mut redraw = true;
         loop {
-            self.render()?;
-
-            if terminal::TERM_FLAG.load(std::sync::atomic::Ordering::SeqCst) {
+            if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 {
                 return Ok(());
             }
             if terminal::TSTP_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst) {
@@ -186,28 +185,34 @@ impl Pager {
                 let (w, h) = terminal::get_terminal_size();
                 self.term_width = w;
                 self.term_height = h;
+                redraw = true;
                 continue;
             }
             if terminal::WINCH_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst) {
                 let (w, h) = terminal::get_terminal_size();
                 self.term_width = w;
                 self.term_height = h;
+                redraw = true;
                 continue;
             }
+
+            if redraw { self.render()?; redraw = false; }
 
             let key = if self.mode == Mode::Follow {
                 let new_lines = self.buffer.poll_new_lines();
                 if new_lines > 0 {
                     self.scroll_to_bottom();
+                    redraw = true;
                 }
                 match keys.read_key_timeout(100)? {
                     Some(k) => k,
                     None => continue,
                 }
             } else {
-                keys.read_key()?
+                match keys.read_key_timeout(100)? { Some(key) => key, None => continue }
             };
 
+            redraw = true;
             if self.handle_key(key) {
                 return Ok(());
             }
