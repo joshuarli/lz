@@ -1,190 +1,172 @@
 use std::fs::File;
-use std::io::{self, BufRead, BufReader, Read, Stdin};
+use std::io::{self, Read, Stdin};
+use std::os::unix::fs::FileExt;
+use std::os::fd::{AsFd, AsRawFd};
 
-const BINARY_CHECK_SIZE: usize = 8 * 1024; // 8KB
+use crate::storage::{Offsets, anonymous_file};
+
+const BLOCK_BYTES: usize = 64 * 1024;
+const BINARY_CHECK_SIZE: usize = 8 * 1024;
 
 enum Source {
-    File(BufReader<File>),
-    Stdin(BufReader<Stdin>),
+    File(File),
+    Pipe { input: File, spool: File },
 }
 
 impl Source {
-    fn read_line(&mut self, buf: &mut String) -> io::Result<usize> {
+    fn file(&self) -> &File {
+        match self { Self::File(file) => file, Self::Pipe { spool, .. } => spool }
+    }
+
+    fn pull(&mut self, offset: u64, bytes: &mut [u8]) -> io::Result<Option<usize>> {
         match self {
-            Source::File(r) => r.read_line(buf),
-            Source::Stdin(r) => r.read_line(buf),
+            Self::File(file) => file.read_at(bytes, offset).map(Some),
+            Self::Pipe { input, spool } => {
+                if !crate::readiness::readable(input.as_raw_fd(), 0)? { return Ok(None); }
+                let count = input.read(bytes)?;
+                spool.write_all_at(&bytes[..count], offset)?;
+                Ok(Some(count))
+            }
         }
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SourceState { Ready, Waiting, Eof, Failed }
+
+pub struct LineFragment {
+    pub text: String,
+    pub complete: bool,
+}
+
 pub struct LineBuffer {
-    pub lines: Vec<String>,
-    source: Option<Source>,
-    finished: bool,
-    /// Partial line from prepopulated data (read boundary split a line).
-    partial: Option<String>,
+    source: Source,
+    starts: Offsets,
+    scanned: u64,
+    state: SourceState,
+    error: Option<io::Error>,
+    line: String,
 }
 
 impl LineBuffer {
     pub fn from_file(file: File) -> Self {
-        LineBuffer {
-            lines: Vec::new(),
-            source: Some(Source::File(BufReader::new(file))),
-            finished: false,
-            partial: None,
+        Self { source: Source::File(file), starts: Offsets::new(), scanned: 0, state: SourceState::Ready, error: None, line: String::new() }
+    }
+
+    pub fn from_stdin(stdin: Stdin) -> io::Result<Self> {
+        Self::from_stream(File::from(stdin.as_fd().try_clone_to_owned()?))
+    }
+
+    fn from_stream(input: File) -> io::Result<Self> {
+        Ok(Self { source: Source::Pipe { input, spool: anonymous_file()? }, starts: Offsets::new(), scanned: 0, state: SourceState::Ready, error: None, line: String::new() })
+    }
+
+    pub fn state(&self) -> SourceState { self.state }
+
+    pub(crate) fn refresh_waiting(&mut self) -> bool {
+        self.state == SourceState::Waiting && self.scan()
+    }
+
+    pub fn take_error(&mut self) -> Option<io::Error> { self.error.take() }
+
+    fn scan(&mut self) -> bool {
+        if matches!(self.state, SourceState::Eof | SourceState::Failed) { return false; }
+        let result = (|| -> io::Result<Option<usize>> {
+            let mut bytes = [0; BLOCK_BYTES];
+            let Some(count) = self.source.pull(self.scanned, &mut bytes)? else { return Ok(None); };
+            for (index, byte) in bytes[..count].iter().enumerate() {
+                if *byte == b'\n' { self.starts.push(self.scanned + index as u64 + 1)?; }
+            }
+            self.scanned += count as u64;
+            Ok(Some(count))
+        })();
+        match result {
+            Ok(Some(0)) => { self.state = SourceState::Eof; false }
+            Ok(Some(_)) => { self.state = SourceState::Ready; true }
+            Ok(None) => { self.state = SourceState::Waiting; false }
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => { self.state = SourceState::Waiting; false }
+            Err(error) => { self.error = Some(error); self.state = SourceState::Failed; false }
         }
     }
 
-    pub fn from_stdin(stdin: Stdin) -> Self {
-        LineBuffer {
-            lines: Vec::new(),
-            source: Some(Source::Stdin(BufReader::new(stdin))),
-            finished: false,
-            partial: None,
+    fn ensure_line(&mut self, index: usize) -> bool {
+        while self.len() <= index {
+            if !self.scan() { return false; }
+        }
+        true
+    }
+
+    fn fragment(&mut self, index: usize, limit: Option<usize>) -> io::Result<Option<LineFragment>> {
+        if !self.ensure_line(index) { return Ok(None); }
+        let start = self.starts.get(index)?;
+        while self.starts.len() <= index + 1 && !self.is_finished() {
+            if limit.is_some_and(|limit| self.scanned - start >= limit as u64) || !self.scan() { break; }
+        }
+        let complete = self.starts.len() > index + 1 || self.is_finished();
+        let end = if self.starts.len() > index + 1 { self.starts.get(index + 1)? - 1 } else { self.scanned };
+        let length = end - start;
+        let length = limit.map_or(length, |limit| length.min(limit as u64));
+        let length = usize::try_from(length).map_err(|_| io::Error::other("line exceeds addressable memory"))?;
+        let mut bytes = vec![0; length];
+        self.source.file().read_exact_at(&mut bytes, start)?;
+        let complete = complete && start + length as u64 == end;
+        if complete && bytes.last() == Some(&b'\r') && self.starts.len() > index + 1 { bytes.pop(); }
+        if !complete && let Err(error) = std::str::from_utf8(&bytes)
+            && error.error_len().is_none() { bytes.truncate(error.valid_up_to()); }
+        Ok(Some(LineFragment { text: String::from_utf8_lossy(&bytes).into_owned(), complete }))
+    }
+
+    /// Read a bounded display prefix without requiring the end of the logical line.
+    pub fn line_prefix(&mut self, index: usize, bytes: usize) -> io::Result<Option<LineFragment>> {
+        self.fragment(index, Some(bytes))
+    }
+
+    /// Materialize a logical line for operations that explicitly need the whole line.
+    pub fn get_line(&mut self, index: usize) -> Option<&str> {
+        match self.fragment(index, None) {
+            Ok(Some(fragment)) => { self.line = fragment.text; Some(&self.line) }
+            Ok(None) => None,
+            Err(error) => { self.error = Some(error); self.state = SourceState::Failed; None }
         }
     }
 
-    /// Check first 8KB for null bytes. Returns true if binary.
+    pub fn len(&self) -> usize {
+        self.starts.len() - 1 + usize::from(self.scanned > self.starts.last())
+    }
+
+    pub fn is_empty(&self) -> bool { self.len() == 0 }
+
+    pub fn is_finished(&self) -> bool { self.state == SourceState::Eof }
+
+    pub fn read_more(&mut self, count: usize) -> usize {
+        let before = self.len();
+        while self.len().saturating_sub(before) < count && self.scan() {}
+        self.len().saturating_sub(before)
+    }
+
+    pub fn read_all(&mut self) { while self.scan() {} }
+
+    pub fn poll_new_lines(&mut self) -> usize {
+        if self.state == SourceState::Eof { self.state = SourceState::Ready; }
+        let before = self.len();
+        self.scan();
+        self.len().saturating_sub(before)
+    }
+
     pub fn check_binary(file: &mut File) -> io::Result<bool> {
-        let mut buf = [0u8; BINARY_CHECK_SIZE];
-        let n = file.read(&mut buf)?;
-        use std::io::Seek;
-        file.seek(io::SeekFrom::Start(0))?;
-        Ok(buf[..n].contains(&0))
+        let mut bytes = [0; BINARY_CHECK_SIZE];
+        let count = file.read_at(&mut bytes, 0)?;
+        Ok(bytes[..count].contains(&0))
     }
 
-    /// Push a pre-parsed line into the buffer.
-    pub fn push_line(&mut self, line: String) {
-        self.lines.push(line);
-    }
-
-    /// Set a partial line fragment that will be prepended to the next line read.
-    pub fn set_partial(&mut self, partial: String) {
-        self.partial = Some(partial);
-    }
-
-    /// Prepopulate with text already read (e.g. for binary detection).
-    /// If the text doesn't end with '\n', the trailing fragment is stored
-    /// as the partial line so it joins with the next read from the source.
-    pub fn prepopulate(&mut self, text: &str) {
-        if text.is_empty() {
-            return;
-        }
-        let mut lines: Vec<&str> = text.split('\n').collect();
-        let partial = if text.ends_with('\n') {
-            lines.pop();
-            None
-        } else {
-            lines.pop()
-        };
-        for line in lines {
-            let l = line.strip_suffix('\r').unwrap_or(line);
-            self.push_line(l.to_string());
-        }
-        if let Some(p) = partial {
-            let l = p.strip_suffix('\r').unwrap_or(p);
-            self.set_partial(l.to_string());
-        }
-    }
-
-    /// Create a buffer from pre-existing lines (for testing).
     #[cfg(test)]
     pub fn from_lines(lines: Vec<String>) -> Self {
-        LineBuffer {
-            lines,
-            source: None,
-            finished: true,
-            partial: None,
-        }
-    }
-
-    /// Read more lines, up to `count`. Returns number of new lines read.
-    pub fn read_more(&mut self, count: usize) -> usize {
-        if self.finished {
-            return 0;
-        }
-        let source = match &mut self.source {
-            Some(s) => s,
-            None => return 0,
-        };
-
-        let mut read = 0;
-        for _ in 0..count {
-            let mut line = self.partial.take().unwrap_or_default();
-            match source.read_line(&mut line) {
-                Ok(0) => {
-                    // EOF — if there's a leftover partial, push it as the last line.
-                    if !line.is_empty() {
-                        self.lines.push(line);
-                        read += 1;
-                    }
-                    self.finished = true;
-                    break;
-                }
-                Ok(_) => {
-                    // Strip trailing newline
-                    if line.ends_with('\n') {
-                        line.pop();
-                        if line.ends_with('\r') {
-                            line.pop();
-                        }
-                    }
-                    self.lines.push(line);
-                    read += 1;
-                }
-                Err(_) => {
-                    self.finished = true;
-                    break;
-                }
-            }
-        }
-        read
-    }
-
-    /// Ensure at least `n+1` lines are loaded (so line index `n` is available).
-    fn ensure_line(&mut self, n: usize) {
-        while self.lines.len() <= n && !self.finished {
-            if self.read_more(256) == 0 {
-                break;
-            }
-        }
-    }
-
-    /// Get line at index, reading forward if necessary.
-    pub fn get_line(&mut self, n: usize) -> Option<&str> {
-        self.ensure_line(n);
-        self.lines.get(n).map(|s| s.as_str())
-    }
-
-    /// Number of currently cached lines.
-    pub fn len(&self) -> usize {
-        self.lines.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.lines.is_empty()
-    }
-
-    pub fn is_finished(&self) -> bool {
-        self.finished
-    }
-
-    /// Read all remaining lines.
-    pub fn read_all(&mut self) {
-        while !self.finished {
-            if self.read_more(4096) == 0 {
-                break;
-            }
-        }
-    }
-
-    /// Try to read new lines (for follow mode). Returns number of new lines.
-    pub fn poll_new_lines(&mut self) -> usize {
-        if self.finished {
-            // For follow mode, the file might have been appended to.
-            self.finished = false;
-        }
-        self.read_more(256)
+        let file = anonymous_file().unwrap();
+        let mut offset = 0;
+        for line in lines { file.write_all_at(line.as_bytes(), offset).unwrap(); offset += line.len() as u64; file.write_all_at(b"\n", offset).unwrap(); offset += 1; }
+        let mut buffer = Self::from_file(file);
+        buffer.read_all();
+        buffer
     }
 }
 
@@ -202,6 +184,76 @@ mod tests {
     }
 
     // --- LineBuffer from file ---
+
+    #[test]
+    fn open_stream_preserves_bytes_and_distinguishes_waiting_from_eof() {
+        use std::os::fd::OwnedFd;
+        use std::os::unix::net::UnixStream;
+        let (mut producer, consumer) = UnixStream::pair().unwrap();
+        let descriptor: OwnedFd = consumer.into();
+        let mut buffer = LineBuffer::from_stream(File::from(descriptor)).unwrap();
+        assert!(buffer.line_prefix(0, 4096).unwrap().is_none());
+        assert_eq!(buffer.state(), SourceState::Waiting);
+        producer.write_all(b"part").unwrap();
+        let fragment = buffer.line_prefix(0, 4096).unwrap().unwrap();
+        assert_eq!(fragment.text, "part");
+        assert!(!fragment.complete);
+        assert_eq!(buffer.state(), SourceState::Waiting);
+        producer.write_all(&[255, b'\n', b't', b'a', b'i', b'l']).unwrap();
+        assert!(buffer.refresh_waiting());
+        let fragment = buffer.line_prefix(0, 4096).unwrap().unwrap();
+        assert!(fragment.complete);
+        let mut bytes = [0; 10];
+        buffer.source.file().read_exact_at(&mut bytes, 0).unwrap();
+        assert_eq!(&bytes, b"part\xff\ntail");
+        assert_eq!(buffer.get_line(1), Some("tail"));
+        assert_eq!(buffer.state(), SourceState::Waiting);
+        drop(producer);
+        assert_eq!(buffer.get_line(1), Some("tail"));
+        assert_eq!(buffer.state(), SourceState::Eof);
+        assert_eq!(buffer.get_line(2), None);
+    }
+
+    #[test]
+    fn display_prefix_does_not_read_a_sixteen_mib_line() {
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        let block = vec![b'x'; BLOCK_BYTES];
+        for _ in 0..256 { tmp.write_all(&block).unwrap(); }
+        tmp.write_all(b"suffix\nnext\n").unwrap();
+        let mut buffer = LineBuffer::from_file(File::open(tmp.path()).unwrap());
+        let fragment = buffer.line_prefix(0, 4096).unwrap().unwrap();
+        assert_eq!(fragment.text, "x".repeat(4096));
+        assert!(!fragment.complete);
+        assert_eq!(buffer.scanned, BLOCK_BYTES as u64);
+        assert_eq!(buffer.get_line(1), Some("next"));
+        assert!(buffer.get_line(0).unwrap().ends_with("suffix"));
+    }
+
+    #[test]
+    fn source_bytes_survive_invalid_utf8_and_split_characters() {
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        let mut bytes = "€".repeat(24_000).into_bytes();
+        bytes.extend_from_slice(&[255, 0, b'\n']);
+        tmp.write_all(&bytes).unwrap();
+        let mut buffer = LineBuffer::from_file(File::open(tmp.path()).unwrap());
+        let fragment = buffer.line_prefix(0, 4097).unwrap().unwrap();
+        assert_eq!(fragment.text, "€".repeat(1365));
+        assert!(!fragment.complete);
+        buffer.read_all();
+        let mut retained = vec![0; bytes.len()];
+        buffer.source.file().read_exact_at(&mut retained, 0).unwrap();
+        assert_eq!(retained, bytes);
+    }
+
+    #[test]
+    fn source_read_error_is_distinct_from_eof() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut buffer = LineBuffer::from_file(File::open(dir.path()).unwrap());
+        assert_eq!(buffer.get_line(0), None);
+        assert_eq!(buffer.state(), SourceState::Failed);
+        assert!(!buffer.is_finished());
+        assert!(buffer.take_error().is_some());
+    }
 
     #[test]
     fn read_simple_file() {
@@ -276,16 +328,6 @@ mod tests {
         assert_eq!(buf.len(), 3);
     }
 
-    #[test]
-    fn push_line() {
-        let (file, _tmp) = make_temp_file("");
-        let mut buf = LineBuffer::from_file(file);
-
-        buf.push_line("injected".to_string());
-        assert_eq!(buf.lines[0], "injected");
-        assert_eq!(buf.len(), 1);
-    }
-
     // --- binary detection ---
 
     #[test]
@@ -329,8 +371,8 @@ mod tests {
         let mut buf = LineBuffer::from_file(file);
 
         let n = buf.read_more(2);
-        assert_eq!(n, 2);
-        assert_eq!(buf.len(), 2);
+        assert_eq!(n, 5);
+        assert_eq!(buf.len(), 5);
         assert!(!buf.is_finished());
     }
 

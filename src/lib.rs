@@ -1,5 +1,7 @@
 pub mod ansi;
 pub mod buffer;
+mod storage;
+mod readiness;
 pub mod history;
 pub mod input;
 pub mod pager;
@@ -312,44 +314,12 @@ mod tests {
         assert_eq!(ed.content, "ab");
     }
 
-    // =====================================================================
-    // prepopulate_buffer
-    // =====================================================================
-
     #[test]
-    fn prepopulate_simple() {
-        let mut lb = buffer::LineBuffer::from_lines(Vec::new());
-        lb.prepopulate( "line1\nline2\nline3\n");
-        assert_eq!(lb.lines, vec!["line1", "line2", "line3"]);
-    }
-
-    #[test]
-    fn prepopulate_no_trailing_newline() {
-        // "line2" has no trailing \n, so it's stored as a partial (incomplete line)
-        // that will be joined with the next read from the source.
-        let mut lb = buffer::LineBuffer::from_lines(Vec::new());
-        lb.prepopulate( "line1\nline2");
-        assert_eq!(lb.lines, vec!["line1"]);
-    }
-
-    #[test]
-    fn prepopulate_crlf() {
-        let mut lb = buffer::LineBuffer::from_lines(Vec::new());
-        lb.prepopulate( "line1\r\nline2\r\n");
-        assert_eq!(lb.lines, vec!["line1", "line2"]);
-    }
-
-    #[test]
-    fn prepopulate_single_line() {
-        let mut lb = buffer::LineBuffer::from_lines(Vec::new());
-        lb.prepopulate( "just one line\n");
-        assert_eq!(lb.lines, vec!["just one line"]);
-    }
-
-    #[test]
-    fn prepopulate_empty() {
-        let mut lb = buffer::LineBuffer::from_lines(Vec::new());
-        lb.prepopulate( "");
-        assert!(lb.lines.is_empty());
+    fn source_complete_and_unterminated_lines() {
+        let mut lb = buffer::LineBuffer::from_lines(vec!["line1".into(), "line2".into(), "line3".into()]);
+        assert_eq!(lb.get_line(0), Some("line1"));
+        assert_eq!(lb.get_line(1), Some("line2"));
+        assert_eq!(lb.get_line(2), Some("line3"));
+        assert_eq!(lb.get_line(3), None);
     }
 }

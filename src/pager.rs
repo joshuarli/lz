@@ -227,6 +227,8 @@ impl Pager {
                 continue;
             }
 
+            if self.buffer.refresh_waiting() { redraw = true; }
+            if let Some(error) = self.buffer.take_error() { return Err(error); }
             if redraw { self.render()?; redraw = false; }
 
             let key = if self.mode == Mode::Follow {
@@ -504,7 +506,7 @@ impl Pager {
         // Read all lines so we can filter them
         self.buffer.read_all();
         for i in 0..self.buffer.len() {
-            if let Some(line) = self.buffer.lines.get(i)
+            if let Some(line) = self.buffer.get_line(i)
                 && filter.is_match(line)
             {
                 self.filtered_lines.push(i);
@@ -647,11 +649,12 @@ impl Pager {
         if self.mode == Mode::Help {
             Self::render_help(&mut buf, w, ch);
         } else if self.wrap {
-            self.render_wrapped(&mut buf, w, ch);
+            self.render_wrapped(&mut buf, w, ch)?;
         } else {
-            self.render_nowrap(&mut buf, w, ch);
+            self.render_nowrap(&mut buf, w, ch)?;
         }
 
+        if let Some(error) = self.buffer.take_error() { return Err(error); }
         self.render_status(&mut buf, w);
         buf.extend_from_slice(b"\x1b[?25h");
 
@@ -697,50 +700,56 @@ impl Pager {
         } else { buf.extend_from_slice(gutter.as_bytes()); }
     }
 
-    fn render_nowrap(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize) {
-        if self.filter.is_none() { self.buffer.get_line(self.top_line.saturating_add(ch)); }
+    fn render_nowrap(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize) -> io::Result<()> {
         for row in 0..ch {
             terminal::move_cursor(buf, row as u16, 0);
             let display_idx = self.top_line.saturating_add(row);
-            match self.display_line_idx(display_idx).and_then(|index| self.buffer.lines.get(index).map(|line| (index, line))) {
-                Some((line_idx, line)) => {
+            let actual = self.display_line_idx(display_idx);
+            let fragment = match actual { Some(index) => self.buffer.line_prefix(index, self.left_col.saturating_add(w).saturating_add(1).saturating_mul(16).max(4096))?, None => None };
+            match actual.zip(fragment) {
+                Some((line_idx, fragment)) => {
+                    let line = &fragment.text;
                     let gutter = self.number_gutter(line_idx, w);
                     Self::write_number_gutter(buf, &gutter);
                     let content_width = w.saturating_sub(gutter.len());
                     let line_width = if self.raw_mode { unicode_width::UnicodeWidthStr::width(line.as_str()) } else { visible_width(line) };
-                    let chopped = line_width > self.left_col.saturating_add(content_width) && content_width > 0;
+                    let chopped = (!fragment.complete || line_width > self.left_col.saturating_add(content_width)) && content_width > 0;
                     let display = truncate_to_width(line, self.left_col, content_width.saturating_sub(usize::from(chopped)), self.raw_mode);
-                    self.write_line_with_search(buf, &display, line_idx);
+                    self.write_line_with_search(buf, &display);
                     if chopped { buf.extend_from_slice(b"\x1b[7m>\x1b[m"); }
                 }
                 None => buf.push(b'~'),
             }
             terminal::clear_line(buf);
         }
+        Ok(())
     }
 
-    fn render_wrapped(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize) {
+    fn render_wrapped(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize) -> io::Result<()> {
         let mut screen_row = 0;
         let mut display_idx = self.top_line;
-        if self.filter.is_none() { self.buffer.get_line(self.top_line.saturating_add(ch)); }
         while screen_row < ch {
-            let actual_idx = self.display_line_idx(display_idx);
-            match actual_idx.and_then(|index| self.buffer.lines.get(index).map(|line| (index, line))) {
-                Some((actual, line)) => {
+            let actual = self.display_line_idx(display_idx);
+            let fragment = match actual { Some(index) => self.buffer.line_prefix(index, w.saturating_mul(ch - screen_row).saturating_add(1).saturating_mul(16).max(4096))?, None => None };
+            match actual.zip(fragment) {
+                Some((actual, fragment)) => {
+                    let line = &fragment.text;
                     let gutter_width = self.number_gutter(actual, w).len();
                     let content_width = w.saturating_sub(gutter_width).max(1);
                     let total_width = if self.raw_mode { unicode_width::UnicodeWidthStr::width(line.as_str()) } else { visible_width(line) };
-                    let rows_needed = total_width.div_ceil(content_width).max(1);
+                    let rows_needed = if fragment.complete { total_width.div_ceil(content_width).max(1) } else { ch - screen_row };
+                    let available_rows = ch - screen_row;
                     for wrap_row in 0..rows_needed {
                         if screen_row >= ch { break; }
                         if wrap_row == 0 { terminal::move_cursor(buf, screen_row as u16, 0); }
                         let gutter = self.number_gutter(actual, w);
                         Self::write_number_gutter(buf, &gutter);
                         let display = truncate_to_width(line, wrap_row * content_width, w.saturating_sub(gutter.len()), self.raw_mode);
-                        self.write_line_with_search(buf, &display, actual);
+                        self.write_line_with_search(buf, &display);
                         screen_row += 1;
-                        if wrap_row + 1 == rows_needed { terminal::clear_line(buf); }
+                        if wrap_row + 1 == rows_needed && fragment.complete { terminal::clear_line(buf); }
                     }
+                    if screen_row == ch && (rows_needed > available_rows || !fragment.complete) { buf.extend_from_slice(b" \x08"); }
                     display_idx += 1;
                 }
                 None => {
@@ -752,12 +761,12 @@ impl Pager {
                 }
             }
         }
+        Ok(())
     }
 
-    fn write_line_with_search(&self, buf: &mut Vec<u8>, display: &str, line_idx: usize) {
+    fn write_line_with_search(&self, buf: &mut Vec<u8>, display: &str) {
         if let Some(ref search) = self.search
-            && let Some(original_line) = self.buffer.lines.get(line_idx)
-            && search.is_match(original_line)
+            && search.is_match(display)
         {
             {
                 let stripped = strip_ansi(display);

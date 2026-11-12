@@ -7329,11 +7329,13 @@
         "linux-musl"
       ],
       "cases": [
-        "sources-long-utf8"
+        "sources-long-utf8",
+        "sources-sixteen-mib-ascii",
+        "sources-sixteen-mib-utf8"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "The 64 KiB byte cut could panic inside a UTF-8 character and silently dropped long-line suffixes. Unit regressions preserve full ASCII/UTF-8 lines and a strict en_US.UTF-8 chopped PTY case passes. Full-line allocation and unbounded cache storage remain open in S05b."
+      "cause": "Initial display uses bounded byte prefixes. Strict 16 MiB ASCII and UTF-8 first-screen scenarios pass. Source bytes remain in seekable files or anonymous spools, scanning uses 64 KiB blocks, and line offsets spill after 8192 entries. Whole-line search and wrapped navigation still materialize complete lines; open-producer PTY proof, RSS gates and exact malformed-byte display remain open."
     }
   ],
   "upstream": [

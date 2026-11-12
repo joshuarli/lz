@@ -5,7 +5,7 @@ use lz::{buffer, history, pager, terminal};
 use std::fs::File;
 use std::ffi::OsString;
 use std::os::unix::ffi::OsStrExt;
-use std::io::{self, IsTerminal, Read, Write};
+use std::io::{self, IsTerminal, Write};
 use std::process;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -108,31 +108,7 @@ fn run() -> Result<ExitAction, String> {
     }
 
     let (buf, display_name) = if is_stdin {
-        // Read from stdin
-        let stdin = io::stdin();
-
-        // For stdin binary detection, read a chunk first
-        if !args.force {
-            let mut check_buf = [0u8; 8192];
-            let mut handle = stdin.lock();
-            let n = handle.read(&mut check_buf).map_err(|e| e.to_string())?;
-            if n == 0 {
-                return Ok(ExitAction::Success); // Empty input, exit 0
-            }
-            if check_buf[..n].contains(&0) {
-                return Err("Binary content detected. Use --force to view.".to_string());
-            }
-            drop(handle);
-
-            // We consumed some bytes. Create buffer and prepopulate.
-            let mut lb = buffer::LineBuffer::from_stdin(io::stdin());
-            let prefix = String::from_utf8_lossy(&check_buf[..n]).to_string();
-            lb.prepopulate(&prefix);
-            (lb, None)
-        } else {
-            let lb = buffer::LineBuffer::from_stdin(stdin);
-            (lb, None)
-        }
+        (buffer::LineBuffer::from_stdin(io::stdin()).map_err(|error| error.to_string())?, None)
     } else {
         let filename = &args.filenames[0];
         let mut file = File::open(filename).map_err(|e| format!("{}: {}", filename.to_string_lossy(), e))?;

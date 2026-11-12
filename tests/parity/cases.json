@@ -103701,5 +103701,97 @@
       116
     ],
     "files": {}
+  },
+  {
+    "id": "sources-sixteen-mib-ascii",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        120
+      ],
+      "count": 16777216,
+      "suffix": [
+        10
+      ]
+    },
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "input",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "sources-sixteen-mib-utf8",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        226,
+        130,
+        172
+      ],
+      "count": 5592406,
+      "suffix": [
+        10
+      ]
+    },
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "input",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
   }
 ]

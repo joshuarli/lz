@@ -22,7 +22,9 @@ src/
   main.rs       CLI entry point, arg parsing, panic hook
   options.rs    Binary-only CLI option-name diagnostics
   pager.rs      Main event loop and rendering
-  buffer.rs     Lazy streaming line buffer
+  buffer.rs     Byte source access, line indexing and display fragments
+  storage.rs    Anonymous spill files and bounded line indexes
+  readiness.rs  Platform descriptor readiness
   input.rs      Key reading and escape sequence parsing
   terminal.rs   Raw termios, alt screen, signals, output helpers
   ansi.rs       ANSI stripping, visible width, color-preserving truncation
@@ -118,15 +120,16 @@ Key types: `Key` enum, `InputReader` struct.
 
 ### `buffer.rs`
 
-Lazy streaming line buffer for file content.
+Byte source access and logical line indexing.
 
-- Reads lines from the input source on demand rather than loading the entire file upfront. This gives instant startup even on very large files.
-- Binary detection: reads the first 8KB and checks for null bytes. If found, refuses to display and reports the file as binary.
-- Long lines are preserved without the retired 64 KiB truncation. The current reader still allocates complete lines and caches them; bounded byte storage is unfinished.
-- Follow mode: when enabled (equivalent to `tail -f`), polls the input source for new data after reaching EOF rather than stopping.
-- Exposes a random-access-by-line-index interface: `pager.rs` asks for line N and the buffer reads forward as needed, caching lines already read.
+- Regular files remain seekable. Nonseekable stdin is polled before each read and retained in an unlinked, mode-0600 spill file.
+- Scanning uses 64 KiB blocks. Line offsets spill after 8,192 entries, so source retention does not require an in-memory copy of every line.
+- `line_prefix` reads a bounded display fragment without waiting for the end of a logical line. `get_line` explicitly materializes a complete line for search and some navigation paths. Those operations still need large-line bounds and cancellation work.
+- `SourceState` distinguishes ready data, temporary waiting, EOF and read failure. Read failures reach the pager instead of becoming EOF.
+- Source bytes stay intact in the file or spool. Display fragments currently decode with replacement for malformed UTF-8. Exact malformed-byte presentation remains unfinished.
+- File binary detection checks the first 8 KiB without changing the file position. Interactive binary prompts remain unfinished.
 
-Key types: `LineBuffer` struct, methods `get(n)`, `len()`, `is_binary()`.
+Key types: `LineBuffer`, `LineFragment`, `SourceState`. Mutable line injection and the old prepopulation interface are retired.
 
 ### `ansi.rs`
 
@@ -246,12 +249,11 @@ Search is case-sensitive by default. `-i` enables smart case, and `-I` always ig
 Most real-world searches are literal strings, not regexes. BMH with a 256-entry shift table skips large portions of each line without examining every byte, giving a significant speedup over regex for the common case. The `is_literal()` check detects regex metacharacters; if none are present, the search is routed to BMH instead of `regex-lite`. This is why `search.rs` has the `Matcher` enum dispatching between `Literal` and `Regex`.
 
 **Lazy line loading.**
-Lines are read from the source on demand and cached. The pager does not read the entire file on startup. This gives instant startup for large files and makes stdin streaming natural.
+Display reads bounded prefixes from seekable files or retained stream bytes. Line indexes spill to disk after a fixed in-memory allowance.
 
 **Long lines.**
-Lines are preserved in full. The old byte cut could panic inside UTF-8 and did not
-bound peak allocation. Full-line allocation and the unbounded cache remain open
-until the byte-source work lands.
+Source bytes are preserved in full. Initial display does not allocate a complete
+logical line. Whole-line search and wrapped movement still materialize lines.
 
 ---
 
