@@ -3538,10 +3538,20 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "rendering-overstrike-replace",
+        "rendering-overstrike-bold",
+        "rendering-overstrike-underline",
+        "rendering-overstrike-reverse-underline",
+        "rendering-overstrike-tab",
+        "rendering-overstrike-combined",
+        "rendering-overstrike-underscore",
+        "rendering-overstrike-wide",
+        "rendering-overstrike-combining"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Default replacement, bold/underline and combined overstrikes pass, including tab spaces, repeated underscores, CJK and a base plus combining mark. The -u/-U modes and per-control overrides remain unimplemented; other combining/width/search interactions remain open."
     },
     {
       "id": "man-1202",
@@ -4904,11 +4914,13 @@
         "rendering-sgr-standard",
         "rendering-path-control",
         "rendering-control-wrap",
-        "rendering-escape-wrap"
+        "rendering-escape-wrap",
+        "rendering-return",
+        "rendering-overstrike-notation"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Default C0/DEL/ESC notation, inverse attributes, default tab stops and safe filename prompts pass. Control notation stays intact at wrap boundaries and leaves short rows unwrapped. Backspaces, carriage returns, overstrikes, custom tab stops and other geometry remain open."
+      "cause": "Default control notation, inverse attributes, tab stops, CR notation and safe filename prompts pass. Notation stays intact at wrap boundaries, and a backspace after notation is displayed rather than erasing it. Processing flags, custom tab stops and further geometry remain open."
     },
     {
       "id": "man-1876",

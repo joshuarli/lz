@@ -117532,5 +117532,491 @@
     ],
     "files": {},
     "trace_check": "captured"
+  },
+  {
+    "id": "rendering-overstrike-replace",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      65,
+      66,
+      67,
+      8,
+      88,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-overstrike-bold",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      65,
+      8,
+      65,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-overstrike-underline",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      95,
+      8,
+      88,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-overstrike-reverse-underline",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      88,
+      8,
+      95,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-return",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      65,
+      66,
+      67,
+      13,
+      88,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-overstrike-tab",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      65,
+      9,
+      8,
+      88,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-overstrike-notation",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      1,
+      8,
+      88,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-overstrike-combined",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      88,
+      8,
+      95,
+      8,
+      88,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-overstrike-underscore",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      95,
+      8,
+      95,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-overstrike-wide",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      231,
+      149,
+      140,
+      8,
+      231,
+      149,
+      140,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-overstrike-combining",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      101,
+      204,
+      129,
+      8,
+      101,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
   }
 ]

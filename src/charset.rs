@@ -3,6 +3,7 @@ use std::io::{self, Write};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Charset { Ascii, Utf8 }
 
+#[derive(Clone, Copy)]
 pub(crate) enum Unit<'a> { Character(char), Invalid(&'a [u8]) }
 
 pub(crate) struct Units<'a> { pub(crate) charset: Charset, pub(crate) remaining: &'a [u8] }

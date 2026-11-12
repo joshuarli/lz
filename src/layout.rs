@@ -12,6 +12,8 @@ struct Glyph {
     source: Range<usize>,
     columns: Range<usize>,
     representation: Representation,
+    bold: bool,
+    underline: bool,
 }
 
 pub(crate) struct DisplayPrefix {
@@ -26,15 +28,33 @@ impl DisplayPrefix {
     pub(crate) fn new(mut bytes: Vec<u8>, charset: Charset, complete: bool, wrap_width: Option<NonZeroUsize>) -> Self {
         if !complete && charset == Charset::Utf8 && let Err(error) = std::str::from_utf8(&bytes)
             && error.error_len().is_none() { bytes.truncate(error.valid_up_to()); }
-        let mut glyphs = Vec::new();
+        let mut glyphs: Vec<Glyph> = Vec::new();
+        let mut overstrike: Option<Glyph> = None;
+        let mut last_overstrike = (false, false);
         let mut columns = 0;
         let mut units = Units { charset, remaining: &bytes };
         while !units.remaining.is_empty() {
             let start = bytes.len() - units.remaining.len();
             let unit = units.next().unwrap();
             let end = bytes.len() - units.remaining.len();
-            let (representation, width) = match unit {
-                Unit::Character('\t') => (Representation::Tab, 8 - columns % 8),
+            if matches!(unit, Unit::Character('\u{8}')) && !glyphs.last().is_some_and(|glyph| matches!(glyph.representation, Representation::Notation)) {
+                overstrike = glyphs.pop();
+                while overstrike.as_ref().is_some_and(|glyph| glyph.columns.is_empty()) && !glyphs.is_empty() { overstrike = glyphs.pop(); }
+                if let Some(previous) = &overstrike { columns = previous.columns.start; }
+                continue;
+            }
+            let mut source = start..end;
+            let mut bold = false;
+            let mut underline = false;
+            let (mut representation, mut width) = match unit {
+                Unit::Character('\t') => {
+                    for _ in 0..8 - columns % 8 {
+                        glyphs.push(Glyph { source: start..end, columns: columns..columns + 1, representation: Representation::Tab, bold: false, underline: false });
+                        columns += 1;
+                    }
+                    overstrike = None;
+                    continue;
+                }
                 Unit::Character(character) if character.is_control() || charset.binary_character(character) => {
                     let mut notation = Vec::new();
                     charset.write_filename(&bytes[start..end], &mut notation).unwrap();
@@ -44,14 +64,38 @@ impl DisplayPrefix {
                 Unit::Invalid(invalid) => {
                     for offset in 0..invalid.len() {
                         columns = Self::place(columns, 4, wrap_width);
-                        glyphs.push(Glyph { source: start + offset..start + offset + 1, columns: columns..columns + 4, representation: Representation::Notation });
+                        glyphs.push(Glyph { source: start + offset..start + offset + 1, columns: columns..columns + 4, representation: Representation::Notation, bold: false, underline: false });
                         columns += 4;
                     }
+                    overstrike = None;
                     continue;
                 }
             };
+            if let Some(previous) = overstrike.take() {
+                bold = previous.bold;
+                underline = previous.underline;
+                let previous_character = match previous.representation {
+                    Representation::Tab => Some(' '),
+                    Representation::Literal => std::str::from_utf8(&bytes[previous.source.clone()]).unwrap().chars().next(),
+                    Representation::Notation => None,
+                };
+                if let Unit::Character(character) = unit {
+                    if previous_character == Some(character) {
+                        if character != '_' { bold = true; }
+                        else if bold || underline { bold = true; underline = true; }
+                        else if last_overstrike != (false, false) { (bold, underline) = last_overstrike; }
+                        else { bold = true; }
+                    } else if character == '_' {
+                        underline = true;
+                        source = previous.source;
+                        representation = previous.representation;
+                        width = previous.columns.len();
+                    } else if previous_character == Some('_') { underline = true; }
+                }
+            }
+            if bold || underline { last_overstrike = (bold, underline); }
             if !matches!(representation, Representation::Tab) { columns = Self::place(columns, width, wrap_width); }
-            glyphs.push(Glyph { source: start..end, columns: columns..columns + width, representation });
+            glyphs.push(Glyph { source, columns: columns..columns + width, representation, bold, underline });
             columns += width;
         }
         Self { bytes, charset, glyphs, columns, complete }
@@ -74,14 +118,17 @@ impl DisplayPrefix {
     pub(crate) fn display(&self, start: usize, width: usize) -> String {
         let end = start.saturating_add(width);
         let mut output = Vec::new();
-        let mut inverse = false;
+        let mut attributes = (false, false, false);
         for glyph in &self.glyphs {
             if glyph.columns.end <= start && !glyph.columns.is_empty() { continue; }
             if glyph.columns.start >= end { break; }
             let notation = matches!(glyph.representation, Representation::Notation);
-            if notation != inverse {
-                output.extend_from_slice(if notation { b"\x1b[7m" } else { b"\x1b[m" });
-                inverse = notation;
+            let next_attributes = (notation, glyph.bold, glyph.underline);
+            if attributes != next_attributes {
+                if attributes != (false, false, false) { output.extend_from_slice(b"\x1b[m"); }
+                let codes = [(notation, "7"), (glyph.bold, "1"), (glyph.underline, "4")].into_iter().filter_map(|(enabled, code)| enabled.then_some(code)).collect::<Vec<_>>();
+                if !codes.is_empty() { output.extend_from_slice(format!("\x1b[{}m", codes.join(";")).as_bytes()); }
+                attributes = next_attributes;
             }
             let visible = glyph.columns.end.min(end).saturating_sub(glyph.columns.start.max(start));
             match glyph.representation {
@@ -96,7 +143,7 @@ impl DisplayPrefix {
                 }
             }
         }
-        if inverse { output.extend_from_slice(b"\x1b[m"); }
+        if attributes != (false, false, false) { output.extend_from_slice(b"\x1b[m"); }
         String::from_utf8(output).unwrap()
     }
 }
@@ -111,8 +158,7 @@ mod tests {
         assert_eq!(layout.columns, 15);
         assert_eq!(layout.display(0, 8), "A       ");
         assert_eq!(layout.display(8, 7), "B\x1b[7m^A<FF>\x1b[m");
-        assert_eq!(layout.glyphs[1].source, 1..2);
-        assert_eq!(layout.glyphs[1].columns, 1..8);
+        assert!(layout.glyphs[1..8].iter().enumerate().all(|(index, glyph)| glyph.source == (1..2) && glyph.columns == (index + 1..index + 2)));
     }
 
     #[test]
@@ -124,6 +170,15 @@ mod tests {
         let layout = DisplayPrefix::new("abcdefg界B".as_bytes().to_vec(), Charset::Utf8, true, NonZeroUsize::new(8));
         assert_eq!(layout.display(0, 8), "abcdefg");
         assert_eq!(layout.display(8, 8), "界B");
+    }
+
+    #[test]
+    fn backspace_replaces_a_base_and_its_combining_marks() {
+        let layout = DisplayPrefix::new("e\u{301}\u{8}e".as_bytes().to_vec(), Charset::Utf8, true, None);
+        assert_eq!(layout.columns, 1);
+        assert_eq!(layout.display(0, 8), "\x1b[1me\x1b[m");
+        let layout = DisplayPrefix::new(b"X\x08_\x08X".to_vec(), Charset::Ascii, true, None);
+        assert_eq!(layout.display(0, 8), "\x1b[1;4mX\x1b[m");
     }
 
     #[test]
