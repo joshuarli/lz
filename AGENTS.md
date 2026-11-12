@@ -24,7 +24,7 @@ src/
   pager.rs      Main event loop and rendering
   buffer.rs     Byte source access, line indexing and display fragments
   charset.rs    ASCII/UTF-8 policy for binary samples and byte presentation
-  layout.rs     Bounded byte-prefix mapping to displayed columns and notation
+  layout.rs     Bounded byte-prefix mapping for standard/color display and notation
   storage.rs    Anonymous spill files and bounded line indexes
   readiness.rs  Platform descriptor readiness
   input.rs      Key reading and escape sequence parsing
@@ -129,7 +129,7 @@ Byte source access and logical line indexing.
 - `line_prefix` reads a bounded display fragment without waiting for the end of a logical line. `get_line` explicitly materializes a complete line for search and some navigation paths. Those operations still need large-line bounds and cancellation work.
 - `SourceState` distinguishes ready data, temporary waiting, EOF and read failure. Read failures reach the pager instead of becoming EOF.
 - Source bytes stay intact in the file or spool. Display fragments currently decode with replacement for malformed UTF-8. Exact malformed-byte presentation remains unfinished.
-- File binary detection samples 256 bytes without changing the file position. More than five binary units trigger a question. Detection and filename questions share `Charset`; `ControlDisplay::Color` excludes common SGR escapes from the sample. Accepted/forced bytes use inverse caret/hex notation. Other charsets remain unfinished.
+- File binary detection samples 256 bytes without changing the file position. More than five binary units trigger a question. Detection and filename questions share `Charset`; `ControlDisplay::Color` excludes SGR spans from the sample, preserving the reference's distinct OSC-prefix handling during binary sampling. Accepted/forced bytes use inverse caret/hex notation. Other charsets remain unfinished.
 
 Key types: `LineBuffer`, `LineFragment`, `SourceState`. Mutable line injection and the old prepopulation interface are retired.
 
@@ -141,7 +141,9 @@ ANSI escape code utilities.
 - `visible_width(s)`: computes the display width of a string (after stripping ANSI), accounting for wide Unicode characters (CJK, etc.) via `unicode-width`.
 - `truncate_to_width(s, max_width)`: truncates a string to fit within `max_width` terminal columns, but preserves ANSI color state. If a color escape was active before the truncation point, the returned string still starts in that color. This is necessary for correct horizontal scrolling — if you slice a colored line mid-segment, the color must carry through.
 
-Key types: none (free functions).
+Standard and color rendering use `layout.rs`: byte ranges map to columns, atomic wrap boundaries, printable notation and overstrike attributes. Color spans preserve source SGR state across generated notation and resets. Raw rendering and whole-line search/navigation still use the earlier string utilities.
+
+Key types: `ControlDisplay`; the remaining ANSI functions also serve search and benchmarks.
 
 ### `history.rs`
 

@@ -3,13 +3,54 @@ use unicode_width::UnicodeWidthChar;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ControlDisplay { #[default] Standard, Raw, Color }
 
-pub(crate) fn without_escapes(bytes: &[u8]) -> Vec<u8> {
+pub(crate) enum ColorSpan { Sgr(usize), Hyperlink(usize), Discard(usize), Incomplete }
+
+pub(crate) fn color_span(bytes: &[u8], charset: crate::charset::Charset) -> ColorSpan {
+    use crate::charset::{Unit, Units};
+    if bytes.starts_with(b"\x1b]8;") {
+        let mut units = Units { charset, remaining: &bytes[4..] };
+        let mut in_uri = false;
+        let mut escape = false;
+        while let Some(unit) = units.next() {
+            let length = bytes.len() - units.remaining.len();
+            if !in_uri {
+                if matches!(unit, Unit::Character(';')) { in_uri = true; }
+            } else if escape {
+                return if matches!(unit, Unit::Character('\\')) { ColorSpan::Hyperlink(length) } else { ColorSpan::Discard(length) };
+            } else if matches!(unit, Unit::Character('\u{7}')) { return ColorSpan::Hyperlink(length); }
+            else if matches!(unit, Unit::Character('\u{1b}')) { escape = true; }
+        }
+        return ColorSpan::Incomplete;
+    }
+    sgr_span(bytes, charset)
+}
+
+fn sgr_span(bytes: &[u8], charset: crate::charset::Charset) -> ColorSpan {
+    use crate::charset::{Unit, Units};
+    let mut units = Units { charset, remaining: &bytes[1..] };
+    while let Some(unit) = units.next() {
+        let length = bytes.len() - units.remaining.len();
+        match unit {
+            Unit::Character('m') => return ColorSpan::Sgr(length),
+            Unit::Character(character) if character.is_ascii() && b"0123456789:;[?!\"'#%()*+ ".contains(&(character as u8)) => {}
+            _ => return ColorSpan::Discard(length),
+        }
+    }
+    ColorSpan::Incomplete
+}
+
+pub(crate) fn without_sample_escapes(bytes: &[u8], charset: crate::charset::Charset) -> Vec<u8> {
     let mut output = Vec::with_capacity(bytes.len());
     let mut index = 0;
     while index < bytes.len() {
-        let length = escape_seq_len(bytes, index);
-        if length > 0 { index += length; }
-        else { output.push(bytes[index]); index += 1; }
+        if bytes[index] == 0x1b {
+            // less 668 binary sampling skips the initial ESC before feeding its ANSI state, so OSC 8 is not recognized there.
+            match sgr_span(&bytes[index..], charset) {
+                ColorSpan::Sgr(length) | ColorSpan::Discard(length) => index += length,
+                ColorSpan::Incomplete => break,
+                ColorSpan::Hyperlink(_) => unreachable!(),
+            }
+        } else { output.push(bytes[index]); index += 1; }
     }
     output
 }

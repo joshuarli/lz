@@ -111,22 +111,21 @@ struct CommandError { command: Key, context: CommandContext, remainder: Vec<u8> 
 #[derive(Clone, Copy, PartialEq)]
 enum NumericPrefix { Empty, Value(usize), Overflow }
 
-enum DisplayLine { Standard(DisplayPrefix), Escapes(LineFragment, ControlDisplay) }
+enum DisplayLine { Mapped(DisplayPrefix), Raw(LineFragment) }
 
 impl DisplayLine {
-    fn complete(&self) -> bool { match self { Self::Standard(prefix) => prefix.complete, Self::Escapes(fragment, _) => fragment.complete } }
+    fn complete(&self) -> bool { match self { Self::Mapped(prefix) => prefix.complete, Self::Raw(fragment) => fragment.complete } }
     fn columns(&self) -> usize { match self {
-        Self::Standard(prefix) => prefix.columns,
-        Self::Escapes(fragment, ControlDisplay::Raw) => unicode_width::UnicodeWidthStr::width(fragment.text.as_str()),
-        Self::Escapes(fragment, _) => visible_width(&fragment.text),
+        Self::Mapped(prefix) => prefix.columns,
+        Self::Raw(fragment) => unicode_width::UnicodeWidthStr::width(fragment.text.as_str()),
     } }
     fn fills_row(&self, start: usize, width: usize) -> bool { match self {
-        Self::Standard(prefix) => prefix.fills_row(start, width),
-        Self::Escapes(_, _) => self.columns() >= start.saturating_add(width),
+        Self::Mapped(prefix) => prefix.fills_row(start, width),
+        Self::Raw(_) => self.columns() >= start.saturating_add(width),
     } }
-    fn display(&self, start: usize, width: usize) -> String { match self {
-        Self::Standard(prefix) => prefix.display(start, width),
-        Self::Escapes(fragment, controls) => truncate_to_width(&fragment.text, start, width, *controls == ControlDisplay::Raw),
+    fn display(&self, start: usize, width: usize) -> Vec<u8> { match self {
+        Self::Mapped(prefix) => prefix.display(start, width),
+        Self::Raw(fragment) => truncate_to_width(&fragment.text, start, width, true).into_bytes(),
     } }
 }
 
@@ -785,12 +784,12 @@ impl Pager {
     }
 
     fn display_prefix(&mut self, line: usize, bytes: usize) -> io::Result<Option<DisplayLine>> {
-        if self.controls == ControlDisplay::Standard {
+        if self.controls != ControlDisplay::Raw {
             let width = self.term_width as usize;
             let wrap_width = self.wrap.then(|| std::num::NonZeroUsize::new(width.saturating_sub(self.number_gutter(line, width).len()).max(1)).unwrap());
-            Ok(self.buffer.byte_prefix(line, bytes)?.map(|fragment| DisplayLine::Standard(DisplayPrefix::new(fragment.bytes, self.charset, fragment.complete, wrap_width))))
+            Ok(self.buffer.byte_prefix(line, bytes)?.map(|fragment| DisplayLine::Mapped(DisplayPrefix::new(fragment.bytes, self.charset, fragment.complete, wrap_width, self.controls))))
         } else {
-            Ok(self.buffer.line_prefix(line, bytes)?.map(|fragment| DisplayLine::Escapes(fragment, self.controls)))
+            Ok(self.buffer.line_prefix(line, bytes)?.map(DisplayLine::Raw))
         }
     }
 
@@ -883,7 +882,8 @@ impl Pager {
         Ok(())
     }
 
-    fn write_line_with_search(&self, buf: &mut Vec<u8>, display: &str) {
+    fn write_line_with_search(&self, buf: &mut Vec<u8>, display: &[u8]) {
+        let Ok(display) = std::str::from_utf8(display) else { buf.extend_from_slice(display); return; };
         if let Some(ref search) = self.search
             && search.is_match(display)
         {

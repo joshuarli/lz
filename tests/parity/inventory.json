@@ -3439,11 +3439,20 @@
       "cases": [
         "rendering-sgr-color",
         "rendering-color-utf8-escape",
-        "rendering-color-utf8-intermediate"
+        "rendering-color-utf8-intermediate",
+        "rendering-color-csi-discard",
+        "rendering-color-controls",
+        "rendering-color-indexed",
+        "rendering-color-rgb-style",
+        "rendering-color-control-state",
+        "rendering-color-overstrike",
+        "rendering-color-wrap",
+        "rendering-color-line-reset",
+        "rendering-color-invalid-utf8"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Common SGR color/reset and malformed escapes ending in multibyte scalars pass under -R, without splitting UTF-8 or panicking. Other SGR, OSC 8, unsupported controls, charset sampling and wrap/color interactions remain open."
+      "cause": "SGR indexed/RGB colors and represented style, malformed UTF-8, unsupported CSI removal, controls, overstrikes, wrapping and line resets pass under -R. The byte layout restores source SGR after notation and overstrikes. OSC 8 semantic obligations, customized grammars, C1 forms, incomplete sequences and further geometry remain open."
     },
     {
       "id": "man-1163",
@@ -7473,11 +7482,13 @@
         "sources-binary-utf8-malformed-run",
         "sources-binary-ascii-alias",
         "sources-binary-utf8-alias",
-        "sources-binary-private-name"
+        "sources-binary-private-name",
+        "sources-binary-color-unknown-osc",
+        "sources-binary-color-link-sample"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Strict cases cover five versus six binary units, the 256-byte boundary, UTF-8 controls and malformed runs, common SGR sampling under -R, filename presentation and explicit charset/alias precedence. Detection and filename questions share one typed policy. Other charsets/custom definitions, locale validity, nonstandard UTF-8 scalar forms and other color-safe controls remain open."
+      "cause": "Strict cases cover five versus six binary units, the 256-byte boundary, UTF-8 controls and malformed runs, common SGR sampling under -R, filename presentation and explicit charset/alias precedence. Detection and filename questions share one typed policy. Other charsets/custom definitions, locale validity, nonstandard UTF-8 scalar forms and other color-safe controls remain open. Binary sampling shares SGR grammar with display but preserves the 668 quirk that skips the initial ESC before its OSC-prefix recognizer; both unsupported OSC and OSC 8 payload controls still trigger the question."
     },
     {
       "id": "invocation-command-overflow",

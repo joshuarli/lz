@@ -174,7 +174,7 @@ impl LineBuffer {
         let mut bytes = [0; BINARY_CHECK_SIZE];
         let count = file.read_at(&mut bytes, 0)?;
         let sample = &bytes[..count];
-        Ok(if controls == ControlDisplay::Color { charset.looks_binary(&crate::ansi::without_escapes(sample)) } else { charset.looks_binary(sample) })
+        Ok(if controls == ControlDisplay::Color { charset.looks_binary(&crate::ansi::without_sample_escapes(sample, charset)) } else { charset.looks_binary(sample) })
     }
 
     #[cfg(test)]
