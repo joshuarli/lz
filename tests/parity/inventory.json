@@ -821,8 +821,8 @@
         "upstream-seq-search"
       ],
       "implementation": "partial",
-      "evidence": "known incompatible",
-      "cause": "Strict PTY comparison exposes startup prompt/cursor/modes discrepancy; command edges remain untested"
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Plain ASCII literal search subsequence passes; regex dialect, modifiers, colors and interactions remain untested"
     },
     {
       "id": "man-0220",

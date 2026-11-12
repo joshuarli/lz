@@ -716,7 +716,7 @@ impl Pager {
                         if *start > last_end {
                             result.push_str(&stripped[last_end..*start]);
                         }
-                        result.push_str("\x1b[30;43m");
+                        result.push_str("\x1b[7m");
                         result.push_str(&stripped[*start..*end]);
                         result.push_str("\x1b[m");
                         last_end = *end;

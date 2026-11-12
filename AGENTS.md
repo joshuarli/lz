@@ -146,7 +146,7 @@ Search over file content with a fast literal path.
 - `BMH` struct implements Boyer-Moore-Horspool substring search with a 256-entry bad-character shift table. For literal patterns this skips large chunks of the haystack without examining every byte — dramatically faster than regex for common search terms.
 - Smart-case logic: if the search pattern contains any uppercase letter, the search is case-sensitive; if the pattern is all lowercase, it is case-insensitive. This matches vim and less behavior.
 - Searches on ANSI-stripped text (delegates to `ansi.rs`) so that color codes in the input do not interfere with pattern matching.
-- Returns match byte ranges on the stripped text; `pager.rs` uses these to inject yellow highlighting escapes when rendering.
+- Returns match byte ranges on the stripped text; `pager.rs` uses these to inject inverse highlighting escapes when rendering.
 - Integrates with `buffer.rs` to scan forward/backward through lines for `n`/`N` navigation.
 
 Key types: `Search` struct, `Matcher` enum (`Literal`, `Regex`), `BMH` struct.
@@ -162,7 +162,7 @@ The main event loop and renderer. This is the largest and most central module.
 - Rendering: full redraw every frame. Each frame: clear screen, render visible lines (or help screen) top-to-bottom, render inverse-video status bar at the bottom showing context on the left (filename, filter, wrap state, or input prompt) and position info on the right (line range, total, percentage/END).
 - Horizontal scroll: tracks a column offset, increments/decrements in 8-column steps.
 - Wrap mode: toggled with `w`. When enabled, long lines are wrapped using `unicode-width` for correct column calculation (this is why `pager.rs` depends on the crate directly).
-- Search highlighting: when a search is active, matching spans on each visible line are wrapped in `\x1b[30;43m` (black text on yellow background) and reset afterward.
+- Search highlighting: when a search is active, matching spans on each visible line are wrapped in `\x1b[7m` (inverse video) and reset afterward.
 - Line editor: the search/filter prompt at the bottom is a simple line editor supporting character input, backspace, cursor movement, and Escape/Enter. Up/Down cycle through search history (search mode only).
 - Key dispatch table: maps `Key` variants to actions in Normal mode (scroll, search, backward search, filter, quit, toggle wrap, enter follow mode, help, etc.).
 - Signal integration: checks the atomic flags set by signal handlers in `terminal.rs` on each event loop iteration. Handles resize by re-querying terminal dimensions and redrawing; handles TSTP by suspending the process after restoring the terminal.
@@ -178,7 +178,7 @@ Key types: `Pager` struct, `Mode` enum (`Normal`, `SearchInput`, `FilterInput`, 
 - View files and piped stdin
 - Line scroll, half-page scroll, full-page scroll, jump to top/bottom
 - Horizontal scroll in 8-column increments
-- Regex search with smart-case, forward (`/`) and backward (`?`) search, `n`/`N` navigation, yellow highlighting, persistent search history (Up/Down in search prompt)
+- Regex search with smart-case, forward (`/`) and backward (`?`) search, `n`/`N` navigation, inverse highlighting, persistent search history (Up/Down in search prompt)
 - Line filtering (`&`) — show only lines matching a pattern
 - Interactive help screen (`h` key)
 - Wrap toggle (`w` key)
