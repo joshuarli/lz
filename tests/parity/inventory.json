@@ -818,11 +818,12 @@
         "linux-musl"
       ],
       "cases": [
-        "upstream-seq-search"
+        "upstream-seq-search",
+        "search-case-default"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Plain ASCII literal search subsequence passes; regex dialect, modifiers, colors and interactions remain untested"
+      "cause": "Plain ASCII literal search/highlight and default sensitivity pass; POSIX dialect, modifiers, colors and layout interactions remain untested"
     },
     {
       "id": "man-0220",
@@ -2909,10 +2910,19 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "search-case-default",
+        "search-case-smart-lower",
+        "search-case-smart-upper",
+        "search-case-ignore-upper",
+        "search-case-env-smart",
+        "search-case-cli-override",
+        "search-case-reset",
+        "search-case-combined"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "ASCII search case policy passes for exact -i/-I, combined i/I flags, simple LESS entries, CLI override and -+i reset. Other option syntax, Unicode folding and environment policies remain untested"
     },
     {
       "id": "man-0894",
@@ -2928,10 +2938,19 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "search-case-default",
+        "search-case-smart-lower",
+        "search-case-smart-upper",
+        "search-case-ignore-upper",
+        "search-case-env-smart",
+        "search-case-cli-override",
+        "search-case-reset",
+        "search-case-combined"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "ASCII search case policy passes for exact -i/-I, combined i/I flags, simple LESS entries, CLI override and -+i reset. Other option syntax, Unicode folding and environment policies remain untested"
     },
     {
       "id": "man-0897",
@@ -6247,10 +6266,19 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "search-case-default",
+        "search-case-smart-lower",
+        "search-case-smart-upper",
+        "search-case-ignore-upper",
+        "search-case-env-smart",
+        "search-case-cli-override",
+        "search-case-reset",
+        "search-case-combined"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "ASCII search case policy passes for exact -i/-I, combined i/I flags, simple LESS entries, CLI override and -+i reset. Other option syntax, Unicode folding and environment policies remain untested"
     },
     {
       "id": "man-2354",

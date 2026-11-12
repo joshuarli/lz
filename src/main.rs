@@ -1,4 +1,5 @@
 use lz::{buffer, history, pager, terminal};
+use lz::search::CaseSensitivity;
 
 use std::fs::File;
 use std::ffi::OsString;
@@ -12,10 +13,24 @@ struct Args {
     follow: bool,
     force: bool,
     raw_mode: bool,
+    search_case: CaseSensitivity,
     filenames: Vec<OsString>,
     stdin_explicit: bool,
     help: bool,
     version: bool,
+}
+
+fn case_option(bytes: &[u8]) -> Option<CaseSensitivity> {
+    match bytes {
+        b"--ignore-case" => Some(CaseSensitivity::Smart),
+        b"--IGNORE-CASE" => Some(CaseSensitivity::Insensitive),
+        b"-+i" | b"-+I" => Some(CaseSensitivity::Sensitive),
+        _ => {
+            let flags = bytes.strip_prefix(b"-")?;
+            if flags.is_empty() || flags.iter().any(|byte| !matches!(byte, b'i' | b'I')) { return None; }
+            Some(if flags.last() == Some(&b'i') { CaseSensitivity::Smart } else { CaseSensitivity::Insensitive })
+        }
+    }
 }
 
 fn parse_args() -> Args {
@@ -23,11 +38,19 @@ fn parse_args() -> Args {
         follow: false,
         force: false,
         raw_mode: false,
+        search_case: CaseSensitivity::default(),
         filenames: Vec::new(),
         stdin_explicit: false,
         help: false,
         version: false,
     };
+
+    if let Some(defaults) = std::env::var_os("LESS") {
+        for token in defaults.as_bytes().split(|byte| byte.is_ascii_whitespace()).filter(|token| !token.is_empty()) {
+            let flag = if token.starts_with(b"-") { token.to_vec() } else { [b"-", token].concat() };
+            if let Some(case) = case_option(&flag) { args.search_case = case; }
+        }
+    }
 
     let argv: Vec<OsString> = std::env::args_os().skip(1).collect();
     let mut end_of_flags = false;
@@ -37,6 +60,8 @@ fn parse_args() -> Args {
             args.filenames.push(arg.clone());
             continue;
         }
+
+        if let Some(case) = case_option(arg.as_bytes()) { args.search_case = case; continue; }
 
         match arg.as_bytes() {
             b"--" => end_of_flags = true,
@@ -69,7 +94,9 @@ USAGE: lz [OPTIONS] [FILE]
 
 OPTIONS:
     --follow    Follow mode (like tail -f)
-    --force     View binary files
+    -f, --force View binary files
+    -i          Ignore ASCII case unless the pattern has uppercase
+    -I          Always ignore ASCII case
     -r, --raw   Raw mode (show ANSI escapes literally)
     -h, --help  Show this help
     -V, --version  Show version
@@ -212,7 +239,7 @@ fn run() -> Result<ExitAction, String> {
     let history = history_path.as_deref().map(history::SearchHistory::load).unwrap_or_default();
 
     // Run pager
-    let mut pager = pager::Pager::new(buf, args.follow, args.raw_mode, display_name, history);
+    let mut pager = pager::Pager::new(buf, pager::Config { follow: args.follow, raw_mode: args.raw_mode, search_case: args.search_case }, display_name, history);
     let result = pager.run(session.keys_mut());
 
     if let Some(path) = history_path { pager.history().save(&path); }

@@ -26,10 +26,14 @@ The less 668 parity campaign is in progress; interactive behavior still differs.
 | Flag | Description |
 |---|---|
 | `--follow` | Follow mode (like `tail -f`) |
-| `--force` | View binary files |
+| `-f`, `--force` | View binary files |
+| `-i`, `--ignore-case` | Use smart case for ASCII search |
+| `-I`, `--IGNORE-CASE` | Ignore ASCII search case |
 | `-r`, `--raw` | Show ANSI escapes literally |
 | `-h`, `--help` | Show help |
 | `-V`, `--version` | Show version |
+
+Search is case-sensitive by default. Simple `-i` and `-I` entries in `LESS` apply before the command line. `-+i` resets the case policy. Full less option syntax and Unicode case-folding parity remain open.
 
 ## Keyboard Shortcuts
 

@@ -4,7 +4,7 @@ use crate::ansi::{strip_ansi, truncate_to_width, visible_width};
 use crate::buffer::LineBuffer;
 use crate::history::SearchHistory;
 use crate::input::{Key, KeyReader};
-use crate::search::Search;
+use crate::search::{CaseSensitivity, Search};
 use crate::terminal;
 
 #[derive(PartialEq, Clone, Copy)]
@@ -98,12 +98,19 @@ impl LineEditor {
     }
 }
 
+pub struct Config {
+    pub follow: bool,
+    pub raw_mode: bool,
+    pub search_case: CaseSensitivity,
+}
+
 pub struct Pager {
     buffer: LineBuffer,
     top_line: usize,
     left_col: usize,
     wrap: bool,
     search: Option<Search>,
+    search_case: CaseSensitivity,
     search_dir: SearchDir,
     current_match_line: Option<usize>,
     mode: Mode,
@@ -124,8 +131,7 @@ pub struct Pager {
 impl Pager {
     pub fn new(
         buffer: LineBuffer,
-        follow: bool,
-        raw_mode: bool,
+        config: Config,
         filename: Option<String>,
         history: SearchHistory,
     ) -> Self {
@@ -136,9 +142,10 @@ impl Pager {
             left_col: 0,
             wrap: false,
             search: None,
+            search_case: config.search_case,
             search_dir: SearchDir::Forward,
             current_match_line: None,
-            mode: if follow { Mode::Follow } else { Mode::Normal },
+            mode: if config.follow { Mode::Follow } else { Mode::Normal },
             search_input: LineEditor::new(),
             filter_input: LineEditor::new(),
             filter: None,
@@ -146,8 +153,8 @@ impl Pager {
             history,
             term_width: w,
             term_height: h,
-            follow,
-            raw_mode,
+            follow: config.follow,
+            raw_mode: config.raw_mode,
             status_msg: None,
             filename,
             filename_prompt: true,
@@ -335,7 +342,7 @@ impl Pager {
                     return;
                 }
                 self.history.push(&pattern);
-                match Search::new(&pattern) {
+                match Search::new(&pattern, self.search_case) {
                     Ok(s) => {
                         self.search = Some(s);
                         self.current_match_line = None;
@@ -420,7 +427,7 @@ impl Pager {
                     self.clear_filter();
                     return;
                 }
-                match Search::new(&pattern) {
+                match Search::new(&pattern, self.search_case) {
                     Ok(s) => {
                         self.filter = Some(s);
                         self.rebuild_filter();

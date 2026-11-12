@@ -15,7 +15,7 @@ static ALLOC: AllocProfiler = AllocProfiler::system();
 
 use lz::ansi::{strip_ansi, truncate_to_width, visible_width};
 use lz::buffer::LineBuffer;
-use lz::search::Search;
+use lz::search::{CaseSensitivity, Search};
 
 const LINES: usize = 100_000;
 const LINE: &str = "the quick brown fox jumps over the lazy dog abcdef padding padding padding";
@@ -76,7 +76,7 @@ fn buffer_read_all_100k_lines(bencher: Bencher) {
 #[rustybench::bench]
 fn search_hit_literal(bencher: Bencher) {
     let (_fixture, path) = make_fixture("search-hit");
-    let search = Search::new("00050000").unwrap();
+    let search = Search::new("00050000", CaseSensitivity::Sensitive).unwrap();
     bencher.bench_local(|| {
         let mut buffer = line_buffer(&path);
         black_box(search.find_next_line(&mut buffer, 0, true));
@@ -86,7 +86,7 @@ fn search_hit_literal(bencher: Bencher) {
 #[rustybench::bench]
 fn search_miss_literal(bencher: Bencher) {
     let (_fixture, path) = make_fixture("search-miss");
-    let search = Search::new("zznomatch").unwrap();
+    let search = Search::new("zznomatch", CaseSensitivity::Sensitive).unwrap();
     bencher.bench_local(|| {
         let mut buffer = line_buffer(&path);
         black_box(search.find_next_line(&mut buffer, 0, true));
@@ -96,7 +96,7 @@ fn search_miss_literal(bencher: Bencher) {
 #[rustybench::bench]
 fn search_hit_regex(bencher: Bencher) {
     let (_fixture, path) = make_fixture("search-regex");
-    let search = Search::new("0001000.*fox").unwrap();
+    let search = Search::new("0001000.*fox", CaseSensitivity::Sensitive).unwrap();
     bencher.bench_local(|| {
         let mut buffer = line_buffer(&path);
         black_box(search.find_next_line(&mut buffer, 0, true));
@@ -106,7 +106,7 @@ fn search_hit_regex(bencher: Bencher) {
 #[rustybench::bench]
 fn search_filter_scan_cached(bencher: Bencher) {
     let (_fixture, path) = make_fixture("filter-scan");
-    let search = Search::new("lazy dog").unwrap();
+    let search = Search::new("lazy dog", CaseSensitivity::Sensitive).unwrap();
     let mut buffer = line_buffer(&path);
     buffer.read_all();
     bencher.bench_local(|| {

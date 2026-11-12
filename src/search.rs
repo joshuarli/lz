@@ -119,21 +119,31 @@ enum Matcher {
     Regex(Regex),
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum CaseSensitivity {
+    #[default]
+    Sensitive,
+    Smart,
+    Insensitive,
+}
+
 pub struct Search {
     pub pattern: String,
     matcher: Matcher,
 }
 
 impl Search {
-    /// Create a new search. Smart-case: if pattern has uppercase → case-sensitive,
-    /// otherwise case-insensitive.
-    pub fn new(pattern: &str) -> Result<Self, String> {
+    /// Compile a pattern using the case policy selected by the caller.
+    pub fn new(pattern: &str, case: CaseSensitivity) -> Result<Self, String> {
         if pattern.is_empty() {
             return Err("Empty pattern".to_string());
         }
 
-        let has_upper = pattern.chars().any(|c| c.is_uppercase());
-        let case_insensitive = !has_upper;
+        let case_insensitive = match case {
+            CaseSensitivity::Sensitive => false,
+            CaseSensitivity::Smart => !pattern.chars().any(|c| c.is_uppercase()),
+            CaseSensitivity::Insensitive => true,
+        };
 
         let matcher = if is_literal(pattern) {
             Matcher::Literal(Box::new(Bmh::new(pattern.as_bytes(), case_insensitive)))
@@ -333,14 +343,14 @@ mod tests {
 
     #[test]
     fn new_lowercase_is_case_insensitive() {
-        let s = Search::new("hello").unwrap();
+        let s = Search::new("hello", CaseSensitivity::Smart).unwrap();
         assert!(!s.find_matches("Hello World").is_empty());
         assert!(!s.find_matches("HELLO").is_empty());
     }
 
     #[test]
     fn new_uppercase_is_case_sensitive() {
-        let s = Search::new("Hello").unwrap();
+        let s = Search::new("Hello", CaseSensitivity::Smart).unwrap();
         assert!(!s.find_matches("Hello").is_empty());
         assert!(s.find_matches("hello").is_empty());
         assert!(s.find_matches("HELLO").is_empty());
@@ -348,30 +358,30 @@ mod tests {
 
     #[test]
     fn new_empty_pattern_errors() {
-        assert!(Search::new("").is_err());
+        assert!(Search::new("", CaseSensitivity::Smart).is_err());
     }
 
     #[test]
     fn new_invalid_regex_errors() {
-        assert!(Search::new("[invalid").is_err());
+        assert!(Search::new("[invalid", CaseSensitivity::Smart).is_err());
     }
 
     #[test]
     fn new_regex_special_chars() {
-        let s = Search::new("a.b").unwrap();
+        let s = Search::new("a.b", CaseSensitivity::Smart).unwrap();
         assert!(!s.find_matches("axb").is_empty()); // dot matches any
         assert!(s.find_matches("ab").is_empty()); // but not zero chars
     }
 
     #[test]
     fn new_literal_pattern_uses_bmh() {
-        let s = Search::new("0500000").unwrap();
+        let s = Search::new("0500000", CaseSensitivity::Smart).unwrap();
         assert!(matches!(s.matcher, Matcher::Literal(_)));
     }
 
     #[test]
     fn new_regex_pattern_uses_regex() {
-        let s = Search::new("foo.*bar").unwrap();
+        let s = Search::new("foo.*bar", CaseSensitivity::Smart).unwrap();
         assert!(matches!(s.matcher, Matcher::Regex(_)));
     }
 
@@ -379,28 +389,28 @@ mod tests {
 
     #[test]
     fn matches_plain_text() {
-        let s = Search::new("world").unwrap();
+        let s = Search::new("world", CaseSensitivity::Smart).unwrap();
         let m = s.find_matches("hello world");
         assert_eq!(m, vec![(6, 11)]);
     }
 
     #[test]
     fn matches_multiple() {
-        let s = Search::new("a").unwrap();
+        let s = Search::new("a", CaseSensitivity::Smart).unwrap();
         let m = s.find_matches("banana");
         assert_eq!(m, vec![(1, 2), (3, 4), (5, 6)]);
     }
 
     #[test]
     fn matches_strips_ansi() {
-        let s = Search::new("red").unwrap();
+        let s = Search::new("red", CaseSensitivity::Smart).unwrap();
         let m = s.find_matches("\x1b[31mred\x1b[m text");
         assert_eq!(m, vec![(0, 3)]); // positions in stripped text
     }
 
     #[test]
     fn matches_none() {
-        let s = Search::new("xyz").unwrap();
+        let s = Search::new("xyz", CaseSensitivity::Smart).unwrap();
         assert!(s.find_matches("hello world").is_empty());
     }
 
@@ -408,42 +418,42 @@ mod tests {
 
     #[test]
     fn find_forward_from_start() {
-        let s = Search::new("match").unwrap();
+        let s = Search::new("match", CaseSensitivity::Smart).unwrap();
         let mut buf = make_buffer(&["no", "match here", "also no"]);
         assert_eq!(s.find_next_line(&mut buf, 0, true), Some(1));
     }
 
     #[test]
     fn find_forward_from_middle() {
-        let s = Search::new("target").unwrap();
+        let s = Search::new("target", CaseSensitivity::Smart).unwrap();
         let mut buf = make_buffer(&["target", "no", "target again"]);
         assert_eq!(s.find_next_line(&mut buf, 1, true), Some(2));
     }
 
     #[test]
     fn find_forward_not_found() {
-        let s = Search::new("missing").unwrap();
+        let s = Search::new("missing", CaseSensitivity::Smart).unwrap();
         let mut buf = make_buffer(&["a", "b", "c"]);
         assert_eq!(s.find_next_line(&mut buf, 0, true), None);
     }
 
     #[test]
     fn find_backward_from_end() {
-        let s = Search::new("match").unwrap();
+        let s = Search::new("match", CaseSensitivity::Smart).unwrap();
         let mut buf = make_buffer(&["match here", "no", "also no"]);
         assert_eq!(s.find_next_line(&mut buf, 2, false), Some(0));
     }
 
     #[test]
     fn find_backward_from_start() {
-        let s = Search::new("anything").unwrap();
+        let s = Search::new("anything", CaseSensitivity::Smart).unwrap();
         let mut buf = make_buffer(&["a", "b"]);
         assert_eq!(s.find_next_line(&mut buf, 0, false), None);
     }
 
     #[test]
     fn find_backward_stops_at_first_match() {
-        let s = Search::new("x").unwrap();
+        let s = Search::new("x", CaseSensitivity::Smart).unwrap();
         let mut buf = make_buffer(&["x1", "x2", "x3", "no"]);
         // Searching backward from line 3 should find line 2
         assert_eq!(s.find_next_line(&mut buf, 3, false), Some(2));
@@ -451,18 +461,18 @@ mod tests {
 
     #[test]
     fn find_with_ansi_content() {
-        let s = Search::new("error").unwrap();
+        let s = Search::new("error", CaseSensitivity::Smart).unwrap();
         let mut buf = make_buffer(&["ok", "\x1b[31merror\x1b[m occurred", "ok"]);
         assert_eq!(s.find_next_line(&mut buf, 0, true), Some(1));
     }
 
     #[test]
     fn smart_case_mixed() {
-        let s = Search::new("error").unwrap(); // lowercase → case insensitive
+        let s = Search::new("error", CaseSensitivity::Smart).unwrap();
         let mut buf = make_buffer(&["ERROR found", "no match"]);
         assert_eq!(s.find_next_line(&mut buf, 0, true), Some(0));
 
-        let s2 = Search::new("Error").unwrap(); // has uppercase → case sensitive
+        let s2 = Search::new("Error", CaseSensitivity::Smart).unwrap();
         let mut buf2 = make_buffer(&["ERROR found", "Error found"]);
         assert_eq!(s2.find_next_line(&mut buf2, 0, true), Some(1));
     }

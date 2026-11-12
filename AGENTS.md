@@ -149,7 +149,7 @@ Search over file content with a fast literal path.
 
 - Two-tier matching via the `Matcher` enum: `Literal(BMH)` for patterns with no regex metacharacters, `Regex(Regex)` for everything else. The `is_literal()` function detects which path to use.
 - `BMH` struct implements Boyer-Moore-Horspool substring search with a 256-entry bad-character shift table. For literal patterns this skips large chunks of the haystack without examining every byte — dramatically faster than regex for common search terms.
-- Smart-case logic: if the search pattern contains any uppercase letter, the search is case-sensitive; if the pattern is all lowercase, it is case-insensitive. This matches vim and less behavior.
+- Case policy is explicit: sensitive by default, smart case with `-i`, and insensitive with `-I`. `Search::new(pattern, CaseSensitivity)` receives the resolved policy. The literal folding path is ASCII-only; Unicode folding parity is unproved.
 - Searches on ANSI-stripped text (delegates to `ansi.rs`) so that color codes in the input do not interfere with pattern matching.
 - Returns match byte ranges on the stripped text; `pager.rs` uses these to inject inverse highlighting escapes when rendering.
 - Integrates with `buffer.rs` to scan forward/backward through lines for `n`/`N` navigation.
@@ -171,6 +171,8 @@ The main event loop and renderer. This is the largest and most central module.
 - Line editor: the search/filter prompt at the bottom is a simple line editor supporting character input, backspace, cursor movement, and Escape/Enter. Up/Down cycle through search history (search mode only).
 - Key dispatch table: maps `Key` variants to actions in Normal mode (scroll, search, backward search, filter, quit, toggle wrap, enter follow mode, help, etc.).
 - Signal integration: checks the atomic flags set by signal handlers in `terminal.rs` on each event loop iteration. Handles resize by re-querying terminal dimensions and redrawing; handles TSTP by suspending the process after restoring the terminal.
+
+`Pager::new` takes a named `Config` containing follow, raw rendering and search case policy.
 
 Key types: `Pager` struct, `Mode` enum (`Normal`, `SearchInput`, `FilterInput`, `Follow`, `Help`), `SearchDir` enum (`Forward`, `Backward`), `LineEditor` struct.
 
@@ -226,8 +228,8 @@ When lz is invoked as `something | lz`, stdin is the pipe carrying file content.
 **64-byte internal read buffer for key input.**
 Arrow keys and other special keys send multi-byte escape sequences (e.g., `\x1b[A` for up arrow). If you read one byte at a time and the read returns only `\x1b`, you cannot tell whether it is a bare Escape or the start of a sequence. Reading up to 64 bytes at once means that in practice the entire sequence arrives in one read. The 50ms timeout handles the rare case where `\x1b` arrives alone.
 
-**Smart-case search.**
-If the search pattern is all lowercase, the search is case-insensitive. If it contains any uppercase letter, it is case-sensitive. This matches vim and less behavior and is the expected default for most users.
+**Search case policy.**
+Search is case-sensitive by default. `-i` enables smart case, and `-I` always ignores case. Simple case flags in `LESS` apply before CLI overrides. Unicode case parity remains unproved.
 
 **Boyer-Moore-Horspool fast path for literal searches.**
 Most real-world searches are literal strings, not regexes. BMH with a 256-entry shift table skips large portions of each line without examining every byte, giving a significant speedup over regex for the common case. The `is_literal()` check detects regex metacharacters; if none are present, the search is routed to BMH instead of `regex-lite`. This is why `search.rs` has the `Matcher` enum dispatching between `Literal` and `Regex`.
