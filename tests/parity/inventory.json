@@ -4877,10 +4877,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "rendering-wide-wrap"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "A UTF-8 CJK scalar crossing the right margin moves intact to the next row and leaves the short row unwrapped. Other Unicode width, combining/grapheme and resize behavior remain open."
     },
     {
       "id": "man-1873",
@@ -4900,11 +4902,13 @@
         "rendering-control-bytes",
         "rendering-tab-boundary",
         "rendering-sgr-standard",
-        "rendering-path-control"
+        "rendering-path-control",
+        "rendering-control-wrap",
+        "rendering-escape-wrap"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Default C0/DEL/ESC notation, inverse attributes, default tab-stop wrapping and safe filename prompt formatting pass. Backspaces, carriage returns, overstrikes, custom tab stops and other geometry remain open."
+      "cause": "Default C0/DEL/ESC notation, inverse attributes, default tab stops and safe filename prompts pass. Control notation stays intact at wrap boundaries and leaves short rows unwrapped. Backspaces, carriage returns, overstrikes, custom tab stops and other geometry remain open."
     },
     {
       "id": "man-1876",
@@ -4923,11 +4927,12 @@
       "cases": [
         "rendering-binary-forced",
         "sources-binary-accepted",
-        "rendering-invalid-utf8"
+        "rendering-invalid-utf8",
+        "rendering-invalid-wrap"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Forced and accepted NUL display and malformed UTF-8 byte notation pass with inverse attributes. Other charsets, custom formats and nonstandard UTF-8 forms remain open."
+      "cause": "Forced and accepted NUL display and malformed UTF-8 byte notation pass with inverse attributes, including intact hex notation at a wrap boundary. Other charsets, custom formats and nonstandard UTF-8 forms remain open."
     },
     {
       "id": "man-1884",

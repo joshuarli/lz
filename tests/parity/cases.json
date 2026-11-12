@@ -117336,5 +117336,201 @@
     ],
     "files": {},
     "trace_check": "captured"
+  },
+  {
+    "id": "rendering-control-wrap",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      97,
+      98,
+      99,
+      100,
+      101,
+      102,
+      103,
+      1,
+      66,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-escape-wrap",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      97,
+      98,
+      99,
+      100,
+      101,
+      102,
+      27,
+      66,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-invalid-wrap",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      97,
+      98,
+      99,
+      100,
+      101,
+      102,
+      255,
+      66,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-wide-wrap",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      97,
+      98,
+      99,
+      100,
+      101,
+      102,
+      103,
+      231,
+      149,
+      140,
+      66,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
   }
 ]

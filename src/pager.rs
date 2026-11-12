@@ -120,6 +120,10 @@ impl DisplayLine {
         Self::Escapes(fragment, ControlDisplay::Raw) => unicode_width::UnicodeWidthStr::width(fragment.text.as_str()),
         Self::Escapes(fragment, _) => visible_width(&fragment.text),
     } }
+    fn fills_row(&self, start: usize, width: usize) -> bool { match self {
+        Self::Standard(prefix) => prefix.fills_row(start, width),
+        Self::Escapes(_, _) => self.columns() >= start.saturating_add(width),
+    } }
     fn display(&self, start: usize, width: usize) -> String { match self {
         Self::Standard(prefix) => prefix.display(start, width),
         Self::Escapes(fragment, controls) => truncate_to_width(&fragment.text, start, width, *controls == ControlDisplay::Raw),
@@ -782,7 +786,9 @@ impl Pager {
 
     fn display_prefix(&mut self, line: usize, bytes: usize) -> io::Result<Option<DisplayLine>> {
         if self.controls == ControlDisplay::Standard {
-            Ok(self.buffer.byte_prefix(line, bytes)?.map(|fragment| DisplayLine::Standard(DisplayPrefix::new(fragment.bytes, self.charset, fragment.complete))))
+            let width = self.term_width as usize;
+            let wrap_width = self.wrap.then(|| std::num::NonZeroUsize::new(width.saturating_sub(self.number_gutter(line, width).len()).max(1)).unwrap());
+            Ok(self.buffer.byte_prefix(line, bytes)?.map(|fragment| DisplayLine::Standard(DisplayPrefix::new(fragment.bytes, self.charset, fragment.complete, wrap_width))))
         } else {
             Ok(self.buffer.line_prefix(line, bytes)?.map(|fragment| DisplayLine::Escapes(fragment, self.controls)))
         }
@@ -857,7 +863,10 @@ impl Pager {
                         let display = fragment.display(wrap_row * content_width, w.saturating_sub(gutter.len()));
                         self.write_line_with_search(buf, &display);
                         screen_row += 1;
-                        if wrap_row + 1 == rows_needed && fragment.complete() { terminal::clear_line(buf); }
+                        if (wrap_row + 1 == rows_needed && fragment.complete()) || !fragment.fills_row(wrap_row * content_width, content_width) {
+                            terminal::clear_line(buf);
+                            if wrap_row + 1 < rows_needed && screen_row < ch { terminal::move_cursor(buf, screen_row as u16, 0); }
+                        }
                     }
                     if screen_row == ch && (rows_needed > available_rows || !fragment.complete()) { buf.extend_from_slice(b" \x08"); }
                     display_idx = display_idx.saturating_add(1);
