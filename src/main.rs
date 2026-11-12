@@ -118,16 +118,6 @@ fn run() -> Result<ExitAction, String> {
             return Err("Binary file detected. Use --force to view.".to_string());
         }
 
-        // Empty check
-        {
-            use std::io::Seek;
-            let size = file.seek(io::SeekFrom::End(0)).unwrap_or(0);
-            file.seek(io::SeekFrom::Start(0)).ok();
-            if size == 0 {
-                return Ok(ExitAction::Success); // Empty file, exit 0
-            }
-        }
-
         let lb = buffer::LineBuffer::from_file(file);
         (lb, Some(filename.to_string_lossy().into_owned()))
     };

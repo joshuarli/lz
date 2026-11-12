@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
 use crate::ansi::{strip_ansi, truncate_to_width, visible_width};
-use crate::buffer::LineBuffer;
+use crate::buffer::{LineBuffer, LineFragment};
 use crate::history::SearchHistory;
 use crate::input::{Key, KeyReader};
 use crate::search::{CaseSensitivity, Search};
@@ -132,6 +132,7 @@ pub struct Pager {
     status_msg: Option<String>,
     filename: Option<String>,
     filename_prompt: bool,
+    compact_initial: bool,
     startup_commands: Vec<Vec<u8>>,
     numeric_prefix: Option<usize>,
     command_context: CommandContext,
@@ -169,6 +170,7 @@ impl Pager {
             status_msg: None,
             filename,
             filename_prompt: true,
+            compact_initial: config.startup_commands.is_empty(),
             startup_commands: config.startup_commands,
             numeric_prefix: None,
             command_context: CommandContext::StartupUnpositioned,
@@ -646,16 +648,19 @@ impl Pager {
         buf.extend_from_slice(b"\x1b[?25l");
         terminal::move_cursor(&mut buf, 0, 0);
 
+        let first_row = if self.mode == Mode::Help { 0 } else { self.initial_content_row(w, ch)? };
+        for row in 0..first_row { terminal::move_cursor(&mut buf, row as u16, 0); terminal::clear_line(&mut buf); }
         if self.mode == Mode::Help {
             Self::render_help(&mut buf, w, ch);
         } else if self.wrap {
-            self.render_wrapped(&mut buf, w, ch)?;
+            self.render_wrapped(&mut buf, w, ch, first_row)?;
         } else {
-            self.render_nowrap(&mut buf, w, ch)?;
+            self.render_nowrap(&mut buf, w, ch, first_row)?;
         }
 
         if let Some(error) = self.buffer.take_error() { return Err(error); }
         self.render_status(&mut buf, w);
+        self.compact_initial = false;
         buf.extend_from_slice(b"\x1b[?25h");
 
         let mut stdout = io::stdout().lock();
@@ -700,10 +705,36 @@ impl Pager {
         } else { buf.extend_from_slice(gutter.as_bytes()); }
     }
 
-    fn render_nowrap(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize) -> io::Result<()> {
-        for row in 0..ch {
+    fn wrapped_prefix_rows(&self, fragment: &LineFragment, actual: usize, width: usize, available: usize) -> usize {
+        if !fragment.complete { return available; }
+        let columns = width.saturating_sub(self.number_gutter(actual, width).len()).max(1);
+        let visible = if self.raw_mode { unicode_width::UnicodeWidthStr::width(fragment.text.as_str()) } else { visible_width(&fragment.text) };
+        visible.div_ceil(columns).max(1)
+    }
+
+    fn initial_content_row(&mut self, width: usize, height: usize) -> io::Result<usize> {
+        if !self.compact_initial { return Ok(0); }
+        let mut rows = 0;
+        let mut index = self.top_line;
+        while rows < height {
+            let Some(actual) = self.display_line_idx(index) else { return Ok(0); };
+            let Some(fragment) = self.buffer.line_prefix(actual, width.saturating_mul(height - rows).saturating_add(1).saturating_mul(16).max(4096))? else {
+                return Ok(if self.buffer.is_finished() { height - rows } else { 0 });
+            };
+            rows += if self.wrap { self.wrapped_prefix_rows(&fragment, actual, width, height - rows) } else { 1 };
+            index += 1;
+        }
+        Ok(0)
+    }
+
+    fn write_eof_marker(&self, buf: &mut Vec<u8>) {
+        if !(self.compact_initial && self.buffer.is_finished()) { buf.extend_from_slice(b"\x1b[1m~\x1b[m"); }
+    }
+
+    fn render_nowrap(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize, first_row: usize) -> io::Result<()> {
+        for row in first_row..ch {
             terminal::move_cursor(buf, row as u16, 0);
-            let display_idx = self.top_line.saturating_add(row);
+            let display_idx = self.top_line.saturating_add(row - first_row);
             let actual = self.display_line_idx(display_idx);
             let fragment = match actual { Some(index) => self.buffer.line_prefix(index, self.left_col.saturating_add(w).saturating_add(1).saturating_mul(16).max(4096))?, None => None };
             match actual.zip(fragment) {
@@ -718,15 +749,15 @@ impl Pager {
                     self.write_line_with_search(buf, &display);
                     if chopped { buf.extend_from_slice(b"\x1b[7m>\x1b[m"); }
                 }
-                None => buf.push(b'~'),
+                None => self.write_eof_marker(buf),
             }
             terminal::clear_line(buf);
         }
         Ok(())
     }
 
-    fn render_wrapped(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize) -> io::Result<()> {
-        let mut screen_row = 0;
+    fn render_wrapped(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize, first_row: usize) -> io::Result<()> {
+        let mut screen_row = first_row;
         let mut display_idx = self.top_line;
         while screen_row < ch {
             let actual = self.display_line_idx(display_idx);
@@ -736,8 +767,7 @@ impl Pager {
                     let line = &fragment.text;
                     let gutter_width = self.number_gutter(actual, w).len();
                     let content_width = w.saturating_sub(gutter_width).max(1);
-                    let total_width = if self.raw_mode { unicode_width::UnicodeWidthStr::width(line.as_str()) } else { visible_width(line) };
-                    let rows_needed = if fragment.complete { total_width.div_ceil(content_width).max(1) } else { ch - screen_row };
+                    let rows_needed = self.wrapped_prefix_rows(&fragment, actual, w, ch - screen_row);
                     let available_rows = ch - screen_row;
                     for wrap_row in 0..rows_needed {
                         if screen_row >= ch { break; }
@@ -754,7 +784,7 @@ impl Pager {
                 }
                 None => {
                     terminal::move_cursor(buf, screen_row as u16, 0);
-                    buf.push(b'~');
+                    self.write_eof_marker(buf);
                     terminal::clear_line(buf);
                     screen_row += 1;
                     display_idx += 1;

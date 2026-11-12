@@ -174,6 +174,7 @@ The main event loop and renderer. This is the largest and most central module.
 - `SearchDir` enum (`Forward`, `Backward`) tracks whether search was initiated with `/` (forward) or `?` (backward). `n` repeats in the same direction, `N` in the opposite direction.
 - Line filtering: `&` enters `FilterInput` mode. On Enter, builds a `Search` from the pattern and populates `filtered_lines: Vec<usize>` with matching line indices. All rendering and navigation then operate on this filtered subset. Empty pattern clears the filter.
 - Help mode: `h` toggles an overlay displaying all keybindings. `render_help()` draws static help text instead of file content. `h`, `q`, or Escape returns to Normal.
+- Initial short-file content is placed at the bottom with blank unused rows. Empty files keep an interactive EOF view. Explicit startup positioning uses a full paint.
 - Rendering: full redraw every frame. Each frame: clear screen, render visible lines (or help screen) top-to-bottom, render inverse-video status bar at the bottom showing context on the left (filename, filter, wrap state, or input prompt) and position info on the right (line range, total, percentage/END).
 - Horizontal scroll: tracks a column offset, increments/decrements in 8-column steps.
 - Wrap mode: enabled by default and disabled with `-S`. Legacy `w` still toggles it until command parity is finished. When enabled, long lines are wrapped using `unicode-width` for correct column calculation (this is why `pager.rs` depends on the crate directly).
