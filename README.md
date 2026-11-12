@@ -70,6 +70,8 @@ Search is case-sensitive by default. Regex highlighting selects the longest matc
 | `Left` / `Right` | Horizontal scroll |
 | `m` + letter / `'` + letter | Set / return to an in-file mark |
 
+Default page movement uses one content viewport; half-page movement uses half the terminal height rounded up. Zero numeric prefixes select the command’s default. Plain-line aliases include `e`, Ctrl-E/Ctrl-N, `y`, Ctrl-Y/Ctrl-P/Ctrl-K, `f`, Ctrl-V and `<`/`>`. Persistent numeric scroll defaults and configured windows remain unfinished.
+
 ### Search
 
 | Key | Action |

@@ -192,6 +192,7 @@ The main event loop and renderer. This is the largest and most central module.
 - Wrap mode: enabled by default and disabled with `-S`. Legacy `w` still toggles it until command parity is finished. When enabled, long lines are wrapped using `unicode-width` for correct column calculation (this is why `pager.rs` depends on the crate directly).
 - Search highlighting: when a search is active, matching spans on each visible line are wrapped in `\x1b[7m` (inverse video) and reset afterward.
 - Line editor: the search/filter prompt at the bottom is a simple line editor supporting character input, backspace, cursor movement, and Escape/Enter. Up/Down cycle through search history (search mode only).
+- Default page movement uses the content height, and half-page movement uses the terminal height rounded up to the next half. Zero prefixes select defaults while leading zeros remain valid digits. Plain-line aliases e/y/f, Ctrl-E/N/Y/P/K/V and angle-bracket jumps share their canonical dispatch paths. Persistent numeric scroll defaults and configured windows remain open.
 - Key dispatch table: maps `Key` variants to actions in Normal mode (scroll, search, backward search, filter, quit, toggle wrap, enter follow mode, help, etc.).
 - Signal integration: checks the atomic flags set by signal handlers in `terminal.rs` on each event loop iteration. Handles resize by re-querying terminal dimensions and redrawing; handles TSTP by suspending the process after restoring the terminal.
 

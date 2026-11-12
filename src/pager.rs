@@ -416,7 +416,7 @@ impl Pager {
         }
         let count = match std::mem::replace(&mut self.numeric_prefix, NumericPrefix::Empty) {
             NumericPrefix::Empty => None,
-            NumericPrefix::Value(value) => Some(value),
+            NumericPrefix::Value(value) => (value != 0).then_some(value),
             NumericPrefix::Overflow => {
                 self.command_error("Integer is too big".into(), ErrorAction::Retry(key));
                 return false;
@@ -434,25 +434,25 @@ impl Pager {
             Key::Char('m') => self.mode = Mode::SetMark,
             Key::Char('\'') => self.mode = Mode::JumpMark,
 
-            Key::Char('j') | Key::Down | Key::Enter => self.scroll_down(count.unwrap_or(1)),
-            Key::Char('k') | Key::Up => self.scroll_up(count.unwrap_or(1)),
+            Key::Char('j' | 'e') | Key::Ctrl('e' | 'n') | Key::Down | Key::Enter => self.scroll_down(count.unwrap_or(1)),
+            Key::Char('k' | 'y') | Key::Ctrl('y' | 'p' | 'k') | Key::Up => self.scroll_up(count.unwrap_or(1)),
             Key::Char('d') | Key::Ctrl('d') => {
-                let half = self.content_height() / 2;
+                let half = usize::from(self.term_height).div_ceil(2);
                 self.scroll_down(count.unwrap_or(half.max(1)));
             }
             Key::Char('u') | Key::Ctrl('u') => {
-                let half = self.content_height() / 2;
+                let half = usize::from(self.term_height).div_ceil(2);
                 self.scroll_up(count.unwrap_or(half.max(1)));
             }
-            Key::Char(' ') | Key::PageDown | Key::Ctrl('f') => {
-                let page = self.content_height().saturating_sub(1).max(1);
+            Key::Char(' ' | 'f') | Key::PageDown | Key::Ctrl('f' | 'v') => {
+                let page = self.content_height();
                 self.scroll_down(count.unwrap_or(page));
             }
             Key::Char('b') | Key::PageUp | Key::Ctrl('b') => {
-                let page = self.content_height().saturating_sub(1).max(1);
+                let page = self.content_height();
                 self.scroll_up(count.unwrap_or(page));
             }
-            Key::Char('g') | Key::Home => {
+            Key::Char('g' | '<') | Key::Home => {
                 let previous = self.top_line;
                 self.position_initialized();
                 let target = count.unwrap_or(1).saturating_sub(1);
@@ -462,7 +462,7 @@ impl Pager {
                 self.remember_jump_from(previous);
                 self.left_col = 0;
             }
-            Key::Char('G') | Key::End => {
+            Key::Char('G' | '>') | Key::End => {
                 let previous = self.top_line;
                 self.position_initialized();
                 if let Some(count) = count { self.top_line = count.saturating_sub(1); self.buffer.get_line(self.top_line); }

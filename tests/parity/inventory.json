@@ -115,10 +115,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-page-aliases"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named plain-line aliases and default page/half-page distances pass, including zero and leading-zero counts where exercised. Wrapped-row geometry, ESC aliases, persistent numeric scroll settings and configured windows remain open."
     },
     {
       "id": "man-0061",
@@ -173,11 +175,12 @@
         "linux-musl"
       ],
       "cases": [
+        "navigation-forward-line-aliases",
         "upstream-version-navigation"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Named startup/navigation scenarios pass on macOS arm64; other forms, boundaries and platforms remain untested"
+      "cause": "Named plain-line aliases and default page/half-page distances pass, including zero and leading-zero counts where exercised. Wrapped-row geometry, ESC aliases, persistent numeric scroll settings and configured windows remain open."
     },
     {
       "id": "man-0069",
@@ -193,10 +196,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-half-page-default"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named plain-line aliases and default page/half-page distances pass, including zero and leading-zero counts where exercised. Wrapped-row geometry, ESC aliases, persistent numeric scroll settings and configured windows remain open."
     },
     {
       "id": "man-0073",
@@ -212,10 +217,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-page-aliases"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named plain-line aliases and default page/half-page distances pass, including zero and leading-zero counts where exercised. Wrapped-row geometry, ESC aliases, persistent numeric scroll settings and configured windows remain open."
     },
     {
       "id": "man-0076",
@@ -250,10 +257,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-backward-line-aliases"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named plain-line aliases and default page/half-page distances pass, including zero and leading-zero counts where exercised. Wrapped-row geometry, ESC aliases, persistent numeric scroll settings and configured windows remain open."
     },
     {
       "id": "man-0082",
@@ -269,10 +278,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-half-page-default"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named plain-line aliases and default page/half-page distances pass, including zero and leading-zero counts where exercised. Wrapped-row geometry, ESC aliases, persistent numeric scroll settings and configured windows remain open."
     },
     {
       "id": "man-0086",
@@ -478,10 +489,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-angle-boundaries"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named plain-line aliases and default page/half-page distances pass, including zero and leading-zero counts where exercised. Wrapped-row geometry, ESC aliases, persistent numeric scroll settings and configured windows remain open."
     },
     {
       "id": "man-0134",
@@ -497,10 +510,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-angle-boundaries"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named plain-line aliases and default page/half-page distances pass, including zero and leading-zero counts where exercised. Wrapped-row geometry, ESC aliases, persistent numeric scroll settings and configured windows remain open."
     },
     {
       "id": "man-0139",
