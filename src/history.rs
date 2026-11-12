@@ -31,7 +31,6 @@ pub struct HistoryFile { location: Location, limit: usize }
 impl HistoryFile {
     pub fn from_environment() -> Option<Self> {
         let setting = |name| std::env::var_os(name).filter(|value| !value.is_empty());
-        if setting("LESSSECURE").is_some() { return None; }
         let location = if let Some(path) = setting("LESSHISTFILE") {
             if path == "-" || path == "/dev/null" { return None; }
             Location::Explicit(path.into())

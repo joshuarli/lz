@@ -1,4 +1,5 @@
 mod options;
+mod security;
 
 use lz::{buffer, history, pager, terminal};
 use lz::charset::Charset;
@@ -48,19 +49,33 @@ enum ExitAction { Success, FileError, Terminated, Hangup }
 
 enum BinaryAnswer { Open, Refuse, Quit }
 
+fn read_prompt_key(keys: &mut lz::input::KeyReader) -> io::Result<Option<lz::input::Key>> {
+    loop {
+        if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return Ok(None); }
+        if let Some(key) = keys.read_key_timeout(100)? { return Ok(Some(key)); }
+    }
+}
+
+fn acknowledge_diagnostics(keys: &mut lz::input::KeyReader) -> io::Result<bool> {
+    let mut output = io::stderr().lock();
+    output.write_all(b"Press RETURN to continue ")?;
+    output.flush()?;
+    let Some(key) = read_prompt_key(keys)? else { return Ok(false); };
+    if !matches!(key, lz::input::Key::Enter | lz::input::Key::Char(' ') | lz::input::Key::Ctrl('c')) { keys.unread_key(key)?; }
+    output.write_all(b"\r\n")?;
+    output.flush()?;
+    Ok(true)
+}
+
 fn confirm_binary(name: &std::ffi::OsStr, charset: Charset, keys: &mut lz::input::KeyReader) -> io::Result<BinaryAnswer> {
     let mut output = io::stdout().lock();
     output.write_all(b"\"")?;
     charset.write_filename(name.as_bytes(), &mut output)?;
     output.write_all(b"\" may be a binary file.  See it anyway? ")?;
     output.flush()?;
-    let answer = loop {
-        if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return Ok(BinaryAnswer::Refuse); }
-        if let Some(key) = keys.read_key_timeout(100)? {
-            break match key { lz::input::Key::Char('y' | 'Y') => BinaryAnswer::Open,
-                lz::input::Key::Char('Q') => BinaryAnswer::Quit, _ => BinaryAnswer::Refuse };
-        }
-    };
+    let Some(key) = read_prompt_key(keys)? else { return Ok(BinaryAnswer::Refuse); };
+    let answer = match key { lz::input::Key::Char('y' | 'Y') => BinaryAnswer::Open,
+        lz::input::Key::Char('Q') => BinaryAnswer::Quit, _ => BinaryAnswer::Refuse };
     output.write_all(b"\r\n")?;
     output.flush()?;
     Ok(answer)
@@ -95,6 +110,8 @@ fn open_input(filename: &std::ffi::OsStr, charset: Charset, controls: ControlDis
 }
 
 fn run() -> Result<ExitAction, String> {
+    let security = security::Policy::from_environment();
+    security.write_diagnostics(&mut io::stderr().lock()).map_err(|error| error.to_string())?;
     let argv: Vec<OsString> = std::env::args_os().skip(1).collect();
     let mut args = options::parse(argv, std::env::var_os("LESS"));
     for diagnostic in &args.diagnostics {
@@ -162,20 +179,26 @@ fn run() -> Result<ExitAction, String> {
     let charset = Charset::resolve(explicit_charset.as_deref(), locale.as_deref()).map_err(|error| error.to_string())?;
     let mut opened = open_input(&args.filenames[0], charset, args.control_display, args.force)
         .map_err(|error| format!("{}: {error}", args.filenames[0].to_string_lossy()))?;
-    let screen = if opened.binary_name.is_some() { terminal::Screen::Primary } else { terminal::Screen::Alternate };
+    let primary = opened.binary_name.is_some() || security.has_diagnostics();
+    let screen = if primary { terminal::Screen::Primary } else { terminal::Screen::Alternate };
     let mut session = terminal::Session::start(screen).map_err(|error| error.to_string())?;
     if let Some(name) = opened.binary_name.take() {
         match confirm_binary(&name, charset, session.keys_mut()) {
             Ok(BinaryAnswer::Refuse) => return finish_session(Ok(ExitAction::FileError), session),
             Ok(BinaryAnswer::Quit) => return finish_session(Ok(ExitAction::Success), session),
             Err(error) => return finish_session(Err(error), session),
-            Ok(BinaryAnswer::Open) => {
-                if let Err(error) = session.enter_alternate_screen() { return finish_session(Err(error), session); }
-            }
+            Ok(BinaryAnswer::Open) => {}
         }
     }
 
-    let history_file = history::HistoryFile::from_environment();
+    if security.has_diagnostics() {
+        match acknowledge_diagnostics(session.keys_mut()) {
+            Ok(true) => {}, Ok(false) => return finish_session(Ok(ExitAction::Success), session),
+            Err(error) => return finish_session(Err(error), session),
+        }
+    }
+    if primary && let Err(error) = session.enter_alternate_screen() { return finish_session(Err(error), session); }
+    let history_file = if security.allows(security::Feature::History) { history::HistoryFile::from_environment() } else { None };
     let mut history = history_file.as_ref().map(history::HistoryFile::load).unwrap_or_default();
 
     let mut file_index = 0;

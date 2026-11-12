@@ -27,6 +27,7 @@ pub struct KeyReader {
     pos: usize,
     len: usize,
     command: io::Cursor<Vec<u8>>,
+    pending: Option<Key>,
 }
 
 impl KeyReader {
@@ -38,6 +39,7 @@ impl KeyReader {
             pos: 0,
             len: 0,
             command: io::Cursor::new(Vec::new()),
+            pending: None,
         })
     }
 
@@ -59,6 +61,13 @@ impl KeyReader {
         Some(byte)
     }
 
+    /// Put one decoded key back before buffered input; reject a second pending key.
+    pub fn unread_key(&mut self, key: Key) -> io::Result<()> {
+        if self.pending.is_some() { return Err(io::Error::new(io::ErrorKind::AlreadyExists, "a key is already pending")); }
+        self.pending = Some(key);
+        Ok(())
+    }
+
     /// Raw fd for the tty, used to set raw mode on the correct fd.
     pub fn fd(&self) -> i32 {
         self.tty.as_raw_fd()
@@ -66,6 +75,7 @@ impl KeyReader {
 
     /// Read a key, blocking until one is available.
     pub fn read_key(&mut self) -> io::Result<Key> {
+        if let Some(key) = self.pending.take() { return Ok(key); }
         let byte = self.next_byte_blocking()?;
         self.parse_byte(byte)
     }
@@ -73,6 +83,7 @@ impl KeyReader {
     /// Read a key with a timeout in milliseconds.
     /// Returns None if no key is available within the timeout.
     pub fn read_key_timeout(&mut self, timeout_ms: i32) -> io::Result<Option<Key>> {
+        if let Some(key) = self.pending.take() { return Ok(Some(key)); }
         match self.next_byte_timeout(timeout_ms)? {
             Some(byte) => Ok(Some(self.parse_byte(byte)?)),
             None => Ok(None),
@@ -308,6 +319,7 @@ pub fn parse_keys_from_bytes(bytes: &[u8]) -> Vec<Key> {
         buf: [0; 64],
         pos: 0,
         len: 0,
+        pending: None,
         command: io::Cursor::new(Vec::new()),
     };
 

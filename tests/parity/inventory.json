@@ -6815,10 +6815,15 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "configuration-history-secure",
+        "integrations-secure-history-denied",
+        "integrations-secure-zero-denied",
+        "integrations-secure-zero"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Nonempty LESSSECURE, including 0, denies history unless the resolved feature mask permits it. The permission decision has one policy owner. Other feature effects and helper/session enforcement remain open."
     },
     {
       "id": "man-2429",
@@ -6834,10 +6839,23 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "integrations-secure-history-allow",
+        "integrations-secure-history-prefix",
+        "integrations-secure-history-spaces",
+        "integrations-secure-history-denied",
+        "integrations-secure-invalid",
+        "integrations-secure-ambiguous",
+        "integrations-secure-case-sensitive",
+        "integrations-secure-zero",
+        "integrations-secure-diagnostic-quit",
+        "integrations-secure-diagnostic-term",
+        "integrations-secure-partial-allow",
+        "integrations-secure-zero-denied"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "History allowances, unique prefixes, spaces/commas, case sensitivity, invalid/ambiguous names and partial success pass. Diagnostics pause on the primary screen, retain a non-Return command, and clean up on TERM. The complete 12-name parser is shared, but other feature enforcement remains open."
     },
     {
       "id": "man-2432",

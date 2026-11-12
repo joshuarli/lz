@@ -20,6 +20,7 @@ All source lives in `src/`:
 src/
   lib.rs        Library root (modules below) and binary test suite
   main.rs       CLI entry point, arg parsing, panic hook
+  security.rs   Secure feature-name parsing, permission mask and diagnostics
   options.rs    Binary-only CLI option-name diagnostics
   pager.rs      Main event loop and rendering
   buffer.rs     Byte source access, line indexing and display fragments
@@ -116,6 +117,7 @@ Key event reading from `/dev/tty`.
 - Internal 64-byte read buffer: reads up to 64 bytes at once. This is critical for escape sequences — arrow keys send `\x1b[A` as three bytes. Buffering the read means all three bytes arrive in one call, avoiding timing-dependent races where only `\x1b` is read and the rest is lost.
 - Read readiness uses `select` on macOS (`poll` rejects `/dev/tty` with `POLLNVAL`) and `poll` on Linux. Idle key waits allow the pager to observe signal flags without repainting.
 - Escape sequence parser with a 50ms timeout: after seeing `\x1b`, waits up to 50ms for the rest of the sequence before treating it as a bare Escape keypress.
+- `unread_key` retains one decoded key before buffered input and rejects overwriting a pending key. Startup diagnostics use it to preserve a non-Return command.
 - Raw mode for the tty fd is set here (separate from the stdout terminal) so that escape sequences arrive as raw bytes even when stdin is redirected.
 
 Key types: `Key` enum, `InputReader` struct.
@@ -149,7 +151,7 @@ Key types: `ControlDisplay`; the remaining ANSI functions also serve search and 
 
 Persistent search history in the less format.
 
-- `HistoryFile` captures path/size policy, searches existing XDG/home destinations, and resolves the save destination again at exit. `LESSHISTFILE=-` or `/dev/null` disables persistence. Secure mode currently suppresses it; individual allowances remain open.
+- `HistoryFile` captures path/size policy, searches existing XDG/home destinations, and resolves the save destination again at exit. `LESSHISTFILE=-` or `/dev/null` disables persistence. Main applies the shared secure feature policy before constructing it; path/size resolution does not duplicate permission checks.
 - Search entries suppress consecutive duplicates. Raw stored bytes survive merge, including shell records. Full command editing and malformed-byte recall remain unfinished.
 - Closing a painted file records a position change separately from accepted search input. Saving rereads the current destination, trims old entries by `LESSHISTSIZE`, writes a private file and renames it atomically. I/O failures are silent.
 - The old `$XDG_STATE_HOME/lz/history` path is not read or migrated. Parent directories are not created for a history destination.

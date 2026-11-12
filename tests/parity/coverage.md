@@ -4,7 +4,7 @@ Generated from `inventory.json` and fingerprint-checked full current/baseline re
 
 | Family | Applicable entries | Implemented | Tested by named cases | Compatible in named scenarios |
 | --- | ---: | ---: | ---: | ---: |
-| configuration | 69 | 0 | 3 | 3 |
+| configuration | 69 | 0 | 5 | 5 |
 | integrations | 22 | 0 | 0 | 0 |
 | invocation | 133 | 0 | 12 | 12 |
 | lifecycle | 3 | 0 | 2 | 1 |
@@ -18,7 +18,7 @@ Untested entries stay in the denominator. A named scenario does not cover every 
 
 | Corpus | Pass | Mismatch | Harness error | Needs environment | Total |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| baseline | 3 | 168 | 0 | 1 | 172 |
-| current | 170 | 1 | 0 | 1 | 172 |
+| baseline | 3 | 180 | 0 | 1 | 184 |
+| current | 182 | 1 | 0 | 1 | 184 |
 
 All 14 instrumented upstream tests pass against instrumented less. Two have partial generic VT translations; twelve await translation. These are oracle validation results, not lz passes. Discovery mismatches remain strict failures in `make parity-test MODE=all`. Identity normalization changes only the exact program token in recognized option-diagnostic help hints. Other diagnostic bytes and all other locations remain strict.
