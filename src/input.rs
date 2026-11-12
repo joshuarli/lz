@@ -21,6 +21,11 @@ pub enum Key {
     Unknown,
 }
 
+impl Key {
+    /// Return whether dismissing a message consumes this key instead of dispatching it.
+    pub fn is_prompt_acknowledgement(&self) -> bool { matches!(self, Self::Enter | Self::Char(' ') | Self::Ctrl('c')) }
+}
+
 pub struct KeyReader {
     tty: File,
     buf: [u8; 64],

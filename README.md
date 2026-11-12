@@ -23,6 +23,8 @@ If no file is given and stdin is a pipe, `lz` reads from stdin. Redirected stdou
 
 Binary files ask before alternate-screen entry. Refuse with `n` or Enter, or quit with `Q`. Detection samples the first 256 bytes and prompts after more than five binary units. ASCII and UTF-8 selection also controls filename formatting. SGR escapes are excluded from the sample with `-R`. Color display preserves indexed/RGB SGR across notation, overstrikes and wrapping, and discards unsupported CSI sequences. Accepted and forced binary bytes display in inverse notation, as do control and malformed UTF-8 bytes. Default tab stops participate in wrapping. Caret/hex notation and wide characters move intact across wrap boundaries. Default backspaces replace characters or produce bold/underline overstrikes, including a preceding base with combining marks. Filename controls are also escaped in status prompts. Other charsets, customized definitions, nonstandard UTF-8 forms, processing flags, OSC 8 semantics, raw-mode parity and full incremental layout remain unfinished.
 
+Ordinary in-file marks use `m` plus a letter and `'` plus that letter. Pressing the apostrophe key twice returns to the last large movement; `'^` and `'$` go to file boundaries. Wrapped positions, cross-file marks and persisted marks remain unfinished.
+
 Oversized numeric prefixes show a dismissible error. Enter resumes the pending command without losing the rest of a startup command.
 
 Empty files keep an interactive EOF view. Initial short-file content appears at the bottom, with unused rows blank. An explicit startup position uses a full paint.
@@ -64,6 +66,7 @@ Search is case-sensitive by default. Simple `-i` and `-I` entries in `LESS` appl
 | `g` / `Home` | Go to top |
 | `G` / `End` | Go to bottom |
 | `Left` / `Right` | Horizontal scroll |
+| `m` + letter / `'` + letter | Set / return to an in-file mark |
 
 ### Search
 

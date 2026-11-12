@@ -724,10 +724,14 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-mark-return",
+        "navigation-mark-case-sensitive",
+        "navigation-mark-invalid-dispatch"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Ordinary in-file marks pass on plain unwrapped lines; status columns, short and wrapped positions, cross-file marks and persistence remain open"
     },
     {
       "id": "man-0188",
@@ -762,10 +766,17 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-mark-return",
+        "navigation-mark-case-sensitive",
+        "navigation-mark-unset",
+        "navigation-last-mark-toggle",
+        "navigation-mark-file-boundaries",
+        "navigation-small-jumps-preserve-last"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named plain-line jumps, unset errors, last-large-jump and file boundaries pass; wrapped and cross-file positions remain open"
     },
     {
       "id": "man-0201",

@@ -1,5 +1,5 @@
 use std::io::{self, Write};
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 use crate::ansi::{ControlDisplay, strip_ansi, truncate_to_width, visible_width};
 use crate::charset::Charset;
@@ -18,6 +18,8 @@ enum Mode {
     Follow,
     Help,
     FileCommand,
+    SetMark,
+    JumpMark,
     CommandError(CommandError),
 }
 
@@ -107,7 +109,19 @@ impl LineEditor {
 enum CommandContext { StartupUnpositioned, StartupPositioned, StartupAborted, Interactive }
 
 #[derive(Clone, PartialEq)]
-struct CommandError { command: Key, context: CommandContext, remainder: Vec<u8> }
+struct CommandError { action: ErrorAction, context: CommandContext, remainder: Vec<u8> }
+
+#[derive(Clone, PartialEq)]
+enum ErrorAction { Retry(Key), Dismiss }
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct MarkName(u8);
+
+impl MarkName {
+    fn new(character: char) -> Option<Self> {
+        (character.is_ascii_alphabetic() || matches!(character, '\'' | '#')).then_some(Self(character as u8))
+    }
+}
 
 #[derive(Clone, Copy, PartialEq)]
 enum NumericPrefix { Empty, Value(usize), Overflow }
@@ -166,6 +180,7 @@ pub struct Config {
 pub struct Pager {
     buffer: LineBuffer,
     top_line: usize,
+    marks: HashMap<MarkName, usize>,
     left_col: usize,
     wrap: bool,
     line_numbers: bool,
@@ -208,6 +223,7 @@ impl Pager {
         Pager {
             buffer,
             top_line: 0,
+            marks: HashMap::new(),
             left_col: 0,
             wrap: !config.chop,
             line_numbers: config.line_numbers,
@@ -335,6 +351,7 @@ impl Pager {
     fn handle_key(&mut self, key: Key) -> bool {
         match self.mode.clone() {
             Mode::Normal => self.handle_normal_key(key),
+            Mode::SetMark | Mode::JumpMark => { self.handle_mark_key(key); false }
             Mode::FileCommand => {
                 self.mode = Mode::Normal;
                 match key {
@@ -368,10 +385,10 @@ impl Pager {
                 self.mode = Mode::Normal;
                 self.command_context = error.context;
                 self.status_msg = None;
-                if self.handle_normal_key(error.command) { return true; }
+                if let ErrorAction::Retry(command) = error.action && self.handle_normal_key(command) { return true; }
                 if self.command_context == CommandContext::StartupAborted { self.command_context = CommandContext::StartupUnpositioned; }
                 else if !error.remainder.is_empty() { self.startup_commands.push_front(error.remainder); }
-                if !matches!(key, Key::Enter | Key::Char(' ') | Key::Ctrl('c')) { return self.handle_key(key); }
+                if !key.is_prompt_acknowledgement() { return self.handle_key(key); }
                 false
             }
         }
@@ -391,8 +408,7 @@ impl Pager {
             NumericPrefix::Empty => None,
             NumericPrefix::Value(value) => Some(value),
             NumericPrefix::Overflow => {
-                self.mode = Mode::CommandError(CommandError { command: key, context: self.command_context, remainder: Vec::new() });
-                self.status_msg = Some("Integer is too big  (press RETURN)".into());
+                self.command_error("Integer is too big".into(), ErrorAction::Retry(key));
                 return false;
             }
         };
@@ -405,6 +421,8 @@ impl Pager {
         match key {
             Key::Char('q') | Key::Ctrl('c') | Key::Escape => return true,
             Key::Char(':') => self.mode = Mode::FileCommand,
+            Key::Char('m') => self.mode = Mode::SetMark,
+            Key::Char('\'') => self.mode = Mode::JumpMark,
 
             Key::Char('j') | Key::Down | Key::Enter => self.scroll_down(count.unwrap_or(1)),
             Key::Char('k') | Key::Up => self.scroll_up(count.unwrap_or(1)),
@@ -425,17 +443,21 @@ impl Pager {
                 self.scroll_up(count.unwrap_or(page));
             }
             Key::Char('g') | Key::Home => {
+                let previous = self.top_line;
                 self.position_initialized();
                 let target = count.unwrap_or(1).saturating_sub(1);
                 if self.command_context == CommandContext::Interactive && self.content_painted && self.top_line == target { self.bell_requested = true; }
                 self.top_line = target;
                 self.buffer.get_line(self.top_line);
+                self.remember_jump_from(previous);
                 self.left_col = 0;
             }
             Key::Char('G') | Key::End => {
+                let previous = self.top_line;
                 self.position_initialized();
                 if let Some(count) = count { self.top_line = count.saturating_sub(1); self.buffer.get_line(self.top_line); }
                 else { self.buffer.read_all(); self.scroll_to_bottom(); }
+                self.remember_jump_from(previous);
             }
             Key::Right => {
                 if !self.wrap {
@@ -482,6 +504,55 @@ impl Pager {
             _ => {}
         }
         false
+    }
+
+    fn command_error(&mut self, message: String, action: ErrorAction) {
+        self.status_msg = Some(format!("{message}  (press RETURN)"));
+        self.mode = Mode::CommandError(CommandError { action, context: self.command_context, remainder: Vec::new() });
+    }
+
+    fn remember_jump_from(&mut self, previous_line: usize) {
+        let height = self.content_height();
+        // less 668 can scroll backward by exactly one screen without replacing the last mark.
+        let large = self.top_line >= previous_line.saturating_add(height) || previous_line > self.top_line.saturating_add(height);
+        if self.content_painted && previous_line < self.buffer.len() && large { self.marks.insert(MarkName(b'\''), previous_line); }
+    }
+
+    fn handle_mark_key(&mut self, key: Key) {
+        let setting = self.mode == Mode::SetMark;
+        self.mode = Mode::Normal;
+        let character = match key {
+            Key::Char(character) => character,
+            Key::Enter | Key::Backspace => return,
+            Key::Escape => '\u{1b}',
+            Key::Ctrl(character) => char::from(character as u8 & 0x1f),
+            _ => { self.bell_requested = true; return; }
+        };
+        if !setting {
+            match character {
+                '^' => { let previous = self.top_line; self.top_line = 0; self.remember_jump_from(previous); return; }
+                '$' => { let previous = self.top_line; self.buffer.read_all(); self.scroll_to_bottom(); self.remember_jump_from(previous); return; }
+                '.' => return,
+                _ => {}
+            }
+        }
+        let Some(name) = MarkName::new(character) else {
+            let mut bytes = Vec::new();
+            let mut encoded = [0; 4];
+            self.charset.write_filename(character.encode_utf8(&mut encoded).as_bytes(), &mut bytes).unwrap();
+            self.command_error(format!("Invalid mark letter {}", String::from_utf8(bytes).unwrap()), ErrorAction::Dismiss);
+            return;
+        };
+        if setting {
+            if self.content_painted && self.top_line < self.buffer.len() { self.marks.insert(name, self.top_line); }
+            else { self.bell_requested = true; }
+        }
+        else if let Some(line) = self.marks.get(&name).copied().or_else(|| (character == '\'').then_some(0)) {
+            let previous = self.top_line;
+            self.position_initialized();
+            self.top_line = line;
+            self.remember_jump_from(previous);
+        } else { self.command_error("Mark not set".into(), ErrorAction::Dismiss); }
     }
 
     fn position_initialized(&mut self) {
@@ -1017,6 +1088,8 @@ impl Pager {
     }
 
     fn build_status(&self) -> String {
+        if self.mode == Mode::SetMark { return "set mark: ".into(); }
+        if self.mode == Mode::JumpMark { return "goto mark: ".into(); }
         if self.mode == Mode::SearchInput {
             let ch = if self.search_dir == SearchDir::Forward {
                 '/'

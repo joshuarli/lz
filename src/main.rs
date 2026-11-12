@@ -61,7 +61,7 @@ fn acknowledge_diagnostics(keys: &mut lz::input::KeyReader) -> io::Result<bool> 
     output.write_all(b"Press RETURN to continue ")?;
     output.flush()?;
     let Some(key) = read_prompt_key(keys)? else { return Ok(false); };
-    if !matches!(key, lz::input::Key::Enter | lz::input::Key::Char(' ') | lz::input::Key::Ctrl('c')) { keys.unread_key(key)?; }
+    if !key.is_prompt_acknowledgement() { keys.unread_key(key)?; }
     output.write_all(b"\r\n")?;
     output.flush()?;
     Ok(true)

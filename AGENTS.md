@@ -117,6 +117,7 @@ Key event reading from `/dev/tty`.
 - Internal 64-byte read buffer: reads up to 64 bytes at once. This is critical for escape sequences — arrow keys send `\x1b[A` as three bytes. Buffering the read means all three bytes arrive in one call, avoiding timing-dependent races where only `\x1b` is read and the rest is lost.
 - Read readiness uses `select` on macOS (`poll` rejects `/dev/tty` with `POLLNVAL`) and `poll` on Linux. Idle key waits allow the pager to observe signal flags without repainting.
 - Escape sequence parser with a 50ms timeout: after seeing `\x1b`, waits up to 50ms for the rest of the sequence before treating it as a bare Escape keypress.
+- `Key::is_prompt_acknowledgement` defines which dismissal keys are consumed; other keys resume normal dispatch.
 - `unread_key` retains one decoded key before buffered input and rejects overwriting a pending key. Startup diagnostics use it to preserve a non-Return command.
 - Raw mode for the tty fd is set here (separate from the stdout terminal) so that escape sequences arrive as raw bytes even when stdin is redirected.
 
@@ -177,6 +178,7 @@ Key types: `Search` struct, `Matcher` enum (`Literal`, `Regex`), `BMH` struct.
 The main event loop and renderer. This is the largest and most central module.
 
 - Modes via the `Mode` enum: `Normal`, `SearchInput` (typing a search pattern), `FilterInput` (typing a filter pattern), `Follow` (like `tail -f`), `Help` (overlay showing keybindings), and `CommandError` (a pending command paused for acknowledgment).
+- `SetMark` and `JumpMark` modes own ordinary in-file marks. Marks currently store logical line indices; wrapped, cross-file and persisted positions remain open. Large jumps update the previous-position mark.
 - `SearchDir` enum (`Forward`, `Backward`) tracks whether search was initiated with `/` (forward) or `?` (backward). `n` repeats in the same direction, `N` in the opposite direction.
 - Line filtering: `&` enters `FilterInput` mode. On Enter, builds a `Search` from the pattern and populates `filtered_lines: Vec<usize>` with matching line indices. All rendering and navigation then operate on this filtered subset. Empty pattern clears the filter.
 - Help mode: `h` toggles an overlay displaying all keybindings. `render_help()` draws static help text instead of file content. `h`, `q`, or Escape returns to Normal.
@@ -218,7 +220,7 @@ Key types: `Pager` struct, `Mode` enum (`Normal`, `SearchInput`, `FilterInput`, 
 
 ### What lz Intentionally Does Not Do
 
-- No marks or bookmarks
+- Ordinary in-file marks are implemented; wrapped, cross-file and persisted marks remain unfinished
 - Line-number options beyond the implemented -N gutter remain incomplete
 - No pipe commands (no `|` prompt)
 - No custom keybindings
