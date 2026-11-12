@@ -36,6 +36,11 @@ impl Source {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SourceState { Ready, Waiting, Eof, Failed }
 
+pub(crate) struct ByteFragment {
+    pub(crate) bytes: Vec<u8>,
+    pub(crate) complete: bool,
+}
+
 pub struct LineFragment {
     pub text: String,
     pub complete: bool,
@@ -98,7 +103,7 @@ impl LineBuffer {
         true
     }
 
-    fn fragment(&mut self, index: usize, limit: Option<usize>) -> io::Result<Option<LineFragment>> {
+    fn byte_fragment(&mut self, index: usize, limit: Option<usize>) -> io::Result<Option<ByteFragment>> {
         if !self.ensure_line(index) { return Ok(None); }
         let start = self.starts.get(index)?;
         while self.starts.len() <= index + 1 && !self.is_finished() {
@@ -113,6 +118,15 @@ impl LineBuffer {
         self.source.file().read_exact_at(&mut bytes, start)?;
         let complete = complete && start + length as u64 == end;
         if complete && bytes.last() == Some(&b'\r') && self.starts.len() > index + 1 { bytes.pop(); }
+        Ok(Some(ByteFragment { bytes, complete }))
+    }
+
+    pub(crate) fn byte_prefix(&mut self, index: usize, bytes: usize) -> io::Result<Option<ByteFragment>> {
+        self.byte_fragment(index, Some(bytes))
+    }
+
+    fn fragment(&mut self, index: usize, limit: Option<usize>) -> io::Result<Option<LineFragment>> {
+        let Some(ByteFragment { mut bytes, complete }) = self.byte_fragment(index, limit)? else { return Ok(None); };
         if !complete && let Err(error) = std::str::from_utf8(&bytes)
             && error.error_len().is_none() { bytes.truncate(error.valid_up_to()); }
         Ok(Some(LineFragment { text: String::from_utf8_lossy(&bytes).into_owned(), complete }))

@@ -3,9 +3,9 @@ use std::io::{self, Write};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Charset { Ascii, Utf8 }
 
-enum Unit<'a> { Character(char), Invalid(&'a [u8]) }
+pub(crate) enum Unit<'a> { Character(char), Invalid(&'a [u8]) }
 
-struct Units<'a> { charset: Charset, remaining: &'a [u8] }
+pub(crate) struct Units<'a> { pub(crate) charset: Charset, pub(crate) remaining: &'a [u8] }
 
 impl<'a> Iterator for Units<'a> {
     type Item = Unit<'a>;
@@ -47,7 +47,7 @@ impl Charset {
         Err(io::Error::new(io::ErrorKind::Unsupported, format!("unsupported locale character set: {locale:?}")))
     }
 
-    fn binary_character(self, character: char) -> bool {
+    pub(crate) fn binary_character(self, character: char) -> bool {
         let code = u32::from(character);
         if character.is_control() && !matches!(code, 8 | 9 | 10 | 12 | 13) { return true; }
         self == Self::Utf8 && matches!(code, 0x2028 | 0x2029 | 0xe000..=0xf8ff | 0xf0000..=0xffffd | 0x100000..=0x10fffd)

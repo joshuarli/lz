@@ -2,7 +2,6 @@ mod options;
 
 use lz::{buffer, history, pager, terminal};
 use lz::charset::Charset;
-use lz::ansi::ControlDisplay;
 
 use std::fs::File;
 use std::ffi::OsString;
@@ -163,7 +162,9 @@ fn run() -> Result<ExitAction, String> {
         }
 
         let lb = buffer::LineBuffer::from_file(file);
-        (lb, Some(filename.to_string_lossy().into_owned()))
+        let mut name = Vec::new();
+        charset.write_filename(filename.as_bytes(), &mut name).map_err(|error| error.to_string())?;
+        (lb, Some(String::from_utf8(name).map_err(|error| error.to_string())?))
     };
 
     let screen = if binary_name.is_some() { terminal::Screen::Primary } else { terminal::Screen::Alternate };
@@ -190,7 +191,7 @@ fn run() -> Result<ExitAction, String> {
     let history = history_path.as_deref().map(history::SearchHistory::load).unwrap_or_default();
 
     // Run pager
-    let mut pager = pager::Pager::new(buf, pager::Config { startup_commands: args.startup_commands, raw_mode: args.control_display == ControlDisplay::Raw, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, display_name, history);
+    let mut pager = pager::Pager::new(buf, pager::Config { startup_commands: args.startup_commands, charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, display_name, history);
     let result = pager.run(session.keys_mut());
 
     if let Some(path) = history_path { pager.history().save(&path); }

@@ -1,7 +1,9 @@
 use std::io::{self, Write};
 use std::collections::VecDeque;
 
-use crate::ansi::{strip_ansi, truncate_to_width, visible_width};
+use crate::ansi::{ControlDisplay, strip_ansi, truncate_to_width, visible_width};
+use crate::charset::Charset;
+use crate::layout::DisplayPrefix;
 use crate::buffer::{LineBuffer, LineFragment};
 use crate::history::SearchHistory;
 use crate::input::{Key, KeyReader};
@@ -109,9 +111,25 @@ struct CommandError { command: Key, context: CommandContext, remainder: Vec<u8> 
 #[derive(Clone, Copy, PartialEq)]
 enum NumericPrefix { Empty, Value(usize), Overflow }
 
+enum DisplayLine { Standard(DisplayPrefix), Escapes(LineFragment, ControlDisplay) }
+
+impl DisplayLine {
+    fn complete(&self) -> bool { match self { Self::Standard(prefix) => prefix.complete, Self::Escapes(fragment, _) => fragment.complete } }
+    fn columns(&self) -> usize { match self {
+        Self::Standard(prefix) => prefix.columns,
+        Self::Escapes(fragment, ControlDisplay::Raw) => unicode_width::UnicodeWidthStr::width(fragment.text.as_str()),
+        Self::Escapes(fragment, _) => visible_width(&fragment.text),
+    } }
+    fn display(&self, start: usize, width: usize) -> String { match self {
+        Self::Standard(prefix) => prefix.display(start, width),
+        Self::Escapes(fragment, controls) => truncate_to_width(&fragment.text, start, width, *controls == ControlDisplay::Raw),
+    } }
+}
+
 pub struct Config {
     pub startup_commands: Vec<Vec<u8>>,
-    pub raw_mode: bool,
+    pub charset: Charset,
+    pub controls: ControlDisplay,
     pub chop: bool,
     pub line_numbers: bool,
     pub search_case: CaseSensitivity,
@@ -136,7 +154,8 @@ pub struct Pager {
     term_width: u16,
     term_height: u16,
     follow: bool,
-    raw_mode: bool,
+    charset: Charset,
+    controls: ControlDisplay,
     status_msg: Option<String>,
     filename: Option<String>,
     filename_prompt: bool,
@@ -175,7 +194,8 @@ impl Pager {
             term_width: w,
             term_height: h,
             follow: false,
-            raw_mode: config.raw_mode,
+            charset: config.charset,
+            controls: config.controls,
             status_msg: None,
             filename,
             filename_prompt: true,
@@ -618,7 +638,7 @@ impl Pager {
         }
         match self.buffer.get_line(line_idx) {
             Some(line) => {
-                let vw = if self.raw_mode {
+                let vw = if self.controls == ControlDisplay::Raw {
                     unicode_width::UnicodeWidthStr::width(line)
                 } else {
                     visible_width(line)
@@ -760,11 +780,18 @@ impl Pager {
         } else { buf.extend_from_slice(gutter.as_bytes()); }
     }
 
-    fn wrapped_prefix_rows(&self, fragment: &LineFragment, actual: usize, width: usize, available: usize) -> usize {
-        if !fragment.complete { return available; }
+    fn display_prefix(&mut self, line: usize, bytes: usize) -> io::Result<Option<DisplayLine>> {
+        if self.controls == ControlDisplay::Standard {
+            Ok(self.buffer.byte_prefix(line, bytes)?.map(|fragment| DisplayLine::Standard(DisplayPrefix::new(fragment.bytes, self.charset, fragment.complete))))
+        } else {
+            Ok(self.buffer.line_prefix(line, bytes)?.map(|fragment| DisplayLine::Escapes(fragment, self.controls)))
+        }
+    }
+
+    fn wrapped_prefix_rows(&self, fragment: &DisplayLine, actual: usize, width: usize, available: usize) -> usize {
+        if !fragment.complete() { return available; }
         let columns = width.saturating_sub(self.number_gutter(actual, width).len()).max(1);
-        let visible = if self.raw_mode { unicode_width::UnicodeWidthStr::width(fragment.text.as_str()) } else { visible_width(&fragment.text) };
-        visible.div_ceil(columns).max(1)
+        fragment.columns().div_ceil(columns).max(1)
     }
 
     fn initial_content_row(&mut self, width: usize, height: usize) -> io::Result<usize> {
@@ -773,7 +800,7 @@ impl Pager {
         let mut index = self.top_line;
         while rows < height {
             let Some(actual) = self.display_line_idx(index) else { return Ok(0); };
-            let Some(fragment) = self.buffer.line_prefix(actual, width.saturating_mul(height - rows).saturating_add(1).saturating_mul(16).max(4096))? else {
+            let Some(fragment) = self.display_prefix(actual, width.saturating_mul(height - rows).saturating_add(1).saturating_mul(16).max(4096))? else {
                 return Ok(if self.buffer.is_finished() { height - rows } else { 0 });
             };
             rows += if self.wrap { self.wrapped_prefix_rows(&fragment, actual, width, height - rows) } else { 1 };
@@ -791,16 +818,15 @@ impl Pager {
             terminal::move_cursor(buf, row as u16, 0);
             let display_idx = self.top_line.saturating_add(row - first_row);
             let actual = self.display_line_idx(display_idx);
-            let fragment = match actual { Some(index) => self.buffer.line_prefix(index, self.left_col.saturating_add(w).saturating_add(1).saturating_mul(16).max(4096))?, None => None };
+            let fragment = match actual { Some(index) => self.display_prefix(index, self.left_col.saturating_add(w).saturating_add(1).saturating_mul(16).max(4096))?, None => None };
             match actual.zip(fragment) {
                 Some((line_idx, fragment)) => {
-                    let line = &fragment.text;
                     let gutter = self.number_gutter(line_idx, w);
                     Self::write_number_gutter(buf, &gutter);
                     let content_width = w.saturating_sub(gutter.len());
-                    let line_width = if self.raw_mode { unicode_width::UnicodeWidthStr::width(line.as_str()) } else { visible_width(line) };
-                    let chopped = (!fragment.complete || line_width > self.left_col.saturating_add(content_width)) && content_width > 0;
-                    let display = truncate_to_width(line, self.left_col, content_width.saturating_sub(usize::from(chopped)), self.raw_mode);
+                    let line_width = fragment.columns();
+                    let chopped = (!fragment.complete() || line_width > self.left_col.saturating_add(content_width)) && content_width > 0;
+                    let display = fragment.display(self.left_col, content_width.saturating_sub(usize::from(chopped)));
                     self.write_line_with_search(buf, &display);
                     if chopped { buf.extend_from_slice(b"\x1b[7m>\x1b[m"); }
                 }
@@ -816,10 +842,9 @@ impl Pager {
         let mut display_idx = self.top_line;
         while screen_row < ch {
             let actual = self.display_line_idx(display_idx);
-            let fragment = match actual { Some(index) => self.buffer.line_prefix(index, w.saturating_mul(ch - screen_row).saturating_add(1).saturating_mul(16).max(4096))?, None => None };
+            let fragment = match actual { Some(index) => self.display_prefix(index, w.saturating_mul(ch - screen_row).saturating_add(1).saturating_mul(16).max(4096))?, None => None };
             match actual.zip(fragment) {
                 Some((actual, fragment)) => {
-                    let line = &fragment.text;
                     let gutter_width = self.number_gutter(actual, w).len();
                     let content_width = w.saturating_sub(gutter_width).max(1);
                     let rows_needed = self.wrapped_prefix_rows(&fragment, actual, w, ch - screen_row);
@@ -829,12 +854,12 @@ impl Pager {
                         if wrap_row == 0 { terminal::move_cursor(buf, screen_row as u16, 0); }
                         let gutter = self.number_gutter(actual, w);
                         Self::write_number_gutter(buf, &gutter);
-                        let display = truncate_to_width(line, wrap_row * content_width, w.saturating_sub(gutter.len()), self.raw_mode);
+                        let display = fragment.display(wrap_row * content_width, w.saturating_sub(gutter.len()));
                         self.write_line_with_search(buf, &display);
                         screen_row += 1;
-                        if wrap_row + 1 == rows_needed && fragment.complete { terminal::clear_line(buf); }
+                        if wrap_row + 1 == rows_needed && fragment.complete() { terminal::clear_line(buf); }
                     }
-                    if screen_row == ch && (rows_needed > available_rows || !fragment.complete) { buf.extend_from_slice(b" \x08"); }
+                    if screen_row == ch && (rows_needed > available_rows || !fragment.complete()) { buf.extend_from_slice(b" \x08"); }
                     display_idx = display_idx.saturating_add(1);
                 }
                 None => {
@@ -922,8 +947,15 @@ impl Pager {
         let status = self.build_status();
         let emphasized = (self.filename_prompt && self.filename.is_some()) || status == "(END)" || self.status_msg.is_some();
         if emphasized { buf.extend_from_slice(b"\x1b[7m"); }
+        let mut suffix_width = 0;
+        let mut start = status.len();
+        for (index, character) in status.char_indices().rev() {
+            suffix_width += unicode_width::UnicodeWidthChar::width(character).unwrap_or(0);
+            if suffix_width > w { break; }
+            start = index;
+        }
         let mut columns = 0;
-        for character in status.chars() {
+        for character in status[start..].chars() {
             let width = unicode_width::UnicodeWidthChar::width(character).unwrap_or(0);
             if columns + width > w { break; }
             let mut bytes = [0; 4];

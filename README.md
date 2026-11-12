@@ -21,7 +21,7 @@ lz -p pattern file.txt
 
 If no file is given and stdin is a pipe, `lz` reads from stdin. Redirected stdout copies input bytes without terminal setup, including binary and invalid UTF-8 content. It concatenates multiple files and explicit `-` stdin entries in order, de-duplicating resolved paths as less does. Interactive multiple-file sessions remain unimplemented.
 
-Binary files ask before alternate-screen entry. Refuse with `n` or Enter, or quit with `Q`. Detection samples the first 256 bytes and prompts after more than five binary units. ASCII and UTF-8 selection also controls filename formatting. Common SGR escapes are excluded from the sample with `-R`. Other charsets, customized definitions, nonstandard UTF-8 forms and accepted binary display remain unfinished.
+Binary files ask before alternate-screen entry. Refuse with `n` or Enter, or quit with `Q`. Detection samples the first 256 bytes and prompts after more than five binary units. ASCII and UTF-8 selection also controls filename formatting. Common SGR escapes are excluded from the sample with `-R`. Accepted and forced binary bytes display in inverse notation, as do control and malformed UTF-8 bytes. Default tab stops participate in wrapping. Filename controls are also escaped in status prompts. Other charsets, customized definitions, nonstandard UTF-8 forms, overstrikes and full incremental layout remain unfinished.
 
 Oversized numeric prefixes show a dismissible error. Enter resumes the pending command without losing the rest of a startup command.
 

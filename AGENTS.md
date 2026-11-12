@@ -23,7 +23,8 @@ src/
   options.rs    Binary-only CLI option-name diagnostics
   pager.rs      Main event loop and rendering
   buffer.rs     Byte source access, line indexing and display fragments
-  charset.rs    ASCII/UTF-8 policy for binary samples and filename questions
+  charset.rs    ASCII/UTF-8 policy for binary samples and byte presentation
+  layout.rs     Bounded byte-prefix mapping to displayed columns and notation
   storage.rs    Anonymous spill files and bounded line indexes
   readiness.rs  Platform descriptor readiness
   input.rs      Key reading and escape sequence parsing
@@ -128,7 +129,7 @@ Byte source access and logical line indexing.
 - `line_prefix` reads a bounded display fragment without waiting for the end of a logical line. `get_line` explicitly materializes a complete line for search and some navigation paths. Those operations still need large-line bounds and cancellation work.
 - `SourceState` distinguishes ready data, temporary waiting, EOF and read failure. Read failures reach the pager instead of becoming EOF.
 - Source bytes stay intact in the file or spool. Display fragments currently decode with replacement for malformed UTF-8. Exact malformed-byte presentation remains unfinished.
-- File binary detection samples 256 bytes without changing the file position. More than five binary units trigger a question. Detection and filename questions share `Charset`; `ControlDisplay::Color` excludes common SGR escapes from the sample. Other charsets and accepted binary display remain unfinished.
+- File binary detection samples 256 bytes without changing the file position. More than five binary units trigger a question. Detection and filename questions share `Charset`; `ControlDisplay::Color` excludes common SGR escapes from the sample. Accepted/forced bytes use inverse caret/hex notation. Other charsets remain unfinished.
 
 Key types: `LineBuffer`, `LineFragment`, `SourceState`. Mutable line injection and the old prepopulation interface are retired.
 
@@ -184,7 +185,7 @@ The main event loop and renderer. This is the largest and most central module.
 - Key dispatch table: maps `Key` variants to actions in Normal mode (scroll, search, backward search, filter, quit, toggle wrap, enter follow mode, help, etc.).
 - Signal integration: checks the atomic flags set by signal handlers in `terminal.rs` on each event loop iteration. Handles resize by re-querying terminal dimensions and redrawing; handles TSTP by suspending the process after restoring the terminal.
 
-`Pager::new` takes a named `Config` containing startup command bytes, raw rendering
+`Pager::new` takes a named `Config` containing startup command bytes, charset and control-display policy,
 chopping, line-number display and search case policy. Startup commands use the same key decoder and dispatcher
 as tty input, before the first frame. Numeric startup positions and `-p` searches
 are supported. A position-dependent startup movement before any jump/search rings

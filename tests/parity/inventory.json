@@ -3436,10 +3436,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "rendering-sgr-color"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "A common SGR color/reset line passes under -R. Other SGR, OSC 8, unsupported controls and wrap/color interactions remain open."
     },
     {
       "id": "man-1163",
@@ -4894,10 +4896,15 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "rendering-control-bytes",
+        "rendering-tab-boundary",
+        "rendering-sgr-standard",
+        "rendering-path-control"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Default C0/DEL/ESC notation, inverse attributes, default tab-stop wrapping and safe filename prompt formatting pass. Backspaces, carriage returns, overstrikes, custom tab stops and other geometry remain open."
     },
     {
       "id": "man-1876",
@@ -4913,10 +4920,14 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "rendering-binary-forced",
+        "sources-binary-accepted",
+        "rendering-invalid-utf8"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Forced and accepted NUL display and malformed UTF-8 byte notation pass with inverse attributes. Other charsets, custom formats and nonstandard UTF-8 forms remain open."
     },
     {
       "id": "man-1884",
@@ -7405,11 +7416,12 @@
         "sources-binary-quit",
         "sources-binary-enter",
         "sources-binary-control-name",
-        "sources-binary-term"
+        "sources-binary-term",
+        "sources-binary-accepted"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Under locale C, n/Enter refuse with code 1, uppercase Q quits with code 0 and TERM exits with code 15 on the primary screen. Filename control bytes are printable and plain-text trace assertions reject hidden controls. Staged session controls verify primary-to-alternate acquisition, duplicate-entry refusal and cleanup. Binary detection boundaries, Unicode filename presentation, accepted binary rendering and other query lifecycle interactions remain open."
+      "cause": "Under locale C, n/Enter refuse with code 1, uppercase Q quits with code 0 and TERM exits with code 15 on the primary screen. Accepting with y enters the alternate screen and displays six NUL bytes in inverse caret notation. Filename controls are printable; staged controls verify acquisition and cleanup. Other query interactions remain open."
     },
     {
       "id": "source-binary-detection",

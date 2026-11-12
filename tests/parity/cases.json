@@ -116925,5 +116925,416 @@
       116
     ],
     "files": {}
+  },
+  {
+    "id": "rendering-control-bytes",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      65,
+      1,
+      66,
+      127,
+      67,
+      27,
+      68,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "input (END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-binary-forced",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      "-f",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "input (END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "sources-binary-accepted",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          121
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "input (END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-invalid-utf8",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      65,
+      255,
+      66,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "input (END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-sgr-standard",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      27,
+      91,
+      51,
+      49,
+      109,
+      114,
+      101,
+      100,
+      27,
+      91,
+      48,
+      109,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "input (END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-sgr-color",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      27,
+      91,
+      51,
+      49,
+      109,
+      114,
+      101,
+      100,
+      27,
+      91,
+      48,
+      109,
+      10
+    ],
+    "args": [
+      "-R",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "input (END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-tab-boundary",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      65,
+      9,
+      66,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      8,
+      6
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 5
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-path-control",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        112,
+        108,
+        97,
+        105,
+        110,
+        10
+      ],
+      "count": 40,
+      "suffix": []
+    },
+    "args": [
+      {
+        "bytes": [
+          98,
+          27,
+          91,
+          51,
+          49,
+          109,
+          10,
+          127,
+          32,
+          34,
+          113
+        ]
+      }
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "bESC[31m",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      98,
+      27,
+      91,
+      51,
+      49,
+      109,
+      10,
+      127,
+      32,
+      34,
+      113
+    ],
+    "files": {},
+    "trace_check": "captured"
   }
 ]
