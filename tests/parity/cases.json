@@ -118018,5 +118018,98 @@
     ],
     "files": {},
     "trace_check": "captured"
+  },
+  {
+    "id": "rendering-color-utf8-escape",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      65,
+      27,
+      195,
+      169,
+      66,
+      10
+    ],
+    "args": [
+      "-R",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      40,
+      8
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "input (END)",
+        "row": 7
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "rendering-color-utf8-intermediate",
+    "family": "rendering",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      65,
+      27,
+      40,
+      195,
+      169,
+      66,
+      10
+    ],
+    "args": [
+      "-R",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      40,
+      8
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "input (END)",
+        "row": 7
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
   }
 ]

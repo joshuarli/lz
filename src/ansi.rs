@@ -58,18 +58,23 @@ fn escape_seq_len(bytes: &[u8], pos: usize) -> usize {
     }
 }
 
+fn string_escape_seq_len(line: &str, position: usize) -> usize {
+    let length = escape_seq_len(line.as_bytes(), position);
+    let mut end = position + length;
+    while !line.is_char_boundary(end) { end += 1; }
+    end - position
+}
+
 /// Strip all ANSI escape sequences from a line, returning visible text only.
 pub fn strip_ansi(line: &str) -> String {
     let bytes = line.as_bytes();
     let mut out = String::with_capacity(line.len());
     let mut i = 0;
     while i < bytes.len() {
-        let esc_len = escape_seq_len(bytes, i);
+        let esc_len = string_escape_seq_len(line, i);
         if esc_len > 0 {
             i += esc_len;
         } else {
-            // Safe because we're walking byte by byte and only skipping escape sequences
-            // We need to handle UTF-8 properly
             let rest = &line[i..];
             if let Some(ch) = rest.chars().next() {
                 out.push(ch);
@@ -118,9 +123,10 @@ pub fn truncate_to_width(line: &str, start_col: usize, max_width: usize, raw_mod
 
     let mut i = 0;
     while i < bytes.len() && cols_emitted < max_width {
-        let esc_len = escape_seq_len(bytes, i);
+        let esc_len = string_escape_seq_len(line, i);
         if esc_len > 0 {
             let seq = &line[i..i + esc_len];
+            if esc_len != escape_seq_len(bytes, i) { i += esc_len; continue; }
             if emitting {
                 out.push_str(seq);
             } else {
@@ -270,6 +276,18 @@ mod tests {
     use super::*;
 
     // --- strip_ansi ---
+
+    #[test]
+    fn malformed_escape_does_not_split_a_multibyte_scalar() {
+        for sequence in ["\x1bé", "\x1b界", "\x1b😀", "\x1b(é"] {
+            let line = format!("A{sequence}B");
+            assert_eq!(strip_ansi(&line), "AB");
+            assert_eq!(visible_width(&line), 2);
+            assert_eq!(truncate_to_width(&line, 0, 8, false), "AB");
+        }
+        let link = "A\x1b]8;;https://example.invalid/界\x1b\\B";
+        assert_eq!(truncate_to_width(link, 0, 8, false), link);
+    }
 
     #[test]
     fn strip_plain_text() {

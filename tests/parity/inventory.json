@@ -3437,11 +3437,13 @@
         "linux-musl"
       ],
       "cases": [
-        "rendering-sgr-color"
+        "rendering-sgr-color",
+        "rendering-color-utf8-escape",
+        "rendering-color-utf8-intermediate"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "A common SGR color/reset line passes under -R. Other SGR, OSC 8, unsupported controls and wrap/color interactions remain open."
+      "cause": "Common SGR color/reset and malformed escapes ending in multibyte scalars pass under -R, without splitting UTF-8 or panicking. Other SGR, OSC 8, unsupported controls, charset sampling and wrap/color interactions remain open."
     },
     {
       "id": "man-1163",
