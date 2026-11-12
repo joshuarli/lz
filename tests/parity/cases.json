@@ -103797,7 +103797,7 @@
   {
     "id": "sources-open-pipe",
     "family": "sources",
-    "admitted": false,
+    "admitted": true,
     "source": "pty-pipe",
     "fixture": {
       "repeat": [
@@ -103841,7 +103841,7 @@
   {
     "id": "sources-open-pipe-term",
     "family": "sources",
-    "admitted": false,
+    "admitted": true,
     "source": "pty-pipe",
     "fixture": {
       "repeat": [
@@ -103883,7 +103883,7 @@
   {
     "id": "sources-open-pipe-lines",
     "family": "sources",
-    "admitted": false,
+    "admitted": true,
     "source": "pty-pipe",
     "fixture": [
       48,

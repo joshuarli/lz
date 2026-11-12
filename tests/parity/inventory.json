@@ -7357,8 +7357,8 @@
         "sources-open-pipe-lines"
       ],
       "implementation": "partial",
-      "evidence": "known incompatible",
-      "cause": "The foreground-group supervisor passes argv/env/input/status/reaping controls. Strict open-pipe discovery still distinguishes stdin prompt attributes. S04h repairs input loss by draining output without flushing queued tty input during restoration or reentry; the queued-input control failed before both repairs. Full kernel flags remain strict observations. The unterminated line uses -n because default oracle line counting waits for more bytes before showing its prompt."
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Strict open-producer tests pass: -n with an unterminated 4096-byte line supports quit and TERM; default mode with complete lines supports quit. Screen cells, attributes, cursor, wraps, full kernel termios, status and child cleanup compare. Queued input survives restoration and reentry. Default line-counting on an unterminated producer, slow/error sources and follow interactions remain open."
     }
   ],
   "upstream": [

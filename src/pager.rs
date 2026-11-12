@@ -835,7 +835,7 @@ impl Pager {
     fn render_status(&self, buf: &mut Vec<u8>, w: usize) {
         terminal::move_cursor(buf, self.term_height - 1, 0);
         let status = self.build_status();
-        let emphasized = self.filename_prompt || status == "(END)" || self.status_msg.is_some();
+        let emphasized = (self.filename_prompt && self.filename.is_some()) || status == "(END)" || self.status_msg.is_some();
         if emphasized { buf.extend_from_slice(b"\x1b[7m"); }
         let mut columns = 0;
         for character in status.chars() {
