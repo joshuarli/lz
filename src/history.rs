@@ -50,7 +50,7 @@ impl SearchHistory {
         self.cursor = self.entries.len();
     }
 
-    pub fn prev(&mut self, current_input: &str) -> Option<&str> {
+    pub fn older(&mut self, current_input: &str) -> Option<&str> {
         if self.entries.is_empty() {
             return None;
         }
@@ -64,7 +64,7 @@ impl SearchHistory {
         Some(&self.entries[self.cursor])
     }
 
-    pub fn next(&mut self) -> Option<&str> {
+    pub fn newer(&mut self) -> Option<&str> {
         if self.cursor >= self.entries.len() {
             return None;
         }
@@ -140,48 +140,48 @@ mod tests {
     }
 
     #[test]
-    fn prev_cycles_backward() {
+    fn older_cycles_backward() {
         let mut h = history_with(&["a", "b", "c"]);
-        assert_eq!(h.prev("draft"), Some("c"));
-        assert_eq!(h.prev("draft"), Some("b"));
-        assert_eq!(h.prev("draft"), Some("a"));
+        assert_eq!(h.older("draft"), Some("c"));
+        assert_eq!(h.older("draft"), Some("b"));
+        assert_eq!(h.older("draft"), Some("a"));
         // stays at oldest
-        assert_eq!(h.prev("draft"), Some("a"));
+        assert_eq!(h.older("draft"), Some("a"));
     }
 
     #[test]
-    fn prev_saves_draft() {
+    fn older_saves_draft() {
         let mut h = history_with(&["a"]);
-        h.prev("my draft");
+        h.older("my draft");
         assert_eq!(h.draft(), "my draft");
     }
 
     #[test]
-    fn prev_empty_returns_none() {
+    fn older_empty_returns_none() {
         let mut h = empty_history();
-        assert_eq!(h.prev("x"), None);
+        assert_eq!(h.older("x"), None);
     }
 
     #[test]
-    fn next_cycles_forward() {
+    fn newer_cycles_forward() {
         let mut h = history_with(&["a", "b", "c"]);
-        h.prev(""); // c, cursor=2
-        h.prev(""); // b, cursor=1
-        assert_eq!(h.next(), Some("c"));
+        h.older(""); // c, cursor=2
+        h.older(""); // b, cursor=1
+        assert_eq!(h.newer(), Some("c"));
         // past end returns None
-        assert_eq!(h.next(), None);
+        assert_eq!(h.newer(), None);
     }
 
     #[test]
-    fn next_at_end_returns_none() {
+    fn newer_at_end_returns_none() {
         let mut h = history_with(&["a"]);
-        assert_eq!(h.next(), None);
+        assert_eq!(h.newer(), None);
     }
 
     #[test]
     fn reset_cursor_goes_to_end() {
         let mut h = history_with(&["a", "b"]);
-        h.prev("draft");
+        h.older("draft");
         h.reset_cursor();
         assert_eq!(h.cursor, h.entries.len());
         assert_eq!(h.draft(), "");

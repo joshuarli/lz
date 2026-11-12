@@ -64,6 +64,30 @@ impl LineBuffer {
         self.partial = Some(partial);
     }
 
+    /// Prepopulate with text already read (e.g. for binary detection).
+    /// If the text doesn't end with '\n', the trailing fragment is stored
+    /// as the partial line so it joins with the next read from the source.
+    pub fn prepopulate(&mut self, text: &str) {
+        if text.is_empty() {
+            return;
+        }
+        let mut lines: Vec<&str> = text.split('\n').collect();
+        let partial = if text.ends_with('\n') {
+            lines.pop();
+            None
+        } else {
+            lines.pop()
+        };
+        for line in lines {
+            let l = line.strip_suffix('\r').unwrap_or(line);
+            self.push_line(l.to_string());
+        }
+        if let Some(p) = partial {
+            let l = p.strip_suffix('\r').unwrap_or(p);
+            self.set_partial(l.to_string());
+        }
+    }
+
     /// Create a buffer from pre-existing lines (for testing).
     #[cfg(test)]
     pub fn from_lines(lines: Vec<String>) -> Self {
@@ -141,6 +165,10 @@ impl LineBuffer {
     /// Number of currently cached lines.
     pub fn len(&self) -> usize {
         self.lines.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.lines.is_empty()
     }
 
     pub fn is_finished(&self) -> bool {
@@ -241,7 +269,7 @@ mod tests {
 
         // Accessing line 0 triggers lazy load (reads in chunks of 256)
         assert_eq!(buf.get_line(0), Some("a"));
-        assert!(buf.len() >= 1);
+        assert!(!buf.is_empty());
     }
 
     #[test]

@@ -339,12 +339,12 @@ impl Pager {
                 }
             }
             Key::Up => {
-                if let Some(entry) = self.history.prev(&self.search_input.content) {
+                if let Some(entry) = self.history.older(&self.search_input.content) {
                     self.search_input.content = entry.to_string();
                     self.search_input.cursor = self.search_input.content.len();
                 }
             }
-            Key::Down => match self.history.next() {
+            Key::Down => match self.history.newer() {
                 Some(entry) => {
                     self.search_input.content = entry.to_string();
                     self.search_input.cursor = self.search_input.content.len();
