@@ -106315,5 +106315,757 @@
     ],
     "files": {},
     "trace_check": "plain-text"
+  },
+  {
+    "id": "sources-binary-five-controls",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      "+q",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "sources-binary-six-controls",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      "+q",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          110
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "plain-text"
+  },
+  {
+    "id": "sources-binary-after-sample",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        120
+      ],
+      "count": 256,
+      "suffix": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        10
+      ]
+    },
+    "args": [
+      "+q",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "sources-binary-at-sample-end",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        120
+      ],
+      "count": 250,
+      "suffix": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        10
+      ]
+    },
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          110
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "plain-text"
+  },
+  {
+    "id": "sources-binary-utf8-malformed",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        255,
+        120
+      ],
+      "count": 6,
+      "suffix": [
+        10
+      ]
+    },
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          110
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "plain-text"
+  },
+  {
+    "id": "sources-binary-utf8-control",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        194,
+        133
+      ],
+      "count": 6,
+      "suffix": [
+        10
+      ]
+    },
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          110
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "plain-text"
+  },
+  {
+    "id": "sources-binary-utf8-text",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        226,
+        130,
+        172
+      ],
+      "count": 100,
+      "suffix": [
+        10
+      ]
+    },
+    "args": [
+      "+q",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "sources-binary-sgr-default",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        27,
+        91,
+        51,
+        49,
+        109,
+        120
+      ],
+      "count": 6,
+      "suffix": [
+        10
+      ]
+    },
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          110
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "plain-text"
+  },
+  {
+    "id": "sources-binary-sgr-color",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        27,
+        91,
+        51,
+        49,
+        109,
+        120
+      ],
+      "count": 6,
+      "suffix": [
+        10
+      ]
+    },
+    "args": [
+      "-R",
+      "+q",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "sources-binary-utf8-name",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      "€input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          110
+        ]
+      }
+    ],
+    "fixture_name": [
+      226,
+      130,
+      172,
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "plain-text"
+  },
+  {
+    "id": "sources-binary-ascii-name",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      "€input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          110
+        ]
+      }
+    ],
+    "fixture_name": [
+      226,
+      130,
+      172,
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "plain-text"
+  },
+  {
+    "id": "sources-binary-charset-override",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      "€input"
+    ],
+    "env": {
+      "LESSCHARSET": "ascii"
+    },
+    "size": [
+      80,
+      24
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          110
+        ]
+      }
+    ],
+    "fixture_name": [
+      226,
+      130,
+      172,
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "plain-text"
+  },
+  {
+    "id": "sources-binary-utf8-override",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        226,
+        130,
+        172
+      ],
+      "count": 100,
+      "suffix": [
+        10
+      ]
+    },
+    "args": [
+      "+q",
+      "input"
+    ],
+    "env": {
+      "LESSCHARSET": "utf-8"
+    },
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "sources-binary-utf8-malformed-run",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      255,
+      255,
+      255,
+      255,
+      255,
+      255,
+      10
+    ],
+    "args": [
+      "+q",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "sources-binary-ascii-alias",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      "€input"
+    ],
+    "env": {
+      "LESSCHARSET": "US-ASCII"
+    },
+    "size": [
+      80,
+      24
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          110
+        ]
+      }
+    ],
+    "fixture_name": [
+      226,
+      130,
+      172,
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "plain-text"
+  },
+  {
+    "id": "sources-binary-utf8-alias",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        226,
+        130,
+        172
+      ],
+      "count": 100,
+      "suffix": [
+        10
+      ]
+    },
+    "args": [
+      "+q",
+      "input"
+    ],
+    "env": {
+      "LESSCHARSET": "UTF8"
+    },
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {}
+  },
+  {
+    "id": "sources-binary-private-name",
+    "family": "sources",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "en_US.UTF-8",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          110
+        ]
+      }
+    ],
+    "fixture_name": [
+      238,
+      128,
+      128,
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "plain-text"
   }
 ]

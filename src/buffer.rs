@@ -4,9 +4,11 @@ use std::os::unix::fs::FileExt;
 use std::os::fd::{AsFd, AsRawFd};
 
 use crate::storage::{Offsets, anonymous_file};
+use crate::charset::Charset;
+use crate::ansi::ControlDisplay;
 
 const BLOCK_BYTES: usize = 64 * 1024;
-const BINARY_CHECK_SIZE: usize = 8 * 1024;
+const BINARY_CHECK_SIZE: usize = 256;
 
 enum Source {
     File(File),
@@ -153,10 +155,12 @@ impl LineBuffer {
         self.len().saturating_sub(before)
     }
 
-    pub fn check_binary(file: &mut File) -> io::Result<bool> {
+    /// Inspect the initial sample without changing the file position.
+    pub fn check_binary(file: &File, charset: Charset, controls: ControlDisplay) -> io::Result<bool> {
         let mut bytes = [0; BINARY_CHECK_SIZE];
         let count = file.read_at(&mut bytes, 0)?;
-        Ok(bytes[..count].contains(&0))
+        let sample = &bytes[..count];
+        Ok(if controls == ControlDisplay::Color { charset.looks_binary(&crate::ansi::without_escapes(sample)) } else { charset.looks_binary(sample) })
     }
 
     #[cfg(test)]
@@ -333,11 +337,11 @@ mod tests {
     #[test]
     fn binary_detection_positive() {
         let mut tmp = tempfile::NamedTempFile::new().unwrap();
-        tmp.write_all(&[0x00, 0x01, 0x02]).unwrap();
+        tmp.write_all(&[0x00, 0x01, 0x02, 0x03, 0x04, 0x05]).unwrap();
         tmp.flush().unwrap();
-        let mut file = File::open(tmp.path()).unwrap();
+        let file = File::open(tmp.path()).unwrap();
 
-        assert!(LineBuffer::check_binary(&mut file).unwrap());
+        assert!(LineBuffer::check_binary(&file, Charset::Ascii, ControlDisplay::Standard).unwrap());
     }
 
     #[test]
@@ -345,20 +349,22 @@ mod tests {
         let mut tmp = tempfile::NamedTempFile::new().unwrap();
         tmp.write_all(b"just text\n").unwrap();
         tmp.flush().unwrap();
-        let mut file = File::open(tmp.path()).unwrap();
+        let file = File::open(tmp.path()).unwrap();
 
-        assert!(!LineBuffer::check_binary(&mut file).unwrap());
+        assert!(!LineBuffer::check_binary(&file, Charset::Ascii, ControlDisplay::Standard).unwrap());
     }
 
     #[test]
-    fn binary_detection_rewinds() {
+    fn binary_detection_preserves_file_position() {
+        use std::io::{Seek, SeekFrom};
         let mut tmp = tempfile::NamedTempFile::new().unwrap();
         tmp.write_all(b"hello\n").unwrap();
         tmp.flush().unwrap();
         let mut file = File::open(tmp.path()).unwrap();
+        file.seek(SeekFrom::Start(2)).unwrap();
 
-        LineBuffer::check_binary(&mut file).unwrap();
-        // After binary check, file should be rewound — reading should work
+        LineBuffer::check_binary(&file, Charset::Ascii, ControlDisplay::Standard).unwrap();
+        assert_eq!(file.stream_position().unwrap(), 2);
         let mut buf = LineBuffer::from_file(file);
         assert_eq!(buf.get_line(0), Some("hello"));
     }

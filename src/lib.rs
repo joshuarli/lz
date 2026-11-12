@@ -1,5 +1,6 @@
 pub mod ansi;
 pub mod buffer;
+pub mod charset;
 mod storage;
 mod readiness;
 pub mod history;

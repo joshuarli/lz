@@ -23,6 +23,7 @@ src/
   options.rs    Binary-only CLI option-name diagnostics
   pager.rs      Main event loop and rendering
   buffer.rs     Byte source access, line indexing and display fragments
+  charset.rs    ASCII/UTF-8 policy for binary samples and filename questions
   storage.rs    Anonymous spill files and bounded line indexes
   readiness.rs  Platform descriptor readiness
   input.rs      Key reading and escape sequence parsing
@@ -127,7 +128,7 @@ Byte source access and logical line indexing.
 - `line_prefix` reads a bounded display fragment without waiting for the end of a logical line. `get_line` explicitly materializes a complete line for search and some navigation paths. Those operations still need large-line bounds and cancellation work.
 - `SourceState` distinguishes ready data, temporary waiting, EOF and read failure. Read failures reach the pager instead of becoming EOF.
 - Source bytes stay intact in the file or spool. Display fragments currently decode with replacement for malformed UTF-8. Exact malformed-byte presentation remains unfinished.
-- File binary detection checks the first 8 KiB without changing the file position. Interactive binary prompts remain unfinished.
+- File binary detection samples 256 bytes without changing the file position. More than five binary units trigger a question. Detection and filename questions share `Charset`; `ControlDisplay::Color` excludes common SGR escapes from the sample. Other charsets and accepted binary display remain unfinished.
 
 Key types: `LineBuffer`, `LineFragment`, `SourceState`. Mutable line injection and the old prepopulation interface are retired.
 

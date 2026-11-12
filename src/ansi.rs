@@ -1,5 +1,19 @@
 use unicode_width::UnicodeWidthChar;
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ControlDisplay { #[default] Standard, Raw, Color }
+
+pub(crate) fn without_escapes(bytes: &[u8]) -> Vec<u8> {
+    let mut output = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        let length = escape_seq_len(bytes, index);
+        if length > 0 { index += length; }
+        else { output.push(bytes[index]); index += 1; }
+    }
+    output
+}
+
 /// Check if we're inside an ANSI escape sequence starting at `bytes[pos]`.
 /// Returns the length of the escape sequence if found, or 0.
 fn escape_seq_len(bytes: &[u8], pos: usize) -> usize {

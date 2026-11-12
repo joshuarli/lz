@@ -12,13 +12,13 @@ Generated from `inventory.json` and fingerprint-checked full current/baseline re
 | rendering | 55 | 0 | 0 | 0 |
 | search | 28 | 0 | 1 | 1 |
 | sessions | 10 | 0 | 0 | 0 |
-| sources | 7 | 1 | 7 | 6 |
+| sources | 8 | 1 | 8 | 7 |
 
 Untested entries stay in the denominator. A named scenario does not cover every boundary of its linked manual entry. See the canonical inventory for every anchor, cause, owner and platform.
 
 | Corpus | Pass | Mismatch | Harness error | Needs environment | Total |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| baseline | 3 | 95 | 0 | 1 | 99 |
-| current | 97 | 1 | 0 | 1 | 99 |
+| baseline | 3 | 112 | 0 | 1 | 116 |
+| current | 114 | 1 | 0 | 1 | 116 |
 
 All 14 instrumented upstream tests pass against instrumented less. Two have partial generic VT translations; twelve await translation. These are oracle validation results, not lz passes. Discovery mismatches remain strict failures in `make parity-test MODE=all`. Identity normalization changes only the exact program token in recognized option-diagnostic help hints. Other diagnostic bytes and all other locations remain strict.

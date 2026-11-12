@@ -1,6 +1,8 @@
 mod options;
 
 use lz::{buffer, history, pager, terminal};
+use lz::charset::Charset;
+use lz::ansi::ControlDisplay;
 
 use std::fs::File;
 use std::ffi::OsString;
@@ -46,17 +48,10 @@ enum ExitAction { Success, FileError, Terminated, Hangup }
 
 enum BinaryAnswer { Open, Refuse, Quit }
 
-fn confirm_binary(name: &std::ffi::OsStr, keys: &mut lz::input::KeyReader) -> io::Result<BinaryAnswer> {
+fn confirm_binary(name: &std::ffi::OsStr, charset: Charset, keys: &mut lz::input::KeyReader) -> io::Result<BinaryAnswer> {
     let mut output = io::stdout().lock();
     output.write_all(b"\"")?;
-    for &byte in name.as_bytes() {
-        match byte {
-            27 => output.write_all(b"ESC")?,
-            0..=31 | 127 => output.write_all(&[b'^', byte ^ 0x40])?,
-            32..=126 => output.write_all(&[byte])?,
-            _ => write!(output, "<{byte:02X}>")?,
-        }
-    }
+    charset.write_filename(name.as_bytes(), &mut output)?;
     output.write_all(b"\" may be a binary file.  See it anyway? ")?;
     output.flush()?;
     let answer = loop {
@@ -148,14 +143,22 @@ fn run() -> Result<ExitAction, String> {
         process::exit(2);
     }
 
+    let text_setting = |name| match std::env::var(name) {
+        Ok(value) => Ok(Some(value)), Err(std::env::VarError::NotPresent) => Ok(None),
+        Err(error) => Err(format!("{name}: {error}")),
+    };
+    let explicit_charset = text_setting("LESSCHARSET")?;
+    let locale = ["LC_ALL", "LC_CTYPE", "LANG"].into_iter().map(text_setting).collect::<Result<Vec<_>, _>>()?
+        .into_iter().flatten().find(|value| !value.is_empty());
+    let charset = Charset::resolve(explicit_charset.as_deref(), locale.as_deref()).map_err(|error| error.to_string())?;
     let mut binary_name = None;
     let (buf, display_name) = if is_stdin {
         (buffer::LineBuffer::from_stdin(io::stdin()).map_err(|error| error.to_string())?, None)
     } else {
         let filename = &args.filenames[0];
-        let mut file = File::open(filename).map_err(|e| format!("{}: {}", filename.to_string_lossy(), e))?;
+        let file = File::open(filename).map_err(|e| format!("{}: {}", filename.to_string_lossy(), e))?;
 
-        if !args.force && buffer::LineBuffer::check_binary(&mut file).map_err(|e| e.to_string())? {
+        if !args.force && buffer::LineBuffer::check_binary(&file, charset, args.control_display).map_err(|e| e.to_string())? {
             binary_name = Some(filename.clone());
         }
 
@@ -166,7 +169,7 @@ fn run() -> Result<ExitAction, String> {
     let screen = if binary_name.is_some() { terminal::Screen::Primary } else { terminal::Screen::Alternate };
     let mut session = terminal::Session::start(screen).map_err(|error| error.to_string())?;
     if let Some(name) = binary_name {
-        match confirm_binary(&name, session.keys_mut()) {
+        match confirm_binary(&name, charset, session.keys_mut()) {
             Ok(BinaryAnswer::Refuse) => return finish_session(Ok(ExitAction::FileError), session),
             Ok(BinaryAnswer::Quit) => return finish_session(Ok(ExitAction::Success), session),
             Err(error) => return finish_session(Err(error), session),
@@ -187,7 +190,7 @@ fn run() -> Result<ExitAction, String> {
     let history = history_path.as_deref().map(history::SearchHistory::load).unwrap_or_default();
 
     // Run pager
-    let mut pager = pager::Pager::new(buf, pager::Config { startup_commands: args.startup_commands, raw_mode: args.raw_mode, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, display_name, history);
+    let mut pager = pager::Pager::new(buf, pager::Config { startup_commands: args.startup_commands, raw_mode: args.control_display == ControlDisplay::Raw, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, display_name, history);
     let result = pager.run(session.keys_mut());
 
     if let Some(path) = history_path { pager.history().save(&path); }

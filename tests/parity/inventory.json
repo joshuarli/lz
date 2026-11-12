@@ -7410,6 +7410,43 @@
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
       "cause": "Under locale C, n/Enter refuse with code 1, uppercase Q quits with code 0 and TERM exits with code 15 on the primary screen. Filename control bytes are printable and plain-text trace assertions reject hidden controls. Staged session controls verify primary-to-alternate acquisition, duplicate-entry refusal and cleanup. Binary detection boundaries, Unicode filename presentation, accepted binary rendering and other query lifecycle interactions remain open."
+    },
+    {
+      "id": "source-binary-detection",
+      "family": "sources",
+      "title": "Binary sample thresholds use the resolved ASCII or UTF-8 character policy",
+      "anchor": {
+        "file": "filename.c",
+        "line": 472,
+        "text": "public int bin_file(int f, ssize_t *n)"
+      },
+      "slice": "S05",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [
+        "sources-binary-five-controls",
+        "sources-binary-six-controls",
+        "sources-binary-after-sample",
+        "sources-binary-at-sample-end",
+        "sources-binary-utf8-malformed",
+        "sources-binary-utf8-control",
+        "sources-binary-utf8-text",
+        "sources-binary-sgr-default",
+        "sources-binary-sgr-color",
+        "sources-binary-utf8-name",
+        "sources-binary-ascii-name",
+        "sources-binary-charset-override",
+        "sources-binary-utf8-override",
+        "sources-binary-utf8-malformed-run",
+        "sources-binary-ascii-alias",
+        "sources-binary-utf8-alias",
+        "sources-binary-private-name"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Strict cases cover five versus six binary units, the 256-byte boundary, UTF-8 controls and malformed runs, common SGR sampling under -R, filename presentation and explicit charset/alias precedence. Detection and filename questions share one typed policy. Other charsets/custom definitions, locale validity, nonstandard UTF-8 scalar forms and other color-safe controls remain open."
     }
   ],
   "upstream": [
