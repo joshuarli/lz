@@ -1,7 +1,6 @@
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Read, Stdin};
 
-const MAX_LINE_LEN: usize = 64 * 1024; // 64KB
 const BINARY_CHECK_SIZE: usize = 8 * 1024; // 8KB
 
 enum Source {
@@ -129,11 +128,6 @@ impl LineBuffer {
                         if line.ends_with('\r') {
                             line.pop();
                         }
-                    }
-                    // Truncate excessively long lines
-                    if line.len() > MAX_LINE_LEN {
-                        line.truncate(MAX_LINE_LEN);
-                        line.push_str(" [truncated]");
                     }
                     self.lines.push(line);
                     read += 1;
@@ -350,18 +344,26 @@ mod tests {
         assert!(buf.is_finished());
     }
 
-    // --- line truncation ---
-
     #[test]
-    fn long_line_truncated() {
+    fn long_line_is_preserved() {
         let long = "x".repeat(70_000);
         let content = format!("{}\n", long);
         let (file, _tmp) = make_temp_file(&content);
         let mut buf = LineBuffer::from_file(file);
 
         let line = buf.get_line(0).unwrap();
-        assert!(line.len() < 70_000);
-        assert!(line.ends_with("[truncated]"));
+        assert_eq!(line, long);
+        assert_eq!(buf.get_line(1), None);
+    }
+
+    #[test]
+    fn long_utf8_line_is_preserved() {
+        let line = "€".repeat(21_846);
+        let (file, _tmp) = make_temp_file(&(line.clone() + "\nlast\n"));
+        let mut buffer = LineBuffer::from_file(file);
+        assert_eq!(buffer.get_line(0), Some(line.as_str()));
+        assert_eq!(buffer.get_line(1), Some("last"));
+        assert_eq!(buffer.get_line(2), None);
     }
 
     // --- poll_new_lines ---

@@ -122,7 +122,7 @@ Lazy streaming line buffer for file content.
 
 - Reads lines from the input source on demand rather than loading the entire file upfront. This gives instant startup even on very large files.
 - Binary detection: reads the first 8KB and checks for null bytes. If found, refuses to display and reports the file as binary.
-- Line truncation at 64KB: any single line longer than 64KB is hard-truncated. Prevents memory explosion on pathological input (e.g., a file with no newlines).
+- Long lines are preserved without the retired 64 KiB truncation. The current reader still allocates complete lines and caches them; bounded byte storage is unfinished.
 - Follow mode: when enabled (equivalent to `tail -f`), polls the input source for new data after reaching EOF rather than stopping.
 - Exposes a random-access-by-line-index interface: `pager.rs` asks for line N and the buffer reads forward as needed, caching lines already read.
 
@@ -248,8 +248,10 @@ Most real-world searches are literal strings, not regexes. BMH with a 256-entry 
 **Lazy line loading.**
 Lines are read from the source on demand and cached. The pager does not read the entire file on startup. This gives instant startup for large files and makes stdin streaming natural.
 
-**64KB line truncation.**
-A line longer than 64KB is truncated. This prevents a single pathological line from consuming unbounded memory. The truncation point is chosen to be far larger than any reasonable line while still being a hard cap.
+**Long lines.**
+Lines are preserved in full. The old byte cut could panic inside UTF-8 and did not
+bound peak allocation. Full-line allocation and the unbounded cache remain open
+until the byte-source work lands.
 
 ---
 

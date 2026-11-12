@@ -7313,6 +7313,27 @@
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
       "cause": "Named ASCII diagnostics, continued redirected copying, multiple errors and first-filename boundary pass. Only the diagnostic help-command program token is normalized. Full parser grammar, known-option effects and numeric/string errors remain open."
+    },
+    {
+      "id": "source-long-lines",
+      "family": "sources",
+      "title": "Long logical lines preserve complete UTF-8 content",
+      "anchor": {
+        "file": "ch.c",
+        "line": 1,
+        "text": "/*"
+      },
+      "slice": "S05",
+      "platforms": [
+        "macos",
+        "linux-musl"
+      ],
+      "cases": [
+        "sources-long-utf8"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "The 64 KiB byte cut could panic inside a UTF-8 character and silently dropped long-line suffixes. Unit regressions preserve full ASCII/UTF-8 lines and a strict en_US.UTF-8 chopped PTY case passes. Full-line allocation and unbounded cache storage remain open in S05b."
     }
   ],
   "upstream": [
