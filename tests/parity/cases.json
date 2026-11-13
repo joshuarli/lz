@@ -591451,5 +591451,28 @@
   "args": ["-R", "input"], "env": {}, "size": [80, 24], "locale": "C.UTF-8",
   "events": [{"type": "checkpoint", "ready": "next", "row": null}, {"type": "send", "bytes": [113]}],
   "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "rendering-long-osc8-bel",
+  "family": "rendering", "admitted": true, "source": "pty",
+  "fixture": {"repeat": [27, 91, 48, 109], "count": 10000, "suffix": [27,93,56,59,59,104,116,116,112,115,58,47,47,101,120,97,109,112,108,101,46,99,111,109,7,108,105,110,107,27,93,56,59,59,7,10,110,101,120,116,10]},
+  "args": ["-R", "input"], "env": {}, "size": [80, 24], "locale": "C.UTF-8",
+  "events": [{"type": "checkpoint", "ready": "next", "row": null}, {"type": "send", "bytes": [113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "rendering-long-osc8-split-st",
+  "family": "rendering", "admitted": true, "source": "pty",
+  "fixture": {"repeat": [27, 91, 48, 109], "count": 16377, "suffix": [97,98,99,27,93,56,59,59,104,116,116,112,115,58,47,47,101,120,97,109,112,108,101,46,99,111,109,27,92,108,105,110,107,27,93,56,59,59,27,92,10,110,101,120,116,10]},
+  "args": ["-R", "input"], "env": {}, "size": [80, 24], "locale": "C.UTF-8",
+  "events": [{"type": "checkpoint", "ready": "next", "row": null}, {"type": "send", "bytes": [113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "rendering-long-osc8-one-screen",
+  "family": "rendering", "admitted": true, "source": "pty",
+  "fixture": {"repeat": [27, 91, 48, 109], "count": 10000, "suffix": [27,93,56,59,59,104,116,116,112,115,58,47,47,101,120,97,109,112,108,101,46,99,111,109,7,108,105,110,107,27,93,56,59,59,7,10]},
+  "args": ["-F", "-R", "input"], "env": {}, "size": [80, 24], "locale": "C.UTF-8",
+  "events": [], "fixture_name": [105, 110, 112, 117, 116], "files": {}
 }
 ]

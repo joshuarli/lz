@@ -44,13 +44,15 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S02h:** 19 duplicate numbered fixtures use a bounded additive recipe. Both original fixture byte sequences were compared before replacement. All 19 cases, harness self-tests and Clippy passed. Existing inline and repeated recipes remain supported.
 
-**S06f:** long single-row ASCII SGR lines render through one anonymous disk-backed frame spill. Eleven cases cover startup, interactive views, screen options, chunk boundaries, CRLF and exact width. A 16 MiB case passes within resource limits on macOS and in a Linux arm64 container. The renderer scans a live stream only after the line is fully buffered. Search highlighting, OSC, multirow content and cancellation during a long write remain open.
+**S06f:** long single-row ASCII SGR lines render through one anonymous disk-backed frame spill. Eleven cases cover startup, interactive views, screen options, chunk boundaries, CRLF and exact width. A 16 MiB case passes within resource limits on macOS and in a Linux arm64 container. The renderer scans a live stream only after the line is fully buffered. Search highlighting, other escapes, multirow content and cancellation during a long write remain open.
 
 **S06g:** `man-0865` and `man-1128` cover complete, single-row UTF-8 SGR lines. The scanner retains an incomplete character across chunks and rejects malformed, control and binary characters. Three cases cover interactive output, one-screen startup and an exact-width character split across chunks; they pass on macOS and in a Linux arm64 container.
 
 **S06h:** five cases cover combining marks in complete single-row SGR lines, including at the screen edge, the start of a line and split across chunks. They pass on macOS and in a Linux arm64 container. Other zero-width sequences and long-line forms remain open.
 
-The following work remains local and actionable: complete the nonparked S04–S11 behaviors and interactions, upstream scenario translations, bounded fuzzing and holdouts, parity CI checks, final performance and size gates, cleanup, and independent review. The inventory retains behavior-specific causes and cases. The S06 shared renderer still needs bounded OSC and multirow handling. POSIX search, cancellation, headers, helper and pipe transitions, history concurrency, and lifecycle hardening remain incomplete.
+**S06i:** complete single-row color lines may contain ASCII OSC 8 hyperlinks. Three cases cover BEL and ST terminators, a split terminator and one-screen startup on macOS and in a Linux arm64 container. Other OSC forms, Unicode in hyperlink metadata, malformed sequences and broader hyperlink semantics remain open.
+
+The following work remains local and actionable: complete the nonparked S04–S11 behaviors and interactions, upstream scenario translations, bounded fuzzing and holdouts, parity CI checks, final performance and size gates, cleanup, and independent review. The inventory retains behavior-specific causes and cases. The S06 shared renderer still needs bounded handling for other escapes and multirow lines. POSIX search, cancellation, headers, helper and pipe transitions, history concurrency, and lifecycle hardening remain incomplete.
 
 Parked conditions are:
 

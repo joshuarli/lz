@@ -328,7 +328,7 @@ fn number_gutter(line: usize, width: usize, enabled: bool, minimum: LineNumberWi
     format!("{:>columns$} ", line + 1, columns = minimum.columns()).chars().take(width).collect()
 }
 
-enum SgrScan { Text, Escape, Sequence, Utf8 { bytes: [u8; 4], len: usize, width: usize } }
+enum SgrScan { Text, Escape, Sequence, OscCommand, OscSeparator, OscParams, OscUri, OscEscape, Utf8 { bytes: [u8; 4], len: usize, width: usize } }
 enum ColorLine { Fits(bool), Unsupported, Waiting }
 enum StreamedLine { Fits(std::fs::File, bool), Unsupported, Waiting }
 
@@ -371,8 +371,17 @@ fn scan_color_line(buffer: &mut LineBuffer, line: usize, width: usize, charset: 
                     }
                 }
                 SgrScan::Escape if byte == b'[' => SgrScan::Sequence,
+                SgrScan::Escape if byte == b']' => SgrScan::OscCommand,
                 SgrScan::Sequence if byte == b'm' => { sgr = true; SgrScan::Text }
                 SgrScan::Sequence if b"0123456789:;[?!\"'#%()*+ ".contains(&byte) => SgrScan::Sequence,
+                SgrScan::OscCommand if byte == b'8' => SgrScan::OscSeparator,
+                SgrScan::OscSeparator if byte == b';' => SgrScan::OscParams,
+                SgrScan::OscParams if byte == b';' => SgrScan::OscUri,
+                SgrScan::OscParams if (0x20..=0x7e).contains(&byte) => SgrScan::OscParams,
+                SgrScan::OscUri if byte == 0x07 => SgrScan::Text,
+                SgrScan::OscUri if byte == 0x1b => SgrScan::OscEscape,
+                SgrScan::OscUri if (0x20..=0x7e).contains(&byte) => SgrScan::OscUri,
+                SgrScan::OscEscape if byte == b'\\' => SgrScan::Text,
                 _ => return Ok(ColorLine::Unsupported),
             };
         }
@@ -2183,6 +2192,21 @@ mod one_screen_tests {
             assert!(matches!(scan_color_line(&mut buffer, line, 80, Charset::Utf8, &mut io::sink()).unwrap(), ColorLine::Unsupported));
         }
         assert!(matches!(scan_color_line(&mut buffer, 3, 1, Charset::Utf8, &mut io::sink()).unwrap(), ColorLine::Fits(true)));
+    }
+
+    #[test]
+    fn streamed_color_lines_accept_only_complete_osc8_sequences() {
+        let mut input = tempfile::NamedTempFile::new().unwrap();
+        input.write_all(b"\x1b]8;id=test;https://example.com\x07link\x1b]8;;\x07\n").unwrap();
+        input.write_all(b"\x1b]8;;https://example.com\x1b\\link\x1b]8;;\x1b\\\n").unwrap();
+        input.write_all(b"\x1b]52;;secret\x07\n\x1b]8;;incomplete\n\x1b]8;;bad\x1bX\n").unwrap();
+        let mut buffer = LineBuffer::from_file(std::fs::File::open(input.path()).unwrap());
+        for line in 0..=1 {
+            assert!(matches!(scan_color_line(&mut buffer, line, 4, Charset::Utf8, &mut io::sink()).unwrap(), ColorLine::Fits(false)));
+        }
+        for line in 2..=4 {
+            assert!(matches!(scan_color_line(&mut buffer, line, 80, Charset::Utf8, &mut io::sink()).unwrap(), ColorLine::Unsupported));
+        }
     }
 
     #[test]
