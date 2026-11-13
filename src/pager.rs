@@ -2472,7 +2472,13 @@ impl Pager {
             && source.matches_search(search, self.controls)
         {
             let stripped = strip_ansi(display);
-            let searchable = source.search_text(&stripped, start);
+            let mut context = if start == 0 { String::new() } else {
+                let prefix = source.display(0, start, NotationStyle::for_ui_color(self.use_color));
+                strip_ansi(&String::from_utf8_lossy(&prefix))
+            };
+            let prefix_bytes = context.len();
+            context.push_str(&stripped);
+            let searchable = source.search_text(&context, 0);
             let mut matches: Vec<_> = search.find_matches_stripped(&searchable).into_iter().filter(|(start, end)| start < end).collect();
             if search.uses_byte_regex() {
                 let mut aligned: Vec<(usize, usize)> = Vec::new();
@@ -2485,6 +2491,9 @@ impl Pager {
                 matches = aligned;
             }
             if self.search_nonmatch { matches.truncate(1); }
+            let matches: Vec<_> = matches.into_iter().filter_map(|(start, end)| {
+                if end > prefix_bytes { Some((start.saturating_sub(prefix_bytes), end - prefix_bytes)) } else { None }
+            }).collect();
             if !matches.is_empty() {
                 let colored = self.use_color;
                 let mut source_colors = crate::ansi::SgrColors::default();
