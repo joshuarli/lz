@@ -164,6 +164,13 @@ impl LineBuffer {
 
     pub fn is_finished(&self) -> bool { self.state == SourceState::Eof }
 
+    /// Finish a waiting stream at its buffered boundary after an interrupt.
+    pub fn finish_interrupted_stream(&mut self) -> io::Result<()> {
+        if self.state != SourceState::Waiting { return Err(io::Error::new(io::ErrorKind::InvalidInput, "stream is not waiting")); }
+        self.state = SourceState::Eof;
+        Ok(())
+    }
+
     pub fn read_more(&mut self, count: usize) -> usize {
         let before = self.len();
         while self.len().saturating_sub(before) < count && self.scan() {}

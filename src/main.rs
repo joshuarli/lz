@@ -315,7 +315,15 @@ fn run() -> Result<ExitAction, String> {
                 Ok(pager::OneScreen::Overflows) => break,
                 Ok(pager::OneScreen::Waiting) => {
                     if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return finish_opened(Ok(ExitAction::Success), opened, session); }
-                    if terminal::take_interrupt() && args.interrupt_policy == pager::InterruptPolicy::Quit { return finish_opened(Ok(ExitAction::Interrupted), opened, session); }
+                    if terminal::take_interrupt() {
+                        let mut output = io::stdout().lock();
+                        let suffix: &[u8] = if args.interrupt_policy == pager::InterruptPolicy::Quit { b"\x07\r\r\x1b[K" } else { b"\x07" };
+                        if let Err(error) = output.write_all(suffix).and_then(|()| output.flush()) { return finish_opened(Err(error), opened, session); }
+                        drop(output);
+                        if args.interrupt_policy == pager::InterruptPolicy::Quit { return finish_opened(Ok(ExitAction::Interrupted), opened, session); }
+                        if let Err(error) = opened.buffer.finish_interrupted_stream() { return finish_opened(Err(error), opened, session); }
+                        continue;
+                    }
                     std::thread::sleep(std::time::Duration::from_millis(10));
                     opened.buffer.read_more(1);
                 }

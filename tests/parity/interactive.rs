@@ -355,6 +355,10 @@ pub fn selftest() -> Result<()> {
         return Err("supervisor failed to reap a producer that closed its pipe".into());
     }
     pipe_case.env.remove("LZ_PARITY_PRODUCER_CLOSE");
+    pipe_case.env.insert("LZ_PARITY_PRODUCER_READY".into(), "producer-ready".into());
+    pipe_case.events = vec![Event::Checkpoint { ready:"producer-ready".into(), row:None }, Event::Send { bytes:b"q".to_vec() }];
+    execute(&candidate, &pipe_case)?;
+    pipe_case.env.remove("LZ_PARITY_PRODUCER_READY");
     println!("supervisor argv/env/stdin/foreground, code 7, signal 15 and explicit TERM controls pass");
     pipe_case.args[1] = "job".into();
     pipe_case.events = vec![Event::Checkpoint { ready:"probe".into(), row:None }, Event::Suspend {}, Event::Suspend {}, Event::Send { bytes:b"\n".to_vec() }];

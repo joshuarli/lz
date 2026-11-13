@@ -209,6 +209,15 @@ pub fn producer(path: &Path) -> Result<()> {
         std::thread::sleep(Duration::from_millis(delay));
     }
     io::copy(&mut File::open(path)?, &mut io::stdout().lock())?;
+    if let Some(ready) = std::env::var_os("LZ_PARITY_PRODUCER_READY") {
+        let mut tty = File::options().read(true).write(true).open("/dev/tty")?;
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while termios(tty.as_raw_fd())?.c_lflag & libc::ICANON != 0 {
+            if Instant::now() >= deadline { return Err("pager did not acquire raw terminal input".into()); }
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        tty.write_all(ready.as_bytes())?;
+    }
     if std::env::var_os("LZ_PARITY_PRODUCER_CLOSE").is_some() { return Ok(()); }
     loop { std::thread::park(); }
 }

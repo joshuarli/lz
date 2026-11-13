@@ -460771,5 +460771,224 @@
     ],
     "files": {},
     "trace_check": "captured"
+  },
+  {
+    "id": "invocation-quit-one-screen-pipe-int",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty-pipe",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "-F",
+      "-"
+    ],
+    "env": {
+      "LZ_PARITY_PRODUCER_READY": "producer ready"
+    },
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "producer ready",
+        "row": 0
+      },
+      {
+        "type": "signal",
+        "number": 2
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-quit-one-screen-pipe-int-quit",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty-pipe",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "-F",
+      "-K",
+      "-"
+    ],
+    "env": {
+      "LZ_PARITY_PRODUCER_READY": "producer ready"
+    },
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "producer ready",
+        "row": 0
+      },
+      {
+        "type": "signal",
+        "number": 2
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-quit-one-screen-pipe-keyboard-int",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty-pipe",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "-F",
+      "-"
+    ],
+    "env": {
+      "LZ_PARITY_PRODUCER_READY": "producer ready"
+    },
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "producer ready",
+        "row": 0
+      },
+      {
+        "type": "send",
+        "bytes": [
+          3
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-quit-one-screen-pipe-term",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty-pipe",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "-F",
+      "-"
+    ],
+    "env": {
+      "LZ_PARITY_PRODUCER_READY": "producer ready"
+    },
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "producer ready",
+        "row": 0
+      },
+      {
+        "type": "signal",
+        "number": 15
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
   }
 ]
