@@ -55,6 +55,7 @@ pub fn take_interrupt() -> bool { INTERRUPT_FLAG.swap(false, Ordering::SeqCst) }
 static ALT_SCREEN: AtomicBool = AtomicBool::new(false);
 static APPLICATION_MODES: AtomicBool = AtomicBool::new(false);
 static INTERACTIVE_ACTIVE: AtomicBool = AtomicBool::new(false);
+static SUSPENDED: AtomicBool = AtomicBool::new(false);
 static SUSPENDED_ALT_SCREEN: AtomicBool = AtomicBool::new(false);
 static SUSPENDED_APPLICATION_MODES: AtomicBool = AtomicBool::new(false);
 static EOF_BELL: BellRate = BellRate(AtomicU64::new(0));
@@ -256,14 +257,21 @@ pub fn handle_suspend() -> io::Result<()> {
     if application { stdout.write_all(b"\x1b[?1l\x1b>")?; }
     if alternate { leave_alt_screen(&mut stdout)?; }
     show_cursor(&mut stdout)?;
+    SUSPENDED.store(true, Ordering::SeqCst);
 
+    // SAFETY: the session owns this signal disposition; SIGSTOP targets only the current process.
     unsafe {
         if signal(SIGTSTP, SIG_DFL) == usize::MAX || raise(SIGSTOP) != 0 { return Err(io::Error::last_os_error()); }
     }
     Ok(())
 }
 
-pub fn handle_resume() -> io::Result<()> {
+/// Whether continuation restored modes released by an owned suspension.
+#[derive(PartialEq, Eq)]
+pub enum ResumeOutcome { Unchanged, Restored }
+
+pub fn handle_resume() -> io::Result<ResumeOutcome> {
+    if !SUSPENDED.swap(false, Ordering::SeqCst) { return Ok(ResumeOutcome::Unchanged); }
     let fd = TTY_FD.load(Ordering::SeqCst);
     if fd >= 0 {
         enable_raw_mode(fd)?;
@@ -276,10 +284,11 @@ pub fn handle_resume() -> io::Result<()> {
     }
     stdout.flush()?;
 
+    // SAFETY: the C handler updates only an atomic flag and replaces the session's saved disposition.
     unsafe {
         if signal(SIGTSTP, handle_tstp as *const () as usize) == usize::MAX { return Err(io::Error::last_os_error()); }
     }
-    Ok(())
+    Ok(ResumeOutcome::Restored)
 }
 
 fn restore_acquired_terminal() -> io::Result<()> {
@@ -341,6 +350,11 @@ impl Session {
         SESSION_ACTIVE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).map_err(|_| io::Error::other("a terminal session is already active"))?;
         TERMINATION_SIGNAL.store(0, Ordering::SeqCst);
         INTERRUPT_FLAG.store(false, Ordering::SeqCst);
+        SUSPENDED.store(false, Ordering::SeqCst);
+        SUSPENDED_ALT_SCREEN.store(false, Ordering::SeqCst);
+        SUSPENDED_APPLICATION_MODES.store(false, Ordering::SeqCst);
+        TSTP_FLAG.store(false, Ordering::SeqCst);
+        CONT_FLAG.store(false, Ordering::SeqCst);
         let mut session = Self { keys, previous_handlers: Vec::new() };
         session.previous_handlers = install_signal_handlers()?;
         enable_raw_mode(session.keys.fd())?;

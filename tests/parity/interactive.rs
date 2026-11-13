@@ -201,6 +201,7 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
             }
             Event::Resize { columns, rows } => terminal.resize(Size::new(*columns, *rows)?)?,
             Event::Signal { number } => terminal.signal(*number)?,
+            Event::Continue {} => terminal.signal(libc::SIGCONT)?,
             Event::Suspend {} => {
                 suspensions += 1;
                 terminal.signal(libc::SIGTSTP)?;

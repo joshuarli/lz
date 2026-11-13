@@ -106,6 +106,7 @@ enum Event {
     Resize { columns: u16, rows: u16 },
     Signal { number: i32 },
     Suspend {},
+    Continue {},
     Append { bytes: Vec<u8> },
 }
 

@@ -469,8 +469,8 @@ impl Pager {
             if terminal::TSTP_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst) {
                 terminal::handle_suspend()?;
             }
-            if terminal::CONT_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst) {
-                terminal::handle_resume()?;
+            if terminal::CONT_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst)
+                && terminal::handle_resume()? == terminal::ResumeOutcome::Restored {
                 self.filename_prompt = false;
                 let (w, h) = terminal::get_terminal_size();
                 self.term_width = w;
