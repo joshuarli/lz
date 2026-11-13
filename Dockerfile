@@ -11,6 +11,7 @@ RUN apk add --no-cache \
     binutils=2.45.1-r1 \
     bash=5.3.9-r1 \
     file=5.47-r2 \
+    git=2.54.1-r0 \
     make=4.4.1-r4 \
     gcc=15.2.0-r5 \
     musl-dev=1.2.6-r3
