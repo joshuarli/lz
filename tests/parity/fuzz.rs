@@ -6,7 +6,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const GENERATOR_VERSION: u32 = 7;
+const GENERATOR_VERSION: u32 = 8;
 
 struct Random(u64);
 impl Random {
@@ -58,7 +58,7 @@ fn generate(seed: u64) -> Case {
     let mut switched = false;
     let mut events = vec![checkpoint(top)];
     for _ in 0..8 {
-        let action = random.choose(11);
+        let action = if random.choose(10) < 3 { 11 } else { random.choose(11) };
         let count = 1 + random.choose(4);
         let (bytes, target) = match action {
             0 if top + count <= last => {
@@ -104,6 +104,10 @@ fn generate(seed: u64) -> Case {
                 marks = [None; 2];
                 switched = true;
                 (b":n".to_vec(), 1)
+            }
+            11 => {
+                let target = if top == 1 { 2 } else { 1 };
+                (format!("a{target}g").into_bytes(), target)
             }
             _ => {
                 let mut target = 1 + random.choose(last);
@@ -238,7 +242,7 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
     }
     fs::write(directory.join("summary.json"), serde_json::to_vec_pretty(&json!({
         "metadata":meta,"seed":seed,"generator_version":GENERATOR_VERSION,"requested":count,"executed":summaries.len(),"oracle_only":oracle_only,"results":summaries,
-        "grammar":"logical-line movement, ordinary in-file marks, forward literal searches, resize-and-jump, next-file transitions and quit or SIGTERM with CLI/LESS display options over ASCII, UTF-8 or isolated malformed bytes; eight actions; 40x12 or 80x24",
+        "grammar":"logical-line movement, ordinary in-file marks, forward literal searches, resize-and-jump, next-file transitions and quit or SIGTERM with CLI/LESS display options over ASCII, UTF-8 or isolated malformed bytes; 30% invalid-command actions; eight actions; 40x12 or 80x24",
         "limits":{"case_seconds":10,"trace_bytes":64*1024*1024,"pty_rss_bytes":u64::from(super::resources::RssLimit::default()),"pty_spill_bytes":u64::from(super::spill::Limit::default()),"actions":8,"workers":4,"reduction_attempts":8},
         "open_limits":["stdio/helper/producer RSS enforcement","stdio/helper/producer spill accounting","broader CLI/config/byte-text/file-transition/signal grammar","event boundary weighting","search variants and adversarial/stream/helper grammar"]
     }))?)?;
