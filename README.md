@@ -28,6 +28,8 @@ Ordinary in-file marks use `m` plus a letter and `'` plus that letter. Pressing 
 
 Startup `-t` selects a numeric or literal-prefix ctags address from `tags`; `-T` chooses another tags file. Pattern delimiters, backslash removal, optional end-of-line matching, raw bytes, extended records and the oracle’s secure-startup behavior are covered. Tag matching retains CR bytes while display normalizes CRLF. Duplicate matches, interactive tags, tag error prompts, color conversion, long-running cancellation and GLOBAL helpers remain unfinished.
 
+Normal mode accepts `q`, `Q`, `:q`, `:Q` and `ZZ` to quit; numeric counts are ignored. A pending `Z` or colon command displays its prefix. Backspace, Ctrl-C and invalid second keys cancel the `Z` prefix with the reference bell.
+
 Oversized numeric prefixes show a dismissible error. Enter resumes the pending command without losing the rest of a startup command.
 
 An exact-viewport final line gets bounded source lookahead so its EOF prompt is shown. Empty files keep an interactive EOF view. Initial short-file content appears at the bottom of the alternate screen, with unused rows blank. An explicit startup position uses a full paint.
@@ -100,4 +102,4 @@ Default page movement uses one content viewport; half-page movement uses half th
 | `z` / `w` | Forward / backward window; numeric prefixes set the default |
 | `F` | Follow mode (`tail -f`) |
 | `h` | Toggle help screen |
-| `q` / `Esc` | Quit |
+| `q` / `Q` / `:q` / `:Q` / `ZZ` | Quit |

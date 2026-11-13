@@ -65,6 +65,7 @@ enum Mode {
     Follow,
     Help,
     FileCommand(std::num::NonZeroUsize),
+    QuitPrefix,
     SetMark,
     JumpMark,
     CommandError(CommandError),
@@ -501,6 +502,14 @@ impl Pager {
         match self.mode.clone() {
             Mode::Normal => self.handle_normal_key(key),
             Mode::SetMark | Mode::JumpMark => { self.handle_mark_key(key); false }
+            Mode::QuitPrefix => {
+                self.mode = Mode::Normal;
+                match key {
+                    Key::Char('Z') => return true,
+                    _ => self.bell_requested = true,
+                }
+                false
+            }
             Mode::FileCommand(count) => {
                 self.mode = Mode::Normal;
                 match key {
@@ -520,7 +529,7 @@ impl Pager {
                         let direction = if direction == 'n' { "next" } else { "previous" };
                         self.command_error(format!("No {ordinal}{direction} file"), ErrorAction::Dismiss);
                     }
-                    Key::Char('q') => return true,
+                    Key::Char('q' | 'Q') => return true,
                     Key::Escape => {},
                     _ => self.bell_requested = true,
                 }
@@ -580,7 +589,8 @@ impl Pager {
             return false;
         }
         match key {
-            Key::Char('q') | Key::Ctrl('c') | Key::Escape => return true,
+            Key::Char('q' | 'Q') | Key::Ctrl('c') | Key::Escape => return true,
+            Key::Char('Z') => self.mode = Mode::QuitPrefix,
             Key::Char(':') => self.mode = Mode::FileCommand(std::num::NonZeroUsize::new(count.unwrap_or(1)).unwrap()),
             Key::Char('m') => self.mode = Mode::SetMark,
             Key::Char('\'') => self.mode = Mode::JumpMark,
@@ -1237,7 +1247,7 @@ impl Pager {
             "    z / w              Forward / backward window",
             "    F                  Follow mode (tail -f)",
             "    h                  Toggle this help",
-            "    q / Esc            Quit",
+            "    q / Q / :q / :Q / ZZ  Quit",
         ];
 
         for row in 0..ch {
@@ -1275,6 +1285,8 @@ impl Pager {
     }
 
     fn build_status(&self) -> String {
+        if self.mode == Mode::QuitPrefix { return " Z".into(); }
+        if matches!(self.mode, Mode::FileCommand(_)) { return " :".into(); }
         if self.mode == Mode::SetMark { return "set mark: ".into(); }
         if self.mode == Mode::JumpMark { return "goto mark: ".into(); }
         if self.mode == Mode::SearchInput {

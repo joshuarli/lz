@@ -42,7 +42,7 @@ KEYS:
     /           Search forward     ?           Search backward
     n/N         Next/prev match    &           Filter lines
     F           Enter follow mode  h           Help
-    q/Esc       Quit
+    q/Q/:q/:Q/ZZ  Quit
 
 FILE:
     File to view. If omitted or '-', reads stdin.",

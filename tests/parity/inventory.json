@@ -1910,10 +1910,20 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-quit-uppercase",
+        "navigation-quit-colon",
+        "navigation-quit-colon-uppercase",
+        "navigation-quit-double-z",
+        "navigation-quit-count-uppercase",
+        "navigation-quit-count-double-z",
+        "navigation-quit-prefix-backspace",
+        "navigation-quit-prefix-interrupt",
+        "navigation-quit-prefix-invalid"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Normal-mode q/Q/:q/:Q/ZZ, ignored numeric counts, prefix prompts, Backspace/Ctrl-C cancellation and invalid-prefix bells pass on macOS arm64. Help/follow, configured keys and quiet/interrupt-policy interactions remain untested"
     },
     {
       "id": "man-0456",

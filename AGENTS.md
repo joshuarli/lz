@@ -181,6 +181,7 @@ Key types: `Search` struct, `Matcher` enum (`Literal`, `Regex`), `BMH` struct.
 The main event loop and renderer. This is the largest and most central module.
 
 - Modes via the `Mode` enum: `Normal`, `SearchInput` (typing a search pattern), `FilterInput` (typing a filter pattern), `Follow` (like `tail -f`), `Help` (overlay showing keybindings), and `CommandError` (a pending command paused for acknowledgment).
+- `QuitPrefix` owns pending ZZ input. Normal-mode q/Q/:q/:Q/ZZ share ordinary exit; numeric counts are ignored. Prefix prompts preserve the reference leading space, and canceled/invalid Z prefixes ring the bell.
 - `SetMark` and `JumpMark` modes own ordinary in-file marks. Marks currently store logical line indices; wrapped, cross-file and persisted positions remain open. Large jumps update the previous-position mark.
 - `SearchDir` enum (`Forward`, `Backward`) tracks whether search was initiated with `/` (forward) or `?` (backward). `n` repeats in the same direction, `N` in the opposite direction.
 - Line filtering: `&` enters `FilterInput` mode. On Enter, builds a `Search` from the pattern and populates `filtered_lines: Vec<usize>` with matching line indices. All rendering and navigation then operate on this filtered subset. Empty pattern clears the filter.
