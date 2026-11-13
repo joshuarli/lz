@@ -1085,11 +1085,16 @@ impl Pager {
             Mode::SetMark | Mode::JumpMark => { self.handle_mark_key(key); false }
             Mode::OptionPrefix => {
                 self.mode = Mode::Normal;
-                if key == Key::Char('R') {
-                    self.controls = if self.controls == ControlDisplay::Color { ControlDisplay::Standard } else { ControlDisplay::Color };
+                if let Key::Char(choice @ ('r' | 'R')) = key {
+                    let selected = if choice == 'r' { ControlDisplay::Raw } else { ControlDisplay::Color };
+                    self.controls = if self.controls == selected { ControlDisplay::Standard } else { selected };
                     let repaint = self.squished;
                     if repaint { self.position_initialized(); }
-                    let message = if self.controls == ControlDisplay::Color { "Display ANSI sequences directly, other control characters as ^X" } else { "Display control characters as ^X" };
+                    let message = match self.controls {
+                        ControlDisplay::Standard => "Display control characters as ^X",
+                        ControlDisplay::Raw => "Display control characters directly (not recommended)",
+                        ControlDisplay::Color => "Display ANSI sequences directly, other control characters as ^X",
+                    };
                     self.status_msg = Some(format!("{message}  (press RETURN)"));
                     self.mode = Mode::OptionNotice { repaint };
                 } else if key != Key::Escape { self.bell_requested = true; }

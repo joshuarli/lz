@@ -591742,5 +591742,27 @@
   "args": ["input"], "env": {}, "size": [79, 8], "locale": "C",
   "events": [{"type":"checkpoint","ready":"input","row":7}, {"type":"send","bytes":[45,82]}, {"type":"checkpoint","ready":"ANSI sequences","row":7}, {"type":"send","bytes":[3]}, {"type":"checkpoint","ready":":","row":7}, {"type":"send","bytes":[113]}],
   "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "invocation-toggle-raw",
+  "family": "invocation", "admitted": true, "source": "pty",
+  "fixture": [97,27,93,56,59,59,108,105,110,107,27,92,116,101,120,116,27,93,56,59,59,27,92,111,107,10], "args": ["input"], "env": {}, "size": [79, 34], "locale": "C.UTF-8",
+  "events": [{"type":"checkpoint","ready":"input (END)","row":33}, {"type":"send","bytes":[45,114]}, {"type":"checkpoint","ready":"directly (not recommended)","row":33}, {"type":"send","bytes":[13]}, {"type":"checkpoint","ready":"(END)","row":33}, {"type":"send","bytes":[45,114]}, {"type":"checkpoint","ready":"control characters as","row":33}, {"type":"send","bytes":[13]}, {"type":"checkpoint","ready":"(END)","row":33}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "invocation-toggle-raw-from-color",
+  "family": "invocation", "admitted": true, "source": "pty",
+  "fixture": [97,27,93,56,59,59,108,105,110,107,27,92,116,101,120,116,27,93,56,59,59,27,92,111,107,10], "args": ["-R","input"], "env": {}, "size": [79, 34], "locale": "C.UTF-8",
+  "events": [{"type":"checkpoint","ready":"input (END)","row":33}, {"type":"send","bytes":[45,114]}, {"type":"checkpoint","ready":"directly (not recommended)","row":33}, {"type":"send","bytes":[13]}, {"type":"checkpoint","ready":"(END)","row":33}, {"type":"send","bytes":[45,82]}, {"type":"checkpoint","ready":"ANSI sequences","row":33}, {"type":"send","bytes":[13]}, {"type":"checkpoint","ready":"(END)","row":33}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "sessions-toggle-raw-next-file",
+  "family": "sessions", "admitted": true, "source": "pty",
+  "fixture": {"repeat":[97,108,112,104,97,10],"count":20,"suffix":[]},
+  "args": ["input","second"], "env": {}, "size": [79, 8], "locale": "C.UTF-8",
+  "events": [{"type":"checkpoint","ready":"input","row":7}, {"type":"send","bytes":[45,114]}, {"type":"checkpoint","ready":"directly (not recommended)","row":7}, {"type":"send","bytes":[13]}, {"type":"checkpoint","ready":":","row":7}, {"type":"send","bytes":[58,110]}, {"type":"checkpoint","ready":"atextok","row":0}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {"second":[97,27,93,56,59,59,108,105,110,107,27,92,116,101,120,116,27,93,56,59,59,27,92,111,107,10,114,111,119,10,114,111,119,10,114,111,119,10,114,111,119,10,114,111,119,10,114,111,119,10,114,111,119,10,114,111,119,10,114,111,119,10,114,111,119,10,114,111,119,10,114,111,119,10]}
 }
 ]

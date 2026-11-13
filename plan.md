@@ -84,6 +84,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S04au:** interactive `-R` toggles color display and carries it across file switches. Six cases pass on macOS and in a Linux arm64 container, covering the upstream `github329` fixture, short and long views, raw mode, prompt replay and interruption. `Pager::control_display` exposes the current mode. Other option commands, suppression, queries and startup interactions remain open; the upstream translation is partial.
 
+**S04av:** interactive `-r` toggles raw display, switches from color mode and remains in effect across file switches in the named cases on macOS and in a Linux arm64 container. Other option interactions remain open.
+
 **S08p:** `Esc-u` after a search with no matches reports the reference no-previous-pattern prompt. The case passes on macOS and in a Linux arm64 container; cross-file prepared regions are parked separately.
 
 **S02i:** auxiliary files accept the same bounded fixture recipes as the primary fixture; existing inline-byte files retain their prior behavior. PTY and redirected numbered-file cases pass on macOS and in a Linux arm64 container, and harness controls pass. The parity-case schema has an additive auxiliary-file form.
