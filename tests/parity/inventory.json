@@ -119,7 +119,8 @@
         "navigation-page-aliases",
         "navigation-scroll-defaults-across-files",
         "navigation-window-default",
-        "navigation-window-persistent"
+        "navigation-window-persistent",
+        "navigation-page-at-eof"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
@@ -183,11 +184,13 @@
       ],
       "cases": [
         "navigation-forward-line-aliases",
-        "upstream-version-navigation"
+        "upstream-version-navigation",
+        "navigation-line-at-eof",
+        "navigation-line-at-eof-chop"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Named plain-line aliases and default page/half-page distances pass, including zero and leading-zero counts where exercised. Wrapped-row geometry, ESC aliases, persistent numeric scroll settings and configured windows remain open."
+      "cause": "Named plain-line aliases and default page/half-page distances pass, including zero and leading-zero counts where exercised. Wrapped-row geometry, ESC aliases, persistent numeric scroll settings and configured windows remain open. EOF bell and short-file redraw are covered for line and chopped movement."
     },
     {
       "id": "man-0069",
@@ -514,7 +517,8 @@
         "linux-musl"
       ],
       "cases": [
-        "navigation-angle-boundaries"
+        "navigation-angle-boundaries",
+        "navigation-start-short"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",

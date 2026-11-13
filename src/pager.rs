@@ -787,6 +787,7 @@ impl Pager {
     }
 
     fn position_initialized(&mut self) {
+        self.squished = false;
         self.startup_echo = None;
         if self.command_context == CommandContext::StartupUnpositioned { self.command_context = CommandContext::StartupPositioned; }
     }
@@ -948,12 +949,17 @@ impl Pager {
     }
 
     fn scroll_down(&mut self, lines: usize) {
+        let previous = self.top_line;
         if self.wrap {
             self.scroll_down_wrapped(lines);
-            return;
+        } else {
+            self.top_line = self.top_line.saturating_add(lines);
+            self.clamp_top_line();
         }
-        self.top_line = self.top_line.saturating_add(lines);
-        self.clamp_top_line();
+        if self.content_painted && self.top_line == previous && self.buffer.is_finished()
+            && (!self.wrap || self.wrapped_line_rows(self.top_line) <= self.content_height()) {
+            self.bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
+        }
     }
 
     fn scroll_up(&mut self, lines: usize) {
@@ -1171,7 +1177,7 @@ impl Pager {
     }
 
     fn initial_content_row(&mut self, width: usize, height: usize) -> io::Result<usize> {
-        if !self.compact_initial { return Ok(0); }
+        if !self.compact_initial && !self.squished { return Ok(0); }
         let mut rows = 0;
         let mut index = self.top_line;
         while rows < height {

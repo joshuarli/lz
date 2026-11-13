@@ -457362,7 +457362,7 @@
   {
     "id": "integrations-lessclose-invalid-after-move",
     "family": "integrations",
-    "admitted": false,
+    "admitted": true,
     "source": "pty",
     "fixture": [
       111,
@@ -458499,6 +458499,263 @@
         10
       ]
     },
+    "trace_check": "captured"
+  },
+  {
+    "id": "navigation-line-at-eof",
+    "family": "navigation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "original body",
+        "row": 22
+      },
+      {
+        "type": "send",
+        "bytes": [
+          106
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "navigation-start-short",
+    "family": "navigation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "original body",
+        "row": 22
+      },
+      {
+        "type": "send",
+        "bytes": [
+          103
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "navigation-line-at-eof-chop",
+    "family": "navigation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "-S",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "original body",
+        "row": 22
+      },
+      {
+        "type": "send",
+        "bytes": [
+          106
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "navigation-page-at-eof",
+    "family": "navigation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "original body",
+        "row": 22
+      },
+      {
+        "type": "send",
+        "bytes": [
+          32
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
     "trace_check": "captured"
   }
 ]
