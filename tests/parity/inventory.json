@@ -8404,9 +8404,9 @@
       "file": "lesstest/lt/github216.lt",
       "sha256": "be52c067c160617c62bfa9da92efbbc293a083448389bd6faa1916fff05e1923",
       "instrumented": "pass",
-      "cases": ["upstream-github216-color-searches", "upstream-github216-color-option-horizontal"],
+      "cases": ["upstream-github216-color-searches", "upstream-github216-color-option-horizontal", "upstream-github216-horizontal-cycle"],
       "disposition": "partial translation",
-      "cause": "The original fixture, four color-spanning searches, color option and first counted horizontal step are covered with a generic terminal. Later navigation and original per-key/custom termcap checkpoints remain untranslated."
+      "cause": "The original fixture, searches, color option and full horizontal key sequence pass at named generic-terminal checkpoints. Original per-key and custom termcap checkpoints remain untranslated."
     },
     {
       "id": "github265",
