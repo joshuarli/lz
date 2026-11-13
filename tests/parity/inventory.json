@@ -8413,9 +8413,9 @@
       "file": "lesstest/lt/github265.lt",
       "sha256": "e2630f8448edac31de364a75eb6583d3b6e84aa4ef03529a75ffb50a0621a97e",
       "instrumented": "pass",
-      "cases": ["upstream-github265-color-search-toggle"],
+      "cases": ["upstream-github265-color-search-toggle", "upstream-github265-per-key"],
       "disposition": "partial translation",
-      "cause": "The fixture, two color-spanning searches and Esc-u are exercised with a generic terminal. The original per-key and custom termcap checkpoints remain untranslated."
+      "cause": "The original fixture, environment and command sequence pass with generic-terminal checkpoints after each search key and highlight toggle. Original custom termcap checkpoints remain untranslated."
     },
     {
       "id": "github329",
