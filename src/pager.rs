@@ -402,6 +402,7 @@ pub struct Pager {
     compact_initial: bool,
     squished: bool,
     bottom_aligned: bool,
+    leading_rows: usize,
     follow_one_screen: bool,
     follow_screen_overflowed: bool,
     bottom_gap: usize,
@@ -460,6 +461,7 @@ impl Pager {
             compact_initial: config.initial_display == InitialDisplay::Startup && config.startup_commands.is_empty(),
             squished: false,
             bottom_aligned: false,
+            leading_rows: 0,
             follow_one_screen: false,
             follow_screen_overflowed: false,
             bottom_gap: 0,
@@ -601,6 +603,7 @@ impl Pager {
                 let (w, h) = terminal::get_terminal_size();
                 self.term_width = w;
                 self.term_height = h;
+                self.leading_rows = 0;
                 redraw = true;
                 continue;
             }
@@ -842,9 +845,10 @@ impl Pager {
             }
             Key::Char('g' | '<') | Key::Home => {
                 let previous = self.top_line;
+                let previous_leading = self.leading_rows;
                 self.position_initialized();
                 let target = count.unwrap_or(1).saturating_sub(1);
-                if self.command_context == CommandContext::Interactive && self.content_painted && self.top_line == target { self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now()); }
+                if self.command_context == CommandContext::Interactive && self.content_painted && self.top_line == target && previous_leading == 0 { self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now()); }
                 self.top_line = target;
                 self.buffer.get_line(self.top_line);
                 self.remember_jump_from(previous);
@@ -956,6 +960,7 @@ impl Pager {
     fn position_initialized(&mut self) {
         self.squished = false;
         self.bottom_aligned = false;
+        self.leading_rows = 0;
         self.startup_echo = None;
         if self.content_painted && self.command_context == CommandContext::Interactive { self.compact_initial = false; }
         if self.command_context == CommandContext::StartupUnpositioned { self.command_context = CommandContext::StartupPositioned; }
@@ -1119,13 +1124,16 @@ impl Pager {
 
     fn scroll_down(&mut self, lines: usize) {
         let previous = self.top_line;
+        let moved_leading = lines.min(self.leading_rows);
+        self.leading_rows -= moved_leading;
+        let lines = lines - moved_leading;
         if self.wrap {
             self.scroll_down_wrapped(lines);
         } else {
             self.top_line = self.top_line.saturating_add(lines);
             self.clamp_top_line();
         }
-        if self.content_painted && self.top_line == previous && self.buffer.is_finished()
+        if moved_leading == 0 && self.content_painted && self.top_line == previous && self.buffer.is_finished()
             && (!self.wrap || self.wrapped_line_rows(self.top_line) <= self.content_height()) {
             self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
         }
@@ -1269,6 +1277,7 @@ impl Pager {
         }
         let first_row = if self.mode == Mode::Help { 0 } else { self.initial_content_row(w, ch)? }.saturating_sub(self.bottom_gap);
         self.bottom_gap = 0;
+        if self.bottom_aligned && self.command_context == CommandContext::Interactive { self.leading_rows = first_row; }
         if !self.content_painted { self.squished = first_row > 0; }
         let primary = self.display_anchor.row.is_some();
         if let Some(command) = self.startup_echo.take() {
@@ -1278,8 +1287,8 @@ impl Pager {
             buf.relative_row = Some(0);
             buf.retain_initial_column = true;
         }
-        if buf.relative_row.is_some() && !self.bottom_aligned { buf.padding = first_row; }
-        else { for row in 0..first_row { buf.position(row); if self.bottom_aligned { self.write_eof_marker(&mut buf); } terminal::clear_line(&mut buf); } }
+        if buf.relative_row.is_some() && !self.bottom_aligned && self.leading_rows == 0 { buf.padding = first_row; }
+        else { for row in 0..first_row { buf.position(row); if self.bottom_aligned || self.leading_rows > 0 { self.write_eof_marker(&mut buf); } terminal::clear_line(&mut buf); } }
         if self.mode == Mode::Help {
             Self::render_help(&mut buf, w, ch);
         } else if self.wrap {
@@ -1392,6 +1401,7 @@ impl Pager {
     }
 
     fn initial_content_row(&mut self, width: usize, height: usize) -> io::Result<usize> {
+        if self.leading_rows > 0 { return Ok(self.leading_rows.min(height)); }
         if !self.compact_initial && !self.squished && !self.bottom_aligned { return Ok(0); }
         let mut rows = 0;
         let mut index = self.top_line;
