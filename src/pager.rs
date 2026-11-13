@@ -1226,6 +1226,19 @@ impl Pager {
         }
     }
 
+    fn show_eof_file_info(&mut self) {
+        if self.eof_displayed && self.filter.is_none() && self.files.count == 1
+            && let Some(size) = self.buffer.eof_regular_size()
+            && let (Some(name), Some(last)) = (&self.filename, self.last_visible_line) {
+            let first = self.top_line + 1;
+            let message = format!("{name} lines {first}-{}/{total} byte {size}/{size} (END)  (press RETURN)", last + 1, total = self.buffer.len());
+            let repaint = self.squished;
+            if repaint { self.position_initialized(); }
+            self.status_msg = Some(message);
+            self.mode = Mode::OptionNotice { repaint };
+        }
+    }
+
     fn handle_key(&mut self, key: Key) -> bool {
         match self.mode.clone() {
             Mode::Normal => self.handle_normal_key(key),
@@ -1331,6 +1344,7 @@ impl Pager {
                         let direction = if direction == 'n' { "next" } else { "previous" };
                         self.command_error(format!("No {ordinal}{direction} file"), ErrorAction::Dismiss);
                     }
+                    Key::Char('f') => self.show_eof_file_info(),
                     Key::Char('q' | 'Q') => return true,
                     Key::Escape => {},
                     _ => self.bell_requested = true,
@@ -1410,18 +1424,7 @@ impl Pager {
                     self.command_error("Cannot seek to that file position".into(), ErrorAction::Dismiss);
                 }
             }
-            Key::Char('=') => {
-                if self.eof_displayed && self.filter.is_none() && self.files.count == 1
-                    && let Some(size) = self.buffer.eof_regular_size()
-                    && let (Some(name), Some(last)) = (&self.filename, self.last_visible_line) {
-                    let first = self.top_line + 1;
-                    let message = format!("{name} lines {first}-{}/{total} byte {size}/{size} (END)  (press RETURN)", last + 1, total = self.buffer.len());
-                    let repaint = self.squished;
-                    if repaint { self.position_initialized(); }
-                    self.status_msg = Some(message);
-                    self.mode = Mode::OptionNotice { repaint };
-                }
-            }
+            Key::Char('=') | Key::Ctrl('g') => self.show_eof_file_info(),
             Key::Char('m') => self.mode = Mode::SetMark,
             Key::Char('\'') => self.mode = Mode::JumpMark,
 
