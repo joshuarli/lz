@@ -150,6 +150,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12av accepted:** interactive differential cases use the pinned reference build's `lessecho` helper unless overridden; setup checks its version and fails when it is absent. Missing-file examine cases and all 51 admitted session cases passed on macOS arm64 and Linux arm64 Docker. The test environment contract changed.
 
+**S12bb accepted:** generator version 16 adds same- and opposite-direction search repeats, with movement preconditions that avoid accidental boundary bells. Generator controls and seeds 0–49 pass on macOS arm64 and Linux arm64 Docker; the macOS run included 14 repeat sequences. All-target Clippy passed on macOS. Other search forms and holdouts remain open.
+
 **S12ba accepted:** generator version 15 adds selective filtering and clearing with source-position checks. Generator controls and seeds 0–49 pass on macOS arm64 and Linux arm64 Docker; the macOS run included 13 filter actions. All-target Clippy passed on macOS. Broader filter and boundary interactions remain open.
 
 **S12az accepted:** generator version 14 adds missing-search acknowledgment alongside invalid commands within the existing 30-percent boundary weight. Generator controls and seeds 0–49 pass on macOS arm64 and Linux arm64 Docker; the macOS run included 56 missing-search actions. All-target Clippy passed on macOS. Remaining boundary classes and holdouts stay open.
