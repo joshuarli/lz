@@ -198,7 +198,7 @@ impl Scanner {
     fn apply_flag(&mut self, option: &OptionSpec, upper: bool, reset: bool) {
         match option.names[0] {
             "help" => self.args.action = Action::Help,
-            "version" => if !matches!(self.args.action, Action::Help) { self.args.action = Action::Version; },
+            "version" => self.args.action = Action::Version,
             "force" => self.args.force = !reset,
             "no-lessopen" => self.args.use_lessopen = reset,
             "quit-if-one-screen" => self.args.quit_if_one_screen = !reset,
@@ -304,7 +304,10 @@ impl Scanner {
                 (option, vec![b'-', byte], byte.is_ascii_uppercase())
             };
             match option.value {
-                ValueKind::Flag => self.apply_flag(option, upper, reset),
+                ValueKind::Flag => {
+                    self.apply_flag(option, upper, reset);
+                    if matches!(self.args.action, Action::Version) { return; }
+                }
                 ValueKind::Number | ValueKind::Text => {
                     if cursor == word.len() { self.pending = Some(option); return; }
                     cursor += self.value(option, &word[cursor..], label);
@@ -319,6 +322,7 @@ pub(super) fn parse(arguments: Vec<OsString>, defaults: Option<OsString>) -> Arg
     if let Some(defaults) = defaults { scanner.word(defaults.as_bytes()); }
     let mut arguments = arguments.into_iter();
     while let Some(argument) = arguments.next() {
+        if matches!(scanner.args.action, Action::Version) { break; }
         let bytes = argument.as_bytes();
         if bytes == b"--" { scanner.args.filenames.extend(arguments); break; }
         if let Some(option) = scanner.pending.take() {
@@ -344,6 +348,24 @@ pub(super) fn parse(arguments: Vec<OsString>, defaults: Option<OsString>) -> Arg
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn version_stops_option_scanning() {
+        for words in [["--help", "--version", "-Z"], ["--version", "--help", "-Z"]] {
+            let args = parse(words.into_iter().map(Into::into).collect(), None);
+            assert!(matches!(args.action, Action::Version));
+            assert!(args.diagnostics.is_empty());
+        }
+        let args = parse(vec!["-Z".into(), "--version".into(), "--help".into()], None);
+        assert!(matches!(args.action, Action::Version));
+        assert_eq!(args.diagnostics.len(), 1);
+        let args = parse(vec!["-VZ".into()], None);
+        assert!(matches!(args.action, Action::Version));
+        assert!(args.diagnostics.is_empty());
+        let args = parse(vec!["-Z".into()], Some("--help --version".into()));
+        assert!(matches!(args.action, Action::Version));
+        assert!(args.diagnostics.is_empty());
+    }
 
     #[test]
     fn negative_line_number_width_reports_an_error() {
