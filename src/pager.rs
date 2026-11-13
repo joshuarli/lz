@@ -946,12 +946,22 @@ impl Pager {
             return;
         };
         if setting {
-            if self.content_painted && self.top_line < self.buffer.len() { self.marks.insert(name, self.top_line); }
+            if self.content_painted && self.top_line < self.buffer.len() {
+                self.marks.insert(name, self.top_line);
+                if self.command_context == CommandContext::Interactive {
+                    self.squished = false;
+                    self.compact_initial = false;
+                }
+            }
             else { self.bell_requested = true; }
         }
         else if let Some(line) = self.marks.get(&name).copied().or_else(|| (character == '\'').then_some(0)) {
             let previous = self.top_line;
+            let previous_leading = self.leading_rows;
             self.position_initialized();
+            if self.content_painted && previous == line && previous_leading == 0 {
+                self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
+            }
             self.top_line = line;
             self.remember_jump_from(previous);
         } else { self.command_error("Mark not set".into(), ErrorAction::Dismiss); }
