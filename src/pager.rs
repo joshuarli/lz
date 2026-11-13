@@ -417,11 +417,37 @@ enum CommandContinuation { Inline, NextCommand }
 #[derive(Clone, Copy, PartialEq)]
 pub enum InitialDisplay { Startup, StartupFileSwitch(StartupFileSwitch), FileSwitch(Option<SavedPosition>) }
 
+#[derive(Clone, Copy)]
+enum ShiftValue { Default, Fixed(std::num::NonZeroUsize), Fraction(u32) }
+
+/// A validated horizontal shift, expressed in columns or as a fraction of the screen.
+#[derive(Clone, Copy)]
+pub struct HorizontalShift(ShiftValue);
+
+impl HorizontalShift {
+    /// Parse the less-compatible integer or decimal-fraction form.
+    pub fn parse(bytes: &[u8]) -> Option<Self> {
+        if let Some(digits) = bytes.strip_prefix(b".") {
+            if digits.is_empty() || !digits.iter().all(u8::is_ascii_digit) { return None; }
+            let mut fraction = 0u32;
+            for &digit in digits.iter().take(6) { fraction = fraction * 10 + u32::from(digit - b'0'); }
+            for _ in digits.len().min(6)..6 { fraction *= 10; }
+            return Some(Self(ShiftValue::Fraction(fraction)));
+        }
+        if bytes.is_empty() || !bytes.iter().all(u8::is_ascii_digit) { return None; }
+        let mut columns = 0u32;
+        for &digit in bytes { columns = columns.checked_mul(10)?.checked_add(u32::from(digit - b'0'))?; }
+        if columns > i32::MAX as u32 { return None; }
+        Some(Self(std::num::NonZeroUsize::new(columns as usize).map_or(ShiftValue::Default, ShiftValue::Fixed)))
+    }
+}
+
 /// Numeric scrolling defaults belong to the terminal session, across file visits.
 #[derive(Clone, Copy)]
 pub struct ScrollDefaults {
     half_page: std::num::NonZeroUsize,
     horizontal: Option<std::num::NonZeroUsize>,
+    horizontal_fraction: Option<u32>,
     window: WindowSize,
 }
 
@@ -439,8 +465,29 @@ impl WindowSize {
 
 impl ScrollDefaults {
     pub fn new(terminal_height: u16) -> Self {
-        Self { half_page: std::num::NonZeroUsize::new(usize::from(terminal_height).div_ceil(2).max(1)).unwrap(), horizontal: None, window: WindowSize::ScreenMinus(1) }
+        Self { half_page: std::num::NonZeroUsize::new(usize::from(terminal_height).div_ceil(2).max(1)).unwrap(), horizontal: None, horizontal_fraction: None, window: WindowSize::ScreenMinus(1) }
     }
+
+    /// Set the default horizontal shift; fractional settings follow terminal resizes.
+    pub fn set_horizontal_shift(&mut self, shift: HorizontalShift) {
+        (self.horizontal, self.horizontal_fraction) = match shift.0 {
+            ShiftValue::Default => (None, None),
+            ShiftValue::Fixed(columns) => (Some(columns), None),
+            ShiftValue::Fraction(fraction) => (None, Some(fraction)),
+        };
+    }
+
+    fn horizontal_step(self, width: u16) -> usize {
+        let fraction = self.horizontal_fraction.map(|fraction| {
+            let product = u64::from(width) * u64::from(fraction);
+            let whole = product / 1_000_000;
+            let remainder = product % 1_000_000;
+            (whole + u64::from(remainder > 500_000 || (remainder == 500_000 && whole % 2 != 0))) as usize
+        }).filter(|columns| *columns > 0);
+        self.horizontal.map(std::num::NonZeroUsize::get).or(fraction).unwrap_or_else(|| (usize::from(width) / 2).max(1))
+    }
+
+    fn resize(&mut self) { if self.horizontal_fraction.is_some() { self.horizontal = None; } }
 
     /// Positive settings select rows; nonpositive settings subtract from the current terminal height.
     pub fn set_window(&mut self, setting: i32) {
@@ -735,6 +782,7 @@ impl Pager {
                 let (w, h) = terminal::get_terminal_size();
                 self.term_width = w;
                 self.term_height = h;
+                self.scroll_defaults.resize();
                 redraw = true;
                 continue;
             }
@@ -742,6 +790,7 @@ impl Pager {
                 let (w, h) = terminal::get_terminal_size();
                 self.term_width = w;
                 self.term_height = h;
+                self.scroll_defaults.resize();
                 self.leading_rows = 0;
                 redraw = true;
                 continue;
@@ -1004,7 +1053,7 @@ impl Pager {
             Key::Right | Key::Left => {
                 self.position_initialized();
                 if let Some(amount) = count.and_then(std::num::NonZeroUsize::new) { self.scroll_defaults.horizontal = Some(amount); }
-                let amount = self.scroll_defaults.horizontal.map_or_else(|| (usize::from(self.term_width) / 2).max(1), std::num::NonZeroUsize::get);
+                let amount = self.scroll_defaults.horizontal_step(self.term_width);
                 if key == Key::Right { self.left_col = self.left_col.saturating_add(amount); }
                 else { self.left_col = self.left_col.saturating_sub(amount); }
             }

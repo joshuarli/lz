@@ -4185,10 +4185,23 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-shift-fixed",
+        "invocation-shift-fraction",
+        "invocation-shift-zero",
+        "invocation-shift-resize",
+        "invocation-shift-count-resize",
+        "invocation-shift-fixed-resize",
+        "invocation-shift-invalid",
+        "invocation-shift-invalid-fraction",
+        "invocation-shift-less-override",
+        "invocation-shift-rounding",
+        "invocation-shift-precision",
+        "invocation-shift-invalid-terminal"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Fixed, fractional and zero shifts, resize, counts, LESS precedence and named invalid inputs pass; overflow, other invalid forms, interactive toggles and cross-file interactions remain open"
     },
     {
       "id": "man-1305",

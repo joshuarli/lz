@@ -319,6 +319,7 @@ fn run() -> Result<ExitAction, String> {
     let mut display_anchor = pager::DisplayAnchor::new(if startup_one_screen { terminal::ScreenMode::Preserve } else { args.terminal.screen });
     let mut scroll_defaults = pager::ScrollDefaults::new(terminal::get_terminal_size().1);
     if let Some(window) = args.window { scroll_defaults.set_window(window); }
+    if let Some(shift) = args.horizontal_shift { scroll_defaults.set_horizontal_shift(shift); }
     let mut positions = vec![None; args.filenames.len()];
     let result = loop {
         let files = match pager::FileStatus::new(&args.filenames, file_index, charset) { Ok(files) => files, Err(error) => break close_opened(Err(error), opened, &mut session) };

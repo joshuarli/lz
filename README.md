@@ -70,6 +70,7 @@ PTY runs now use the same foreground-process supervisor for files and pipes. It 
 | `-a`, `--search-skip-screen` | Start searches beyond the displayed screen |
 | `-A`, `--SEARCH-SKIP-SCREEN` | Start searches beyond the target line |
 | `-xN,...`, `--tabs=N,...` | Set tab stops |
+| `-#N`, `--shift=N` | Set the horizontal step in columns or as a screen-width fraction |
 | `--line-num-width=N` | Set line-number width from 0 to 16 |
 | `-f`, `--force` | View binary files |
 | `-i`, `--ignore-case` | Use smart case for ASCII search |
