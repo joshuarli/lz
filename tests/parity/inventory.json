@@ -500,10 +500,17 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-repaint",
+        "navigation-repaint-control-r",
+        "navigation-repaint-control-l",
+        "navigation-repaint-short",
+        "navigation-repaint-short-primary",
+        "navigation-repaint-help"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named repaint keys preserve wrapped and help views and expand compact short files; changed input, resize and other interactions remain open"
     },
     {
       "id": "man-0108",
