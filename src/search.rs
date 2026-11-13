@@ -265,7 +265,7 @@ impl Search {
         self.is_match_raw(&stripped)
     }
 
-    fn is_match_raw(&self, text: &str) -> bool {
+    pub(crate) fn is_match_raw(&self, text: &str) -> bool {
         match &self.matcher {
             Matcher::Literal(bmh) => bmh.is_match(text.as_bytes()),
             Matcher::Regex(regex) => regex.is_match(text),
@@ -287,17 +287,26 @@ impl Search {
         }
     }
 
+    pub(crate) fn find_next_raw_line(&self, buffer: &mut LineBuffer, from_line: usize, forward: bool, nonmatch: bool) -> Option<usize> {
+        self.find_next_with(buffer, from_line, forward, nonmatch, true)
+    }
+
     pub(crate) fn find_next_nonmatching_line(&self, buffer: &mut LineBuffer, from_line: usize, forward: bool) -> Option<usize> {
+        self.find_next_with(buffer, from_line, forward, true, false)
+    }
+
+    fn find_next_with(&self, buffer: &mut LineBuffer, from_line: usize, forward: bool, nonmatch: bool, raw: bool) -> Option<usize> {
+        let matches = |line: &str| if raw { self.is_match_raw(line) } else { self.is_match(line) } != nonmatch;
         if forward {
             let mut line = from_line;
             loop {
-                if !self.is_match(buffer.get_line(line)?) { return Some(line); }
+                if matches(buffer.get_line(line)?) { return Some(line); }
                 line = line.checked_add(1)?;
             }
         } else {
             let mut line = from_line;
             while let Some(previous) = line.checked_sub(1) {
-                if !self.is_match(buffer.get_line(previous)?) { return Some(previous); }
+                if matches(buffer.get_line(previous)?) { return Some(previous); }
                 line = previous;
             }
             None
@@ -312,31 +321,7 @@ impl Search {
         from_line: usize,
         forward: bool,
     ) -> Option<usize> {
-        if forward {
-            let mut line_idx = from_line;
-            loop {
-                let line = buffer.get_line(line_idx)?;
-                if self.is_match(line) {
-                    return Some(line_idx);
-                }
-                line_idx += 1;
-            }
-        } else {
-            if from_line == 0 {
-                return None;
-            }
-            let mut line_idx = from_line - 1;
-            loop {
-                let line = buffer.get_line(line_idx)?;
-                if self.is_match(line) {
-                    return Some(line_idx);
-                }
-                if line_idx == 0 {
-                    return None;
-                }
-                line_idx -= 1;
-            }
-        }
+        self.find_next_with(buffer, from_line, forward, false, false)
     }
 }
 

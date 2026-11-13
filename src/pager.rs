@@ -1861,7 +1861,8 @@ impl Pager {
         let target = self.target_line();
         let forward = self.search_dir == SearchDir::Forward;
         let from = if forward { target } else { target.saturating_add(1) };
-        let found = if self.search_input_nonmatch { search.find_next_nonmatching_line(&mut self.buffer, from, forward) }
+        let found = if self.controls == ControlDisplay::Standard { search.find_next_raw_line(&mut self.buffer, from, forward, self.search_input_nonmatch) }
+            else if self.search_input_nonmatch { search.find_next_nonmatching_line(&mut self.buffer, from, forward) }
             else { search.find_next_line(&mut self.buffer, from, forward) };
         if let Some(line) = found {
             self.position_initialized();
@@ -1918,10 +1919,14 @@ impl Pager {
         } };
         let found = if self.filter.is_some() {
             let count = self.filtered_lines.len();
-            let mut matches = |index: &usize| self.buffer.get_line(self.filtered_lines[*index]).is_some_and(|line| search.is_match(line) != self.search_nonmatch);
+            let mut matches = |index: &usize| self.buffer.get_line(self.filtered_lines[*index]).is_some_and(|line| {
+                let matched = if self.controls == ControlDisplay::Standard { search.is_match_raw(line) } else { search.is_match(line) };
+                matched != self.search_nonmatch
+            });
             if forward { (from.min(count)..count).find(&mut matches) }
             else { (0..from.min(count)).rev().find(&mut matches) }
-        } else if self.search_nonmatch { search.find_next_nonmatching_line(&mut self.buffer, from, forward) }
+        } else if self.controls == ControlDisplay::Standard { search.find_next_raw_line(&mut self.buffer, from, forward, self.search_nonmatch) }
+        else if self.search_nonmatch { search.find_next_nonmatching_line(&mut self.buffer, from, forward) }
         else { search.find_next_line(&mut self.buffer, from, forward) };
         match found {
             Some(line) => {

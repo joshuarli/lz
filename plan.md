@@ -144,6 +144,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S07ap accepted:** normal-mode numeric-prefix display preserves zero and leading zeros in the tested count. The zero sequence and ordinary counted upstream movement pass on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Overflow display and other command modes remain open.
 
+**S08ar accepted (partial translation):** the `github329` OSC fixture and keep-position search match in standard display, including matching source bytes but not generated control labels; the OSC payload stays hidden in color mode. Three focused cases and neighboring search/color cases passed on macOS arm64 and Linux arm64 Docker; 40 search unit tests and all-target Clippy passed on macOS. Other control, filter, raw-mode and custom termcap interactions remain open.
+
 **S08aq accepted:** `man-0232` Ctrl-K keeps the tested plain-line view in place for a search; toggling it off, missing matches and subsequent repeat match the reference. Three new and neighboring search cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Incremental, control-notation, filtered and wrapped interactions remain open.
 
 **S12ak accepted (partial translation):** the remaining original `github216` right/left key sequence passes at named generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker, alongside the initial counted step. Original per-key and custom termcap checkpoints remain open.
