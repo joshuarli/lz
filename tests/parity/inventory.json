@@ -8488,9 +8488,9 @@
       "file": "lesstest/lt/subsearch.lt",
       "sha256": "785413f1e8553d61aad3a2f079d1d6bb2773b7b2b6714b209a26b26edfc043ea",
       "instrumented": "pass",
-      "cases": [],
-      "disposition": "pending translation",
-      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+      "cases": ["upstream-subsearch-initial-search"],
+      "disposition": "partial translation",
+      "cause": "The original fixture, first two movements and initial search pass generic-terminal checkpoints. Later search modifiers, repeat commands and original custom termcap remain untranslated."
     },
     {
       "id": "table-50x200",

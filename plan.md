@@ -150,6 +150,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12av accepted:** interactive differential cases use the pinned reference build's `lessecho` helper unless overridden; setup checks its version and fails when it is absent. Missing-file examine cases and all 51 admitted session cases passed on macOS arm64 and Linux arm64 Docker. The test environment contract changed.
 
+**S12ax accepted (partial translation):** the original `subsearch` fixture, first two movements and initial `es` search pass generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Later search modifiers, repeat commands and custom termcap remain open.
+
 **S12aw accepted (partial translation):** the original `utf8-2.txt` command sequence, including failed examine and the later color/navigation commands, passes generic-terminal checkpoints in C.UTF-8 on macOS arm64 and Linux arm64 Docker. Original custom termcap, intermediate per-key checkpoints and exact Linux en_US.UTF-8 remain open.
 
 **S09aa accepted (partial):** `E` and `:e` open tested literal regular-file paths, preserve the current pager on missing-file errors, navigate back and forward, and enforce secure-mode examine permission. Twelve focused cases and 51 neighboring session cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. `Config.allow_examine`, `PagerExit::Examine` and `Pager::examine_error` change the public pager contract; `PagerExit` is no longer `Copy`. Globbing, substitutions, unusual filenames, changed-file reopen, binary questions and helper interactions remain open.
