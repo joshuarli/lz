@@ -120,6 +120,7 @@ pub(super) struct Args {
     pub control_display: ControlDisplay,
     pub chop: bool,
     pub line_numbers: bool,
+    pub window: Option<i32>,
     pub search_case: CaseSensitivity,
     pub filenames: Vec<OsString>,
     pub stdin_explicit: bool,
@@ -129,7 +130,7 @@ pub(super) struct Args {
 
 impl Default for Args {
     fn default() -> Self {
-        Self { terminal: Default::default(), startup_commands: Vec::new(), tag: None, tags_file: None, force: false, control_display: ControlDisplay::default(), chop: false, line_numbers: false, search_case: CaseSensitivity::Sensitive,
+        Self { terminal: Default::default(), startup_commands: Vec::new(), tag: None, tags_file: None, force: false, control_display: ControlDisplay::default(), chop: false, line_numbers: false, window: None, search_case: CaseSensitivity::Sensitive,
             filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
@@ -153,7 +154,7 @@ fn description(option: &OptionSpec) -> Vec<u8> {
     } else { [b"--".as_slice(), option.names[0].as_bytes()].concat() }
 }
 
-enum NumberScan { Number(usize), Missing, Overflow(usize) }
+enum NumberScan { Number { bytes: usize, value: i32 }, Missing, Overflow(usize) }
 
 fn scan_number(bytes: &[u8]) -> NumberScan {
     let leading = bytes.iter().take_while(|byte| byte.is_ascii_whitespace()).count();
@@ -167,7 +168,8 @@ fn scan_number(bytes: &[u8]) -> NumberScan {
         value = value.saturating_mul(10).saturating_add(u64::from(byte - b'0'));
         overflow |= value > i32::MAX as u64;
     }
-    if overflow { NumberScan::Overflow(start + digits) } else { NumberScan::Number(start + digits) }
+    if overflow { NumberScan::Overflow(start + digits) }
+    else { NumberScan::Number { bytes: start + digits, value: if sign == 0 { value as i32 } else { -(value as i32) } } }
 }
 
 #[derive(Default)]
@@ -203,7 +205,10 @@ impl Scanner {
                 end
             },
             ValueKind::Number => match scan_number(payload) {
-                NumberScan::Number(bytes) => bytes,
+                NumberScan::Number { bytes, value } => {
+                    if option.names[0] == "window" { self.args.window = Some(value); }
+                    bytes
+                },
                 NumberScan::Missing => { self.args.diagnostics.push(Diagnostic::InvalidNumber(label)); 0 }
                 NumberScan::Overflow(bytes) => { self.args.diagnostics.push(Diagnostic::Overflow(label)); bytes }
             },

@@ -199,12 +199,30 @@ pub enum InitialDisplay { Startup, FileSwitch(Option<SavedPosition>) }
 #[derive(Clone, Copy)]
 pub struct ScrollDefaults {
     half_page: std::num::NonZeroUsize,
-    window: Option<std::num::NonZeroUsize>,
+    window: WindowSize,
+}
+
+#[derive(Clone, Copy)]
+enum WindowSize { Fixed(std::num::NonZeroUsize), ScreenMinus(u32) }
+
+impl WindowSize {
+    fn lines(self, terminal_height: u16) -> usize {
+        match self {
+            Self::Fixed(lines) => lines.get(),
+            Self::ScreenMinus(lines) => usize::from(terminal_height).saturating_sub(lines as usize),
+        }
+    }
 }
 
 impl ScrollDefaults {
     pub fn new(terminal_height: u16) -> Self {
-        Self { half_page: std::num::NonZeroUsize::new(usize::from(terminal_height).div_ceil(2).max(1)).unwrap(), window: None }
+        Self { half_page: std::num::NonZeroUsize::new(usize::from(terminal_height).div_ceil(2).max(1)).unwrap(), window: WindowSize::ScreenMinus(1) }
+    }
+
+    /// Positive settings select rows; nonpositive settings subtract from the current terminal height.
+    pub fn set_window(&mut self, setting: i32) {
+        self.window = if setting > 0 { WindowSize::Fixed(std::num::NonZeroUsize::new(setting as usize).unwrap()) }
+            else { WindowSize::ScreenMinus(setting.unsigned_abs()) };
     }
 }
 
@@ -510,10 +528,11 @@ impl Pager {
             }
             Key::Char(' ' | 'f' | 'z' | 'b' | 'w') | Key::PageDown | Key::PageUp | Key::Ctrl('f' | 'v' | 'b') => {
                 if matches!(key, Key::Char('z' | 'w')) && let Some(amount) = count.and_then(std::num::NonZeroUsize::new) {
-                    self.scroll_defaults.window = Some(amount);
+                    self.scroll_defaults.window = WindowSize::Fixed(amount);
                 }
-                let amount = count.unwrap_or_else(|| self.scroll_defaults.window.map_or(self.content_height(), std::num::NonZeroUsize::get));
-                if matches!(key, Key::Char('b' | 'w') | Key::PageUp | Key::Ctrl('b')) { self.scroll_up(amount); }
+                let amount = count.unwrap_or_else(|| self.scroll_defaults.window.lines(self.term_height));
+                if amount == 0 { self.bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now()); }
+                else if matches!(key, Key::Char('b' | 'w') | Key::PageUp | Key::Ctrl('b')) { self.scroll_up(amount); }
                 else { self.scroll_down(amount); }
             }
             Key::Char('g' | '<') | Key::Home => {

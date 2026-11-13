@@ -1,5 +1,5 @@
 use std::io::{self, Write};
-use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU64, Ordering};
 use std::sync::Mutex;
 
 unsafe extern "C" {
@@ -48,6 +48,7 @@ pub static TERMINATION_SIGNAL: AtomicI32 = AtomicI32::new(0);
 static ALT_SCREEN: AtomicBool = AtomicBool::new(false);
 static APPLICATION_MODES: AtomicBool = AtomicBool::new(false);
 static INTERACTIVE_ACTIVE: AtomicBool = AtomicBool::new(false);
+static EOF_BELL: BellRate = BellRate(AtomicU64::new(0));
 static TTY_FD: AtomicI32 = AtomicI32::new(-1);
 
 #[cfg(target_os = "macos")]
@@ -87,6 +88,17 @@ struct Winsize {
 
 static ORIG_TERMIOS: Mutex<Option<Termios>> = Mutex::new(None);
 static SESSION_ACTIVE: AtomicBool = AtomicBool::new(false);
+
+struct BellRate(AtomicU64);
+
+impl BellRate {
+    fn request(&self, at: std::time::SystemTime) -> bool {
+        let second = at.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
+        self.0.swap(second, Ordering::SeqCst) != second
+    }
+}
+
+pub(crate) fn request_eof_bell(at: std::time::SystemTime) -> bool { EOF_BELL.request(at) }
 
 extern "C" fn handle_winch(_sig: i32) {
     WINCH_FLAG.store(true, Ordering::SeqCst);
@@ -335,5 +347,20 @@ impl Drop for Session {
             unsafe { signal(number, handler); }
         }
         SESSION_ACTIVE.store(false, Ordering::SeqCst);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn boundary_bell_follows_wall_clock_seconds() {
+        let rate = BellRate(AtomicU64::new(0));
+        let at = |second| std::time::UNIX_EPOCH + std::time::Duration::from_secs(second);
+        assert!(rate.request(at(10)));
+        assert!(!rate.request(at(10)));
+        assert!(rate.request(at(11)));
+        assert!(rate.request(at(9)));
     }
 }

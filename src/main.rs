@@ -25,6 +25,9 @@ OPTIONS:
     -f, --force View binary files
     -i          Ignore ASCII case unless the pattern has uppercase
     -I          Always ignore ASCII case
+    -zN, --window=N  Set the scrolling window (negative: screen-relative)
+    -X, --no-init   Preserve the primary screen
+    --no-keypad     Keep normal cursor and keypad modes
     -r, --raw   Raw mode (show ANSI escapes literally)
     -?, --help  Show this help
     -V, --version  Show version
@@ -34,7 +37,7 @@ KEYS:
     Space/PgDn  Page down          b/PgUp      Page up
     d/Ctrl-D    Half page down     u/Ctrl-U    Half page up
     g/Home      Top                G/End       Bottom
-    Left/Right  Horizontal scroll  w           Toggle wrap
+    Left/Right  Horizontal scroll  z/w         Forward/backward window
     /           Search forward     ?           Search backward
     n/N         Next/prev match    &           Filter lines
     F           Enter follow mode  h           Help
@@ -216,6 +219,7 @@ fn run() -> Result<ExitAction, String> {
     let mut initial_display = pager::InitialDisplay::Startup;
     let mut display_anchor = pager::DisplayAnchor::new(args.terminal.screen);
     let mut scroll_defaults = pager::ScrollDefaults::new(terminal::get_terminal_size().1);
+    if let Some(window) = args.window { scroll_defaults.set_window(window); }
     let mut positions = vec![None; args.filenames.len()];
     let result = loop {
         let files = match pager::FileStatus::new(&args.filenames, file_index, charset) { Ok(files) => files, Err(error) => break Err(error) };

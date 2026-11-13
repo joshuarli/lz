@@ -80,7 +80,7 @@ Search is case-sensitive by default. Regex highlighting selects the longest matc
 | `Left` / `Right` | Horizontal scroll |
 | `m` + letter / `'` + letter | Set / return to an in-file mark |
 
-Default page movement uses one content viewport; half-page movement uses half the terminal height rounded up. A numeric `d` or `u` sets the default for both directions. `z` and `w` move forward and backward by a window; a numeric prefix updates the window used by both directions and page commands. These defaults survive file switches. Zero prefixes retain the current default. Plain-line aliases include `e`, Ctrl-E/Ctrl-N, `y`, Ctrl-Y/Ctrl-P/Ctrl-K, `f`, Ctrl-V and `<`/`>`. CLI window configuration, wrapped movement and resized geometry remain unfinished.
+Default page movement uses one content viewport; half-page movement uses half the terminal height rounded up. A numeric `d` or `u` sets the default for both directions. `z` and `w` move forward and backward by a window; a numeric prefix updates the window used by both directions and page commands. These defaults survive file switches. Zero command prefixes retain the current default. `-zN`, `--window=N` and `-N` configure the window at startup. Positive sizes stay fixed; zero uses the terminal height and negative values subtract from it, updating after resize. A nonpositive effective window keeps the position and rings a boundary bell, at most once per wall-clock second. Plain-line aliases include `e`, Ctrl-E/Ctrl-N, `y`, Ctrl-Y/Ctrl-P/Ctrl-K, `f`, Ctrl-V and `<`/`>`. Wrapped movement and custom header interactions remain unfinished.
 
 ### Search
 

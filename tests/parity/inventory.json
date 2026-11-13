@@ -3793,10 +3793,25 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-window-short",
+        "invocation-window-long",
+        "invocation-window-number",
+        "invocation-window-negative",
+        "invocation-window-zero",
+        "invocation-window-environment",
+        "invocation-window-override",
+        "invocation-window-separated",
+        "invocation-window-reset-prefix",
+        "invocation-window-resize-negative",
+        "invocation-window-resize-fixed",
+        "invocation-window-resize-zero",
+        "invocation-window-negative-over-screen",
+        "invocation-window-negative-over-screen-backward"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Signed/zero/fixed CLI windows, numeric alias, LESS precedence, resize, EOF clamping and nonpositive-window bells pass on macOS arm64; custom headers, wrapped geometry and other platforms remain untested"
     },
     {
       "id": "man-1278",
