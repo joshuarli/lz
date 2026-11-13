@@ -713,7 +713,7 @@ pub struct Config {
     pub startup_commands: Vec<Vec<u8>>,
     pub charset: Charset,
     pub controls: ControlDisplay,
-    /// Select UI colors; prompt and notice colors are implemented.
+    /// Select UI colors; prompt, notice and unstyled search colors are implemented.
     pub use_color: bool,
     pub chop: bool,
     pub line_numbers: LineNumberMode,
@@ -2311,6 +2311,7 @@ impl Pager {
             let stripped = strip_ansi(display);
             let matches: Vec<_> = search.find_matches_stripped(&stripped).into_iter().filter(|(start, end)| start < end).collect();
             if !matches.is_empty() {
+                let colored = self.use_color && !display.as_bytes().contains(&0x1b);
                 let mut source = 0;
                 let mut visible = 0;
                 let mut next_match = 0;
@@ -2318,12 +2319,13 @@ impl Pager {
                 let mut inverse = false;
                 while source < display.len() {
                     if highlighted && visible == matches[next_match].1 {
-                        if !inverse { buf.extend_from_slice(b"\x1b[27m"); }
+                        if colored { buf.extend_from_slice(b"\x1b[39;49m"); }
+                        else if !inverse { buf.extend_from_slice(b"\x1b[27m"); }
                         highlighted = false;
                         next_match += 1;
                     }
                     if !highlighted && matches.get(next_match).is_some_and(|(start, _)| *start == visible) {
-                        buf.extend_from_slice(b"\x1b[7m");
+                        buf.extend_from_slice(if colored { b"\x1b[30;102m" } else { b"\x1b[7m" });
                         highlighted = true;
                     }
                     let escape = if display.as_bytes()[source] == 0x1b { crate::ansi::string_escape_seq_len(display, source) } else { 0 };
@@ -2339,7 +2341,10 @@ impl Pager {
                         visible += 1;
                     }
                 }
-                if highlighted && !inverse { buf.extend_from_slice(b"\x1b[27m"); }
+                if highlighted {
+                    if colored { buf.extend_from_slice(b"\x1b[39;49m"); }
+                    else if !inverse { buf.extend_from_slice(b"\x1b[27m"); }
+                }
                 return;
             }
         }

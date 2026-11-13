@@ -122,6 +122,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12z accepted (partial translation):** the actual `chinese1` search for Unicode `上` after six forced-scroll steps passes on macOS arm64 and Linux arm64 Docker. Later option and search steps and custom termcap remain open.
 
+**S08r accepted:** `man-1534` colors search matches in unstyled text, including the actual `chinese1` option sequence after its Unicode search. Two new cases and existing inverse/colored-source regressions passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Styled-source color overlays and other UI color classes remain open.
+
 **S07aj accepted:** seed 117 exposed a `terminal-lifecycle` resize position mismatch after returning to a file and moving to its first line. The reference preserves position zero in a newly grown table, treats that table as empty, and restores the file-entry position. The pager now retains the maximum position-table height across visits and follows the tested behavior. Seven minimal and boundary cases plus neighboring resize cases passed on macOS arm64 and Linux arm64 Docker; seed 117 and all-target Clippy passed on macOS. Wrapped, filtered and other resize interactions remain open.
 
 **S04au:** interactive `-R` toggles color display and carries it across file switches. Six cases pass on macOS and in a Linux arm64 container, covering the upstream `github329` fixture, short and long views, raw mode, prompt replay and interruption. `Pager::control_display` exposes the current mode. Other option commands, suppression, queries and startup interactions remain open; the upstream translation is partial.

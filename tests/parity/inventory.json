@@ -998,7 +998,9 @@
         "search-highlight-sgr-inside-match",
         "search-highlight-existing-inverse",
         "upstream-github216-color-searches",
-        "upstream-chinese1-unicode-search"
+        "upstream-chinese1-unicode-search",
+        "upstream-chinese1-use-color",
+        "search-ui-color-plain-multiple"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
@@ -4999,10 +5001,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["rendering-chinese-use-color-after-missing", "invocation-use-color-startup", "sessions-use-color-next-file", "invocation-use-color-disable", "invocation-use-color-query-reset"],
+      "cases": ["rendering-chinese-use-color-after-missing", "invocation-use-color-startup", "sessions-use-color-next-file", "invocation-use-color-disable", "invocation-use-color-query-reset", "upstream-chinese1-use-color", "search-ui-color-plain-multiple"],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "The tested startup and interactive use-color settings color prompts and notices and persist across files. Search highlights, other color classes and custom colors remain open."
+      "cause": "The tested startup and interactive use-color settings color prompts and notices and persist across files. Plain-text search highlights use the default color in the named cases. Styled-source overlays, other color classes and custom colors remain open."
     },
     {
       "id": "man-1542",
@@ -8374,9 +8376,9 @@
       "file": "lesstest/lt/chinese1.lt",
       "sha256": "d81a2c4d23f16ab28169e62f7be6dbf54090a1d0ea332f7ba7f9453b0afae1d7",
       "instrumented": "pass",
-      "cases": ["upstream-chinese1-scroll", "upstream-chinese1-force-boundary", "upstream-chinese1-unicode-search"],
+      "cases": ["upstream-chinese1-scroll", "upstream-chinese1-force-boundary", "upstream-chinese1-unicode-search", "upstream-chinese1-use-color"],
       "disposition": "partial translation",
-      "cause": "The original fixture, first six scrolling steps and subsequent Unicode search are covered with a generic terminal. The following option command, remaining keys and custom termcap checkpoints are untranslated. Remaining keys and original custom termcap checkpoints are untranslated."
+      "cause": "The original fixture, first six scrolling steps, Unicode search and following use-color command are covered with a generic terminal. The remaining keys and custom termcap checkpoints are untranslated. Remaining keys and original custom termcap checkpoints are untranslated."
     },
     {
       "id": "colorbars",
