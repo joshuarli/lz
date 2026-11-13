@@ -1447,22 +1447,35 @@
         "linux-musl"
       ],
       "cases": [
+        "sessions-control-next-name",
+        "sessions-file-boundary-dispatch-key",
+        "sessions-next-file-boundary",
+        "sessions-next-file-count-boundary",
         "sessions-next-previous",
         "sessions-next-previous-short",
-        "sessions-control-next-name",
         "sessions-next-term",
-        "sessions-remember-positions",
-        "sessions-remember-eof",
         "sessions-numeric-file-traversal",
-        "sessions-next-file-count-boundary",
-        "sessions-prev-file-count-boundary",
         "sessions-prev-file-boundary",
-        "sessions-next-file-boundary",
-        "sessions-file-boundary-dispatch-key"
+        "sessions-prev-file-count-boundary",
+        "sessions-remember-eof",
+        "sessions-remember-positions",
+        "sessions-startup-file-count",
+        "sessions-startup-files-back",
+        "sessions-startup-files-bare",
+        "sessions-startup-files-empty",
+        "sessions-startup-files-inline",
+        "sessions-startup-files-no-init",
+        "sessions-startup-files-no-init-short",
+        "sessions-startup-files-position",
+        "sessions-startup-files-separate",
+        "sessions-startup-files-separate-position",
+        "sessions-startup-files-short",
+        "sessions-startup-files-wide",
+        "sessions-startup-files-zero"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Ordinary numeric next/previous traversal and zero defaults pass across a CLI file list. Boundary errors use the reference N-th wording, consume Enter and dispatch other acknowledgment keys. Missing-file skipping, tags, wrapped positions and startup command echo remain open"
+      "cause": "Ordinary and startup numeric file-list traversal pass, retaining input origins and command boundaries. Boundary errors consume Enter and dispatch other keys. Missing-file skipping, tags, wrapped/changed-file positions and examine remain open"
     },
     {
       "id": "man-0367",
@@ -1479,22 +1492,35 @@
         "linux-musl"
       ],
       "cases": [
+        "sessions-control-next-name",
+        "sessions-file-boundary-dispatch-key",
+        "sessions-next-file-boundary",
+        "sessions-next-file-count-boundary",
         "sessions-next-previous",
         "sessions-next-previous-short",
-        "sessions-control-next-name",
         "sessions-next-term",
-        "sessions-remember-positions",
-        "sessions-remember-eof",
         "sessions-numeric-file-traversal",
-        "sessions-next-file-count-boundary",
-        "sessions-prev-file-count-boundary",
         "sessions-prev-file-boundary",
-        "sessions-next-file-boundary",
-        "sessions-file-boundary-dispatch-key"
+        "sessions-prev-file-count-boundary",
+        "sessions-remember-eof",
+        "sessions-remember-positions",
+        "sessions-startup-file-count",
+        "sessions-startup-files-back",
+        "sessions-startup-files-bare",
+        "sessions-startup-files-empty",
+        "sessions-startup-files-inline",
+        "sessions-startup-files-no-init",
+        "sessions-startup-files-no-init-short",
+        "sessions-startup-files-position",
+        "sessions-startup-files-separate",
+        "sessions-startup-files-separate-position",
+        "sessions-startup-files-short",
+        "sessions-startup-files-wide",
+        "sessions-startup-files-zero"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Ordinary numeric next/previous traversal and zero defaults pass across a CLI file list. Boundary errors use the reference N-th wording, consume Enter and dispatch other acknowledgment keys. Missing-file skipping, tags, wrapped positions and startup command echo remain open"
+      "cause": "Ordinary and startup numeric file-list traversal pass, retaining input origins and command boundaries. Boundary errors consume Enter and dispatch other keys. Missing-file skipping, tags, wrapped/changed-file positions and examine remain open"
     },
     {
       "id": "man-0370",
@@ -1815,19 +1841,31 @@
         "linux-musl"
       ],
       "cases": [
-        "invocation-startup-number",
-        "invocation-startup-line-command",
         "invocation-startup-end-command",
-        "invocation-startup-movement-command",
         "invocation-startup-layout-0",
         "invocation-startup-layout-1",
         "invocation-startup-layout-2",
         "invocation-startup-layout-3",
-        "sessions-startup-file-count"
+        "invocation-startup-line-command",
+        "invocation-startup-movement-command",
+        "invocation-startup-number",
+        "sessions-startup-file-count",
+        "sessions-startup-files-back",
+        "sessions-startup-files-bare",
+        "sessions-startup-files-empty",
+        "sessions-startup-files-inline",
+        "sessions-startup-files-no-init",
+        "sessions-startup-files-no-init-short",
+        "sessions-startup-files-position",
+        "sessions-startup-files-separate",
+        "sessions-startup-files-separate-position",
+        "sessions-startup-files-short",
+        "sessions-startup-files-wide",
+        "sessions-startup-files-zero"
       ],
       "implementation": "partial",
-      "evidence": "partially compatible",
-      "cause": "Existing numeric and movement startup cases pass. The +2:n discovery retains command text before the oracle first content line; lz currently redraws that text away. Keep the strict mismatch for S04m startup-rendering work; every-file scope and other interactions remain open"
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Numeric/movement startup and file-switch input origins pass, including inline continuation, separate-command frame boundaries, short/empty/wide files, -X and bare/zero counts. Subsequent commands preserve first-prompt lifetime. Every-file scope and other command interactions remain open"
     },
     {
       "id": "man-0444",
@@ -4603,19 +4641,31 @@
         "linux-musl"
       ],
       "cases": [
-        "invocation-startup-number",
-        "invocation-startup-line-command",
         "invocation-startup-end-command",
-        "invocation-startup-movement-command",
         "invocation-startup-layout-0",
         "invocation-startup-layout-1",
         "invocation-startup-layout-2",
         "invocation-startup-layout-3",
-        "sessions-startup-file-count"
+        "invocation-startup-line-command",
+        "invocation-startup-movement-command",
+        "invocation-startup-number",
+        "sessions-startup-file-count",
+        "sessions-startup-files-back",
+        "sessions-startup-files-bare",
+        "sessions-startup-files-empty",
+        "sessions-startup-files-inline",
+        "sessions-startup-files-no-init",
+        "sessions-startup-files-no-init-short",
+        "sessions-startup-files-position",
+        "sessions-startup-files-separate",
+        "sessions-startup-files-separate-position",
+        "sessions-startup-files-short",
+        "sessions-startup-files-wide",
+        "sessions-startup-files-zero"
       ],
       "implementation": "partial",
-      "evidence": "partially compatible",
-      "cause": "Existing numeric and movement startup cases pass. The +2:n discovery retains command text before the oracle first content line; lz currently redraws that text away. Keep the strict mismatch for S04m startup-rendering work; every-file scope and other interactions remain open"
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Numeric/movement startup and file-switch input origins pass, including inline continuation, separate-command frame boundaries, short/empty/wide files, -X and bare/zero counts. Subsequent commands preserve first-prompt lifetime. Every-file scope and other command interactions remain open"
     },
     {
       "id": "man-1571",

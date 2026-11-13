@@ -26,6 +26,7 @@ struct Frame {
     bytes: Vec<u8>,
     relative_row: Option<usize>,
     padding: usize,
+    retain_initial_column: bool,
 }
 
 impl std::ops::Deref for Frame {
@@ -39,6 +40,7 @@ impl std::ops::DerefMut for Frame {
 
 impl Frame {
     fn position(&mut self, row: usize) {
+        if std::mem::take(&mut self.retain_initial_column) { return; }
         if let Some(previous) = self.relative_row {
             let row = row.saturating_sub(self.padding);
             self.bytes.push(b'\r');
@@ -194,14 +196,34 @@ pub enum PagerExit { Quit, VisitFile(FileVisit) }
 
 /// A file index validated against the configured command-line file list.
 #[derive(Clone, Copy)]
-pub struct FileVisit { index: usize }
+pub struct FileVisit { index: usize, startup_command: Option<StartupFileSwitch> }
+
+#[derive(Clone, Copy, PartialEq)]
+enum FileCommand { Next, Previous }
+
+impl FileCommand {
+    fn key(self) -> u8 { match self { Self::Next => b'n', Self::Previous => b'p' } }
+}
 
 impl FileVisit {
     pub fn index(self) -> usize { self.index }
+
+    pub fn initial_display(self, position: Option<SavedPosition>) -> InitialDisplay {
+        match self.startup_command {
+            Some(switch) if position.is_none() => InitialDisplay::StartupFileSwitch(switch),
+            _ => InitialDisplay::FileSwitch(position),
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq)]
-pub enum InitialDisplay { Startup, FileSwitch(Option<SavedPosition>) }
+pub struct StartupFileSwitch { command: FileCommand, continuation: CommandContinuation }
+
+#[derive(Clone, Copy, PartialEq)]
+enum CommandContinuation { Inline, NextCommand }
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum InitialDisplay { Startup, StartupFileSwitch(StartupFileSwitch), FileSwitch(Option<SavedPosition>) }
 
 /// Numeric scrolling defaults belong to the terminal session, across file visits.
 #[derive(Clone, Copy)]
@@ -268,6 +290,8 @@ pub struct Config {
 }
 
 pub struct Pager {
+    startup_echo: Option<FileCommand>,
+    paint_before_commands: bool,
     scroll_defaults: ScrollDefaults,
     display_anchor: DisplayAnchor,
     buffer: LineBuffer,
@@ -312,6 +336,8 @@ impl Pager {
     ) -> Self {
         let (w, h) = terminal::get_terminal_size();
         Pager {
+            startup_echo: match config.initial_display { InitialDisplay::StartupFileSwitch(switch) => Some(switch.command), _ => None },
+            paint_before_commands: matches!(config.initial_display, InitialDisplay::StartupFileSwitch(StartupFileSwitch { continuation: CommandContinuation::NextCommand, .. })) && !config.startup_commands.is_empty(),
             scroll_defaults: config.scroll_defaults,
             display_anchor: config.display_anchor,
             buffer,
@@ -358,6 +384,9 @@ impl Pager {
 
     pub fn scroll_defaults(&self) -> ScrollDefaults { self.scroll_defaults }
 
+    /// Transfer startup input that remains after a file switch to the next pager.
+    pub fn take_startup_commands(&mut self) -> Vec<Vec<u8>> { self.startup_commands.drain(..).collect() }
+
     pub fn into_history(mut self) -> SearchHistory {
         if self.content_painted && !self.buffer.is_empty() { self.history.note_position(); }
         self.history
@@ -376,7 +405,16 @@ impl Pager {
             keys.set_command_input(command);
             while keys.has_command_input() {
                 if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return Ok(true); }
-                if self.handle_key(keys.read_key()?) { return Ok(true); }
+                if self.handle_key(keys.read_key()?) {
+                    if let PagerExit::VisitFile(visit) = &mut self.exit {
+                        let remainder = keys.take_command_input();
+                        if !remainder.is_empty() {
+                            if let Some(switch) = &mut visit.startup_command { switch.continuation = CommandContinuation::Inline; }
+                            self.startup_commands.push_front(remainder);
+                        }
+                    }
+                    return Ok(true);
+                }
                 if matches!(self.mode, Mode::CommandError(_)) { break; }
                 if self.command_context == CommandContext::StartupAborted { keys.set_command_input(Vec::new()); break; }
             }
@@ -389,12 +427,16 @@ impl Pager {
             else if self.numeric_prefix != NumericPrefix::Empty { self.handle_normal_key(Key::Char('g')); }
             if matches!(self.mode, Mode::CommandError(_)) { return Ok(false); }
         }
-        self.filename_prompt = true;
+        self.filename_prompt = !self.content_painted;
         self.command_context = CommandContext::Interactive;
         Ok(false)
     }
 
     pub fn run(&mut self, keys: &mut KeyReader) -> io::Result<PagerExit> {
+        if std::mem::take(&mut self.paint_before_commands) {
+            self.render()?;
+            self.command_context = CommandContext::Interactive;
+        }
         if self.run_startup_commands(keys)? { return Ok(self.exit); }
 
         let mut redraw = true;
@@ -461,7 +503,12 @@ impl Pager {
                         let count = count.get();
                         let target = if direction == 'n' { self.files.index.checked_add(count) } else { self.files.index.checked_sub(count) };
                         if let Some(index) = target.filter(|index| *index < self.files.count) {
-                            self.exit = PagerExit::VisitFile(FileVisit { index });
+                            let startup_command = (self.command_context != CommandContext::Interactive)
+                                .then_some(StartupFileSwitch {
+                                    command: if direction == 'n' { FileCommand::Next } else { FileCommand::Previous },
+                                    continuation: CommandContinuation::NextCommand,
+                                });
+                            self.exit = PagerExit::VisitFile(FileVisit { index, startup_command });
                             return true;
                         }
                         let ordinal = if count > 1 { "(N-th) " } else { "" };
@@ -659,6 +706,7 @@ impl Pager {
     }
 
     fn position_initialized(&mut self) {
+        self.startup_echo = None;
         if self.command_context == CommandContext::StartupUnpositioned { self.command_context = CommandContext::StartupPositioned; }
     }
 
@@ -933,7 +981,7 @@ impl Pager {
             self.buffer.byte_prefix(0, 0)?;
             if self.buffer.is_empty() && self.buffer.state() == crate::buffer::SourceState::Waiting { return Ok(()); }
         }
-        let mut buf = Frame { bytes: Vec::with_capacity(4096), relative_row: self.display_anchor.row, padding: 0 };
+        let mut buf = Frame { bytes: Vec::with_capacity(4096), relative_row: self.display_anchor.row, padding: 0, retain_initial_column: false };
         let w = self.term_width as usize;
         let ch = self.content_height();
 
@@ -949,6 +997,14 @@ impl Pager {
             return stdout.flush();
         }
         let first_row = if self.mode == Mode::Help { 0 } else { self.initial_content_row(w, ch)? };
+        let primary = self.display_anchor.row.is_some();
+        if let Some(command) = self.startup_echo.take() {
+            if !primary { terminal::move_cursor(&mut buf, self.term_height.saturating_sub(1), 0); }
+            buf.extend_from_slice(b"\r\x1b[K :");
+            buf.push(command.key());
+            buf.relative_row = Some(0);
+            buf.retain_initial_column = true;
+        }
         if buf.relative_row.is_some() { buf.padding = first_row; }
         else { for row in 0..first_row { buf.position(row); terminal::clear_line(&mut buf); } }
         if self.mode == Mode::Help {
@@ -961,7 +1017,7 @@ impl Pager {
 
         if let Some(error) = self.buffer.take_error() { return Err(error); }
         self.render_status(&mut buf, w);
-        self.display_anchor.row = buf.relative_row;
+        self.display_anchor.row = if primary { buf.relative_row } else { None };
         if self.display_anchor.row.is_none() { self.compact_initial = false; }
         self.content_painted = true;
         buf.extend_from_slice(b"\x1b[?25h");

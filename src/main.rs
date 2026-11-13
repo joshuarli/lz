@@ -236,12 +236,14 @@ fn run() -> Result<ExitAction, String> {
         positions[file_index] = pager.saved_position();
         display_anchor = pager.display_anchor();
         scroll_defaults = pager.scroll_defaults();
+        args.startup_commands = pager.take_startup_commands();
         history = pager.into_history();
-        match result {
+        let visit = match result {
             Err(error) => break Err(error),
             Ok(pager::PagerExit::Quit) => break Ok(ExitAction::Success),
-            Ok(pager::PagerExit::VisitFile(visit)) => file_index = visit.index(),
-        }
+            Ok(pager::PagerExit::VisitFile(visit)) => visit,
+        };
+        file_index = visit.index();
         opened = match open_input(&args.filenames[file_index], charset, args.control_display, args.force) {
             Ok(input) => input, Err(error) => break Err(error),
         };
@@ -253,7 +255,7 @@ fn run() -> Result<ExitAction, String> {
                 Err(error) => break Err(error),
             }
         }
-        initial_display = pager::InitialDisplay::FileSwitch(positions[file_index]);
+        initial_display = visit.initial_display(positions[file_index]);
     };
     if let Some(file) = history_file { file.save(&mut history); }
     finish_session(result, session)
