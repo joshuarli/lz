@@ -406,6 +406,7 @@ pub struct Pager {
     squished: bool,
     bottom_aligned: bool,
     leading_rows: usize,
+    end_mark_from: Option<MarkPosition>,
     follow_one_screen: bool,
     follow_screen_overflowed: bool,
     bottom_gap: usize,
@@ -465,6 +466,7 @@ impl Pager {
             squished: false,
             bottom_aligned: false,
             leading_rows: 0,
+            end_mark_from: None,
             follow_one_screen: false,
             follow_screen_overflowed: false,
             bottom_gap: 0,
@@ -938,7 +940,16 @@ impl Pager {
         if !setting {
             match character {
                 '^' => { self.handle_normal_key(Key::Char('g')); return; }
-                '$' => { let previous = self.mark_position(); self.buffer.read_all(); self.scroll_to_bottom(); self.remember_jump_from(previous); return; }
+                '$' => {
+                    let previous = self.mark_position();
+                    self.position_initialized();
+                    self.buffer.read_all();
+                    self.scroll_to_bottom();
+                    self.bottom_aligned = true;
+                    self.end_mark_from = Some(previous);
+                    self.remember_jump_from(previous);
+                    return;
+                }
                 '.' => {
                     if self.content_painted {
                         self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
@@ -1285,6 +1296,12 @@ impl Pager {
         let w = self.term_width as usize;
         let ch = self.content_height();
 
+        if let Some(previous) = self.end_mark_from.take() {
+            let target = MarkPosition { line:self.top_line, leading_rows:self.initial_content_row(w, ch)? };
+            if self.content_painted && previous == target {
+                self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
+            }
+        }
         let boundary_bell = std::mem::take(&mut self.boundary_bell_requested);
         let general_bell = std::mem::take(&mut self.bell_requested);
         if boundary_bell && self.bell_policy.is_audible(terminal::BellKind::Boundary) { buf.push(7); }
