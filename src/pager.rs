@@ -796,6 +796,7 @@ pub struct Pager {
     squished: bool,
     bottom_aligned: bool,
     leading_rows: usize,
+    forced_leading_rows: bool,
     end_mark_from: Option<MarkPosition>,
     follow_one_screen: bool,
     follow_screen_overflowed: bool,
@@ -874,6 +875,7 @@ impl Pager {
             squished: false,
             bottom_aligned: false,
             leading_rows: 0,
+            forced_leading_rows: false,
             end_mark_from: None,
             follow_one_screen: false,
             follow_screen_overflowed: false,
@@ -1457,20 +1459,24 @@ impl Pager {
             Key::Char('k' | 'y') | Key::Ctrl('y' | 'p' | 'k') | Key::Up => self.scroll_up(count.unwrap_or(1)),
             Key::Char('J') => {
                 let leading = self.leading_rows;
+                let forced = self.forced_leading_rows;
                 self.position_initialized();
                 let moved = leading.min(count.unwrap_or(1));
                 self.leading_rows = leading - moved;
+                self.forced_leading_rows = forced && self.leading_rows > 0;
                 let target = self.top_line.saturating_add(count.unwrap_or(1) - moved);
                 if self.filter.is_none() { self.buffer.get_line(target); }
                 self.top_line = target.min(self.display_line_count().saturating_sub(1));
             }
             Key::Char('K' | 'Y') => {
                 let leading = self.leading_rows;
+                let forced = self.forced_leading_rows;
                 self.position_initialized();
                 let amount = count.unwrap_or(1);
                 let moved = self.top_line.min(amount);
                 self.top_line -= moved;
                 self.leading_rows = leading.saturating_add(amount - moved).min(self.content_height());
+                self.forced_leading_rows = self.leading_rows > 0 && (forced || amount > moved);
             }
             Key::Char('d' | 'u') | Key::Ctrl('d' | 'u') => {
                 if let Some(amount) = count.and_then(std::num::NonZeroUsize::new) { self.scroll_defaults.half_page = amount; }
@@ -1726,6 +1732,7 @@ impl Pager {
         self.squished = false;
         self.bottom_aligned = false;
         self.leading_rows = 0;
+        self.forced_leading_rows = false;
         self.startup_echo = None;
         if self.content_painted && self.command_context == CommandContext::Interactive { self.compact_initial = false; }
         if self.command_context == CommandContext::StartupUnpositioned { self.command_context = CommandContext::StartupPositioned; }
@@ -1929,7 +1936,7 @@ impl Pager {
     }
 
     fn scroll_down(&mut self, lines: usize) {
-        if self.leading_rows > 0 && self.eof_displayed && self.buffer.is_finished() {
+        if self.forced_leading_rows && self.leading_rows > 0 && self.eof_displayed && self.buffer.is_finished() {
             self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
             return;
         }
