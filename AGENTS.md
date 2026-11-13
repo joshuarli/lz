@@ -159,7 +159,7 @@ ANSI escape code utilities.
 - `visible_width(s)`: computes the display width of a string (after stripping ANSI), accounting for wide Unicode characters (CJK, etc.) via `unicode-width`.
 - `truncate_to_width(s, max_width)`: truncates a string to fit within `max_width` terminal columns, but preserves ANSI color state. If a color escape was active before the truncation point, the returned string still starts in that color. This is necessary for correct horizontal scrolling — if you slice a colored line mid-segment, the color must carry through.
 
-Standard and color rendering use `layout.rs`: byte ranges map to columns, atomic wrap boundaries, printable notation and overstrike attributes. Color spans preserve source SGR state across generated notation and resets. Raw rendering and whole-line search/navigation still use the earlier string utilities.
+`TabStops` owns parsed stop lists and repeated spacing for standard, color and raw rendering. A tab occupies a column range rather than allocating per-column glyphs; backspace can still address its last column. Standard and color rendering use `layout.rs`: byte ranges map to columns, atomic wrap boundaries, printable notation and overstrike attributes. Color spans preserve source SGR state across generated notation and resets. Raw rendering and whole-line search/navigation still use the earlier string utilities.
 
 Key types: `ControlDisplay`; the remaining ANSI functions also serve search and benchmarks.
 

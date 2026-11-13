@@ -5,6 +5,7 @@ use unicode_width::UnicodeWidthChar;
 
 use crate::charset::{Charset, Unit, Units};
 use crate::ansi::{ControlDisplay, ColorSpan, color_span};
+use crate::tabs::TabStops;
 
 #[derive(Clone, Copy)]
 enum Representation { Literal, Notation, Tab, Sgr, Hyperlink }
@@ -17,6 +18,15 @@ struct Glyph {
     underline: bool,
 }
 
+fn pop_glyph(glyphs: &mut Vec<Glyph>) -> Option<Glyph> {
+    if let Some(last) = glyphs.last_mut() && matches!(last.representation, Representation::Tab) && last.columns.len() > 1 {
+        let end = last.columns.end;
+        last.columns.end -= 1;
+        return Some(Glyph { source:last.source.clone(), columns:end - 1..end, representation:Representation::Tab, bold:last.bold, underline:last.underline });
+    }
+    glyphs.pop()
+}
+
 pub(crate) struct DisplayPrefix {
     bytes: Vec<u8>,
     charset: Charset,
@@ -26,7 +36,7 @@ pub(crate) struct DisplayPrefix {
 }
 
 impl DisplayPrefix {
-    pub(crate) fn new(mut bytes: Vec<u8>, charset: Charset, complete: bool, wrap_width: Option<NonZeroUsize>, controls: ControlDisplay) -> Self {
+    pub(crate) fn new(mut bytes: Vec<u8>, charset: Charset, complete: bool, wrap_width: Option<NonZeroUsize>, controls: ControlDisplay, tabs: &TabStops) -> Self {
         if !complete && charset == Charset::Utf8 && let Err(error) = std::str::from_utf8(&bytes)
             && error.error_len().is_none() { bytes.truncate(error.valid_up_to()); }
         let mut glyphs: Vec<Glyph> = Vec::new();
@@ -52,8 +62,8 @@ impl DisplayPrefix {
                 continue;
             }
             if matches!(unit, Unit::Character('\u{8}')) && !glyphs.last().is_some_and(|glyph| matches!(glyph.representation, Representation::Notation | Representation::Sgr | Representation::Hyperlink)) {
-                overstrike = glyphs.pop();
-                while overstrike.as_ref().is_some_and(|glyph| glyph.columns.is_empty()) && !glyphs.is_empty() { overstrike = glyphs.pop(); }
+                overstrike = pop_glyph(&mut glyphs);
+                while overstrike.as_ref().is_some_and(|glyph| glyph.columns.is_empty()) && !glyphs.is_empty() { overstrike = pop_glyph(&mut glyphs); }
                 if let Some(previous) = &overstrike { columns = previous.columns.start; }
                 continue;
             }
@@ -62,10 +72,9 @@ impl DisplayPrefix {
             let mut underline = false;
             let (mut representation, mut width) = match unit {
                 Unit::Character('\t') => {
-                    for _ in 0..8 - columns % 8 {
-                        glyphs.push(Glyph { source: start..end, columns: columns..columns + 1, representation: Representation::Tab, bold: false, underline: false });
-                        columns += 1;
-                    }
+                    let end_column = columns.saturating_add(tabs.spaces_after(columns));
+                    glyphs.push(Glyph { source: start..end, columns: columns..end_column, representation: Representation::Tab, bold: false, underline: false });
+                    columns = end_column;
                     overstrike = None;
                     continue;
                 }
@@ -185,38 +194,38 @@ mod tests {
 
     #[test]
     fn bytes_map_to_columns_before_clipping() {
-        let layout = DisplayPrefix::new(b"A\tB\x01\xff".to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard);
+        let layout = DisplayPrefix::new(b"A\tB\x01\xff".to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard, &TabStops::default());
         assert_eq!(layout.columns, 15);
         assert_eq!(layout.display(0, 8), "A       ".as_bytes());
         assert_eq!(layout.display(8, 7), "B\x1b[7m^A<FF>\x1b[m".as_bytes());
-        assert!(layout.glyphs[1..8].iter().enumerate().all(|(index, glyph)| glyph.source == (1..2) && glyph.columns == (index + 1..index + 2)));
+        assert_eq!(layout.display(3, 3), b"   ");
     }
 
     #[test]
     fn atomic_notation_and_wide_characters_leave_short_rows() {
-        let layout = DisplayPrefix::new(b"abcdefg\x01B".to_vec(), Charset::Ascii, true, NonZeroUsize::new(8), ControlDisplay::Standard);
+        let layout = DisplayPrefix::new(b"abcdefg\x01B".to_vec(), Charset::Ascii, true, NonZeroUsize::new(8), ControlDisplay::Standard, &TabStops::default());
         assert_eq!(layout.display(0, 8), "abcdefg".as_bytes());
         assert!(!layout.fills_row(0, 8));
         assert_eq!(layout.display(8, 8), "\x1b[7m^A\x1b[mB".as_bytes());
-        let layout = DisplayPrefix::new("abcdefg界B".as_bytes().to_vec(), Charset::Utf8, true, NonZeroUsize::new(8), ControlDisplay::Standard);
+        let layout = DisplayPrefix::new("abcdefg界B".as_bytes().to_vec(), Charset::Utf8, true, NonZeroUsize::new(8), ControlDisplay::Standard, &TabStops::default());
         assert_eq!(layout.display(0, 8), "abcdefg".as_bytes());
         assert_eq!(layout.display(8, 8), "界B".as_bytes());
     }
 
     #[test]
     fn backspace_replaces_a_base_and_its_combining_marks() {
-        let layout = DisplayPrefix::new("e\u{301}\u{8}e".as_bytes().to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard);
+        let layout = DisplayPrefix::new("e\u{301}\u{8}e".as_bytes().to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard, &TabStops::default());
         assert_eq!(layout.columns, 1);
         assert_eq!(layout.display(0, 8), "\x1b[1me\x1b[m".as_bytes());
-        let layout = DisplayPrefix::new(b"X\x08_\x08X".to_vec(), Charset::Ascii, true, None, ControlDisplay::Standard);
+        let layout = DisplayPrefix::new(b"X\x08_\x08X".to_vec(), Charset::Ascii, true, None, ControlDisplay::Standard, &TabStops::default());
         assert_eq!(layout.display(0, 8), "\x1b[1;4mX\x1b[m".as_bytes());
     }
 
     #[test]
     fn split_scalar_waits_for_more_source_bytes() {
-        let layout = DisplayPrefix::new(vec![b'x', 0xe2, 0x82], Charset::Utf8, false, None, ControlDisplay::Standard);
+        let layout = DisplayPrefix::new(vec![b'x', 0xe2, 0x82], Charset::Utf8, false, None, ControlDisplay::Standard, &TabStops::default());
         assert_eq!(layout.display(0, 8), "x".as_bytes());
-        let layout = DisplayPrefix::new(vec![b'x', 0xe2, 0x82], Charset::Utf8, true, None, ControlDisplay::Standard);
+        let layout = DisplayPrefix::new(vec![b'x', 0xe2, 0x82], Charset::Utf8, true, None, ControlDisplay::Standard, &TabStops::default());
         assert_eq!(layout.display(0, 16), "x\x1b[7m<E2><82>\x1b[m".as_bytes());
     }
 }

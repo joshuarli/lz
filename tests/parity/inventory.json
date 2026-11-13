@@ -3960,10 +3960,31 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-tab-four",
+        "invocation-tab-list",
+        "invocation-tab-numbered",
+        "invocation-tab-wrapped",
+        "invocation-tab-env-override",
+        "invocation-tab-navigation",
+        "invocation-tab-large",
+        "invocation-tab-backspace",
+        "invocation-tab-default-backspace",
+        "invocation-tab-color",
+        "invocation-tab-out-of-order",
+        "invocation-tab-zero",
+        "invocation-tab-invalid-override",
+        "invocation-tab-large-backspace",
+        "invocation-tab-underline",
+        "invocation-tab-bold-space",
+        "invocation-tab-repeat-spacing",
+        "invocation-tab-raw",
+        "invocation-tab-numbered-wrapped",
+        "invocation-tab-raw-wrapped"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named stop lists, raw/color, wrapping, gutters and large bounded stops pass; interactive option changes and the parked raw large-stop oracle resource breach remain open"
     },
     {
       "id": "man-1252",

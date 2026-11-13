@@ -10,6 +10,7 @@ pub mod input;
 pub mod pager;
 pub mod search;
 pub mod terminal;
+pub mod tabs;
 
 #[cfg(test)]
 mod tests {

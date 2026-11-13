@@ -1,7 +1,7 @@
 use std::io::{self, Seek, Write};
 use std::collections::{HashMap, VecDeque};
 
-use crate::ansi::{ControlDisplay, strip_ansi, truncate_to_width, visible_width};
+use crate::ansi::{ControlDisplay, strip_ansi, visible_width};
 use crate::charset::Charset;
 use crate::layout::DisplayPrefix;
 use crate::buffer::{LineBuffer, LineFragment};
@@ -9,6 +9,7 @@ use crate::history::SearchHistory;
 use crate::input::{Key, KeyReader};
 use crate::search::{CaseSensitivity, Search, SearchStart};
 use crate::terminal;
+use crate::tabs::TabStops;
 
 const FOLLOW_INTERRUPT: char = 'x';
 
@@ -180,21 +181,21 @@ enum NumericPrefix { Empty, Value(usize), Overflow }
 #[derive(PartialEq, Eq)]
 enum StartupRun { AllCommands, UntilOneScreen }
 
-enum DisplayLine { Mapped(DisplayPrefix), Raw(LineFragment) }
+enum DisplayLine { Mapped(DisplayPrefix), Raw { fragment: LineFragment, tabs: TabStops } }
 
 impl DisplayLine {
-    fn complete(&self) -> bool { match self { Self::Mapped(prefix) => prefix.complete, Self::Raw(fragment) => fragment.complete } }
+    fn complete(&self) -> bool { match self { Self::Mapped(prefix) => prefix.complete, Self::Raw { fragment, .. } => fragment.complete } }
     fn columns(&self) -> usize { match self {
         Self::Mapped(prefix) => prefix.columns,
-        Self::Raw(fragment) => unicode_width::UnicodeWidthStr::width(fragment.text.as_str()),
+        Self::Raw { fragment, tabs } => crate::ansi::raw_width(&fragment.text, tabs),
     } }
     fn fills_row(&self, start: usize, width: usize) -> bool { match self {
         Self::Mapped(prefix) => prefix.fills_row(start, width),
-        Self::Raw(_) => self.columns() >= start.saturating_add(width),
+        Self::Raw { .. } => self.columns() >= start.saturating_add(width),
     } }
     fn display(&self, start: usize, width: usize) -> Vec<u8> { match self {
         Self::Mapped(prefix) => prefix.display(start, width),
-        Self::Raw(fragment) => truncate_to_width(&fragment.text, start, width, true).into_bytes(),
+        Self::Raw { fragment, tabs } => crate::ansi::truncate_raw(&fragment.text, start, width, tabs).into_bytes(),
     } }
 }
 
@@ -260,6 +261,7 @@ pub struct OneScreenOptions {
     pub chop: bool,
     pub line_numbers: bool,
     pub line_number_width: LineNumberWidth,
+    pub tab_stops: TabStops,
 }
 
 fn is_unbound_ascii(character: char) -> bool {
@@ -324,10 +326,10 @@ pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Res
         let content_width = width.saturating_sub(gutter.len()).max(1);
         let limit = width.saturating_mul(height - rows).saturating_add(1).saturating_mul(16).max(4096);
         let fragment = if options.controls == ControlDisplay::Raw {
-            buffer.line_prefix(index, limit)?.map(DisplayLine::Raw)
+            buffer.line_prefix(index, limit)?.map(|fragment| DisplayLine::Raw { fragment, tabs:options.tab_stops.clone() })
         } else {
             let wrap = (!options.chop).then(|| std::num::NonZeroUsize::new(content_width).unwrap());
-            buffer.byte_prefix(index, limit)?.map(|fragment| DisplayLine::Mapped(DisplayPrefix::new(fragment.bytes, options.charset, fragment.complete, wrap, options.controls)))
+            buffer.byte_prefix(index, limit)?.map(|fragment| DisplayLine::Mapped(DisplayPrefix::new(fragment.bytes, options.charset, fragment.complete, wrap, options.controls, &options.tab_stops)))
         };
         let Some(fragment) = fragment else {
             if let Some(error) = buffer.take_error() { return Err(error); }
@@ -477,6 +479,7 @@ pub struct Config {
     pub chop: bool,
     pub line_numbers: bool,
     pub line_number_width: LineNumberWidth,
+    pub tab_stops: TabStops,
     pub show_eof_markers: bool,
     pub search_case: CaseSensitivity,
     pub search_start: SearchStart,
@@ -498,6 +501,7 @@ pub struct Pager {
     wrap: bool,
     line_numbers: bool,
     line_number_width: LineNumberWidth,
+    tab_stops: TabStops,
     show_eof_markers: bool,
     search: Option<Search>,
     search_case: CaseSensitivity,
@@ -561,6 +565,7 @@ impl Pager {
             wrap: !config.chop,
             line_numbers: config.line_numbers,
             line_number_width: config.line_number_width,
+            tab_stops: config.tab_stops,
             show_eof_markers: config.show_eof_markers,
             search: None,
             search_case: config.search_case,
@@ -778,7 +783,7 @@ impl Pager {
     fn finish_follow_one_screen(&mut self) -> io::Result<bool> {
         if !self.follow_one_screen || self.mode != Mode::Normal { return Ok(false); }
         self.follow_one_screen = false;
-        let options = OneScreenOptions { width:self.term_width, height:self.term_height, charset:self.charset, controls:self.controls, chop:!self.wrap, line_numbers:self.line_numbers, line_number_width:self.line_number_width };
+        let options = OneScreenOptions { width:self.term_width, height:self.term_height, charset:self.charset, controls:self.controls, chop:!self.wrap, line_numbers:self.line_numbers, line_number_width:self.line_number_width, tab_stops:self.tab_stops.clone() };
         match one_screen(&mut self.buffer, options)? {
             OneScreen::Fits(_) => {},
             OneScreen::Overflows => { self.follow_screen_overflowed = true; return Ok(false); },
@@ -1342,9 +1347,15 @@ impl Pager {
         if w == 0 {
             return 1;
         }
+        let content_width = w.saturating_sub(self.number_gutter(line_idx, w).len()).max(1);
         match self.buffer.get_line(line_idx) {
             Some(line) => {
-                let vw = if self.controls == ControlDisplay::Raw {
+                let has_tab = line.contains('\t');
+                let vw = if has_tab && self.controls == ControlDisplay::Raw {
+                    crate::ansi::raw_width(line, &self.tab_stops)
+                } else if has_tab {
+                    DisplayPrefix::new(line.as_bytes().to_vec(), self.charset, true, std::num::NonZeroUsize::new(content_width), self.controls, &self.tab_stops).columns
+                } else if self.controls == ControlDisplay::Raw {
                     unicode_width::UnicodeWidthStr::width(line)
                 } else {
                     visible_width(line)
@@ -1352,7 +1363,7 @@ impl Pager {
                 if vw == 0 {
                     1
                 } else {
-                    vw.div_ceil(w)
+                    vw.div_ceil(if has_tab { content_width } else { w })
                 }
             }
             None => 1,
@@ -1535,9 +1546,9 @@ impl Pager {
         if self.controls != ControlDisplay::Raw {
             let width = self.term_width as usize;
             let wrap_width = self.wrap.then(|| std::num::NonZeroUsize::new(width.saturating_sub(self.number_gutter(line, width).len()).max(1)).unwrap());
-            Ok(self.buffer.byte_prefix(line, bytes)?.map(|fragment| DisplayLine::Mapped(DisplayPrefix::new(fragment.bytes, self.charset, fragment.complete, wrap_width, self.controls))))
+            Ok(self.buffer.byte_prefix(line, bytes)?.map(|fragment| DisplayLine::Mapped(DisplayPrefix::new(fragment.bytes, self.charset, fragment.complete, wrap_width, self.controls, &self.tab_stops))))
         } else {
-            Ok(self.buffer.line_prefix(line, bytes)?.map(DisplayLine::Raw))
+            Ok(self.buffer.line_prefix(line, bytes)?.map(|fragment| DisplayLine::Raw { fragment, tabs:self.tab_stops.clone() }))
         }
     }
 
@@ -1816,7 +1827,7 @@ mod one_screen_tests {
         for _ in 0..32 { input.write_all(&block).unwrap(); }
         input.write_all(b"x\n").unwrap();
         let mut buffer = LineBuffer::from_file(std::fs::File::open(input.path()).unwrap());
-        let options = OneScreenOptions { width:80, height:24, charset:Charset::Ascii, controls:ControlDisplay::Color, chop:false, line_numbers:false, line_number_width:Default::default() };
+        let options = OneScreenOptions { width:80, height:24, charset:Charset::Ascii, controls:ControlDisplay::Color, chop:false, line_numbers:false, line_number_width:Default::default(), tab_stops:Default::default() };
         let OneScreen::Fits(output) = one_screen(&mut buffer, options).unwrap() else { panic!("color line should fit"); };
         assert!(matches!(&output.storage, OneScreenStorage::File(_)));
         let mut written = tempfile::NamedTempFile::new().unwrap();

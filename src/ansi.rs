@@ -149,7 +149,7 @@ fn display_width(s: &str) -> usize {
 /// In raw mode, escapes are treated as visible characters.
 pub fn truncate_to_width(line: &str, start_col: usize, max_width: usize, raw_mode: bool) -> String {
     if raw_mode {
-        return truncate_raw(line, start_col, max_width);
+        return truncate_raw(line, start_col, max_width, &crate::tabs::TabStops::default());
     }
 
     let bytes = line.as_bytes();
@@ -259,35 +259,42 @@ pub fn truncate_to_width(line: &str, start_col: usize, max_width: usize, raw_mod
 }
 
 /// In raw mode, treat escape sequences as visible characters.
-fn truncate_raw(line: &str, start_col: usize, max_width: usize) -> String {
+pub(crate) fn raw_width(line: &str, tabs: &crate::tabs::TabStops) -> usize {
+    line.chars().fold(0usize, |column, character| {
+        let width = if character == '\t' { tabs.spaces_after(column) } else { UnicodeWidthChar::width(character).unwrap_or(1) };
+        column.saturating_add(width)
+    })
+}
+
+pub(crate) fn truncate_raw(line: &str, start_col: usize, max_width: usize, tabs: &crate::tabs::TabStops) -> String {
     let mut out = String::with_capacity(max_width);
     let mut col: usize = 0;
     let mut cols_emitted: usize = 0;
 
     for ch in line.chars() {
         let w = if ch == '\t' {
-            8 - (col % 8)
+            tabs.spaces_after(col)
         } else {
             UnicodeWidthChar::width(ch).unwrap_or(1) // In raw mode, control chars take 1 col
         };
 
-        if col + w > start_col && cols_emitted == 0 && col < start_col {
+        if col.saturating_add(w) > start_col && cols_emitted == 0 && col < start_col {
             // Wide char straddles start
             let visible = w - (start_col - col);
             for _ in 0..visible.min(max_width) {
                 out.push(' ');
                 cols_emitted += 1;
             }
-            col += w;
+            col = col.saturating_add(w);
             continue;
         }
 
         if col >= start_col {
-            if cols_emitted + w > max_width {
+            if ch != '\t' && cols_emitted.saturating_add(w) > max_width {
                 break;
             }
             if ch == '\t' {
-                for _ in 0..w {
+                for _ in 0..w.min(max_width.saturating_sub(cols_emitted)) {
                     if cols_emitted < max_width {
                         out.push(' ');
                         cols_emitted += 1;
@@ -298,7 +305,7 @@ fn truncate_raw(line: &str, start_col: usize, max_width: usize) -> String {
                 cols_emitted += w;
             }
         }
-        col += w;
+        col = col.saturating_add(w);
     }
     out
 }

@@ -140,6 +140,7 @@ pub(super) struct Args {
     pub search_case: CaseSensitivity,
     pub search_start: SearchStart,
     pub history_duplicates: lz::history::DuplicatePolicy,
+    pub tab_stops: lz::tabs::TabStops,
     pub filenames: Vec<OsString>,
     pub stdin_explicit: bool,
     pub action: Action,
@@ -149,7 +150,7 @@ pub(super) struct Args {
 impl Default for Args {
     fn default() -> Self {
         Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, eof_policy: Default::default(), bell_policy: Default::default(), control_display: ControlDisplay::default(), chop: false, line_numbers: false, show_eof_markers: true, window: None, search_case: CaseSensitivity::Sensitive,
-            line_number_width: Default::default(), search_start: SearchStart::default(), history_duplicates: Default::default(), filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
+            line_number_width: Default::default(), search_start: SearchStart::default(), history_duplicates: Default::default(), tab_stops: Default::default(), filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
 
@@ -227,6 +228,7 @@ impl Scanner {
                     "pattern" => self.args.startup_commands.push([b"/".as_slice(), &payload[..end]].concat()),
                     "tag" => self.args.tag = Some(OsString::from_vec(payload[..end].to_vec())),
                     "tag-file" => self.args.tags_file = Some(OsString::from_vec(payload[..end].to_vec())),
+                    "tabs" => if let Some(stops) = lz::tabs::TabStops::parse(&payload[..end]) { self.args.tab_stops = stops; },
                     _ => {}
                 }
                 end
