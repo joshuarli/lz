@@ -1016,7 +1016,11 @@
         "search-utf8-charset-c-unicode-pattern",
         "search-utf8-charset-unicode-regex",
         "search-highlight-crosses-left-edge",
-        "search-highlight-hidden-left"
+        "search-highlight-hidden-left",
+        "search-highlight-crosses-right-edge",
+        "search-highlight-hidden-right",
+        "search-highlight-clipped-wide-glyph",
+        "search-highlight-wide-right-edge"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",

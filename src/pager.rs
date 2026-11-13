@@ -2465,6 +2465,39 @@ impl Pager {
         Ok(())
     }
 
+    fn advance_search_column(text: &str, byte: &mut usize, column: &mut usize, target: usize) {
+        while *byte < target {
+            let character = text[*byte..].chars().next().unwrap();
+            *byte += character.len_utf8();
+            *column += unicode_width::UnicodeWidthChar::width(character).unwrap_or(0);
+        }
+    }
+
+    fn search_right_boundary(text: &str, boundary: usize) -> usize {
+        let mut column = 0;
+        for character in text.chars() {
+            let end = column + unicode_width::UnicodeWidthChar::width(character).unwrap_or(0);
+            if column < boundary && end > boundary { return column; }
+            if end >= boundary { break; }
+            column = end;
+        }
+        boundary
+    }
+
+    fn visible_search_range(text: &str, left: usize, right: usize) -> Option<(usize, usize)> {
+        let mut column = 0;
+        let mut first = None;
+        let mut last = 0;
+        for (byte, character) in text.char_indices() {
+            let width = unicode_width::UnicodeWidthChar::width(character).unwrap_or(0);
+            let end = column + width;
+            let selected = if width == 0 { column > left && column <= right } else { column < right && end > left };
+            if selected { first.get_or_insert(byte); last = byte + character.len_utf8(); }
+            column = end;
+        }
+        first.map(|first| (first, last))
+    }
+
     fn write_line_with_search(&self, buf: &mut Vec<u8>, display: &[u8], source: &DisplayLine, start: usize) {
         let Ok(display) = std::str::from_utf8(display) else { buf.extend_from_slice(display); return; };
         if (self.search_highlight || self.incremental_preview.is_some())
@@ -2472,12 +2505,13 @@ impl Pager {
             && source.matches_search(search, self.controls)
         {
             let stripped = strip_ansi(display);
-            let mut context = if start == 0 { String::new() } else {
+            let prefix = if start == 0 { String::new() } else {
                 let prefix = source.display(0, start, NotationStyle::for_ui_color(self.use_color));
                 strip_ansi(&String::from_utf8_lossy(&prefix))
             };
-            let prefix_bytes = context.len();
-            context.push_str(&stripped);
+            let prefix_bytes = prefix.len();
+            let full = source.display(0, source.columns(), NotationStyle::for_ui_color(self.use_color));
+            let context = strip_ansi(&String::from_utf8_lossy(&full));
             let searchable = source.search_text(&context, 0);
             let mut matches: Vec<_> = search.find_matches_stripped(&searchable).into_iter().filter(|(start, end)| start < end).collect();
             if search.uses_byte_regex() {
@@ -2491,9 +2525,29 @@ impl Pager {
                 matches = aligned;
             }
             if self.search_nonmatch { matches.truncate(1); }
-            let matches: Vec<_> = matches.into_iter().filter_map(|(start, end)| {
-                if end > prefix_bytes { Some((start.saturating_sub(prefix_bytes), end - prefix_bytes)) } else { None }
-            }).collect();
+            let matches: Vec<_> = if context.strip_prefix(&prefix).is_some_and(|suffix| suffix.starts_with(&stripped)) {
+                let visible_end = prefix_bytes.saturating_add(stripped.len());
+                matches.into_iter().filter_map(|(start, end)| {
+                    if end > prefix_bytes && start < visible_end {
+                        Some((start.saturating_sub(prefix_bytes), end.min(visible_end) - prefix_bytes))
+                    } else { None }
+                }).collect()
+            } else {
+                let mut byte = 0;
+                let mut column = 0;
+                let mut visible = Vec::new();
+                let edge = Self::search_right_boundary(&searchable, start.saturating_add(unicode_width::UnicodeWidthStr::width(stripped.as_str())));
+                for (first, last) in matches {
+                    Self::advance_search_column(&searchable, &mut byte, &mut column, first);
+                    let left = column;
+                    Self::advance_search_column(&searchable, &mut byte, &mut column, last);
+                    let right = column.min(edge);
+                    if right > start && let Some(range) = Self::visible_search_range(&stripped, left.saturating_sub(start), right - start) {
+                        visible.push(range);
+                    }
+                }
+                visible
+            };
             if !matches.is_empty() {
                 let colored = self.use_color;
                 let mut source_colors = crate::ansi::SgrColors::default();
