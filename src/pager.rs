@@ -646,6 +646,13 @@ impl FileStatus {
     }
 }
 
+/// Search pattern and direction retained between files in one session.
+pub struct SearchSession { search: Option<Search>, direction: SearchDir }
+
+impl Default for SearchSession {
+    fn default() -> Self { Self { search: None, direction: SearchDir::Forward } }
+}
+
 pub struct Config {
     pub interrupt_policy: InterruptPolicy,
     pub eof_policy: EofPolicy,
@@ -664,6 +671,7 @@ pub struct Config {
     pub show_eof_markers: bool,
     pub search_case: CaseSensitivity,
     pub search_start: SearchStart,
+    pub search_session: SearchSession,
     pub jump_target: JumpTarget,
 }
 
@@ -686,6 +694,7 @@ pub struct Pager {
     tab_stops: TabStops,
     show_eof_markers: bool,
     search: Option<Search>,
+    search_inherited: bool,
     search_case: CaseSensitivity,
     search_start: SearchStart,
     jump_target: JumpTarget,
@@ -736,6 +745,7 @@ impl Pager {
         history: SearchHistory,
     ) -> Self {
         let (w, h) = terminal::get_terminal_size();
+        let search_inherited = config.search_session.search.is_some();
         Pager {
             interrupt_policy: config.interrupt_policy,
             eof_policy: config.eof_policy,
@@ -754,12 +764,13 @@ impl Pager {
             line_number_width: config.line_number_width,
             tab_stops: config.tab_stops,
             show_eof_markers: config.show_eof_markers,
-            search: None,
+            search: config.search_session.search,
+            search_inherited,
             search_case: config.search_case,
             search_start: config.search_start,
             jump_target: config.jump_target,
             last_visible_line: None,
-            search_dir: SearchDir::Forward,
+            search_dir: config.search_session.direction,
             current_match_line: None,
             mode: Mode::Normal,
             help_top: 0,
@@ -813,6 +824,9 @@ impl Pager {
     pub fn display_anchor(&self) -> DisplayAnchor { self.display_anchor }
 
     pub fn scroll_defaults(&self) -> ScrollDefaults { self.scroll_defaults }
+
+    /// Transfer the active search to the next file in the session.
+    pub fn take_search_session(&mut self) -> SearchSession { SearchSession { search:self.search.take(), direction:self.search_dir } }
 
     /// Transfer startup input that remains after a file switch to the next pager.
     pub fn take_startup_commands(&mut self) -> Vec<Vec<u8>> { self.startup_commands.drain(..).collect() }
@@ -1445,6 +1459,7 @@ impl Pager {
                 match Search::new(&pattern, self.search_case) {
                     Ok(s) => {
                         self.search = Some(s);
+                        self.search_inherited = false;
                         self.current_match_line = None;
                         self.search_same_dir();
                     }
@@ -1510,6 +1525,7 @@ impl Pager {
             (SearchStart::AfterTarget, true) if self.content_painted => self.target_line().saturating_add(1),
             (SearchStart::Default, true) if self.current_match_line.is_some() && !matches!(self.jump_target.0, JumpRow::Default) => self.target_line().saturating_add(1),
             (SearchStart::Default, false) if self.current_match_line.is_some() && !matches!(self.jump_target.0, JumpRow::Default) => self.target_line(),
+            (SearchStart::Default, false) if self.current_match_line.is_none() && self.search_inherited => self.top_line,
             (SearchStart::Default, false) if self.current_match_line.is_none() => self.last_visible_line.map_or(self.top_line, |line| line.saturating_add(1)),
             (_, true) => self.current_match_line.map_or(self.top_line, |line| line.saturating_add(1)),
             (_, false) => self.current_match_line.unwrap_or(self.top_line),
@@ -1523,7 +1539,7 @@ impl Pager {
                 self.leading_rows = row.saturating_sub(line);
             }
             None => {
-                self.status_msg = Some("Pattern not found".to_string());
+                self.command_error("Pattern not found".to_string(), ErrorAction::Dismiss);
             }
         }
         self.search = Some(search);

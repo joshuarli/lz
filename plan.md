@@ -64,6 +64,12 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12f:** generated sessions may terminate with SIGTERM after navigation. Fifty seeds pass, including 17 signal terminations. Other signal timing and boundary-event weighting remain open.
 
+**S12g planned:** weight an invalid-command action at 30 percent of generated actions and observe its bell before a known jump. Own `tests/parity/fuzz.rs`; S12f and existing bell comparison are prerequisites. This covers one boundary class; the full 70/30 grammar remains open. Acceptance: `make parity-selftest` and `make parity-fuzz SEED=0 CASES=50`.
+
+**S09j:** the active search and its direction survive next-file switches; the match position remains file-local. Forward highlighting and repeat, backward repeat and the generating seed pass on macOS; the named cases also pass in a Linux arm64 container. Public `SearchSession` carries this state through `Config` and `Pager::take_search_session`. Other search and file-transition interactions remain open.
+
+**S08j:** missing patterns display the reference acknowledgment prompt, and non-acknowledgment keys replay after it. The direct search case and cross-file backward case pass on macOS and in a Linux arm64 container; all 64 admitted macOS search cases pass. Other search diagnostics remain open.
+
 **S06j:** combining marks attached to a character at the right clipping edge remain visible. The layout regression, differential case and generating seed pass; the differential case also passes in a Linux arm64 container.
 
 **S07ai:** terminal size changes reset the `man-0069` and `man-0082` half-page default to half the new height. Three cases cover growth, shrinkage and width-only resize after a count on macOS and in a Linux arm64 container. Existing window and horizontal-shift resize cases pass.

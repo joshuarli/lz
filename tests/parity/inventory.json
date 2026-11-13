@@ -991,11 +991,12 @@
         "search-posix-escaped-left-angle",
         "search-posix-escaped-right-angle",
         "search-posix-boundary-after-punctuation",
-        "search-posix-boundary-before-punctuation"
+        "search-posix-boundary-before-punctuation",
+        "search-missing-acknowledgment"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Literal search, named leftmost-longest alternatives, escaped alphanumerics and bracket literals pass on macOS arm64 and in a Linux arm64 container. Musl differs for escaped letters and word boundaries; native Linux, other bracket forms, full dialect, diagnostics, Unicode, modifiers, colors and layout interactions remain open"
+      "cause": "Literal search, named leftmost-longest alternatives, escaped alphanumerics and bracket literals pass on macOS arm64 and in a Linux arm64 container. A missing pattern uses the reference acknowledgment prompt in the named case. Musl differs for escaped letters and word boundaries; native Linux, other bracket forms, full dialect, further diagnostics, Unicode, modifiers, colors and layout interactions remain open"
     },
     {
       "id": "man-0220",
@@ -1359,10 +1360,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["sessions-search-next-file-highlight-repeat", "sessions-search-next-file-backward-repeat"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Forward and backward repeats preserve the active search across a next-file switch in the named cases. Other repeat and file-transition interactions remain open."
     },
     {
       "id": "man-0302",
@@ -1599,7 +1600,9 @@
         "sessions-startup-files-separate-position",
         "sessions-startup-files-short",
         "sessions-startup-files-wide",
-        "sessions-startup-files-zero"
+        "sessions-startup-files-zero",
+        "sessions-search-next-file-highlight-repeat",
+        "sessions-search-next-file-backward-repeat"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",

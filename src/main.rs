@@ -324,6 +324,7 @@ fn run() -> Result<ExitAction, String> {
     let mut initial_display = pager::InitialDisplay::Startup;
     let mut display_anchor = pager::DisplayAnchor::new(if startup_one_screen { terminal::ScreenMode::Preserve } else { args.terminal.screen });
     let mut scroll_defaults = pager::ScrollDefaults::new(terminal::get_terminal_size().1);
+    let mut search_session = pager::SearchSession::default();
     if let Some(window) = args.window { scroll_defaults.set_window(window); }
     if let Some(shift) = args.horizontal_shift { scroll_defaults.set_horizontal_shift(shift); }
     let mut positions = vec![None; args.filenames.len()];
@@ -334,7 +335,7 @@ fn run() -> Result<ExitAction, String> {
         let mut startup_commands = std::mem::take(&mut args.startup_commands);
         if let Some(command) = &args.every_file_command { startup_commands.push(command.clone()); }
         let alternate = opened.alternate.take();
-        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, line_number_width: args.line_number_width, tab_stops: args.tab_stops.clone(), show_eof_markers: args.show_eof_markers, search_case: args.search_case, search_start: args.search_start, jump_target: args.jump_target }, opened.name, history);
+        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, line_number_width: args.line_number_width, tab_stops: args.tab_stops.clone(), show_eof_markers: args.show_eof_markers, search_case: args.search_case, search_start: args.search_start, search_session, jump_target: args.jump_target }, opened.name, history);
         let result = if showing_help { pager.run_help(session.keys_mut(), help_files) }
             else if std::mem::take(&mut startup_one_screen) { pager.run_one_screen_startup(session.keys_mut()) }
             else { pager.run(session.keys_mut()) };
@@ -345,6 +346,7 @@ fn run() -> Result<ExitAction, String> {
         let squished = pager.is_squished();
         display_anchor = pager.display_anchor();
         scroll_defaults = pager.scroll_defaults();
+        search_session = pager.take_search_session();
         args.startup_commands = pager.take_startup_commands();
         history = pager.into_history();
         let visit = match result {
