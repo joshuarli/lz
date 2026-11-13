@@ -134,11 +134,20 @@
         "navigation-help-end-boundary",
         "navigation-help-window-return",
         "navigation-help-counted-jump",
-        "navigation-help-counted-end-jump"
+        "navigation-help-counted-end-jump",
+        "navigation-help-quit-colon",
+        "navigation-help-quit-double-z",
+        "navigation-help-escape",
+        "navigation-help-quit-colon-uppercase",
+        "navigation-help-quit-count",
+        "navigation-help-quit-invalid",
+        "navigation-help-quit-backspace",
+        "navigation-help-quit-interrupt",
+        "navigation-help-colon-backspace"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Named entry, scrolling, numbered, wrapped, end and return cases pass; help search, command variants and other interactions remain open"
+      "cause": "Named help entry, navigation, quit and return cases pass; help search, remaining commands and other interactions remain open"
     },
     {
       "id": "man-0057",

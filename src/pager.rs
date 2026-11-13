@@ -72,6 +72,9 @@ enum Mode {
     CommandError(CommandError),
 }
 
+#[derive(Clone, Copy)]
+enum HelpPrefix { Colon, Quit }
+
 #[derive(PartialEq, Clone, Copy)]
 enum SearchDir {
     Forward,
@@ -512,6 +515,7 @@ pub struct Pager {
     mode: Mode,
     help_top: usize,
     help_rows: usize,
+    help_prefix: Option<HelpPrefix>,
     search_input: LineEditor,
     filter_input: LineEditor,
     filter: Option<Search>,
@@ -578,6 +582,7 @@ impl Pager {
             mode: Mode::Normal,
             help_top: 0,
             help_rows: 0,
+            help_prefix: None,
             search_input: LineEditor::new(),
             filter_input: LineEditor::new(),
             filter: None,
@@ -1033,6 +1038,7 @@ impl Pager {
             }
             Key::Char('h' | 'H') => {
                 self.help_top = 0;
+                self.help_prefix = None;
                 self.mode = Mode::Help;
             }
             Key::Char(character) if is_unbound_ascii(character) => self.early_bells = self.early_bells.saturating_add(1),
@@ -1047,6 +1053,12 @@ impl Pager {
     }
 
     fn handle_help_key(&mut self, key: Key) {
+        if let Some(prefix) = self.help_prefix.take() {
+            if matches!((prefix, &key), (HelpPrefix::Colon, Key::Char('q' | 'Q')) | (HelpPrefix::Quit, Key::Char('Z'))) {
+                self.leave_help();
+            } else if key != Key::Ctrl('c') { self.bell_requested = true; }
+            return;
+        }
         if let Key::Char(character @ '0'..='9') = key {
             let previous = match self.numeric_prefix { NumericPrefix::Empty => Some(0), NumericPrefix::Value(value) => Some(value), NumericPrefix::Overflow => None };
             self.numeric_prefix = previous.and_then(|value| value.checked_mul(10)).and_then(|value| value.checked_add(character as usize - '0' as usize))
@@ -1062,12 +1074,12 @@ impl Pager {
         let previous = self.help_top;
         match key {
             Key::Char('q' | 'Q') => {
-                self.mode = Mode::Normal;
-                self.filename_prompt = true;
-                self.squished = false;
-                self.compact_initial = false;
+                self.leave_help();
                 return;
             }
+            Key::Char(':') => { self.help_prefix = Some(HelpPrefix::Colon); return; }
+            Key::Char('Z') => { self.help_prefix = Some(HelpPrefix::Quit); return; }
+            Key::Escape => { self.bell_requested = true; return; }
             Key::Char('h' | 'H') => return,
             Key::Char('g' | '<') | Key::Home => self.help_top = count.map_or(0, |line| self.help_line_start(line.saturating_sub(1))).min(last),
             Key::Char('G' | '>') | Key::End => self.help_top = count.map_or(last, |line| self.help_line_start(line.saturating_sub(1))).min(last),
@@ -1092,6 +1104,13 @@ impl Pager {
         if self.help_top == previous {
             self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
         }
+    }
+
+    fn leave_help(&mut self) {
+        self.mode = Mode::Normal;
+        self.filename_prompt = true;
+        self.squished = false;
+        self.compact_initial = false;
     }
 
     fn mark_position(&self) -> MarkPosition { MarkPosition { line:self.top_line, leading_rows:self.leading_rows } }
@@ -1811,7 +1830,7 @@ impl Pager {
     fn render_status(&self, buf: &mut Frame, w: usize) {
         buf.position(self.term_height.saturating_sub(1) as usize);
         let status = self.build_status();
-        let emphasized = matches!(self.mode, Mode::Follow | Mode::Help) || (self.filename_prompt && (self.filename.is_some() || self.files.count > 1)) || status.starts_with("(END)") || self.status_msg.is_some();
+        let emphasized = self.mode == Mode::Follow || (self.mode == Mode::Help && self.help_prefix.is_none()) || (self.mode != Mode::Help && self.filename_prompt && (self.filename.is_some() || self.files.count > 1)) || status.starts_with("(END)") || self.status_msg.is_some();
         if emphasized { buf.extend_from_slice(b"\x1b[7m"); }
         let mut suffix_width = 0;
         let mut start = status.len();
@@ -1851,6 +1870,7 @@ impl Pager {
         }
 
         if self.mode == Mode::Help {
+            if let Some(prefix) = self.help_prefix { return match prefix { HelpPrefix::Colon => " :", HelpPrefix::Quit => " Z" }.into(); }
             return if self.help_top.saturating_add(self.content_height()) >= self.help_rows {
                 "HELP -- END -- Press g to see it again, or q when done".to_string()
             } else { "HELP -- Press RETURN for more, or q when done".to_string() };
