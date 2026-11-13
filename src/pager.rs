@@ -114,7 +114,7 @@ enum Mode {
     QuitPrefix,
     SetMark,
     JumpMark,
-    OptionPrefix,
+    OptionPrefix { quiet: bool },
     OptionNotice { repaint: bool },
     CommandError(CommandError),
 }
@@ -1066,7 +1066,7 @@ impl Pager {
         self.numeric_prefix = NumericPrefix::Empty;
         self.command_context = CommandContext::Interactive;
         self.bell_requested = true;
-        if matches!(self.mode, Mode::SetMark | Mode::JumpMark | Mode::FileCommand(_) | Mode::OptionPrefix | Mode::OptionNotice { .. } | Mode::CommandError(_)) {
+        if matches!(self.mode, Mode::SetMark | Mode::JumpMark | Mode::FileCommand(_) | Mode::OptionPrefix { .. } | Mode::OptionNotice { .. } | Mode::CommandError(_)) {
             self.mode = if matches!(&self.mode, Mode::CommandError(error) if error.destination == ErrorDestination::Help) { Mode::Help } else { Mode::Normal };
             self.status_msg = None;
             self.filename_prompt = false;
@@ -1083,7 +1083,8 @@ impl Pager {
         match self.mode.clone() {
             Mode::Normal => self.handle_normal_key(key),
             Mode::SetMark | Mode::JumpMark => { self.handle_mark_key(key); false }
-            Mode::OptionPrefix => {
+            Mode::OptionPrefix { quiet } => {
+                if key == Key::Ctrl('p') && !quiet { self.mode = Mode::OptionPrefix { quiet:true }; return false; }
                 self.mode = Mode::Normal;
                 if let Key::Char(choice @ ('r' | 'R')) = key {
                     let selected = if choice == 'r' { ControlDisplay::Raw } else { ControlDisplay::Color };
@@ -1095,8 +1096,10 @@ impl Pager {
                         ControlDisplay::Raw => "Display control characters directly (not recommended)",
                         ControlDisplay::Color => "Display ANSI sequences directly, other control characters as ^X",
                     };
-                    self.status_msg = Some(format!("{message}  (press RETURN)"));
-                    self.mode = Mode::OptionNotice { repaint };
+                    if !quiet {
+                        self.status_msg = Some(format!("{message}  (press RETURN)"));
+                        self.mode = Mode::OptionNotice { repaint };
+                    }
                 } else if key != Key::Escape { self.bell_requested = true; }
                 false
             }
@@ -1198,7 +1201,7 @@ impl Pager {
             Key::Char('q' | 'Q') | Key::Escape => return true,
             Key::Ctrl('c') => self.bell_requested = true,
             Key::Char('Z') => self.mode = Mode::QuitPrefix,
-            Key::Char('-') => self.mode = Mode::OptionPrefix,
+            Key::Char('-') => self.mode = Mode::OptionPrefix { quiet:false },
             Key::Char(':') => self.mode = Mode::FileCommand(std::num::NonZeroUsize::new(count.unwrap_or(1)).unwrap()),
             Key::Char('r') | Key::Ctrl('r' | 'l') => self.position_initialized(),
             Key::Char('R') => {
@@ -2208,7 +2211,7 @@ impl Pager {
 
     fn build_status(&self) -> String {
         if self.mode == Mode::QuitPrefix { return " Z".into(); }
-        if self.mode == Mode::OptionPrefix { return "-".into(); }
+        if let Mode::OptionPrefix { quiet } = self.mode { return if quiet { "-(P)" } else { "-" }.into(); }
         if matches!(self.mode, Mode::FileCommand(_)) { return " :".into(); }
         if self.mode == Mode::SetMark { return "set mark: ".into(); }
         if self.mode == Mode::JumpMark { return "goto mark: ".into(); }
