@@ -15,6 +15,10 @@ enum Section { Search, Shell }
 struct Record { section: Section, bytes: Vec<u8> }
 struct Entry { bytes: Vec<u8>, text: String, modified: bool }
 
+/// Select how repeated search patterns are retained for recall.
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+pub enum DuplicatePolicy { #[default] Allow, MoveToEnd }
+
 #[derive(Default)]
 pub struct SearchHistory {
     entries: Vec<Entry>,
@@ -22,6 +26,7 @@ pub struct SearchHistory {
     draft: String,
     dirty: bool,
     position_changed: bool,
+    duplicate_policy: DuplicatePolicy,
 }
 
 enum Location { Explicit(PathBuf), Default { home: Option<OsString>, state: Option<OsString>, data: Option<OsString> } }
@@ -173,10 +178,15 @@ impl SearchHistory {
     }
 
     fn add(&mut self, bytes: Vec<u8>, modified: bool) {
-        if bytes.is_empty() || self.entries.last().is_some_and(|entry| entry.bytes == bytes) { return; }
+        if bytes.is_empty() { return; }
+        if self.duplicate_policy == DuplicatePolicy::MoveToEnd { self.entries.retain(|entry| entry.bytes != bytes); }
+        else if self.entries.last().is_some_and(|entry| entry.bytes == bytes) { return; }
         let text = String::from_utf8_lossy(&bytes).into_owned();
         self.entries.push(Entry { bytes, text, modified });
     }
+
+    /// Apply the resolved duplicate policy to subsequently accepted patterns.
+    pub fn set_duplicate_policy(&mut self, policy: DuplicatePolicy) { self.duplicate_policy = policy; }
 
     pub(crate) fn note_position(&mut self) { self.position_changed = true; }
 

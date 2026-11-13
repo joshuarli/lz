@@ -4356,10 +4356,20 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "configuration-history-unique-recall",
+        "configuration-history-unique-reset",
+        "configuration-history-unique-env",
+        "configuration-history-unique-session",
+        "configuration-history-unique-limit",
+        "configuration-history-unique-loaded",
+        "configuration-history-unique-no-file",
+        "configuration-history-unique-secure",
+        "configuration-history-unique-env-reset"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named search recall and history-file merge scenarios pass; filename and shell history and interactive option changes remain open"
     },
     {
       "id": "man-1444",

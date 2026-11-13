@@ -166,7 +166,7 @@ Key types: `ControlDisplay`; the remaining ANSI functions also serve search and 
 Persistent search history in the less format.
 
 - `HistoryFile` captures path/size policy, searches existing XDG/home destinations, and resolves the save destination again at exit. `LESSHISTFILE=-` or `/dev/null` disables persistence. Main applies the shared secure feature policy before constructing it; path/size resolution does not duplicate permission checks.
-- Search entries suppress consecutive duplicates. Raw stored bytes survive merge, including shell records. Full command editing and malformed-byte recall remain unfinished.
+- Search entries suppress consecutive duplicates. `DuplicatePolicy::MoveToEnd`, selected by `--no-histdups`, removes earlier copies when a pattern is accepted; loaded entries are not rewritten until used. Raw stored bytes survive merge, including shell records. Filename/shell duplicate handling, full command editing and malformed-byte recall remain unfinished.
 - Closing a painted file records a position change separately from accepted search input. Saving rereads the current destination, trims old entries by `LESSHISTSIZE`, writes a private file and renames it atomically. I/O failures are silent.
 - The old `$XDG_STATE_HOME/lz/history` path is not read or migrated. Parent directories are not created for a history destination.
 - Marks, concurrent/interrupted writers and temporary-name collisions still need parity proof.

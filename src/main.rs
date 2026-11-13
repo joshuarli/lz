@@ -349,6 +349,7 @@ fn run() -> Result<ExitAction, String> {
     }
     let history_file = if security.allows(security::Feature::History) { history::HistoryFile::from_environment() } else { None };
     let mut history = history_file.as_ref().map(history::HistoryFile::load).unwrap_or_default();
+    history.set_duplicate_policy(args.history_duplicates);
 
     let mut file_index = 0;
     let mut initial_display = pager::InitialDisplay::Startup;
