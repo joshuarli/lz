@@ -1862,10 +1862,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["invocation-display-reset-color", "invocation-display-reset-raw", "invocation-display-reset-default", "invocation-display-quiet-reset"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Interactive -+ resets r/R display mode, including an already-default mode and Ctrl-P suppression. Other resettable options remain open."
     },
     {
       "id": "man-0417",
@@ -1900,10 +1900,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["invocation-display-set-color", "invocation-display-set-raw", "invocation-display-set-existing", "invocation-display-quiet-set"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Interactive -! sets r/R display mode, including an already-selected mode and Ctrl-P suppression. Other settable options remain open."
     },
     {
       "id": "man-0425",

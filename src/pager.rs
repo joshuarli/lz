@@ -120,7 +120,7 @@ enum Mode {
 }
 
 #[derive(Clone, Copy, PartialEq)]
-enum OptionCommand { Toggle, ToggleQuietly, Query }
+enum OptionCommand { Toggle, ToggleQuietly, Reset, ResetQuietly, Set, SetQuietly, Query }
 
 #[derive(Clone, Copy)]
 enum HelpPrefix { Colon(std::num::NonZeroUsize), Quit }
@@ -1088,10 +1088,23 @@ impl Pager {
             Mode::SetMark | Mode::JumpMark => { self.handle_mark_key(key); false }
             Mode::OptionPrefix(command) => {
                 if key == Key::Ctrl('p') && command == OptionCommand::Toggle { self.mode = Mode::OptionPrefix(OptionCommand::ToggleQuietly); return false; }
+                let modified = match (command, &key) {
+                    (OptionCommand::Toggle, Key::Char('+')) => Some(OptionCommand::Reset),
+                    (OptionCommand::ToggleQuietly, Key::Char('+')) => Some(OptionCommand::ResetQuietly),
+                    (OptionCommand::Toggle, Key::Char('!')) => Some(OptionCommand::Set),
+                    (OptionCommand::ToggleQuietly, Key::Char('!')) => Some(OptionCommand::SetQuietly),
+                    _ => None,
+                };
+                if let Some(command) = modified { self.mode = Mode::OptionPrefix(command); return false; }
                 self.mode = Mode::Normal;
                 if let Key::Char(choice @ ('r' | 'R')) = key {
                     let selected = if choice == 'r' { ControlDisplay::Raw } else { ControlDisplay::Color };
-                    if command != OptionCommand::Query { self.controls = if self.controls == selected { ControlDisplay::Standard } else { selected }; }
+                    self.controls = match command {
+                        OptionCommand::Toggle | OptionCommand::ToggleQuietly => if self.controls == selected { ControlDisplay::Standard } else { selected },
+                        OptionCommand::Reset | OptionCommand::ResetQuietly => ControlDisplay::Standard,
+                        OptionCommand::Set | OptionCommand::SetQuietly => selected,
+                        OptionCommand::Query => self.controls,
+                    };
                     let repaint = self.squished;
                     if repaint { self.position_initialized(); }
                     let message = match self.controls {
@@ -1099,7 +1112,7 @@ impl Pager {
                         ControlDisplay::Raw => "Display control characters directly (not recommended)",
                         ControlDisplay::Color => "Display ANSI sequences directly, other control characters as ^X",
                     };
-                    if command != OptionCommand::ToggleQuietly {
+                    if !matches!(command, OptionCommand::ToggleQuietly | OptionCommand::ResetQuietly | OptionCommand::SetQuietly) {
                         self.status_msg = Some(format!("{message}  (press RETURN)"));
                         self.mode = Mode::OptionNotice { repaint };
                     }
@@ -2215,7 +2228,7 @@ impl Pager {
 
     fn build_status(&self) -> String {
         if self.mode == Mode::QuitPrefix { return " Z".into(); }
-        if let Mode::OptionPrefix(command) = self.mode { return match command { OptionCommand::Toggle => "-", OptionCommand::ToggleQuietly => "-(P)", OptionCommand::Query => "_" }.into(); }
+        if let Mode::OptionPrefix(command) = self.mode { return match command { OptionCommand::Toggle => "-", OptionCommand::ToggleQuietly => "-(P)", OptionCommand::Reset => "-+", OptionCommand::ResetQuietly => "-(P)+", OptionCommand::Set => "-!", OptionCommand::SetQuietly => "-(P)!", OptionCommand::Query => "_" }.into(); }
         if matches!(self.mode, Mode::FileCommand(_)) { return " :".into(); }
         if self.mode == Mode::SetMark { return "set mark: ".into(); }
         if self.mode == Mode::JumpMark { return "goto mark: ".into(); }
