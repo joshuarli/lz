@@ -140,6 +140,12 @@ fn translate_posix_escapes(pattern: &str) -> String {
             class_first = false;
             continue;
         }
+        if in_class && matches!(byte, b'&' | b'~') {
+            output.extend_from_slice(if byte == b'&' { b"\\x26" } else { b"\\x7e" });
+            class_first = false;
+            index += 1;
+            continue;
+        }
         if in_class && byte == b'\\' { output.push(byte); }
         output.push(byte);
         if !in_class && byte == b'[' { in_class = true; class_first = true; }
@@ -315,6 +321,16 @@ impl Search {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn posix_bracket_operators_are_literal_members() {
+        let ampersand = Search::new("[a&&b]", CaseSensitivity::Sensitive).unwrap();
+        assert!(ampersand.is_match("&"));
+        assert!(!ampersand.is_match("c"));
+        let tilde = Search::new("[a~~b]", CaseSensitivity::Sensitive).unwrap();
+        assert!(tilde.is_match("~"));
+        assert!(!tilde.is_match("c"));
+    }
 
     #[test]
     fn posix_bracket_backslashes_are_literal_members() {
