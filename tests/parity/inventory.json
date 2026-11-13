@@ -1364,7 +1364,7 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["sessions-search-next-file-highlight-repeat", "sessions-search-next-file-backward-repeat", "search-repeat-after-forward-movement", "search-repeat-after-backward-movement"],
+      "cases": ["sessions-search-next-file-highlight-repeat", "sessions-search-next-file-backward-repeat", "search-repeat-after-forward-movement", "search-repeat-after-backward-movement", "search-repeat-without-pattern", "search-repeat-from-persisted-history"],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
       "cause": "Forward and backward repeats preserve the active search across a next-file switch and resume from the current position after manual movement in the named cases. Other repeat and file-transition interactions remain open."
@@ -1440,7 +1440,7 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["search-highlight-toggle", "upstream-github265-color-search-toggle", "sessions-search-highlight-toggle-next-file"],
+      "cases": ["search-highlight-toggle", "upstream-github265-color-search-toggle", "sessions-search-highlight-toggle-next-file", "search-toggle-without-pattern"],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
       "cause": "Esc-u toggles highlighting, carries the state across next-file switches and is reset by a subsequent search in the named cases. Other search modes and -G interactions remain open."
@@ -1459,10 +1459,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-clear-highlight-and-pattern"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Esc-U clears active highlighting and pattern; repeat search can recover the latest history entry in the named case. Status-column and other history interactions remain open."
     },
     {
       "id": "man-0322",
@@ -7260,7 +7260,9 @@
         "configuration-history-secure",
         "configuration-history-recall",
         "configuration-history-cancel-typed",
-        "configuration-history-home-existing"
+        "configuration-history-home-existing",
+        "search-repeat-from-persisted-history",
+        "search-persisted-history-no-recall"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",

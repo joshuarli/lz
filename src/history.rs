@@ -189,6 +189,7 @@ impl SearchHistory {
     pub fn set_duplicate_policy(&mut self, policy: DuplicatePolicy) { self.duplicate_policy = policy; }
 
     pub(crate) fn note_position(&mut self) { self.position_changed = true; }
+    pub(crate) fn note_recalled_pattern(&mut self) { self.dirty = true; }
 
     pub fn push(&mut self, pattern: &str) {
         self.dirty = true;
@@ -206,6 +207,8 @@ impl SearchHistory {
     }
 
     pub(crate) fn at_oldest(&self) -> bool { !self.entries.is_empty() && self.cursor == 0 }
+
+    pub(crate) fn last_pattern(&self) -> Option<&str> { self.entries.last().map(|entry| entry.text.as_str()) }
 
     pub fn newer(&mut self) -> Option<&str> {
         if self.cursor >= self.entries.len() { return None; }

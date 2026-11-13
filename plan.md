@@ -74,6 +74,12 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S08m:** forward and backward repeat searches start from the current position after manual movement in the named cases on macOS and in a Linux arm64 container. All 72 admitted macOS search cases and 50 fuzz seeds pass. Wrapped and filtered positions remain open.
 
+**S08n:** `Esc-U` clears active highlighting and pattern; repeat search recovers the latest history pattern or reports that none exists. The named cases pass on macOS and in a Linux arm64 container. `Key::ClearSearchHighlight` is public. Status-column and broader history interactions remain open.
+
+**S10g:** repeating a persisted history pattern records the reference history-file update; a no-recall control preserves the prior file. Both pass on macOS and in a Linux arm64 container. Other history policies and concurrent writes remain open.
+
+**S08o:** `Esc-u` with no active search reports the reference no-previous-pattern prompt. The case passes on macOS and in a Linux arm64 container; all 77 admitted macOS search cases pass. No-match and other search states remain open.
+
 **S09j:** the active search and its direction survive next-file switches; the match position remains file-local. Forward highlighting and repeat, backward repeat and the generating seed pass on macOS; the named cases also pass in a Linux arm64 container. Public `SearchSession` carries this state through `Config` and `Pager::take_search_session`. Other search and file-transition interactions remain open.
 
 **S08j:** missing patterns display the reference acknowledgment prompt, and non-acknowledgment keys replay after it. The direct search case and cross-file backward case pass on macOS and in a Linux arm64 container; all 64 admitted macOS search cases pass. Other search diagnostics remain open.

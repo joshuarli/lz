@@ -1233,7 +1233,16 @@ impl Pager {
                 self.remember_jump_from(previous);
             }
             Key::HorizontalStart => { self.position_initialized(); self.left_col = 0; }
-            Key::ToggleSearchHighlight => self.search_highlight = !self.search_highlight,
+            Key::ToggleSearchHighlight => {
+                if self.search.is_some() { self.search_highlight = !self.search_highlight; }
+                else { self.command_error("No previous regular expression".to_string(), ErrorAction::Dismiss); }
+            }
+            Key::ClearSearchHighlight => {
+                self.search = None;
+                self.search_highlight = false;
+                self.search_inherited = false;
+                self.current_match_line = None;
+            }
             Key::Right | Key::Left => {
                 self.position_initialized();
                 if let Some(amount) = count.and_then(std::num::NonZeroUsize::new) { self.scroll_defaults.horizontal = Some(amount); }
@@ -1517,7 +1526,13 @@ impl Pager {
         self.search_highlight = true;
         let search = match self.search.take() {
             Some(s) => s,
-            None => return,
+            None => match self.history.last_pattern() {
+                Some(pattern) => match Search::new(pattern, self.search_case) {
+                    Ok(search) => { self.history.note_recalled_pattern(); self.current_match_line = Some(self.target_line()); search }
+                    Err(error) => { self.command_error(error, ErrorAction::Dismiss); return; }
+                },
+                None => { self.command_error("No previous regular expression".to_string(), ErrorAction::Dismiss); return; }
+            },
         };
         let from = if !forward && !self.content_painted && self.last_visible_line.is_none() && self.current_match_line.is_none() {
             self.buffer.read_all();
