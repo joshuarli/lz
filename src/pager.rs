@@ -364,7 +364,7 @@ fn scan_color_line(buffer: &mut LineBuffer, line: usize, width: usize, charset: 
                         let Ok(text) = std::str::from_utf8(&bytes[..expected]) else { return Ok(ColorLine::Unsupported); };
                         let character = text.chars().next().unwrap();
                         if character.is_control() || charset.binary_character(character) { return Ok(ColorLine::Unsupported); }
-                        let Some(character_width) = character.width().filter(|width| *width > 0) else { return Ok(ColorLine::Unsupported); };
+                        let Some(character_width) = character.width() else { return Ok(ColorLine::Unsupported); };
                         columns += character_width;
                         if columns > width { return Ok(ColorLine::Unsupported); }
                         SgrScan::Text
@@ -2174,7 +2174,7 @@ mod one_screen_tests {
     fn streamed_color_lines_respect_charset_width_and_utf8_validity() {
         let mut input = tempfile::NamedTempFile::new().unwrap();
         input.write_all("\u{1b}[31mé界🦀\n".as_bytes()).unwrap();
-        input.write_all(b"\x1b[31m\xe7\x95\n\x1b[31m\xe0\x80\x80\n").unwrap();
+        input.write_all(b"\x1b[31m\xe7\x95\n\x1b[31m\xe0\x80\x80\n\x1b[31me\xcc\x81\n").unwrap();
         let mut buffer = LineBuffer::from_file(std::fs::File::open(input.path()).unwrap());
         assert!(matches!(scan_color_line(&mut buffer, 0, 5, Charset::Utf8, &mut io::sink()).unwrap(), ColorLine::Fits(true)));
         assert!(matches!(scan_color_line(&mut buffer, 0, 4, Charset::Utf8, &mut io::sink()).unwrap(), ColorLine::Unsupported));
@@ -2182,6 +2182,7 @@ mod one_screen_tests {
         for line in 1..=2 {
             assert!(matches!(scan_color_line(&mut buffer, line, 80, Charset::Utf8, &mut io::sink()).unwrap(), ColorLine::Unsupported));
         }
+        assert!(matches!(scan_color_line(&mut buffer, 3, 1, Charset::Utf8, &mut io::sink()).unwrap(), ColorLine::Fits(true)));
     }
 
     #[test]

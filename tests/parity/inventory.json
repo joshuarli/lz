@@ -3220,11 +3220,12 @@
         "invocation-one-screen-sgr-pipe",
         "invocation-one-screen-sgr-startup",
         "invocation-one-screen-sgr-startup-numbered",
-        "rendering-long-sgr-utf8-one-screen"
+        "rendering-long-sgr-utf8-one-screen",
+        "rendering-long-sgr-combining-one-screen"
       ],
       "implementation": "partial",
       "evidence": "partially compatible",
-      "cause": "Initial single-file -F covers the named boundaries and interactions. Long single-row ASCII and positive-width UTF-8 SGR lines stream with bounded memory in named startup cases. Combining characters, other escapes, multirow lines, search highlighting, live pipes and further interactions remain open."
+      "cause": "Initial single-file -F covers the named boundaries and interactions. Long single-row ASCII and UTF-8 SGR lines stream with bounded memory in named startup cases, including a combining mark. Other escapes, multirow lines, search highlighting, live pipes and further interactions remain open."
     },
     {
       "id": "man-0870",
@@ -3897,11 +3898,15 @@
         "rendering-long-sgr-split-sequence",
         "rendering-long-sgr-sixteen-mib",
         "rendering-long-sgr-utf8-interactive",
-        "rendering-long-sgr-utf8-split"
+        "rendering-long-sgr-utf8-split",
+        "rendering-long-sgr-combining-interactive",
+        "rendering-long-sgr-combining-edge",
+        "rendering-long-sgr-combining-split",
+        "rendering-long-sgr-combining-leading"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "SGR indexed/RGB colors and represented style, malformed UTF-8, unsupported CSI removal, controls, overstrikes, wrapping and line resets pass under -R. The byte layout restores source SGR after notation and overstrikes. Long single-row ASCII and positive-width UTF-8 SGR cases pass on macOS and in a Linux arm64 container, including split UTF-8 and a 16 MiB ASCII line. OSC 8, combining characters and multirow long lines, search highlighting, cancellation and further geometry remain open."
+      "cause": "SGR indexed/RGB colors and represented style, malformed UTF-8, unsupported CSI removal, controls, overstrikes, wrapping and line resets pass under -R. The byte layout restores source SGR after notation and overstrikes. Long single-row ASCII and UTF-8 SGR cases pass on macOS and in a Linux arm64 container, including combining marks, split characters and a 16 MiB ASCII line. OSC 8, other zero-width sequences, multirow long lines, search highlighting, cancellation and further geometry remain open."
     },
     {
       "id": "man-1163",
