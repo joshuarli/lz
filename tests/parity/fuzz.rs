@@ -7,7 +7,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const GENERATOR_VERSION: u32 = 8;
+const GENERATOR_VERSION: u32 = 9;
 
 struct Random(u64);
 impl Random {
@@ -47,8 +47,9 @@ fn generate(seed: u64) -> Case {
     let mut fixture = Vec::new();
     for line in 1..=lines {
         fixture.extend_from_slice(format!("{line:06} seed{seed:016X}").as_bytes());
-        if utf8 { fixture.extend_from_slice(" é界e\u{301}".as_bytes()); }
-        if text_kind < 3 && line == lines / 2 { fixture.push(0xff); }
+        let malformed = text_kind < 3 && line == lines / 2;
+        if utf8 && !malformed { fixture.extend_from_slice(" é界e\u{301}".as_bytes()); }
+        if malformed { fixture.push(0xff); }
         fixture.push(b'\n');
     }
     let mut files = BTreeMap::new();
@@ -291,6 +292,18 @@ pub(super) fn selftest() -> Result<()> {
     let again = generate(0);
     if serde_json::to_vec(&case)? != serde_json::to_vec(&again)? || serde_json::to_value(&case.fixture)? == serde_json::to_value(&generate(1).fixture)? {
         return Err("generated cases are not deterministic and seed-distinguishing".into());
+    }
+    for seed in 0..1000 {
+        let generated = generate(seed);
+        let Fixture::Bytes(bytes) = &generated.fixture else { return Err("generated fixture is not inline bytes".into()); };
+        if bytes[..bytes.len().min(256)].contains(&0xff) { return Err("generated malformed byte enters the binary sample".into()); }
+        for line in bytes.split(|byte| *byte == b'\n').filter(|line| !line.is_empty()) {
+            let mut columns = line.iter().filter(|byte| **byte == 0xff).count() * 4;
+            for valid in line.split(|byte| *byte == 0xff) {
+                columns += unicode_width::UnicodeWidthStr::width(std::str::from_utf8(valid)?);
+            }
+            if columns + 8 > 40 { return Err("generated numbered line exceeds the narrow viewport".into()); }
+        }
     }
     case.fixture = Vec::new().into();
     case.events = vec![
