@@ -1999,8 +1999,8 @@ impl Pager {
         if let Mode::CommandError(error) = &mut self.mode { error.repaint = repaint; }
     }
 
-    fn show_first_screen_search_match(&mut self, search: &Search, line: usize) {
-        if self.left_col == 0 || self.search_nonmatch || self.controls == ControlDisplay::Raw { return; }
+    fn show_search_match(&mut self, search: &Search, line: usize) {
+        if self.wraps() || self.search_nonmatch || self.controls == ControlDisplay::Raw { return; }
         let actual = if self.filter.is_some() { self.filtered_lines.get(line).copied() } else { Some(line) };
         let Some(actual) = actual else { return; };
         let width = usize::from(self.term_width);
@@ -2010,7 +2010,14 @@ impl Pager {
         let text = if self.controls == ControlDisplay::Color { std::borrow::Cow::Owned(strip_ansi(source)) }
             else if source.contains('\x1b') { return; }
             else { std::borrow::Cow::Borrowed(source) };
-        if search.first_match_stripped(&text).is_some_and(|(_, end)| end < content_width) { self.left_col = 0; }
+        let Some((start, end)) = search.first_match_stripped(&text) else { return; };
+        self.left_col = if end < content_width { 0 }
+            else if start > self.left_col && end < self.left_col.saturating_add(content_width) { self.left_col }
+            else {
+                let last_screen = text.len().saturating_sub(content_width);
+                if start >= last_screen { last_screen }
+                else { start.saturating_sub(ScreenFraction(500_000).scale(self.term_width)) }
+            };
     }
 
     fn do_search(&mut self, forward: bool, keep_position: bool) {
@@ -2059,7 +2066,7 @@ impl Pager {
         match found {
             Some(line) => {
                 self.current_match_line = Some(line);
-                self.show_first_screen_search_match(&search, line);
+                self.show_search_match(&search, line);
                 if keep_position && self.squished { self.position_initialized(); }
                 if !keep_position {
                     self.position_initialized();
