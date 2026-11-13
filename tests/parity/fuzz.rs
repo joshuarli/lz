@@ -6,7 +6,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const GENERATOR_VERSION: u32 = 3;
+const GENERATOR_VERSION: u32 = 4;
 
 struct Random(u64);
 impl Random {
@@ -24,6 +24,18 @@ fn checkpoint(line: usize) -> Event { Event::Checkpoint { ready: format!("{line:
 fn generate(seed: u64) -> Case {
     let mut random = Random(seed);
     let size = if random.choose(2) == 0 { [40, 12] } else { [80, 24] };
+    let mask = random.choose(8);
+    let mut flags = String::from("-");
+    for (bit, flag) in [(1, 'N'), (2, 'S'), (4, 'R')] {
+        if mask & bit != 0 { flags.push(flag); }
+    }
+    let mut args = Vec::new();
+    let mut env = BTreeMap::new();
+    if flags.len() > 1 {
+        if random.choose(2) == 0 { args.push(Argument::Text(flags)); }
+        else { env.insert("LESS".into(), flags); }
+    }
+    args.push(Argument::from("input"));
     let lines = 48 + random.choose(80);
     let mut current_size = size;
     let mut height = usize::from(size[1] - 1);
@@ -86,8 +98,8 @@ fn generate(seed: u64) -> Case {
     events.push(Event::Send { bytes: vec![b'q'] });
     Case {
         id: format!("fuzz-navigation-{seed:016x}"), family: "navigation".into(), admitted: false,
-        source: "pty".into(), pty_rss_limit: Default::default(), pty_spill_limit: Default::default(), fixture: fixture.into(), args: vec![Argument::from("input")],
-        fixture_name: b"input".to_vec(), files: BTreeMap::new(), env: BTreeMap::new(),
+        source: "pty".into(), pty_rss_limit: Default::default(), pty_spill_limit: Default::default(), fixture: fixture.into(), args,
+        fixture_name: b"input".to_vec(), files: BTreeMap::new(), env,
         size, locale: "C".into(), events, trace_check: TraceCheck::Captured,
     }
 }
@@ -205,9 +217,9 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
     }
     fs::write(directory.join("summary.json"), serde_json::to_vec_pretty(&json!({
         "metadata":meta,"seed":seed,"generator_version":GENERATOR_VERSION,"requested":count,"executed":summaries.len(),"oracle_only":oracle_only,"results":summaries,
-        "grammar":"ASCII logical-line movement, ordinary in-file marks, forward literal searches and resize-and-jump; eight actions; 40x12 or 80x24",
+        "grammar":"ASCII logical-line movement, ordinary in-file marks, forward literal searches and resize-and-jump with CLI/LESS display options; eight actions; 40x12 or 80x24",
         "limits":{"case_seconds":10,"trace_bytes":64*1024*1024,"pty_rss_bytes":u64::from(super::resources::RssLimit::default()),"pty_spill_bytes":u64::from(super::spill::Limit::default()),"actions":8,"workers":4,"reduction_attempts":8},
-        "open_limits":["stdio/helper/producer RSS enforcement","stdio/helper/producer spill accounting","CLI/config/byte-text/file-transition/signal grammar","boundary weighting","search variants and adversarial/Unicode/stream/helper grammar"]
+        "open_limits":["stdio/helper/producer RSS enforcement","stdio/helper/producer spill accounting","broader CLI/config/byte-text/file-transition/signal grammar","boundary weighting","search variants and adversarial/Unicode/stream/helper grammar"]
     }))?)?;
     fs::write(stdio::root().join(".work/parity-fuzz-latest"), directory.as_os_str().as_encoded_bytes())?;
     fs::write(stdio::root().join(if oracle_only { ".work/parity-fuzz-oracle" } else { ".work/parity-fuzz-current" }), directory.as_os_str().as_encoded_bytes())?;
