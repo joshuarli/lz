@@ -90,6 +90,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12n accepted:** generated-failure reduction shrinks inline bytes of retained auxiliary files under the existing limits; the report includes auxiliary-byte attempts and counts. The real PTY control retains the required primary and auxiliary bytes, file, environment, argument and mismatch category. A cross-file boundary control also preserves intervening generated recipes. Selftests passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Generated fixture recipes remain untouched.
 
+**S12o accepted:** generated-failure reduction shrinks primary repeat counts without materializing fixtures; the report includes repeat-count attempts and counts. The PTY control retains the repetitions required for the same mismatch. Selftests passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Numbered recipes and auxiliary recipes remain open.
+
 **S04au:** interactive `-R` toggles color display and carries it across file switches. Six cases pass on macOS and in a Linux arm64 container, covering the upstream `github329` fixture, short and long views, raw mode, prompt replay and interruption. `Pager::control_display` exposes the current mode. Other option commands, suppression, queries and startup interactions remain open; the upstream translation is partial.
 
 **S04av:** interactive `-r` toggles raw display, switches from color mode and remains in effect across file switches in the named cases on macOS and in a Linux arm64 container. Other option interactions remain open.
