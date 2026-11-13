@@ -882,6 +882,9 @@ impl Pager {
     /// Return the selected line-number option state.
     pub fn line_numbers(&self) -> LineNumberMode { self.line_numbers }
 
+    /// Return whether long lines are chopped.
+    pub fn chop(&self) -> bool { !self.wrap }
+
     /// Transfer the active search to the next file in the session.
     pub fn take_search_session(&mut self) -> SearchSession { SearchSession { search:self.search.take(), direction:self.search_dir, highlight:self.search_highlight } }
 
@@ -1182,6 +1185,13 @@ impl Pager {
                     self.apply_control_option(command, choice);
                 } else if let Key::Char(choice @ ('n' | 'N')) = key {
                     self.apply_line_number_option(command, choice);
+                } else if key == Key::Char('S') && command == OptionCommand::Toggle {
+                    self.wrap = !self.wrap;
+                    let repaint = self.squished;
+                    if repaint { self.position_initialized(); }
+                    let message = if self.wrap { "Fold long lines" } else { "Chop long lines" };
+                    self.status_msg = Some(format!("{message}  (press RETURN)"));
+                    self.mode = Mode::OptionNotice { repaint };
                 } else if key != Key::Escape { self.bell_requested = true; }
                 false
             }

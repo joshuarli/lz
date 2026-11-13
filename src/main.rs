@@ -348,6 +348,7 @@ fn run() -> Result<ExitAction, String> {
         scroll_defaults = pager.scroll_defaults();
         args.control_display = pager.control_display();
         args.line_numbers = pager.line_numbers();
+        args.chop = pager.chop();
         search_session = pager.take_search_session();
         args.startup_commands = pager.take_startup_commands();
         history = pager.into_history();
