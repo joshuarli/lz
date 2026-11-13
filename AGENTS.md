@@ -217,7 +217,7 @@ Key types: `Pager` struct, `Mode` enum (`Normal`, `SearchInput`, `FilterInput`, 
 - Line filtering (`&`) — show only lines matching a pattern
 - Interactive help screen (`h` key)
 - Wrap toggle (`w` key)
-- Follow mode (`--follow` flag or `F` key, equivalent to `tail -f`)
+- Regular-file follow (`+F` or `F`), including appended lines and return to navigation with Ctrl-C/Ctrl-X. The default waiting message is emphasized. Ctrl-C rings a bell; Ctrl-X does not. The mode owns follow state without a duplicate flag. Custom interrupts, truncation/replacement and continuous/live sources remain open.
 - ANSI color pass-through (colors in input are preserved in output)
 - Raw escape mode (`-r` flag, shows escape sequences literally)
 - Binary file detection (refuses to display binary content)

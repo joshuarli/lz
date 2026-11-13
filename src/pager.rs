@@ -10,6 +10,8 @@ use crate::input::{Key, KeyReader};
 use crate::search::{CaseSensitivity, Search};
 use crate::terminal;
 
+const FOLLOW_INTERRUPT: char = 'x';
+
 #[derive(PartialEq, Clone)]
 enum Mode {
     Normal,
@@ -200,7 +202,6 @@ pub struct Pager {
     history: SearchHistory,
     term_width: u16,
     term_height: u16,
-    follow: bool,
     charset: Charset,
     controls: ControlDisplay,
     status_msg: Option<String>,
@@ -243,7 +244,6 @@ impl Pager {
             history,
             term_width: w,
             term_height: h,
-            follow: false,
             charset: config.charset,
             controls: config.controls,
             status_msg: None,
@@ -504,7 +504,6 @@ impl Pager {
             Key::Char('F') => {
                 self.position_initialized();
                 self.mode = Mode::Follow;
-                self.follow = true;
                 self.buffer.read_all();
                 self.scroll_to_bottom();
             }
@@ -570,7 +569,12 @@ impl Pager {
     }
 
     fn handle_follow_key(&mut self, key: Key) -> bool {
-        matches!(key, Key::Char('q') | Key::Escape | Key::Ctrl('c'))
+        if matches!(key, Key::Ctrl(character) if character == 'c' || character == FOLLOW_INTERRUPT) {
+            self.mode = Mode::Normal;
+            if key == Key::Ctrl('c') { self.bell_requested = true; }
+            self.status_msg = None;
+        }
+        false
     }
 
     fn handle_search_input_key(&mut self, key: Key) {
@@ -1085,7 +1089,7 @@ impl Pager {
     fn render_status(&self, buf: &mut Vec<u8>, w: usize) {
         terminal::move_cursor(buf, self.term_height - 1, 0);
         let status = self.build_status();
-        let emphasized = (self.filename_prompt && self.filename.is_some()) || status.starts_with("(END)") || self.status_msg.is_some();
+        let emphasized = self.mode == Mode::Follow || (self.filename_prompt && self.filename.is_some()) || status.starts_with("(END)") || self.status_msg.is_some();
         if emphasized { buf.extend_from_slice(b"\x1b[7m"); }
         let mut suffix_width = 0;
         let mut start = status.len();
@@ -1127,7 +1131,7 @@ impl Pager {
         }
 
         if self.mode == Mode::Follow {
-            return "Waiting for data...".to_string();
+            return format!("Waiting for data... (^{} or interrupt to abort)", FOLLOW_INTERRUPT.to_ascii_uppercase());
         }
 
         if let Some(ref msg) = self.status_msg {

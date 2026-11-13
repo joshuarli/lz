@@ -451,10 +451,16 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "sessions-follow-message-term",
+        "sessions-follow-append-interrupt",
+        "sessions-follow-startup-interrupt",
+        "sessions-follow-control-x",
+        "sessions-follow-ignore-quit"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Regular-file follow waits with the default interrupt prompt, appends lines, resumes navigation on Ctrl-C/Ctrl-X, ignores quit while waiting and cleans up on TERM. Custom interrupt/wait policies, truncation/replacement, live pipes and continuous-producer cancellation remain open."
     },
     {
       "id": "man-0127",
