@@ -144,6 +144,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S07ap accepted:** normal-mode numeric-prefix display preserves zero and leading zeros in the tested count. The zero sequence and ordinary counted upstream movement pass on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Overflow display and other command modes remain open.
 
+**S12aj accepted (partial translation):** the original `github216` color option and first counted horizontal step pass with the reference, including uncolored count prompts. The new case and neighboring search, color and horizontal cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Later navigation and custom termcap remain open.
+
 **S12ai accepted (partial translation):** the original `github265` fixture, filename, environment, search keystrokes and highlight toggle match on macOS arm64 and Linux arm64 Docker with generic-terminal checkpoints. Original custom termcap remains open.
 
 **S12ah accepted (partial translation):** the remaining `search-hist` incremental history-up/down and repeat sequence passes on macOS arm64 and Linux arm64 Docker, alongside the neighboring incremental case. The original command sequence now has generic-terminal checkpoints after semantic interactions; original custom termcap remains open.

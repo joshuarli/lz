@@ -2540,7 +2540,7 @@ impl Pager {
     fn render_status(&self, buf: &mut Frame, w: usize) {
         buf.position(self.term_height.saturating_sub(1) as usize);
         let base_status = self.build_status();
-        let emphasized = self.mode == Mode::Follow || (self.mode == Mode::Help && self.help_prefix.is_none()) || (self.mode != Mode::Help && self.filename_prompt && (self.filename.is_some() || self.files.count > 1)) || base_status.starts_with("(END)") || self.status_msg.is_some() || (self.use_color && self.mode == Mode::Normal);
+        let emphasized = self.mode == Mode::Follow || (self.mode == Mode::Help && self.help_prefix.is_none()) || (self.mode != Mode::Help && self.filename_prompt && (self.filename.is_some() || self.files.count > 1)) || base_status.starts_with("(END)") || self.status_msg.is_some() || (self.use_color && self.mode == Mode::Normal && self.numeric_prefix == NumericPrefix::Empty);
         let prefix = if self.mode == Mode::Normal && self.filter.is_some() && self.status_msg.is_none() { "& " } else { "" };
         let status = format!("{prefix}{base_status}");
         let mut suffix_width = 0;
