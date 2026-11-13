@@ -140,7 +140,7 @@ fn signature(result: &Value) -> Option<(String, String)> {
 }
 
 #[derive(Clone, Copy)]
-enum ReductionPart { Events, Arguments, FixtureBytes, Environment, AuxiliaryFiles }
+enum ReductionPart { Events, Arguments, FixtureBytes, Environment, AuxiliaryFiles, AuxiliaryBytes }
 
 impl ReductionPart {
     fn len(self, case: &Case) -> usize {
@@ -150,6 +150,7 @@ impl ReductionPart {
             Self::FixtureBytes => match &case.fixture { Fixture::Bytes(bytes) => bytes.len(), _ => 0 },
             Self::Environment => case.env.len(),
             Self::AuxiliaryFiles => case.files.len(),
+            Self::AuxiliaryBytes => case.files.values().map(|fixture| match fixture { Fixture::Bytes(bytes) => bytes.len(), _ => 0 }).sum(),
         }
     }
 
@@ -165,6 +166,18 @@ impl ReductionPart {
             Self::AuxiliaryFiles => {
                 let keys: Vec<_> = case.files.keys().skip(range.start).take(range.len()).cloned().collect();
                 for key in keys { case.files.remove(&key); }
+            }
+            Self::AuxiliaryBytes => {
+                let mut offset = 0;
+                for fixture in case.files.values_mut() {
+                    if let Fixture::Bytes(bytes) = fixture {
+                        let end = offset + bytes.len();
+                        if range.start < end && range.end > offset {
+                            bytes.drain(range.start.saturating_sub(offset)..range.end.min(end) - offset);
+                        }
+                        offset = end;
+                    }
+                }
             }
         }
     }
@@ -265,13 +278,14 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
                     let (arguments, observation, argument_attempts) = reduce_part(&events, &observation, ReductionPart::Arguments, |case| observe_case(reference, candidate, case));
                     let (fixture, observation, fixture_attempts) = reduce_part(&arguments, &observation, ReductionPart::FixtureBytes, |case| observe_case(reference, candidate, case));
                     let (environment, observation, environment_attempts) = reduce_part(&fixture, &observation, ReductionPart::Environment, |case| observe_case(reference, candidate, case));
-                    let (minimized, observation, auxiliary_attempts) = reduce_part(&environment, &observation, ReductionPart::AuxiliaryFiles, |case| observe_case(reference, candidate, case));
+                    let (auxiliary, observation, auxiliary_attempts) = reduce_part(&environment, &observation, ReductionPart::AuxiliaryFiles, |case| observe_case(reference, candidate, case));
+                    let (minimized, observation, auxiliary_byte_attempts) = reduce_part(&auxiliary, &observation, ReductionPart::AuxiliaryBytes, |case| observe_case(reference, candidate, case));
                     fs::write(directory.join("minimized-case.json"), serde_json::to_vec_pretty(&minimized)?)?;
                     save(&directory.join("minimized-observation.json.gz"), &observation)?;
-                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":true,"attempts":{"events":event_attempts,"arguments":argument_attempts,"fixture":fixture_attempts,"environment":environment_attempts,"auxiliary_files":auxiliary_attempts},"original_auxiliary_files":case.files.len(),"minimized_auxiliary_files":minimized.files.len(),"original_environment":case.env.len(),"minimized_environment":minimized.env.len(),"original_events":case.events.len(),"minimized_events":minimized.events.len(),"original_arguments":case.args.len(),"minimized_arguments":minimized.args.len(),"original_fixture_bytes":ReductionPart::FixtureBytes.len(case),"minimized_fixture_bytes":ReductionPart::FixtureBytes.len(&minimized)}))?)?;
+                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":true,"attempts":{"events":event_attempts,"arguments":argument_attempts,"fixture":fixture_attempts,"environment":environment_attempts,"auxiliary_files":auxiliary_attempts,"auxiliary_bytes":auxiliary_byte_attempts},"original_auxiliary_bytes":ReductionPart::AuxiliaryBytes.len(case),"minimized_auxiliary_bytes":ReductionPart::AuxiliaryBytes.len(&minimized),"original_auxiliary_files":case.files.len(),"minimized_auxiliary_files":minimized.files.len(),"original_environment":case.env.len(),"minimized_environment":minimized.env.len(),"original_events":case.events.len(),"minimized_events":minimized.events.len(),"original_arguments":case.args.len(),"minimized_arguments":minimized.args.len(),"original_fixture_bytes":ReductionPart::FixtureBytes.len(case),"minimized_fixture_bytes":ReductionPart::FixtureBytes.len(&minimized)}))?)?;
                 } else {
                     save(&directory.join("reproduction-observation.json.gz"), &reproduced)?;
-                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":false,"attempts":{"events":0,"arguments":0,"fixture":0,"environment":0,"auxiliary_files":0},"reason":"failure signature changed or belongs to the oracle; original failure remains strict"}))?)?;
+                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":false,"attempts":{"events":0,"arguments":0,"fixture":0,"environment":0,"auxiliary_files":0,"auxiliary_bytes":0},"reason":"failure signature changed or belongs to the oracle; original failure remains strict"}))?)?;
                 }
             }
             break;
@@ -348,9 +362,9 @@ pub(super) fn selftest() -> Result<()> {
     input_case.args = vec![Argument::from("unused"), Argument::from("--required"), Argument::from("extra")];
     input_case.fixture = b"abXcd\n".to_vec().into();
     input_case.env = [("AAA_UNUSED".into(), "one".into()), ("LZ_REDUCE_REQUIRED".into(), "yes".into()), ("ZZZ_UNUSED".into(), "two".into())].into();
-    input_case.files = [("aaa".into(), b"unused".to_vec().into()), ("needed".into(), b"required".to_vec().into()), ("zzz".into(), b"unused".to_vec().into())].into();
+    input_case.files = [("aaa".into(), b"unused".to_vec().into()), ("needed".into(), b"abZcd\n".to_vec().into()), ("zzz".into(), b"unused".to_vec().into())].into();
     let conditional = control.path().join("conditional");
-    fs::write(&conditional, format!("#!/bin/sh\nrequired=0\nfor argument do [ \"$argument\" = --required ] && required=1; done\nIFS= read -r content < input || :\nfault=none\ncase \"$content\" in *X*) [ \"$required\" = 1 ] && [ \"$LZ_REDUCE_REQUIRED\" = yes ] && [ -f needed ] && fault=attribute;; esac\nexec '{quoted}' --fixture \"$fault\"\n"))?;
+    fs::write(&conditional, format!("#!/bin/sh\nrequired=0\nfor argument do [ \"$argument\" = --required ] && required=1; done\nIFS= read -r content < input || :\nauxiliary=\nif [ -f needed ]; then IFS= read -r auxiliary < needed || :; fi\nfault=none\ncase \"$content:$auxiliary\" in *X*:*Z*) [ \"$required\" = 1 ] && [ \"$LZ_REDUCE_REQUIRED\" = yes ] && fault=attribute;; esac\nexec '{quoted}' --fixture \"$fault\"\n"))?;
     fs::set_permissions(&conditional, fs::Permissions::from_mode(0o700))?;
     let observe_inputs = |candidate: &Case| observe_case(&good, &conditional, candidate);
     let input_original = observe_inputs(&input_case);
@@ -358,12 +372,27 @@ pub(super) fn selftest() -> Result<()> {
     let (arguments, result, _) = reduce_part(&input_case, &input_original, ReductionPart::Arguments, observe_inputs);
     let (fixture, result, _) = reduce_part(&arguments, &result, ReductionPart::FixtureBytes, observe_inputs);
     let (environment, result, _) = reduce_part(&fixture, &result, ReductionPart::Environment, observe_inputs);
-    let (inputs, result, _) = reduce_part(&environment, &result, ReductionPart::AuxiliaryFiles, observe_inputs);
+    let (auxiliary, result, _) = reduce_part(&environment, &result, ReductionPart::AuxiliaryFiles, observe_inputs);
+    let (inputs, result, _) = reduce_part(&auxiliary, &result, ReductionPart::AuxiliaryBytes, observe_inputs);
     if inputs.args.len() >= input_case.args.len() || ReductionPart::FixtureBytes.len(&inputs) >= ReductionPart::FixtureBytes.len(&input_case)
         || inputs.env.len() != 1 || inputs.env.get("LZ_REDUCE_REQUIRED").map(String::as_str) != Some("yes")
         || inputs.files.len() != 1 || !inputs.files.contains_key("needed")
+        || ReductionPart::AuxiliaryBytes.len(&inputs) >= ReductionPart::AuxiliaryBytes.len(&auxiliary)
         || signature(&result) != signature(&input_original) || signature(&observe_inputs(&inputs)) != signature(&input_original) {
-        return Err("fuzz input reduction lost a required argument, byte, environment variable, file or mismatch category".into());
+        return Err("fuzz input reduction lost a required argument, primary or auxiliary byte, environment variable, file or mismatch category".into());
+    }
+    let mut cross_file = input_case.clone();
+    cross_file.files = [
+        ("a".into(), b"abc".to_vec().into()),
+        ("b".into(), Fixture::Repeated(super::fixtures::Repeat { repeat:b"recipe".to_vec(), count:2, suffix:Vec::new() })),
+        ("c".into(), b"def".to_vec().into()),
+    ].into();
+    let recipe = serde_json::to_value(&cross_file.files["b"])?;
+    ReductionPart::AuxiliaryBytes.remove(&mut cross_file, 2..4);
+    if serde_json::to_value(&cross_file.files["a"])? != json!(b"ab")
+        || serde_json::to_value(&cross_file.files["c"])? != json!(b"ef")
+        || serde_json::to_value(&cross_file.files["b"])? != recipe {
+        return Err("auxiliary byte reduction changed a recipe or missed a file boundary".into());
     }
     let path = control.path().join("observation.json.gz");
     save(&path, &result)?;
@@ -371,6 +400,6 @@ pub(super) fn selftest() -> Result<()> {
     if !decoded.status.success() || serde_json::from_slice::<Value>(&decoded.stdout)? != result {
         return Err("compressed observations do not roundtrip".into());
     }
-    println!("deterministic generated cases distinguish seeds; attribute mismatch shrinks from {} to {} events in {attempts} attempts; input reduction retains required bytes, arguments, environment and file; compressed observations roundtrip", case.events.len(), reduced.events.len());
+    println!("deterministic generated cases distinguish seeds; attribute mismatch shrinks from {} to {} events in {attempts} attempts; input reduction retains required primary and auxiliary bytes, arguments, environment and file; compressed observations roundtrip", case.events.len(), reduced.events.len());
     Ok(())
 }
