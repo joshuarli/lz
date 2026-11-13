@@ -477946,7 +477946,7 @@
   {
     "id": "invocation-primary-screen-bottom",
     "family": "invocation",
-    "admitted": false,
+    "admitted": true,
     "source": "pty",
     "fixture": [
       111,
@@ -478128,6 +478128,212 @@
         "type": "checkpoint",
         "ready": "(END)",
         "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-primary-screen-bottom-repeat",
+    "family": "invocation",
+    "admitted": false,
+    "source": "pty",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "-X",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "original body",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          71
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          106
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-primary-screen-bottom-tilde",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "-X",
+      "-~",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "original body",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          71
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": null
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-alternate-screen-bottom",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "original body",
+        "row": 22
+      },
+      {
+        "type": "send",
+        "bytes": [
+          71
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 23
       },
       {
         "type": "send",

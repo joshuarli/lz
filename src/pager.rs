@@ -401,7 +401,7 @@ pub struct Pager {
     filename_prompt: bool,
     compact_initial: bool,
     squished: bool,
-    startup_bottom: bool,
+    bottom_aligned: bool,
     follow_one_screen: bool,
     follow_screen_overflowed: bool,
     bottom_gap: usize,
@@ -459,7 +459,7 @@ impl Pager {
             filename_prompt: true,
             compact_initial: config.initial_display == InitialDisplay::Startup && config.startup_commands.is_empty(),
             squished: false,
-            startup_bottom: false,
+            bottom_aligned: false,
             follow_one_screen: false,
             follow_screen_overflowed: false,
             bottom_gap: 0,
@@ -558,7 +558,7 @@ impl Pager {
             return self.finish_run();
         }
         if self.mode == Mode::Follow {
-            self.startup_bottom = true;
+            self.bottom_aligned = true;
             self.follow_one_screen = true;
         }
         self.run(keys)
@@ -655,7 +655,7 @@ impl Pager {
             OneScreen::Overflows => { self.follow_screen_overflowed = true; return Ok(false); },
             OneScreen::Waiting => return Ok(false),
         }
-        self.startup_bottom = true;
+        self.bottom_aligned = true;
         self.bottom_gap = 1;
         self.render_frame(false)?;
         Ok(true)
@@ -851,10 +851,10 @@ impl Pager {
                 self.left_col = 0;
             }
             Key::Char('G' | '>') | Key::End => {
-                let startup_bottom = self.command_context != CommandContext::Interactive && count.is_none();
+                let bottom_aligned = count.is_none();
                 let previous = self.top_line;
                 self.position_initialized();
-                self.startup_bottom = startup_bottom;
+                self.bottom_aligned = bottom_aligned;
                 if let Some(count) = count { self.top_line = count.saturating_sub(1); self.buffer.get_line(self.top_line); }
                 else { self.buffer.read_all(); self.scroll_to_bottom(); }
                 self.remember_jump_from(previous);
@@ -888,9 +888,9 @@ impl Pager {
                 self.filter_input.clear();
             }
             Key::Char('F') => {
-                let startup_bottom = self.command_context != CommandContext::Interactive;
+                let bottom_aligned = self.command_context != CommandContext::Interactive;
                 self.position_initialized();
-                self.startup_bottom = startup_bottom;
+                self.bottom_aligned = bottom_aligned;
                 self.mode = Mode::Follow;
                 self.buffer.read_all();
                 self.scroll_to_bottom();
@@ -955,7 +955,7 @@ impl Pager {
 
     fn position_initialized(&mut self) {
         self.squished = false;
-        self.startup_bottom = false;
+        self.bottom_aligned = false;
         self.startup_echo = None;
         if self.content_painted && self.command_context == CommandContext::Interactive { self.compact_initial = false; }
         if self.command_context == CommandContext::StartupUnpositioned { self.command_context = CommandContext::StartupPositioned; }
@@ -1278,8 +1278,8 @@ impl Pager {
             buf.relative_row = Some(0);
             buf.retain_initial_column = true;
         }
-        if buf.relative_row.is_some() && !self.startup_bottom { buf.padding = first_row; }
-        else { for row in 0..first_row { buf.position(row); if self.startup_bottom { self.write_eof_marker(&mut buf); } terminal::clear_line(&mut buf); } }
+        if buf.relative_row.is_some() && !self.bottom_aligned { buf.padding = first_row; }
+        else { for row in 0..first_row { buf.position(row); if self.bottom_aligned { self.write_eof_marker(&mut buf); } terminal::clear_line(&mut buf); } }
         if self.mode == Mode::Help {
             Self::render_help(&mut buf, w, ch);
         } else if self.wrap {
@@ -1311,7 +1311,7 @@ impl Pager {
         self.display_anchor.row = if primary { buf.relative_row } else { None };
         if self.display_anchor.row.is_none() { self.compact_initial = false; }
         self.content_painted = true;
-        self.startup_bottom = false;
+        self.bottom_aligned = false;
         buf.extend_from_slice(b"\x1b[?25h");
 
         let mut stdout = io::stdout().lock();
@@ -1392,7 +1392,7 @@ impl Pager {
     }
 
     fn initial_content_row(&mut self, width: usize, height: usize) -> io::Result<usize> {
-        if !self.compact_initial && !self.squished && !self.startup_bottom { return Ok(0); }
+        if !self.compact_initial && !self.squished && !self.bottom_aligned { return Ok(0); }
         let mut rows = 0;
         let mut index = self.top_line;
         while rows < height {
