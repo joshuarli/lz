@@ -6,7 +6,7 @@ The owner authorized unattended local execution. Keep one writer, commit verifie
 
 The latest macOS arm64 integration check passed all 785 admitted cases across four shards, 157 Rust tests, and Clippy. The previous complete candidate and baseline report covered 664 cases before later slices. It recorded two strict mismatches, one filesystem limitation, and no harness errors; the long-color startup mismatch has since been fixed in S06f. [Coverage](tests/parity/coverage.md) and the [inventory](tests/parity/inventory.json) distinguish named-case results from complete features. Refresh all four candidate and baseline shards before generating a new report.
 
-The 50-seed fuzz smoke passes with ASCII navigation, marks and forward literal search. The generator does not yet meet the S12 grammar requirement.
+The 50-seed fuzz smoke passes with ASCII navigation, marks, forward literal search and resize interactions. The generator does not yet meet the S12 grammar requirement.
 
 Recent accepted slices cover help entry and navigation, CLI help, horizontal movement, fixed and fractional shifts, and repaint. The latest focused checks pass. Public `HorizontalShift` values validate configuration before entering `ScrollDefaults`. Full help search, version text, shift interactive toggles, cross-file movement, and wrapped-row positioning remain open.
 
@@ -54,7 +54,7 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12a:** generated navigation now includes forward literal searches, and each run records its generator version. Harness controls and 50 seeds pass, with 49 searches across the generated cases. This independent grammar extension does not require unrelated S04–S11 behaviors to finish; the remaining event families and boundary weighting remain open.
 
-**S12b planned:** add bounded resize-and-jump interactions to the generated navigation grammar, keeping geometry-dependent movement preconditions current. Own `tests/parity/fuzz.rs`; S12a and the existing resize runner are prerequisites. This generated interaction is independent of unfinished option and helper behaviors. Acceptance: `make parity-selftest` and `make parity-fuzz SEED=0 CASES=50`.
+**S12b:** generated resize-and-jump interactions wait for the resized status row before sending further keys and update movement preconditions. Fifty seeds pass with 42 resize events. The initial run exposed S07ai; remaining event families and boundary weighting stay open.
 
 **S07ai:** terminal size changes reset the `man-0069` and `man-0082` half-page default to half the new height. Three cases cover growth, shrinkage and width-only resize after a count on macOS and in a Linux arm64 container. Existing window and horizontal-shift resize cases pass.
 

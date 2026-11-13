@@ -6,7 +6,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const GENERATOR_VERSION: u32 = 2;
+const GENERATOR_VERSION: u32 = 3;
 
 struct Random(u64);
 impl Random {
@@ -25,15 +25,16 @@ fn generate(seed: u64) -> Case {
     let mut random = Random(seed);
     let size = if random.choose(2) == 0 { [40, 12] } else { [80, 24] };
     let lines = 48 + random.choose(80);
-    let height = usize::from(size[1] - 1);
-    let half = usize::from(size[1]).div_ceil(2);
-    let last = lines - height + 1;
+    let mut current_size = size;
+    let mut height = usize::from(size[1] - 1);
+    let mut half = usize::from(size[1]).div_ceil(2);
+    let mut last = lines - height + 1;
     let fixture: Vec<_> = (1..=lines).flat_map(|line| format!("{line:06} seed{seed:016X}\n").into_bytes()).collect();
     let mut top = 1usize;
     let mut marks = [None; 2];
     let mut events = vec![checkpoint(top)];
     for _ in 0..8 {
-        let action = random.choose(9);
+        let action = random.choose(10);
         let count = 1 + random.choose(4);
         let (bytes, target) = match action {
             0 if top + count <= last => {
@@ -58,6 +59,19 @@ fn generate(seed: u64) -> Case {
             8 if top < last => {
                 let target = top + 1 + random.choose(last - top);
                 (format!("/{target:06} seed\n").into_bytes(), target)
+            }
+            9 => {
+                let before_resize = if top == 1 { 2 } else { 1 };
+                events.push(Event::Send { bytes: format!("{before_resize}g").into_bytes() });
+                events.push(checkpoint(before_resize));
+                current_size = if current_size == [40, 12] { [80, 24] } else { [40, 12] };
+                events.push(Event::Resize { columns: current_size[0], rows: current_size[1] });
+                events.push(Event::Checkpoint { ready: ":".into(), row: Some(usize::from(current_size[1] - 1)) });
+                height = usize::from(current_size[1] - 1);
+                half = usize::from(current_size[1]).div_ceil(2);
+                last = lines - height + 1;
+                let target = if before_resize == 1 { 2 } else { 1 };
+                (format!("{target}g").into_bytes(), target)
             }
             _ => {
                 let mut target = 1 + random.choose(last);
@@ -191,9 +205,9 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
     }
     fs::write(directory.join("summary.json"), serde_json::to_vec_pretty(&json!({
         "metadata":meta,"seed":seed,"generator_version":GENERATOR_VERSION,"requested":count,"executed":summaries.len(),"oracle_only":oracle_only,"results":summaries,
-        "grammar":"ASCII logical-line movement, ordinary in-file marks and forward literal searches; eight actions; 40x12 or 80x24",
+        "grammar":"ASCII logical-line movement, ordinary in-file marks, forward literal searches and resize-and-jump; eight actions; 40x12 or 80x24",
         "limits":{"case_seconds":10,"trace_bytes":64*1024*1024,"pty_rss_bytes":u64::from(super::resources::RssLimit::default()),"pty_spill_bytes":u64::from(super::spill::Limit::default()),"actions":8,"workers":4,"reduction_attempts":8},
-        "open_limits":["stdio/helper/producer RSS enforcement","stdio/helper/producer spill accounting","CLI/config/byte-text/file-transition/resize/signal grammar","boundary weighting","search variants and adversarial/Unicode/stream/helper grammar"]
+        "open_limits":["stdio/helper/producer RSS enforcement","stdio/helper/producer spill accounting","CLI/config/byte-text/file-transition/signal grammar","boundary weighting","search variants and adversarial/Unicode/stream/helper grammar"]
     }))?)?;
     fs::write(stdio::root().join(".work/parity-fuzz-latest"), directory.as_os_str().as_encoded_bytes())?;
     fs::write(stdio::root().join(if oracle_only { ".work/parity-fuzz-oracle" } else { ".work/parity-fuzz-current" }), directory.as_os_str().as_encoded_bytes())?;
