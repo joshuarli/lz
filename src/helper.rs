@@ -49,7 +49,17 @@ impl Drop for ForegroundChild {
     }
 }
 
-pub(crate) fn read_line(mut command: Command, tty: i32) -> io::Result<Vec<u8>> {
+enum Output { FirstLine, Closed }
+
+pub(crate) fn read_line(command: Command, tty: i32) -> io::Result<Vec<u8>> {
+    run(command, tty, Output::FirstLine)
+}
+
+pub(crate) fn close_output(command: Command, tty: i32) -> io::Result<()> {
+    run(command, tty, Output::Closed).map(|_| ())
+}
+
+fn run(mut command: Command, tty: i32, output_mode: Output) -> io::Result<Vec<u8>> {
     // SAFETY: these calls query the current group and temporarily suppress background terminal-control stops.
     let parent_group = unsafe { getpgrp() };
     let previous_ttou = unsafe { signal(SIGTTOU, 1) };
@@ -82,18 +92,20 @@ pub(crate) fn read_line(mut command: Command, tty: i32) -> io::Result<Vec<u8>> {
         let mut line = Vec::new();
         let mut bytes = [0; 4096];
         let mut interrupt_forwarded = false;
-        loop {
-            forward_interrupt(&child, &mut interrupt_forwarded)?;
-            if cancelled() { return Err(io::Error::new(io::ErrorKind::Interrupted, "helper interrupted")); }
-            if !crate::readiness::readable(output.as_raw_fd(), 20)? { continue; }
-            let count = match output.read(&mut bytes) {
-                Ok(count) => count,
-                Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
-                Err(error) => return Err(error),
-            };
-            let newline = bytes[..count].iter().position(|byte| *byte == b'\n');
-            line.extend_from_slice(&bytes[..newline.unwrap_or(count)]);
-            if count == 0 || newline.is_some() { break; }
+        if matches!(output_mode, Output::FirstLine) {
+            loop {
+                forward_interrupt(&child, &mut interrupt_forwarded)?;
+                if cancelled() { return Err(io::Error::new(io::ErrorKind::Interrupted, "helper interrupted")); }
+                if !crate::readiness::readable(output.as_raw_fd(), 20)? { continue; }
+                let count = match output.read(&mut bytes) {
+                    Ok(count) => count,
+                    Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+                    Err(error) => return Err(error),
+                };
+                let newline = bytes[..count].iter().position(|byte| *byte == b'\n');
+                line.extend_from_slice(&bytes[..newline.unwrap_or(count)]);
+                if count == 0 || newline.is_some() { break; }
+            }
         }
         drop(output);
         loop {

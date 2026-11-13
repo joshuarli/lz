@@ -59,13 +59,7 @@ impl Template {
             } else { command.push(self.bytes[cursor]); }
             cursor += 1;
         }
-        let shell = std::env::var_os("SHELL").filter(|shell| !shell.is_empty());
-        if let Some(shell) = shell {
-            command = [shell.as_bytes(), b" -c ", &quote(&command)].concat();
-        }
-        let mut process = Command::new("/bin/sh");
-        process.arg("-c").arg(OsString::from_vec(command));
-        let line = match session.read_helper_line(process) {
+        let line = match session.read_helper_line(shell_command(command)) {
             Ok(line) => line,
             Err(error) if error.kind() == io::ErrorKind::Interrupted => return Ok(None),
             Err(error) => return Err(error),
@@ -83,4 +77,34 @@ fn quote(bytes: &[u8]) -> Vec<u8> {
     }
     quoted.push(b'\'');
     quoted
+}
+
+fn shell_command(mut command: Vec<u8>) -> Command {
+    if let Some(shell) = std::env::var_os("SHELL").filter(|shell| !shell.is_empty()) {
+        command = [shell.as_bytes(), b" -c ", &quote(&command)].concat();
+    }
+    let mut process = Command::new("/bin/sh");
+    process.arg("-c").arg(OsString::from_vec(command));
+    process
+}
+
+pub(super) fn close(original: &OsStr, replacement: &OsStr, session: &mut lz::terminal::Session) -> io::Result<()> {
+    let Some(template) = std::env::var_os("LESSCLOSE") else { return Ok(()); };
+    let bytes = template.as_bytes();
+    let arguments = [quote(original.as_bytes()), quote(replacement.as_bytes())];
+    let mut command = Vec::new();
+    let mut cursor = 0;
+    let mut argument = 0;
+    while cursor < bytes.len() {
+        if bytes[cursor] == b'%' {
+            cursor += 1;
+            match bytes.get(cursor) {
+                Some(b's') if argument < arguments.len() => { command.extend_from_slice(&arguments[argument]); argument += 1; },
+                Some(b'%') => command.push(b'%'),
+                _ => { eprintln!("LESSCLOSE ignored; must contain no more than 2 %s"); return Ok(()); },
+            }
+        } else { command.push(bytes[cursor]); }
+        cursor += 1;
+    }
+    session.run_helper_with_closed_output(shell_command(command))
 }

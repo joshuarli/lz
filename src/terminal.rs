@@ -385,6 +385,11 @@ impl Session {
         crate::helper::read_line(command, self.keys.fd())
     }
 
+    /// Run a foreground helper with its output pipe closed and wait for it.
+    pub fn run_helper_with_closed_output(&mut self, command: std::process::Command) -> io::Result<()> {
+        crate::helper::close_output(command, self.keys.fd())
+    }
+
     pub fn finish(self) -> io::Result<()> { restore_acquired_terminal() }
 }
 

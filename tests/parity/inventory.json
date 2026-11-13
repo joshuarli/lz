@@ -5130,11 +5130,19 @@
         "integrations-lessopen-file-to-enabled-stdin",
         "integrations-lessopen-int",
         "integrations-lessopen-int-quit",
-        "integrations-lessopen-keyboard-int"
+        "integrations-lessopen-keyboard-int",
+        "integrations-lessclose-quit",
+        "integrations-lessclose-switch",
+        "integrations-lessclose-invalid",
+        "integrations-lessclose-empty",
+        "integrations-lessclose-binary-refusal",
+        "integrations-lessclose-stdin",
+        "integrations-lessclose-quoted",
+        "integrations-lessclose-one-argument"
       ],
       "implementation": "partial",
       "evidence": "partially compatible",
-      "cause": "Named file-return scenarios cover quoted filename bytes, percent substitution, first-line/EOF and empty fallback, exit status, secure and CLI policies, exact initial diagnostics and acknowledgment, foreground tty input and TERM cleanup. A leading dash extends execution and validation to stdin. The file-return form retains stdin regardless of the returned filename, and helper reads consume stdin. Named file/stdin transitions retain applicability, data and file-count prompts. Live pipes, LESSCLOSE, custom shell/metachar settings, repeated interactive diagnostics and interrupted/stopped helper interactions remain open. Real SIGINT cleanup and -K are covered; keyboard SIGINT still misses pager interrupt behavior while the helper owns a separate foreground group."
+      "cause": "Named file-return scenarios cover quoted filename bytes, percent substitution, first-line/EOF and empty fallback, exit status, secure and CLI policies, exact initial diagnostics and acknowledgment, foreground tty input and TERM cleanup. A leading dash extends execution and validation to stdin. The file-return form retains stdin regardless of the returned filename, and helper reads consume stdin. Named file/stdin transitions retain applicability, data and file-count prompts. Live pipes, LESSCLOSE, custom shell/metachar settings, repeated interactive diagnostics and interrupted/stopped helper interactions remain open. Real SIGINT cleanup and -K are covered; keyboard SIGINT still misses pager interrupt behavior while the helper owns a separate foreground group. File-return postprocessing covers normal exit, switches, binary refusal, stdin, empty fallback and quoted arguments; live-pipe cleanup and interactive invalid-template diagnostics remain open."
     },
     {
       "id": "man-1869",
@@ -6748,10 +6756,19 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "integrations-lessclose-quit",
+        "integrations-lessclose-switch",
+        "integrations-lessclose-invalid",
+        "integrations-lessclose-empty",
+        "integrations-lessclose-binary-refusal",
+        "integrations-lessclose-stdin",
+        "integrations-lessclose-quoted",
+        "integrations-lessclose-one-argument"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "File-return postprocessing covers exit, switches, stdin, binary refusal, empty fallback, argument quoting and invalid templates on quit. Interactive invalid-template diagnostics and live-pipe cleanup remain open."
     },
     {
       "id": "man-2369",
