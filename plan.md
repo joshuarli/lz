@@ -138,7 +138,9 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12ac accepted (partial translation):** the original `colorbars` fixture and first four scrolling steps pass strict generic-terminal comparison on macOS arm64 and Linux arm64 Docker. The remaining option, horizontal and custom-termcap steps stay open.
 
-**S07aq accepted:** distinguish tested bottom-aligned rows from rows introduced by forced backward movement, restoring ordinary forward behavior after a bottom jump. The nine regressed bottom/mark cases and two forced-movement cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Forced-position mark restoration and other wrapped and boundary interactions remain open. The clean admitted search group passed 99 cases on macOS before this boundary-only change.
+**S07ar accepted:** the tested mark return from a forced leading-row position resumes ordinary forward movement, matching the reference without an additional state change. The new case and neighboring mark/forced cases passed on macOS arm64 and Linux arm64 Docker; the preceding boundary change passed all-target Clippy. Other forced-position and wrapped interactions remain open.
+
+**S07aq accepted:** distinguish tested bottom-aligned rows from rows introduced by forced backward movement, restoring ordinary forward behavior after a bottom jump. The nine regressed bottom/mark cases and two forced-movement cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Other forced-position mark restoration and wrapped and boundary interactions remain open. The clean admitted search group passed 99 cases on macOS before this boundary-only change.
 
 **S07ap accepted:** normal-mode numeric-prefix display preserves zero and leading zeros in the tested count. The zero sequence and ordinary counted upstream movement pass on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Overflow display and other command modes remain open.
 

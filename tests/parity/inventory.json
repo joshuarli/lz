@@ -371,7 +371,7 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["upstream-chinese1-scroll", "navigation-force-line-in-file", "upstream-chinese1-force-boundary", "navigation-force-forward-eof", "navigation-force-backward-bof", "navigation-force-leading-normal-forward"],
+      "cases": ["upstream-chinese1-scroll", "navigation-force-line-in-file", "upstream-chinese1-force-boundary", "navigation-force-forward-eof", "navigation-force-backward-bof", "navigation-force-leading-normal-forward", "navigation-force-leading-mark-return"],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
       "cause": "Named J/K/Y in-file and short-file boundary movements pass, including the first six upstream Chinese scrolling steps. Wrapped rows and other boundary interactions remain open."
@@ -390,7 +390,7 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["upstream-chinese1-scroll", "navigation-force-line-in-file", "upstream-chinese1-force-boundary", "navigation-force-forward-eof", "navigation-force-backward-bof", "navigation-force-leading-normal-forward"],
+      "cases": ["upstream-chinese1-scroll", "navigation-force-line-in-file", "upstream-chinese1-force-boundary", "navigation-force-forward-eof", "navigation-force-backward-bof", "navigation-force-leading-normal-forward", "navigation-force-leading-mark-return"],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
       "cause": "Named J/K/Y in-file and short-file boundary movements pass, including the first six upstream Chinese scrolling steps. Wrapped rows and other boundary interactions remain open."
