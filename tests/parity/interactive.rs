@@ -203,9 +203,9 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
             Event::Signal { number } => terminal.signal(*number)?,
             Event::Continue {} => terminal.signal(libc::SIGCONT)?,
             Event::SuspendSignal {} => terminal.signal(libc::SIGTSTP)?,
-            Event::Suspend {} => {
+            Event::Suspend {} | Event::WaitSuspended {} => {
                 suspensions += 1;
-                terminal.signal(libc::SIGTSTP)?;
+                if matches!(event, Event::Suspend {}) { terminal.signal(libc::SIGTSTP)?; }
                 let state = wait_job(&mut terminal, &case.id, manifest, suspensions, false, total.min(Instant::now() + Duration::from_secs(3)))?;
                 if !terminal.wait_for_quiescence(checkpoint_deadline(), Duration::from_millis(20))? {
                     return Err(Box::new(CheckpointTimeout::Quiescence { artifact_dir:retain_checkpoint(&terminal, &case.id)? }));

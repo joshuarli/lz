@@ -108,6 +108,7 @@ enum Event {
     Suspend {},
     Continue {},
     SuspendSignal {},
+    WaitSuspended {},
     Append { bytes: Vec<u8> },
 }
 

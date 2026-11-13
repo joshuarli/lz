@@ -166,8 +166,8 @@ fn enable_raw_mode(fd: i32) -> io::Result<()> {
             raw.c_oflag &= !0x01;
             // Control flags: set CS8
             raw.c_cflag |= 0x300;
-            // Local flags: disable ECHO, ICANON, IEXTEN, ISIG
-            raw.c_lflag &= !(0x08 | 0x100 | 0x400 | 0x80);
+            // Preserve inherited ISIG so the kernel handles configured signal characters.
+            raw.c_lflag &= !(0x08 | 0x100 | 0x400);
             // VMIN = 1, VTIME = 0
             raw.c_cc[16] = 1;
             raw.c_cc[17] = 0;
@@ -181,8 +181,8 @@ fn enable_raw_mode(fd: i32) -> io::Result<()> {
             raw.c_oflag &= !0x01;
             // Control flags: set CS8
             raw.c_cflag |= 0x30;
-            // Local flags: disable ECHO, ICANON, IEXTEN, ISIG
-            raw.c_lflag &= !(0x08 | 0x02 | 0x8000 | 0x01);
+            // Preserve inherited ISIG so the kernel handles configured signal characters.
+            raw.c_lflag &= !(0x08 | 0x02 | 0x8000);
             // VMIN = 1, VTIME = 0
             raw.c_cc[6] = 1;
             raw.c_cc[5] = 0;

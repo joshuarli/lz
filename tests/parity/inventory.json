@@ -7050,11 +7050,13 @@
         "integrations-secure-stop-binary",
         "integrations-secure-stop-allow",
         "integrations-secure-stop-prefix",
-        "integrations-secure-stop-empty"
+        "integrations-secure-stop-empty",
+        "integrations-secure-stop-keyboard-allow",
+        "integrations-secure-stop-keyboard-denied"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Nonempty LESSSECURE, including 0, denies history unless the resolved feature mask permits it. The permission decision has one policy owner. Other feature effects and helper/session enforcement remain open. Secure stop policy ignores SIGTSTP for nonempty LESSSECURE including 0 and unrelated allowances, including preserved/no-keypad and binary-to-pager transitions. Explicit stop and unique st allowances, and empty LESSSECURE, retain actual suspension. Other secure effects and keyboard suspension remain open."
+      "cause": "The shared 12-feature parser preserves prefixes, spacing, case sensitivity and exact invalid/ambiguous diagnostics. History and external/keyboard stop effects obey the resolved permission mask, including nonempty 0 and explicit allowances. Primary diagnostic acknowledgment and binary transitions have named cases. Other feature effects and interactions remain open."
     },
     {
       "id": "man-2429",
@@ -7090,11 +7092,13 @@
         "integrations-secure-stop-binary",
         "integrations-secure-stop-allow",
         "integrations-secure-stop-prefix",
-        "integrations-secure-stop-empty"
+        "integrations-secure-stop-empty",
+        "integrations-secure-stop-keyboard-allow",
+        "integrations-secure-stop-keyboard-denied"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "History allowances, unique prefixes, spaces/commas, case sensitivity, invalid/ambiguous names and partial success pass. Diagnostics pause on the primary screen, retain a non-Return command, and clean up on TERM. The complete 12-name parser is shared, but other feature enforcement remains open. Secure stop policy ignores SIGTSTP for nonempty LESSSECURE including 0 and unrelated allowances, including preserved/no-keypad and binary-to-pager transitions. Explicit stop and unique st allowances, and empty LESSSECURE, retain actual suspension. Other secure effects and keyboard suspension remain open."
+      "cause": "The shared 12-feature parser preserves prefixes, spacing, case sensitivity and exact invalid/ambiguous diagnostics. History and external/keyboard stop effects obey the resolved permission mask, including nonempty 0 and explicit allowances. Primary diagnostic acknowledgment and binary transitions have named cases. Other feature effects and interactions remain open."
     },
     {
       "id": "man-2432",
@@ -7594,11 +7598,19 @@
         "integrations-secure-stop-binary",
         "integrations-secure-stop-allow",
         "integrations-secure-stop-prefix",
-        "integrations-secure-stop-empty"
+        "integrations-secure-stop-empty",
+        "lifecycle-suspend-keyboard",
+        "lifecycle-suspend-keyboard-preserve",
+        "lifecycle-suspend-keyboard-no-keypad",
+        "lifecycle-suspend-keyboard-preserve-no-keypad",
+        "lifecycle-suspend-keyboard-repeat",
+        "integrations-secure-stop-keyboard-allow",
+        "integrations-secure-stop-keyboard-denied",
+        "lifecycle-quit-keyboard"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "TERM cleanup, default SIGINT continuation and configured interruption pass in named scenarios. SIGQUIT is ignored in normal and pending search input, binary prompts, preserved/no-keypad sessions and under quit-on-interrupt policy; navigation continues beyond the supervisor escalation interval. External suspension restores kernel and represented modes, retains screen/keypad options and resumes navigation in six named scenarios. Keyboard suspension, secure stop policy, inherited dispositions and prompt/resize interactions remain open. Unsolicited SIGCONT retains the initial prompt and saved termios across screen/keypad combinations and after a completed suspension. Secure stop policy ignores SIGTSTP for nonempty LESSSECURE including 0 and unrelated allowances, including preserved/no-keypad and binary-to-pager transitions. Explicit stop and unique st allowances, and empty LESSSECURE, retain actual suspension. Other secure effects and keyboard suspension remain open."
+      "cause": "Named scenarios cover TERM cleanup, default/configured interruption, ignored SIGQUIT, keyboard quit characters, external/keyboard suspension, all screen/keypad combinations, repeated/scrolled navigation and unsolicited SIGCONT without termios leaks. Secure stop denial and explicit allowances apply before primary or interactive prompts. Primary/pending prompt suspension, resize interactions, custom signal characters, inherited dispositions and long operations remain open."
     },
     {
       "id": "input-boundaries",
