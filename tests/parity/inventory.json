@@ -958,11 +958,19 @@
         "search-case-default",
         "search-posix-longest-0",
         "search-posix-longest-1",
-        "search-posix-longest-2"
+        "search-posix-longest-2",
+        "search-posix-escaped-d",
+        "search-posix-escaped-w",
+        "search-posix-escaped-s",
+        "search-posix-escaped-b",
+        "search-posix-escaped-digit",
+        "search-posix-escaped-backslash",
+        "search-posix-class-then-escape",
+        "search-posix-leading-bracket-escape"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Literal search and named ASCII POSIX leftmost-longest alternatives pass; full dialect, diagnostics, Unicode, modifiers, colors and layout interactions remain open"
+      "cause": "Literal search, named leftmost-longest alternatives and escaped alphanumerics pass on macOS arm64. Musl libc differs for escaped letters; Linux end-to-end proof, bracket escapes, full dialect, diagnostics, Unicode, modifiers, colors and layout interactions remain open"
     },
     {
       "id": "man-0220",

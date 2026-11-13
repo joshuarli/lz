@@ -115,6 +115,42 @@ fn is_literal(pattern: &str) -> bool {
     })
 }
 
+fn posix_escaped_literals(pattern: &str) -> String {
+    let bytes = pattern.as_bytes();
+    let mut output = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    let mut in_class = false;
+    let mut class_first = false;
+    while index < bytes.len() {
+        let byte = bytes[index];
+        if !in_class && byte == b'\\' && let Some(&next) = bytes.get(index + 1) {
+            let literal = next.is_ascii_digit() || (cfg!(target_os = "macos") && next.is_ascii_alphabetic());
+            if !literal { output.push(byte); }
+            output.push(next);
+            index += 2;
+            continue;
+        }
+        if in_class && byte == b'[' && bytes.get(index + 1).is_some_and(|next| matches!(next, b':' | b'.' | b'=')) {
+            let delimiter = bytes[index + 1];
+            let start = index;
+            index += 2;
+            while index + 1 < bytes.len() && !(bytes[index] == delimiter && bytes[index + 1] == b']') { index += 1; }
+            index = (index + 2).min(bytes.len());
+            output.extend_from_slice(&bytes[start..index]);
+            class_first = false;
+            continue;
+        }
+        output.push(byte);
+        if !in_class && byte == b'[' { in_class = true; class_first = true; }
+        else if in_class {
+            if byte == b']' && !class_first { in_class = false; }
+            else if byte != b'^' || !class_first { class_first = false; }
+        }
+        index += 1;
+    }
+    String::from_utf8(output).expect("preserved pattern UTF-8")
+}
+
 enum Matcher {
     Literal(Box<Bmh>),
     Regex(Box<RegexMatcher>),
@@ -132,7 +168,7 @@ impl RegexMatcher {
     fn new(pattern: &str, case_insensitive: bool) -> Result<Self, String> {
         let first = PikeVM::builder()
             .syntax(regex_automata::util::syntax::Config::new().case_insensitive(case_insensitive))
-            .build(pattern).map_err(|error| format!("Invalid regex: {error}"))?;
+            .build(&posix_escaped_literals(pattern)).map_err(|error| format!("Invalid regex: {error}"))?;
         let longest = PikeVM::builder().configure(PikeVM::config().match_kind(MatchKind::All))
             .build_from_nfa(first.get_nfa().clone()).map_err(|error| format!("Invalid regex: {error}"))?;
         let caches = Mutex::new(RegexCaches { first: first.create_cache(), longest: longest.create_cache() });
@@ -278,6 +314,25 @@ impl Search {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn escaped_digits_are_literals_in_posix_search() {
+        let search = Search::new(r"(a)\1", CaseSensitivity::Sensitive).unwrap();
+        assert!(search.is_match("a1"));
+        assert!(!search.is_match("aa"));
+    }
+
+    #[test]
+    fn escaped_letter_uses_platform_regex_semantics() {
+        let search = Search::new(r"\d", CaseSensitivity::Sensitive).unwrap();
+        if cfg!(target_os = "macos") {
+            assert!(search.is_match("d"));
+            assert!(!search.is_match("1"));
+        } else if cfg!(target_os = "linux") {
+            assert!(search.is_match("1"));
+            assert!(!search.is_match("d"));
+        }
+    }
 
     fn make_buffer(lines: &[&str]) -> LineBuffer {
         LineBuffer::from_lines(lines.iter().map(|s| s.to_string()).collect())
