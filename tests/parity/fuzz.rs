@@ -7,7 +7,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const GENERATOR_VERSION: u32 = 10;
+const GENERATOR_VERSION: u32 = 11;
 
 struct Random(u64);
 impl Random {
@@ -60,7 +60,7 @@ fn generate(seed: u64) -> Case {
     let mut switched = false;
     let mut events = vec![checkpoint(top)];
     for _ in 0..8 {
-        let action = if random.choose(10) < 3 { 12 } else { random.choose(12) };
+        let action = if random.choose(10) < 3 { 13 } else { random.choose(13) };
         let count = 1 + random.choose(4);
         let (bytes, target) = match action {
             0 if top + count <= last => {
@@ -108,7 +108,11 @@ fn generate(seed: u64) -> Case {
                 (b":n".to_vec(), 1)
             }
             11 => (vec![b'-', 16, b'N'], top),
-            12 => {
+            12 if top > 1 => {
+                let target = 1 + random.choose(top - 1);
+                (format!("?{target:06} seed\n").into_bytes(), target)
+            }
+            13 => {
                 let target = if top == 1 { 2 } else { 1 };
                 (format!("a{target}g").into_bytes(), target)
             }
@@ -363,7 +367,7 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
     }
     fs::write(directory.join("summary.json"), serde_json::to_vec_pretty(&json!({
         "metadata":meta,"seed":seed,"generator_version":GENERATOR_VERSION,"requested":count,"executed":summaries.len(),"oracle_only":oracle_only,"results":summaries,
-        "grammar":"logical-line movement, ordinary in-file marks, forward literal searches, resize-and-jump, next-file transitions, quiet line-number toggles and quit or SIGTERM with CLI/LESS display options over ASCII, UTF-8 or isolated malformed bytes; 30% invalid-command actions; eight actions; 40x12 or 80x24",
+        "grammar":"logical-line movement, ordinary in-file marks, forward and backward literal searches, resize-and-jump, next-file transitions, quiet line-number toggles and quit or SIGTERM with CLI/LESS display options over ASCII, UTF-8 or isolated malformed bytes; 30% invalid-command actions; eight actions; 40x12 or 80x24",
         "limits":{"case_seconds":10,"trace_bytes":64*1024*1024,"pty_rss_bytes":u64::from(super::resources::RssLimit::default()),"pty_spill_bytes":u64::from(super::spill::Limit::default()),"actions":8,"workers":4,"reduction_attempts_per_dimension":8},
         "open_limits":["stdio/helper/producer RSS enforcement","stdio/helper/producer spill accounting","broader CLI/config/byte-text/file-transition/signal grammar","event boundary weighting","search variants and adversarial/stream/helper grammar"]
     }))?)?;
@@ -371,6 +375,34 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
     fs::write(stdio::root().join(if oracle_only { ".work/parity-fuzz-oracle" } else { ".work/parity-fuzz-current" }), directory.as_os_str().as_encoded_bytes())?;
     println!("evidence: {}", directory.display());
     if failed { return Err(format!("generated differential failed; reproduce: make parity-fuzz SEED={seed} CASES={count}").into()); }
+    Ok(())
+}
+
+pub(super) fn generator_selftest() -> Result<()> {
+    let case = generate(0);
+    let again = generate(0);
+    if serde_json::to_vec(&case)? != serde_json::to_vec(&again)? || serde_json::to_value(&case.fixture)? == serde_json::to_value(&generate(1).fixture)? {
+        return Err("generated cases are not deterministic and seed-distinguishing".into());
+    }
+    let mut generated_toggles = 0;
+    let mut generated_backward_searches = 0;
+    for seed in 0..1000 {
+        let generated = generate(seed);
+        generated_toggles += generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes == &[b'-', 16, b'N'])).count();
+        generated_backward_searches += generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes.first() == Some(&b'?'))).count();
+        let Fixture::Bytes(bytes) = &generated.fixture else { return Err("generated fixture is not inline bytes".into()); };
+        if bytes[..bytes.len().min(256)].contains(&0xff) { return Err("generated malformed byte enters the binary sample".into()); }
+        for line in bytes.split(|byte| *byte == b'\n').filter(|line| !line.is_empty()) {
+            let mut columns = line.iter().filter(|byte| **byte == 0xff).count() * 4;
+            for valid in line.split(|byte| *byte == 0xff) {
+                columns += unicode_width::UnicodeWidthStr::width(std::str::from_utf8(valid)?);
+            }
+            if columns + 8 > 40 { return Err("generated numbered line exceeds the narrow viewport".into()); }
+        }
+    }
+    if generated_toggles == 0 { return Err("generated sessions never toggle line numbers".into()); }
+    if generated_backward_searches == 0 { return Err("generated sessions never search backward".into()); }
+    println!("generated sessions are deterministic and cover line-number toggles and backward searches");
     Ok(())
 }
 
@@ -384,26 +416,8 @@ pub(super) fn selftest() -> Result<()> {
         fs::write(&path, format!("#!/bin/sh\nexec '{quoted}' --fixture {fault}\n"))?;
         fs::set_permissions(path, fs::Permissions::from_mode(0o700))?;
     }
+    generator_selftest()?;
     let mut case = generate(0);
-    let again = generate(0);
-    if serde_json::to_vec(&case)? != serde_json::to_vec(&again)? || serde_json::to_value(&case.fixture)? == serde_json::to_value(&generate(1).fixture)? {
-        return Err("generated cases are not deterministic and seed-distinguishing".into());
-    }
-    let mut generated_toggles = 0;
-    for seed in 0..1000 {
-        let generated = generate(seed);
-        generated_toggles += generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes == &[b'-', 16, b'N'])).count();
-        let Fixture::Bytes(bytes) = &generated.fixture else { return Err("generated fixture is not inline bytes".into()); };
-        if bytes[..bytes.len().min(256)].contains(&0xff) { return Err("generated malformed byte enters the binary sample".into()); }
-        for line in bytes.split(|byte| *byte == b'\n').filter(|line| !line.is_empty()) {
-            let mut columns = line.iter().filter(|byte| **byte == 0xff).count() * 4;
-            for valid in line.split(|byte| *byte == 0xff) {
-                columns += unicode_width::UnicodeWidthStr::width(std::str::from_utf8(valid)?);
-            }
-            if columns + 8 > 40 { return Err("generated numbered line exceeds the narrow viewport".into()); }
-        }
-    }
-    if generated_toggles == 0 { return Err("generated sessions never toggle line numbers".into()); }
     case.fixture = Vec::new().into();
     case.events = vec![
         Event::Checkpoint { ready:"probe".into(), row:Some(0) },

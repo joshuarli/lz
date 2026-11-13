@@ -100,6 +100,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12s accepted:** generated-failure reduction shrinks repeat and numbered recipes in retained auxiliary files using the same component operations as primary fixtures; the report includes auxiliary recipe attempts and sizes. Real PTY controls retain required repeat and numbered recipe components and their mismatch categories. Focused fuzz selftests passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Reduction remains bounded to eight attempts per dimension.
 
+**S12t accepted:** generator version 11 includes backward literal searches from known positions. Fifty differential seeds passed on macOS arm64; the new `--generator-selftest` proves deterministic backward-action coverage on macOS and Linux arm64 Docker, and remains part of the full fuzz selftest. All-target Clippy passed on macOS. Other search and grammar boundaries remain open.
+
 **S04au:** interactive `-R` toggles color display and carries it across file switches. Six cases pass on macOS and in a Linux arm64 container, covering the upstream `github329` fixture, short and long views, raw mode, prompt replay and interruption. `Pager::control_display` exposes the current mode. Other option commands, suppression, queries and startup interactions remain open; the upstream translation is partial.
 
 **S04av:** interactive `-r` toggles raw display, switches from color mode and remains in effect across file switches in the named cases on macOS and in a Linux arm64 container. Other option interactions remain open.
