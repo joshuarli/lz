@@ -239,8 +239,8 @@ fn run() -> Result<ExitAction, String> {
     let charset = Charset::resolve(explicit_charset.as_deref(), locale.as_deref()).map_err(|error| error.to_string())?;
     let suspension = if security.allows(security::Feature::Stop) { terminal::SuspendPolicy::Allow } else { terminal::SuspendPolicy::Ignore };
     let mut session = terminal::Session::start(terminal::Screen::Primary, suspension).map_err(|error| error.to_string())?;
-    let preprocessing = if !help_requested && args.use_lessopen && security.allows(security::Feature::Lessopen) { preprocessor::Template::from_environment() } else { Ok(None) };
-    let preprocessing_diagnostic = preprocessing.as_ref().err().filter(|diagnostic| diagnostic.applies_to(&args.filenames[0]));
+    let preprocessing = if args.use_lessopen && security.allows(security::Feature::Lessopen) { preprocessor::Template::from_environment() } else { Ok(None) };
+    let preprocessing_diagnostic = preprocessing.as_ref().err().filter(|diagnostic| !help_requested && diagnostic.applies_to(&args.filenames[0]));
     if let Some(diagnostic) = preprocessing_diagnostic { write!(io::stderr().lock(), "{diagnostic}\r\n").map_err(|error| error.to_string())?; }
     let preprocessor = preprocessing.as_ref().ok().and_then(Option::as_ref);
     let mut opened = if help_requested {
@@ -327,13 +327,15 @@ fn run() -> Result<ExitAction, String> {
     if let Some(window) = args.window { scroll_defaults.set_window(window); }
     if let Some(shift) = args.horizontal_shift { scroll_defaults.set_horizontal_shift(shift); }
     let mut positions = vec![None; args.filenames.len()];
+    let help_files = if args.stdin_explicit || args.filenames.iter().any(|filename| filename != "-") { pager::HelpFiles::Registered } else { pager::HelpFiles::None };
+    let mut showing_help = help_requested;
     let result = loop {
         let files = match pager::FileStatus::new(&args.filenames, file_index, charset) { Ok(files) => files, Err(error) => break close_opened(Err(error), opened, &mut session) };
         let mut startup_commands = std::mem::take(&mut args.startup_commands);
         if let Some(command) = &args.every_file_command { startup_commands.push(command.clone()); }
         let alternate = opened.alternate.take();
         let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, line_number_width: args.line_number_width, tab_stops: args.tab_stops.clone(), show_eof_markers: args.show_eof_markers, search_case: args.search_case, search_start: args.search_start }, opened.name, history);
-        let result = if help_requested { pager.run_help(session.keys_mut()) }
+        let result = if showing_help { pager.run_help(session.keys_mut(), help_files) }
             else if std::mem::take(&mut startup_one_screen) { pager.run_one_screen_startup(session.keys_mut()) }
             else { pager.run(session.keys_mut()) };
         let result = if pager.follow_screen_overflowed() && args.terminal.screen == terminal::ScreenMode::Alternate {
@@ -351,6 +353,7 @@ fn run() -> Result<ExitAction, String> {
             Ok(pager::PagerExit::Interrupted) => break close_alternate(alternate, &mut session, CloseContext::Exiting).map(|()| ExitAction::Interrupted),
             Ok(pager::PagerExit::VisitFile(visit)) => visit,
         };
+        showing_help = false;
         file_index = visit.index();
         opened = match open_input(&args.filenames[file_index], charset, args.control_display, args.force, preprocessor, &mut session) {
             Ok(input) => input, Err(error) => break with_cleanup(Err(error), close_alternate(alternate, &mut session, CloseContext::Exiting)),

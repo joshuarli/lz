@@ -73,7 +73,11 @@ enum Mode {
 }
 
 #[derive(Clone, Copy)]
-enum HelpPrefix { Colon, Quit }
+enum HelpPrefix { Colon(std::num::NonZeroUsize), Quit }
+
+/// Whether standalone help has registered files after it.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum HelpFiles { None, Registered }
 
 #[derive(PartialEq, Clone, Copy)]
 enum SearchDir {
@@ -564,7 +568,7 @@ pub struct Pager {
     help_top: usize,
     help_rows: usize,
     help_prefix: Option<HelpPrefix>,
-    standalone_help: bool,
+    standalone_help: Option<HelpFiles>,
     search_input: LineEditor,
     filter_input: LineEditor,
     filter: Option<Search>,
@@ -632,7 +636,7 @@ impl Pager {
             help_top: 0,
             help_rows: 0,
             help_prefix: None,
-            standalone_help: false,
+            standalone_help: None,
             search_input: LineEditor::new(),
             filter_input: LineEditor::new(),
             filter: None,
@@ -755,9 +759,9 @@ impl Pager {
     }
 
     /// Display the help document as the initial view, exiting when it is closed.
-    pub fn run_help(&mut self, keys: &mut KeyReader) -> io::Result<PagerExit> {
+    pub fn run_help(&mut self, keys: &mut KeyReader, files: HelpFiles) -> io::Result<PagerExit> {
         self.mode = Mode::Help;
-        self.standalone_help = true;
+        self.standalone_help = Some(files);
         let width = usize::from(self.term_width).max(1);
         self.help_rows = Self::help_lines().enumerate().map(|(index, line)| self.help_line(index, line, width).3).sum();
         self.run(keys)
@@ -971,7 +975,7 @@ impl Pager {
             }
             Mode::Help => {
                 self.handle_help_key(key);
-                self.standalone_help && self.mode != Mode::Help
+                self.standalone_help.is_some() && self.mode != Mode::Help
             }
             Mode::Follow => self.handle_follow_key(key),
             Mode::CommandError(error) => {
@@ -1114,8 +1118,12 @@ impl Pager {
 
     fn handle_help_key(&mut self, key: Key) {
         if let Some(prefix) = self.help_prefix.take() {
-            if matches!((prefix, &key), (HelpPrefix::Colon, Key::Char('q' | 'Q')) | (HelpPrefix::Quit, Key::Char('Z'))) {
+            if matches!((prefix, &key), (HelpPrefix::Colon(_), Key::Char('q' | 'Q')) | (HelpPrefix::Quit, Key::Char('Z'))) {
                 self.leave_help();
+            } else if let (HelpPrefix::Colon(count), Key::Char('n'), Some(HelpFiles::Registered)) = (prefix, &key, self.standalone_help)
+                && count.get() <= self.files.count {
+                self.exit = PagerExit::VisitFile(FileVisit { index:count.get() - 1, startup_command:None });
+                self.mode = Mode::Normal;
             } else if key != Key::Ctrl('c') { self.bell_requested = true; }
             return;
         }
@@ -1137,7 +1145,7 @@ impl Pager {
                 self.leave_help();
                 return;
             }
-            Key::Char(':') => { self.help_prefix = Some(HelpPrefix::Colon); return; }
+            Key::Char(':') => { self.help_prefix = Some(HelpPrefix::Colon(std::num::NonZeroUsize::new(count.unwrap_or(1)).unwrap())); return; }
             Key::Char('Z') => { self.help_prefix = Some(HelpPrefix::Quit); return; }
             Key::Escape => { self.bell_requested = true; return; }
             Key::Char('h' | 'H') => return,
@@ -1933,7 +1941,7 @@ impl Pager {
         }
 
         if self.mode == Mode::Help {
-            if let Some(prefix) = self.help_prefix { return match prefix { HelpPrefix::Colon => " :", HelpPrefix::Quit => " Z" }.into(); }
+            if let Some(prefix) = self.help_prefix { return match prefix { HelpPrefix::Colon(_) => " :", HelpPrefix::Quit => " Z" }.into(); }
             return if self.help_top.saturating_add(self.content_height()) >= self.help_rows {
                 "HELP -- END -- Press g to see it again, or q when done".to_string()
             } else { "HELP -- Press RETURN for more, or q when done".to_string() };

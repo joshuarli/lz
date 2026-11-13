@@ -16,6 +16,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S04an:** CLI help opens an interactive help page on a terminal and writes the document when redirected. Nine terminal cases cover navigation, startup positioning, options and piped input. File transitions, tags and remaining help interactions remain open. `Pager::run_help` exposes the standalone view.
 
+**S04ao:** `:n` switches from CLI help to a registered file or explicit stdin. Six cases cover counts, primary-screen mode, line numbers and preprocessing. `HelpFiles` distinguishes a standalone help page with registered files. Backward transitions and out-of-range diagnostics remain open.
+
 The following work remains local and actionable: complete the nonparked S04–S11 behaviors and interactions, upstream scenario translations, bounded fuzzing and holdouts, parity CI checks, final performance and size gates, cleanup, and independent review. The inventory retains behavior-specific causes and cases. The S06 shared renderer still needs bounded long-line startup, Unicode, OSC, and multirow handling. POSIX search, cancellation, headers, helper and pipe transitions, history concurrency, and lifecycle hardening remain incomplete.
 
 Parked conditions are:

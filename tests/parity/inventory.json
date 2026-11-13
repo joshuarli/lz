@@ -2233,11 +2233,17 @@
         "invocation-help-terminal-file",
         "invocation-help-terminal-startup-end",
         "invocation-help-terminal-one-screen",
-        "invocation-help-terminal-pipe"
+        "invocation-help-terminal-pipe",
+        "invocation-help-next-file",
+        "invocation-help-next-file-primary",
+        "invocation-help-next-stdin",
+        "invocation-help-next-file-numbered",
+        "invocation-help-next-file-count",
+        "invocation-help-next-file-preprocessed"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Redirected and terminal help cases pass, including startup end, navigation, screen options and piped input; file transitions, tags and remaining help interactions remain open"
+      "cause": "Redirected and terminal help cases pass, including startup end, navigation, screen options and piped input; backward file transitions, out-of-range counts, tags and remaining help interactions remain open"
     },
     {
       "id": "man-0635",
