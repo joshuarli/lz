@@ -6,7 +6,7 @@ The owner authorized unattended local execution. Keep one writer, commit verifie
 
 The latest macOS arm64 integration check passed all 785 admitted cases across four shards, 157 Rust tests, and Clippy. The previous complete candidate and baseline report covered 664 cases before later slices. It recorded two strict mismatches, one filesystem limitation, and no harness errors; the long-color startup mismatch has since been fixed in S06f. [Coverage](tests/parity/coverage.md) and the [inventory](tests/parity/inventory.json) distinguish named-case results from complete features. Refresh all four candidate and baseline shards before generating a new report.
 
-The 50-seed fuzz smoke passes with navigation, marks, forward literal search, resize and next-file interactions, selected CLI/`LESS` display options and bounded ASCII, UTF-8 and malformed-byte fixtures. The generator does not yet meet the S12 grammar requirement.
+The 50-seed fuzz smoke passes with navigation, marks, forward literal search, resize and next-file interactions, quit or SIGTERM, selected CLI/`LESS` display options and bounded ASCII, UTF-8 and malformed-byte fixtures. The generator does not yet meet the S12 grammar requirement.
 
 Recent accepted slices cover help entry and navigation, CLI help, horizontal movement, fixed and fractional shifts, and repaint. The latest focused checks pass. Public `HorizontalShift` values validate configuration before entering `ScrollDefaults`. Full help search, version text, shift interactive toggles, cross-file movement, and wrapped-row positioning remain open.
 
@@ -61,6 +61,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 **S12d:** generated fixtures include UTF-8 text and isolated malformed bytes beyond the binary sample. Fifty seeds pass: 16 ASCII, 34 UTF-8, including 14 with a malformed byte. The first run exposed S06j. Other byte patterns and event boundary weighting remain open.
 
 **S12e:** generated sessions include a next-file transition from a known position, with the second filename observed after the switch. Fifty seeds pass with 20 transitions. Previous-file, repeated transition and broader session interactions remain open.
+
+**S12f:** generated sessions may terminate with SIGTERM after navigation. Fifty seeds pass, including 17 signal terminations. Other signal timing and boundary-event weighting remain open.
 
 **S06j:** combining marks attached to a character at the right clipping edge remain visible. The layout regression, differential case and generating seed pass; the differential case also passes in a Linux arm64 container.
 

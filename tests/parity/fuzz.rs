@@ -6,7 +6,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const GENERATOR_VERSION: u32 = 6;
+const GENERATOR_VERSION: u32 = 7;
 
 struct Random(u64);
 impl Random {
@@ -115,7 +115,8 @@ fn generate(seed: u64) -> Case {
         top = target;
         events.push(checkpoint(top));
     }
-    events.push(Event::Send { bytes: vec![b'q'] });
+    if random.choose(10) < 3 { events.push(Event::Signal { number: libc::SIGTERM }); }
+    else { events.push(Event::Send { bytes: vec![b'q'] }); }
     Case {
         id: format!("fuzz-navigation-{seed:016x}"), family: "navigation".into(), admitted: false,
         source: "pty".into(), pty_rss_limit: Default::default(), pty_spill_limit: Default::default(), fixture: fixture.into(), args,
@@ -237,7 +238,7 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
     }
     fs::write(directory.join("summary.json"), serde_json::to_vec_pretty(&json!({
         "metadata":meta,"seed":seed,"generator_version":GENERATOR_VERSION,"requested":count,"executed":summaries.len(),"oracle_only":oracle_only,"results":summaries,
-        "grammar":"logical-line movement, ordinary in-file marks, forward literal searches, resize-and-jump and next-file transitions with CLI/LESS display options over ASCII, UTF-8 or isolated malformed bytes; eight actions; 40x12 or 80x24",
+        "grammar":"logical-line movement, ordinary in-file marks, forward literal searches, resize-and-jump, next-file transitions and quit or SIGTERM with CLI/LESS display options over ASCII, UTF-8 or isolated malformed bytes; eight actions; 40x12 or 80x24",
         "limits":{"case_seconds":10,"trace_bytes":64*1024*1024,"pty_rss_bytes":u64::from(super::resources::RssLimit::default()),"pty_spill_bytes":u64::from(super::spill::Limit::default()),"actions":8,"workers":4,"reduction_attempts":8},
         "open_limits":["stdio/helper/producer RSS enforcement","stdio/helper/producer spill accounting","broader CLI/config/byte-text/file-transition/signal grammar","event boundary weighting","search variants and adversarial/stream/helper grammar"]
     }))?)?;
