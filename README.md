@@ -78,7 +78,7 @@ Search is case-sensitive by default. Regex highlighting selects the longest matc
 | `Left` / `Right` | Horizontal scroll |
 | `m` + letter / `'` + letter | Set / return to an in-file mark |
 
-Default page movement uses one content viewport; half-page movement uses half the terminal height rounded up. Zero numeric prefixes select the command’s default. Plain-line aliases include `e`, Ctrl-E/Ctrl-N, `y`, Ctrl-Y/Ctrl-P/Ctrl-K, `f`, Ctrl-V and `<`/`>`. Persistent numeric scroll defaults and configured windows remain unfinished.
+Default page movement uses one content viewport; half-page movement uses half the terminal height rounded up. A numeric `d` or `u` sets the default for both directions. `z` and `w` move forward and backward by a window; a numeric prefix updates the window used by both directions and page commands. These defaults survive file switches. Zero prefixes retain the current default. Plain-line aliases include `e`, Ctrl-E/Ctrl-N, `y`, Ctrl-Y/Ctrl-P/Ctrl-K, `f`, Ctrl-V and `<`/`>`. CLI window configuration, wrapped movement and resized geometry remain unfinished.
 
 ### Search
 
@@ -94,7 +94,7 @@ Default page movement uses one content viewport; half-page movement uses half th
 
 | Key | Action |
 |---|---|
-| `w` | Toggle line wrap |
+| `z` / `w` | Forward / backward window; numeric prefixes set the default |
 | `F` | Follow mode (`tail -f`) |
 | `h` | Toggle help screen |
 | `q` / `Esc` | Quit |

@@ -109,7 +109,7 @@ All raw terminal interaction via libc FFI.
 - Signal handling: `SIGWINCH` (terminal resize), `SIGTSTP` (Ctrl-Z suspend), `SIGCONT` (resume after suspend), `SIGTERM` (clean exit). Signals are caught via `signal()` or `sigaction` FFI calls; handlers set atomic flags that the event loop checks.
 - Buffered output helpers: wraps `stdout` writes so that each rendered frame is assembled in memory and flushed with a single `write()` syscall.
 
-Key types: `Session` owns keyboard input and signal dispositions. `Session::start(Screen::Primary)` acquires raw input without alternate or application modes. `enter_alternate_screen` acquires those modes once. `Screen::Alternate` enters them during startup.
+Key types: `Session` owns keyboard input and signal dispositions. `Session::start(Screen::Primary)` acquires raw input without alternate or application modes. `enter_interactive(InteractiveOptions)` acquires an interactive display once, with independent `ScreenMode` and `KeypadMode` policies. `Screen::Interactive` applies those policies during startup. Primary-screen rendering retains a relative `DisplayAnchor`; exit clears its current prompt. Nondefault suspend/resume remains untested.
 
 ### `input.rs`
 
@@ -189,15 +189,15 @@ The main event loop and renderer. This is the largest and most central module.
 - Initial short-file content is placed at the bottom with blank unused rows. Empty files keep an interactive EOF view. Explicit startup positioning uses a full paint.
 - Rendering: full redraw every frame. Each frame: clear screen, render visible lines (or help screen) top-to-bottom, render inverse-video status bar at the bottom showing context on the left (filename, filter, wrap state, or input prompt) and position info on the right (line range, total, percentage/END).
 - Horizontal scroll: tracks a column offset, increments/decrements in 8-column steps.
-- Wrap mode: enabled by default and disabled with `-S`. Legacy `w` still toggles it until command parity is finished. When enabled, long lines are wrapped using `unicode-width` for correct column calculation (this is why `pager.rs` depends on the crate directly).
+- Wrap mode: enabled by default and disabled with `-S`. When enabled, long lines are wrapped using `unicode-width` for correct column calculation (this is why `pager.rs` depends on the crate directly).
 - Search highlighting: when a search is active, matching spans on each visible line are wrapped in `\x1b[7m` (inverse video) and reset afterward.
 - Line editor: the search/filter prompt at the bottom is a simple line editor supporting character input, backspace, cursor movement, and Escape/Enter. Up/Down cycle through search history (search mode only).
-- Default page movement uses the content height, and half-page movement uses the terminal height rounded up to the next half. Zero prefixes select defaults while leading zeros remain valid digits. Plain-line aliases e/y/f, Ctrl-E/N/Y/P/K/V and angle-bracket jumps share their canonical dispatch paths. Persistent numeric scroll defaults and configured windows remain open.
-- Key dispatch table: maps `Key` variants to actions in Normal mode (scroll, search, backward search, filter, quit, toggle wrap, enter follow mode, help, etc.).
+- Default page movement uses the content height, and half-page movement uses the terminal height rounded up to the next half. Numeric d/u set the shared half-page default; numeric z/w set the shared forward/backward window, including page commands. Main carries opaque `ScrollDefaults` across file visits. Zero prefixes retain defaults while leading zeros remain valid digits. Plain-line aliases e/y/f, Ctrl-E/N/Y/P/K/V and angle-bracket jumps share their canonical dispatch paths. CLI windows, wrapped movement and resized geometry remain open.
+- Key dispatch table: maps `Key` variants to actions in Normal mode (scroll, search, backward search, filter, quit, enter follow mode, help, etc.).
 - Signal integration: checks the atomic flags set by signal handlers in `terminal.rs` on each event loop iteration. Handles resize by re-querying terminal dimensions and redrawing; handles TSTP by suspending the process after restoring the terminal.
 
 `Pager::new` takes a named `Config` containing startup command bytes, charset and control-display policy,
-chopping, line-number display, search case policy, validated `FileStatus` and an explicit `InitialDisplay` placement. `InitialDisplay::FileSwitch` carries an optional opaque `SavedPosition`, obtained with `saved_position` before transferring history. Main retains one saved logical-line position per CLI file; wrapped-row and horizontal offsets remain open. `run` returns `PagerExit`; main opens the requested next/previous file under the same terminal session. `into_history` transfers search history to the next pager. Startup commands use the same key decoder and dispatcher
+chopping, line-number display, search case policy, validated `FileStatus`, retained `DisplayAnchor` and `ScrollDefaults`, and an explicit `InitialDisplay` placement. `InitialDisplay::FileSwitch` carries an optional opaque `SavedPosition`, obtained with `saved_position` before transferring history. Main retains one saved logical-line position per CLI file; wrapped-row and horizontal offsets remain open. `run` returns `PagerExit`; main opens the requested next/previous file under the same terminal session. `into_history` transfers search history to the next pager. Startup commands use the same key decoder and dispatcher
 as tty input, before the first frame. Numeric startup positions and `-p` searches
 are supported. A position-dependent startup movement before any jump/search rings
 a bell and discards the remaining command, matching the reference.
@@ -216,7 +216,7 @@ Key types: `Pager` struct, `Mode` enum (`Normal`, `SearchInput`, `FilterInput`, 
 - Regex search with smart-case, forward (`/`) and backward (`?`) search, `n`/`N` navigation, inverse highlighting, persistent search history (Up/Down in search prompt)
 - Line filtering (`&`) — show only lines matching a pattern
 - Interactive help screen (`h` key)
-- Wrap toggle (`w` key)
+- Default wrapping, with `-S` chopping; `z`/`w` window movement
 - Regular-file follow (`+F` or `F`), including appended lines and return to navigation with Ctrl-C/Ctrl-X. The default waiting message is emphasized. Ctrl-C rings a bell; Ctrl-X does not. The mode owns follow state without a duplicate flag. Custom interrupts, truncation/replacement and continuous/live sources remain open.
 - ANSI color pass-through (colors in input are preserved in output)
 - Raw escape mode (`-r` flag, shows escape sequences literally)

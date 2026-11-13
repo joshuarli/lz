@@ -116,11 +116,14 @@
         "linux-musl"
       ],
       "cases": [
-        "navigation-page-aliases"
+        "navigation-page-aliases",
+        "navigation-scroll-defaults-across-files",
+        "navigation-window-default",
+        "navigation-window-persistent"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Named plain-line aliases and default page/half-page distances pass, including zero and leading-zero counts where exercised. Wrapped-row geometry, ESC aliases, persistent numeric scroll settings and configured windows remain open."
+      "cause": "Plain-line default and numeric windows persist across directions and file visits on macOS arm64; CLI window configuration, negative sizes and wrapped geometry remain untested"
     },
     {
       "id": "man-0061",
@@ -136,10 +139,14 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-scroll-defaults-across-files",
+        "navigation-window-default",
+        "navigation-window-persistent"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Plain-line default and numeric windows persist across directions and file visits on macOS arm64; CLI window configuration, negative sizes and wrapped geometry remain untested"
     },
     {
       "id": "man-0063",
@@ -197,11 +204,13 @@
         "linux-musl"
       ],
       "cases": [
-        "navigation-half-page-default"
+        "navigation-half-page-default",
+        "navigation-half-page-persistent",
+        "navigation-scroll-defaults-across-files"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Named plain-line aliases and default page/half-page distances pass, including zero and leading-zero counts where exercised. Wrapped-row geometry, ESC aliases, persistent numeric scroll settings and configured windows remain open."
+      "cause": "Numeric d/u defaults persist across directions, aliases and file visits on macOS arm64; wrapped and resized geometry remain untested"
     },
     {
       "id": "man-0073",
@@ -218,11 +227,14 @@
         "linux-musl"
       ],
       "cases": [
-        "navigation-page-aliases"
+        "navigation-page-aliases",
+        "navigation-scroll-defaults-across-files",
+        "navigation-window-default",
+        "navigation-window-persistent"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Named plain-line aliases and default page/half-page distances pass, including zero and leading-zero counts where exercised. Wrapped-row geometry, ESC aliases, persistent numeric scroll settings and configured windows remain open."
+      "cause": "Plain-line default and numeric windows persist across directions and file visits on macOS arm64; CLI window configuration, negative sizes and wrapped geometry remain untested"
     },
     {
       "id": "man-0076",
@@ -238,10 +250,14 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-scroll-defaults-across-files",
+        "navigation-window-default",
+        "navigation-window-persistent"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Plain-line default and numeric windows persist across directions and file visits on macOS arm64; CLI window configuration, negative sizes and wrapped geometry remain untested"
     },
     {
       "id": "man-0078",
@@ -279,11 +295,13 @@
         "linux-musl"
       ],
       "cases": [
-        "navigation-half-page-default"
+        "navigation-half-page-default",
+        "navigation-half-page-persistent",
+        "navigation-scroll-defaults-across-files"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Named plain-line aliases and default page/half-page distances pass, including zero and leading-zero counts where exercised. Wrapped-row geometry, ESC aliases, persistent numeric scroll settings and configured windows remain open."
+      "cause": "Numeric d/u defaults persist across directions, aliases and file visits on macOS arm64; wrapped and resized geometry remain untested"
     },
     {
       "id": "man-0086",

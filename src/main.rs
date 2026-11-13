@@ -215,13 +215,15 @@ fn run() -> Result<ExitAction, String> {
     let mut file_index = 0;
     let mut initial_display = pager::InitialDisplay::Startup;
     let mut display_anchor = pager::DisplayAnchor::new(args.terminal.screen);
+    let mut scroll_defaults = pager::ScrollDefaults::new(terminal::get_terminal_size().1);
     let mut positions = vec![None; args.filenames.len()];
     let result = loop {
         let files = match pager::FileStatus::new(&args.filenames, file_index, charset) { Ok(files) => files, Err(error) => break Err(error) };
-        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, startup_commands: std::mem::take(&mut args.startup_commands), charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, opened.name, history);
+        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands: std::mem::take(&mut args.startup_commands), charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, opened.name, history);
         let result = pager.run(session.keys_mut());
         positions[file_index] = pager.saved_position();
         display_anchor = pager.display_anchor();
+        scroll_defaults = pager.scroll_defaults();
         history = pager.into_history();
         match result {
             Err(error) => break Err(error),

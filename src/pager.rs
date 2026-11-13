@@ -195,6 +195,19 @@ pub enum PagerExit { Quit, NextFile, PreviousFile }
 #[derive(Clone, Copy, PartialEq)]
 pub enum InitialDisplay { Startup, FileSwitch(Option<SavedPosition>) }
 
+/// Numeric scrolling defaults belong to the terminal session, across file visits.
+#[derive(Clone, Copy)]
+pub struct ScrollDefaults {
+    half_page: std::num::NonZeroUsize,
+    window: Option<std::num::NonZeroUsize>,
+}
+
+impl ScrollDefaults {
+    pub fn new(terminal_height: u16) -> Self {
+        Self { half_page: std::num::NonZeroUsize::new(usize::from(terminal_height).div_ceil(2).max(1)).unwrap(), window: None }
+    }
+}
+
 /// A saved source line; wrapped-row and horizontal offsets are not represented.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct SavedPosition { line: usize }
@@ -216,6 +229,7 @@ impl FileStatus {
 }
 
 pub struct Config {
+    pub scroll_defaults: ScrollDefaults,
     pub display_anchor: DisplayAnchor,
     pub files: FileStatus,
     pub initial_display: InitialDisplay,
@@ -228,6 +242,7 @@ pub struct Config {
 }
 
 pub struct Pager {
+    scroll_defaults: ScrollDefaults,
     display_anchor: DisplayAnchor,
     buffer: LineBuffer,
     top_line: usize,
@@ -271,6 +286,7 @@ impl Pager {
     ) -> Self {
         let (w, h) = terminal::get_terminal_size();
         Pager {
+            scroll_defaults: config.scroll_defaults,
             display_anchor: config.display_anchor,
             buffer,
             top_line: match config.initial_display { InitialDisplay::FileSwitch(Some(position)) => position.line, _ => 0 },
@@ -313,6 +329,8 @@ impl Pager {
     }
 
     pub fn display_anchor(&self) -> DisplayAnchor { self.display_anchor }
+
+    pub fn scroll_defaults(&self) -> ScrollDefaults { self.scroll_defaults }
 
     pub fn into_history(mut self) -> SearchHistory {
         if self.content_painted && !self.buffer.is_empty() { self.history.note_position(); }
@@ -471,7 +489,7 @@ impl Pager {
             }
         };
         if self.command_context == CommandContext::StartupUnpositioned
-            && matches!(key, Key::Char('j' | 'k' | 'd' | 'u' | 'b' | ' ') | Key::Down | Key::Up | Key::Enter | Key::PageDown | Key::PageUp | Key::Ctrl('d' | 'u' | 'b' | 'f')) {
+            && matches!(key, Key::Char('j' | 'k' | 'd' | 'u' | 'b' | ' ' | 'z' | 'w') | Key::Down | Key::Up | Key::Enter | Key::PageDown | Key::PageUp | Key::Ctrl('d' | 'u' | 'b' | 'f')) {
             self.command_context = CommandContext::StartupAborted;
             self.bell_requested = true;
             return false;
@@ -484,21 +502,19 @@ impl Pager {
 
             Key::Char('j' | 'e') | Key::Ctrl('e' | 'n') | Key::Down | Key::Enter => self.scroll_down(count.unwrap_or(1)),
             Key::Char('k' | 'y') | Key::Ctrl('y' | 'p' | 'k') | Key::Up => self.scroll_up(count.unwrap_or(1)),
-            Key::Char('d') | Key::Ctrl('d') => {
-                let half = usize::from(self.term_height).div_ceil(2);
-                self.scroll_down(count.unwrap_or(half.max(1)));
+            Key::Char('d' | 'u') | Key::Ctrl('d' | 'u') => {
+                if let Some(amount) = count.and_then(std::num::NonZeroUsize::new) { self.scroll_defaults.half_page = amount; }
+                let amount = self.scroll_defaults.half_page.get();
+                if matches!(key, Key::Char('d') | Key::Ctrl('d')) { self.scroll_down(amount); }
+                else { self.scroll_up(amount); }
             }
-            Key::Char('u') | Key::Ctrl('u') => {
-                let half = usize::from(self.term_height).div_ceil(2);
-                self.scroll_up(count.unwrap_or(half.max(1)));
-            }
-            Key::Char(' ' | 'f') | Key::PageDown | Key::Ctrl('f' | 'v') => {
-                let page = self.content_height();
-                self.scroll_down(count.unwrap_or(page));
-            }
-            Key::Char('b') | Key::PageUp | Key::Ctrl('b') => {
-                let page = self.content_height();
-                self.scroll_up(count.unwrap_or(page));
+            Key::Char(' ' | 'f' | 'z' | 'b' | 'w') | Key::PageDown | Key::PageUp | Key::Ctrl('f' | 'v' | 'b') => {
+                if matches!(key, Key::Char('z' | 'w')) && let Some(amount) = count.and_then(std::num::NonZeroUsize::new) {
+                    self.scroll_defaults.window = Some(amount);
+                }
+                let amount = count.unwrap_or_else(|| self.scroll_defaults.window.map_or(self.content_height(), std::num::NonZeroUsize::get));
+                if matches!(key, Key::Char('b' | 'w') | Key::PageUp | Key::Ctrl('b')) { self.scroll_up(amount); }
+                else { self.scroll_down(amount); }
             }
             Key::Char('g' | '<') | Key::Home => {
                 let previous = self.top_line;
@@ -544,10 +560,6 @@ impl Pager {
             Key::Char('&') => {
                 self.mode = Mode::FilterInput;
                 self.filter_input.clear();
-            }
-            Key::Char('w') => {
-                self.wrap = !self.wrap;
-                self.left_col = 0;
             }
             Key::Char('F') => {
                 self.position_initialized();
@@ -1123,7 +1135,7 @@ impl Pager {
             "    &                  Filter lines by pattern",
             "",
             "  OTHER",
-            "    w                  Toggle line wrap",
+            "    z / w              Forward / backward window",
             "    F                  Follow mode (tail -f)",
             "    h                  Toggle this help",
             "    q / Esc            Quit",
