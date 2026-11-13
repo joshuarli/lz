@@ -996,7 +996,8 @@
         "search-highlight-malformed-utf8",
         "search-highlight-color-notation",
         "search-highlight-sgr-inside-match",
-        "search-highlight-existing-inverse"
+        "search-highlight-existing-inverse",
+        "upstream-github216-color-searches"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
@@ -8383,9 +8384,9 @@
       "file": "lesstest/lt/github216.lt",
       "sha256": "be52c067c160617c62bfa9da92efbbc293a083448389bd6faa1916fff05e1923",
       "instrumented": "pass",
-      "cases": [],
-      "disposition": "pending translation",
-      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+      "cases": ["upstream-github216-color-searches"],
+      "disposition": "partial translation",
+      "cause": "The original fixture and four color-spanning searches are covered with a generic terminal. The option prompt, horizontal navigation and original per-key/custom termcap checkpoints remain untranslated."
     },
     {
       "id": "github265",

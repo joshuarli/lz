@@ -591635,5 +591635,12 @@
   "args": ["input"], "env": {}, "size": [80, 8], "locale": "C",
   "events": [{"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[27,117]}, {"type":"checkpoint","ready":"No previous regular expression","row":7}, {"type":"send","bytes":[113]}],
   "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "upstream-github216-color-searches",
+  "family": "search", "admitted": true, "source": "pty",
+  "fixture": [27,91,49,59,51,51,109,54,57,52,27,91,48,109,27,91,75,58,35,105,102,100,101,102,32,27,91,51,48,59,52,51,109,85,83,69,95,83,77,84,51,27,91,48,109,27,91,75,10], "args": ["-R", "input"], "env": {}, "size": [102, 28], "locale": "C.UTF-8",
+  "events": [{"type":"checkpoint","ready":"input (END)","row":27}, {"type":"send","bytes":[47,102]}, {"type":"checkpoint","ready":"/f","row":27}, {"type":"send","bytes":[10]}, {"type":"checkpoint","ready":"(END)","row":27}, {"type":"send","bytes":[47,52,46,46,46]}, {"type":"checkpoint","ready":"/4...","row":27}, {"type":"send","bytes":[10]}, {"type":"checkpoint","ready":"(END)","row":27}, {"type":"send","bytes":[47,102,46,46,46]}, {"type":"checkpoint","ready":"/f...","row":27}, {"type":"send","bytes":[10]}, {"type":"checkpoint","ready":"(END)","row":27}, {"type":"send","bytes":[47,102,32,47,8,46,46,46]}, {"type":"checkpoint","ready":"/f ...","row":27}, {"type":"send","bytes":[10]}, {"type":"checkpoint","ready":"(END)","row":27}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {}
 }
 ]

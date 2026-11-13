@@ -80,6 +80,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S08o:** `Esc-u` with no active search reports the reference no-previous-pattern prompt. The case passes on macOS and in a Linux arm64 container; all 77 admitted macOS search cases pass. No-match and other search states remain open.
 
+**S12j:** the original `github216` fixture and four color-spanning searches pass on macOS and in a Linux arm64 container through a generic terminal, including its edited search prompt. Its option prompt, horizontal navigation and original per-key/custom termcap checkpoints remain untranslated.
+
 **S09j:** the active search and its direction survive next-file switches; the match position remains file-local. Forward highlighting and repeat, backward repeat and the generating seed pass on macOS; the named cases also pass in a Linux arm64 container. Public `SearchSession` carries this state through `Config` and `Pager::take_search_session`. Other search and file-transition interactions remain open.
 
 **S08j:** missing patterns display the reference acknowledgment prompt, and non-acknowledgment keys replay after it. The direct search case and cross-file backward case pass on macOS and in a Linux arm64 container; all 64 admitted macOS search cases pass. Other search diagnostics remain open.
