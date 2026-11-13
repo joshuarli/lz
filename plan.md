@@ -144,6 +144,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S07ap accepted:** normal-mode numeric-prefix display preserves zero and leading zeros in the tested count. The zero sequence and ordinary counted upstream movement pass on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Overflow display and other command modes remain open.
 
+**S12ah accepted (partial translation):** the remaining `search-hist` incremental history-up/down and repeat sequence passes on macOS arm64 and Linux arm64 Docker, alongside the neighboring incremental case. The original command sequence now has generic-terminal checkpoints after semantic interactions; original custom termcap remains open.
+
 **S08ap accepted:** `man-1357` startup and interactive `--incsearch` provide tested plain-line previews, editing, cancellation, query, reset and file-transition persistence. Six new and two neighboring cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. `pager::Config.incremental_search` and `Pager::incremental_search` expose the setting. Wrapped, filtered, modifier and other interactions remain open.
 
 **S12ag accepted (partial translation):** the original `search-hist` fixture, search entries, editing and first five history-up actions match with generic-terminal checkpoints. A failed new search now repaints the view to remove stale highlights. Three upstream-derived cases and neighboring missing-search and non-match cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Later history actions and custom termcap remain open.

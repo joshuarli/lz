@@ -8458,9 +8458,9 @@
       "file": "lesstest/lt/search-hist.lt",
       "sha256": "222c4e0c05793e83c4e696784dbf0d30070f209dbf5b7d55f75b1381a81a7be2",
       "instrumented": "pass",
-      "cases": ["upstream-search-history-entries", "upstream-search-history-record", "upstream-search-history-up", "upstream-search-history-incremental"],
+      "cases": ["upstream-search-history-entries", "upstream-search-history-record", "upstream-search-history-up", "upstream-search-history-incremental", "upstream-search-history-incremental-recall"],
       "disposition": "partial translation",
-      "cause": "The original fixture, initial search entries, editing, first five history-up actions and incremental option/typing pass in generic-terminal checkpoints. Later commands and custom termcap remain untranslated."
+      "cause": "The original fixture and command sequence pass with generic-terminal checkpoints after semantic interactions. Original custom termcap checkpoints remain untranslated."
     },
     {
       "id": "seq200",
