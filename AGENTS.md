@@ -179,6 +179,7 @@ Search over file content with a fast literal path.
 
 - Two-tier matching via the `Matcher` enum: `Literal(BMH)` for patterns with no regex metacharacters, `Regex(Box<RegexMatcher>)` for everything else. The `is_literal()` function detects which path to use.
 - `BMH` struct implements Boyer-Moore-Horspool substring search with a 256-entry bad-character shift table. For literal patterns this skips large chunks of the haystack without examining every byte — dramatically faster than regex for common search terms.
+- `SearchStart` selects the ordinary start, the edge of the rendered screen (`-a`), or the default target line (`-A`). The pager records the last visible logical line while rendering, including wrapped lines. Filtered views and configurable target lines remain open.
 - Case policy is explicit: sensitive by default, smart case with `-i`, and insensitive with `-I`. `Search::new(pattern, CaseSensitivity)` receives the resolved policy. The literal folding path is ASCII-only; Unicode folding parity is unproved.
 - Searches on ANSI-stripped text (delegates to `ansi.rs`) so that color codes in the input do not interfere with pattern matching.
 - Returns match byte ranges on the stripped text; `pager.rs` uses these to inject inverse highlighting escapes when rendering.

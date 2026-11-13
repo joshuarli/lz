@@ -7,7 +7,7 @@ use crate::layout::DisplayPrefix;
 use crate::buffer::{LineBuffer, LineFragment};
 use crate::history::SearchHistory;
 use crate::input::{Key, KeyReader};
-use crate::search::{CaseSensitivity, Search};
+use crate::search::{CaseSensitivity, Search, SearchStart};
 use crate::terminal;
 
 const FOLLOW_INTERRUPT: char = 'x';
@@ -463,6 +463,7 @@ pub struct Config {
     pub line_numbers: bool,
     pub show_eof_markers: bool,
     pub search_case: CaseSensitivity,
+    pub search_start: SearchStart,
 }
 
 pub struct Pager {
@@ -483,6 +484,8 @@ pub struct Pager {
     show_eof_markers: bool,
     search: Option<Search>,
     search_case: CaseSensitivity,
+    search_start: SearchStart,
+    last_visible_line: Option<usize>,
     search_dir: SearchDir,
     current_match_line: Option<usize>,
     mode: Mode,
@@ -543,6 +546,8 @@ impl Pager {
             show_eof_markers: config.show_eof_markers,
             search: None,
             search_case: config.search_case,
+            search_start: config.search_start,
+            last_visible_line: None,
             search_dir: SearchDir::Forward,
             current_match_line: None,
             mode: Mode::Normal,
@@ -1174,12 +1179,12 @@ impl Pager {
             Some(s) => s,
             None => return,
         };
-        let from = if forward {
-            self.current_match_line
-                .map(|l| l + 1)
-                .unwrap_or(self.top_line)
-        } else {
-            self.current_match_line.unwrap_or(self.top_line)
+        let from = match (self.search_start, forward) {
+            (SearchStart::AfterScreen, true) => self.last_visible_line.map_or(self.top_line, |line| line.saturating_add(1)),
+            (SearchStart::AfterScreen | SearchStart::AfterTarget, false) => self.top_line,
+            (SearchStart::AfterTarget, true) if self.content_painted => self.top_line.saturating_add(1),
+            (_, true) => self.current_match_line.map_or(self.top_line, |line| line.saturating_add(1)),
+            (_, false) => self.current_match_line.unwrap_or(self.top_line),
         };
         match search.find_next_line(&mut self.buffer, from, forward) {
             Some(line) => {
@@ -1428,6 +1433,7 @@ impl Pager {
         }
         if buf.relative_row.is_some() && !self.bottom_aligned && self.leading_rows == 0 { buf.padding = first_row; }
         else { for row in 0..first_row { buf.position(row); if self.bottom_aligned || self.leading_rows > 0 { self.write_eof_marker(&mut buf); } terminal::clear_line(&mut buf); } }
+        if self.mode != Mode::Help { self.last_visible_line = None; }
         if self.mode == Mode::Help {
             Self::render_help(&mut buf, w, ch);
         } else if self.wrap {
@@ -1574,6 +1580,7 @@ impl Pager {
             let fragment = match actual { Some(index) => self.display_prefix(index, self.left_col.saturating_add(w).saturating_add(1).saturating_mul(16).max(4096))?, None => None };
             match actual.zip(fragment) {
                 Some((line_idx, fragment)) => {
+                    self.last_visible_line = Some(line_idx);
                     let gutter = self.number_gutter(line_idx, w);
                     Self::write_number_gutter(buf, &gutter);
                     let content_width = w.saturating_sub(gutter.len());
@@ -1599,6 +1606,7 @@ impl Pager {
             let fragment = match actual { Some(index) => self.display_prefix(index, w.saturating_mul(ch - screen_row).saturating_add(1).saturating_mul(16).max(4096))?, None => None };
             match actual.zip(fragment) {
                 Some((actual, fragment)) => {
+                    self.last_visible_line = Some(actual);
                     let gutter_width = self.number_gutter(actual, w).len();
                     let content_width = w.saturating_sub(gutter_width).max(1);
                     let rows_needed = self.wrapped_prefix_rows(&fragment, actual, w, ch - screen_row);

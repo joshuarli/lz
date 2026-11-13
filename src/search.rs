@@ -174,6 +174,10 @@ pub enum CaseSensitivity {
     Insensitive,
 }
 
+/// Select where searches start relative to the displayed viewport.
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+pub enum SearchStart { #[default] Default, AfterScreen, AfterTarget }
+
 pub struct Search {
     pub pattern: String,
     matcher: Matcher,

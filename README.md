@@ -65,6 +65,8 @@ PTY runs now use the same foreground-process supervisor for files and pipes. It 
 | Flag | Description |
 |---|---|
 | `+F` | Start in follow mode (like `tail -f`) |
+| `-a`, `--search-skip-screen` | Start searches beyond the displayed screen |
+| `-A`, `--SEARCH-SKIP-SCREEN` | Start searches beyond the target line |
 | `-f`, `--force` | View binary files |
 | `-i`, `--ignore-case` | Use smart case for ASCII search |
 | `-I`, `--IGNORE-CASE` | Ignore ASCII search case |
@@ -74,7 +76,7 @@ PTY runs now use the same foreground-process supervisor for files and pipes. It 
 | `-?`, `--help` | Show help |
 | `-V`, `--version` | Show version |
 
-Search is case-sensitive by default. Regex highlighting selects the longest match at the earliest position for the tested POSIX alternatives. Full POSIX dialect, diagnostics and Unicode parity remain open. Simple `-i` and `-I` entries in `LESS` apply before the command line. `-+i` resets the case policy. Unknown and ambiguous CLI options emit diagnostics while redirected file copying continues. Option parsing stops at the first filename. Numeric and string arguments are consumed by one parser, including missing-value and overflow diagnostics. `-h` takes a number. Lines fold by default. `-S` shows an inverse right-edge marker for chopped content. `-N` displays line numbers. Full option effects and Unicode case-folding parity remain open.
+The search-start options cover the default target line; filtered views and configurable target lines remain unfinished. Search is case-sensitive by default. Regex highlighting selects the longest match at the earliest position for the tested POSIX alternatives. Full POSIX dialect, diagnostics and Unicode parity remain open. Simple `-i` and `-I` entries in `LESS` apply before the command line. `-+i` resets the case policy. Unknown and ambiguous CLI options emit diagnostics while redirected file copying continues. Option parsing stops at the first filename. Numeric and string arguments are consumed by one parser, including missing-value and overflow diagnostics. `-h` takes a number. Lines fold by default. `-S` shows an inverse right-edge marker for chopped content. `-N` displays line numbers. Full option effects and Unicode case-folding parity remain open.
 
 ## Keyboard Shortcuts
 

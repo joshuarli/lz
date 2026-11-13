@@ -2166,10 +2166,19 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "search-skip-screen-forward",
+        "search-skip-screen-long",
+        "search-skip-screen-backward",
+        "search-skip-screen-reset",
+        "search-skip-screen-wrapped",
+        "search-skip-screen-startup",
+        "search-skip-screen-reverse-repeat",
+        "search-skip-screen-cli-override"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named viewport, wrapped, repeat, startup and option-precedence cases pass; filtered views, variable target lines and interactive option changes remain open"
     },
     {
       "id": "man-0645",
@@ -2185,10 +2194,15 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "search-skip-target-forward",
+        "search-skip-target-long",
+        "search-skip-target-startup",
+        "search-skip-target-cli-override"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named initial and repeat searches pass with the default target; variable target lines, filtered views and interactive option changes remain open"
     },
     {
       "id": "man-0654",
