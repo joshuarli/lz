@@ -563246,5 +563246,81 @@
     ],
     "files": {},
     "trace_check": "captured"
-  }
+  },
+{
+  "id": "invocation-help-long",
+  "family": "invocation",
+  "admitted": true,
+  "source": "file",
+  "fixture": [],
+  "args": [
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-short",
+  "family": "invocation",
+  "admitted": true,
+  "source": "file",
+  "fixture": [],
+  "args": [
+    "-?"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-invalid",
+  "family": "invocation",
+  "admitted": true,
+  "source": "file",
+  "fixture": [],
+  "args": [
+    "--help",
+    "-Z"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+}
 ]

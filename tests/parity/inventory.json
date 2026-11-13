@@ -2190,10 +2190,14 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-help-long",
+        "invocation-help-short",
+        "invocation-help-invalid"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Redirected long and short help options and invalid-option diagnostics match; terminal output and version precedence remain open"
     },
     {
       "id": "man-0635",

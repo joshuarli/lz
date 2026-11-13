@@ -15,43 +15,6 @@ use std::process;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-fn print_help() {
-    println!(
-        "lz {} — a minimal pager
-
-USAGE: lz [OPTIONS] [FILE]
-
-OPTIONS:
-    +COMMAND    Run a startup command once (+F starts follow mode)
-    ++COMMAND   Run a command whenever a file opens
-    -f, --force View binary files
-    -i          Ignore ASCII case unless the pattern has uppercase
-    -I          Always ignore ASCII case
-    -zN, --window=N  Set the scrolling window (negative: screen-relative)
-    -X, --no-init   Preserve the primary screen
-    --no-keypad     Keep normal cursor and keypad modes
-    -K, --quit-on-intr  Exit with status 2 on interrupt
-    -r, --raw   Raw mode (show ANSI escapes literally)
-    -?, --help  Show this help
-    -V, --version  Show version
-
-KEYS:
-    j/Down      Scroll down       k/Up        Scroll up
-    Space/PgDn  Page down          b/PgUp      Page up
-    d/Ctrl-D    Half page down     u/Ctrl-U    Half page up
-    g/Home      Top                G/End       Bottom
-    Left/Right  Horizontal scroll  z/w         Forward/backward window
-    /           Search forward     ?           Search backward
-    n/N         Next/prev match    &           Filter lines
-    F           Enter follow mode  h           Help
-    q/Q/:q/:Q/ZZ  Quit
-
-FILE:
-    File to view. If omitted or '-', reads stdin.",
-        VERSION
-    );
-}
-
 enum ExitAction { Success, FileError, Interrupted, Terminated, Hangup }
 
 enum BinaryAnswer { Open, Refuse, Quit }
@@ -202,7 +165,7 @@ fn run() -> Result<ExitAction, String> {
         diagnostic.write(&mut io::stderr().lock()).map_err(|error| error.to_string())?;
     }
     match args.action {
-        options::Action::Help => { print_help(); return Ok(ExitAction::Success); }
+        options::Action::Help => { io::stdout().lock().write_all(include_bytes!("less-help.txt")).map_err(|error| error.to_string())?; return Ok(ExitAction::Success); }
         options::Action::Version => { println!("lz {}", VERSION); return Ok(ExitAction::Success); }
         options::Action::Stop => return Ok(ExitAction::Success),
         options::Action::Page => {}
