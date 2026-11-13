@@ -8497,9 +8497,9 @@
       "file": "lesstest/lt/table-50x200.lt",
       "sha256": "9d2567d2d606af42f2b4d5a02ab9a6463e1cde43a1b7f614f8d026fd8216cef5",
       "instrumented": "pass",
-      "cases": ["upstream-table-chop", "upstream-table-header-prompt", "upstream-table-header-movement", "upstream-table-header-horizontal-cycle", "upstream-table-header-search", "upstream-table-search-movement"],
+      "cases": ["upstream-table-chop", "upstream-table-header-prompt", "upstream-table-header-movement", "upstream-table-header-horizontal-cycle", "upstream-table-header-search", "upstream-table-search-movement", "upstream-table-row-header-complete"],
       "disposition": "partial translation",
-      "cause": "The original fixture, chop toggle, interactive row-header setup, first movement cycles, search and following right/down movements pass generic-terminal checkpoints. Later commands and original custom termcap remain untranslated."
+      "cause": "The original fixture and commands through the row-header navigation preceding fixed-column setup pass generic-terminal checkpoints. Fixed columns, later commands and original custom termcap remain untranslated."
     },
     {
       "id": "utf8-2.txt",
