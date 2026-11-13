@@ -1841,6 +1841,16 @@
         "linux-musl"
       ],
       "cases": [
+        "invocation-every-file-empty",
+        "invocation-every-file-environment",
+        "invocation-every-file-last",
+        "invocation-every-file-no-init",
+        "invocation-every-file-once-after",
+        "invocation-every-file-once-before",
+        "invocation-every-file-once-environment",
+        "invocation-every-file-override",
+        "invocation-every-file-position",
+        "invocation-every-file-search",
         "invocation-startup-end-command",
         "invocation-startup-layout-0",
         "invocation-startup-layout-1",
@@ -1865,7 +1875,7 @@
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Numeric/movement startup and file-switch input origins pass, including inline continuation, separate-command frame boundaries, short/empty/wide files, -X and bare/zero counts. Subsequent commands preserve first-prompt lifetime. Every-file scope and other command interactions remain open"
+      "cause": "CLI one-time and every-file startup commands pass, including last-setting wins, LESS/CLI precedence, repeated positioning/search, saved-position overrides, -X, empty commands and intervening frame boundaries. Interactive +cmd, other command interactions and platforms remain open"
     },
     {
       "id": "man-0444",
@@ -4641,6 +4651,16 @@
         "linux-musl"
       ],
       "cases": [
+        "invocation-every-file-empty",
+        "invocation-every-file-environment",
+        "invocation-every-file-last",
+        "invocation-every-file-no-init",
+        "invocation-every-file-once-after",
+        "invocation-every-file-once-before",
+        "invocation-every-file-once-environment",
+        "invocation-every-file-override",
+        "invocation-every-file-position",
+        "invocation-every-file-search",
         "invocation-startup-end-command",
         "invocation-startup-layout-0",
         "invocation-startup-layout-1",
@@ -4665,7 +4685,7 @@
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Numeric/movement startup and file-switch input origins pass, including inline continuation, separate-command frame boundaries, short/empty/wide files, -X and bare/zero counts. Subsequent commands preserve first-prompt lifetime. Every-file scope and other command interactions remain open"
+      "cause": "CLI one-time and every-file startup commands pass, including last-setting wins, LESS/CLI precedence, repeated positioning/search, saved-position overrides, -X, empty commands and intervening frame boundaries. Interactive +cmd, other command interactions and platforms remain open"
     },
     {
       "id": "man-1571",

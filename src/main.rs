@@ -21,7 +21,8 @@ fn print_help() {
 USAGE: lz [OPTIONS] [FILE]
 
 OPTIONS:
-    +F          Start in follow mode
+    +COMMAND    Run a startup command once (+F starts follow mode)
+    ++COMMAND   Run a command whenever a file opens
     -f, --force View binary files
     -i          Ignore ASCII case unless the pattern has uppercase
     -I          Always ignore ASCII case
@@ -231,7 +232,9 @@ fn run() -> Result<ExitAction, String> {
     let mut positions = vec![None; args.filenames.len()];
     let result = loop {
         let files = match pager::FileStatus::new(&args.filenames, file_index, charset) { Ok(files) => files, Err(error) => break Err(error) };
-        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands: std::mem::take(&mut args.startup_commands), charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, opened.name, history);
+        let mut startup_commands = std::mem::take(&mut args.startup_commands);
+        if let Some(command) = &args.every_file_command { startup_commands.push(command.clone()); }
+        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, opened.name, history);
         let result = pager.run(session.keys_mut());
         positions[file_index] = pager.saved_position();
         display_anchor = pager.display_anchor();

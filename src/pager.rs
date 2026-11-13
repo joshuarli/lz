@@ -426,6 +426,11 @@ impl Pager {
             if matches!(self.mode, Mode::SearchInput | Mode::FilterInput) { self.handle_key(Key::Enter); }
             else if self.numeric_prefix != NumericPrefix::Empty { self.handle_normal_key(Key::Char('g')); }
             if matches!(self.mode, Mode::CommandError(_)) { return Ok(false); }
+            if !self.startup_commands.is_empty() {
+                self.filename_prompt = !self.content_painted;
+                self.render()?;
+                self.command_context = CommandContext::Interactive;
+            }
         }
         self.filename_prompt = !self.content_painted;
         self.command_context = CommandContext::Interactive;

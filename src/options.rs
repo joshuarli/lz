@@ -114,6 +114,7 @@ pub(super) enum Action { Page, Help, Version, Stop }
 pub(super) struct Args {
     pub terminal: lz::terminal::InteractiveOptions,
     pub startup_commands: Vec<Vec<u8>>,
+    pub every_file_command: Option<Vec<u8>>,
     pub tag: Option<OsString>,
     pub tags_file: Option<OsString>,
     pub force: bool,
@@ -130,7 +131,7 @@ pub(super) struct Args {
 
 impl Default for Args {
     fn default() -> Self {
-        Self { terminal: Default::default(), startup_commands: Vec::new(), tag: None, tags_file: None, force: false, control_display: ControlDisplay::default(), chop: false, line_numbers: false, window: None, search_case: CaseSensitivity::Sensitive,
+        Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, tag: None, tags_file: None, force: false, control_display: ControlDisplay::default(), chop: false, line_numbers: false, window: None, search_case: CaseSensitivity::Sensitive,
             filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
@@ -225,7 +226,9 @@ impl Scanner {
                 b' ' | b'\t' | b'$' => continue,
                 b'+' => {
                     let end = word[cursor..].iter().position(|byte| *byte == b'$').map_or(word.len(), |end| cursor + end);
-                    self.args.startup_commands.push(word[cursor..end].to_vec());
+                    let command = &word[cursor..end];
+                    if let Some(command) = command.strip_prefix(b"+") { self.args.every_file_command = Some(command.to_vec()); }
+                    else { self.args.startup_commands.push(command.to_vec()); }
                     cursor = end;
                     continue;
                 }
