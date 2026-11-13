@@ -206,6 +206,25 @@ impl LineBuffer {
 
     pub fn is_finished(&self) -> bool { self.state == SourceState::Eof }
 
+    pub(crate) fn regular_file_position(&mut self, line: usize) -> Option<(u64, u64)> {
+        if !self.is_finished() {
+            let Source::File(file) = &self.source else { return None; };
+            match file.metadata() {
+                Ok(metadata) if metadata.is_file() && metadata.len() == self.scanned => { self.scan(); }
+                Ok(_) => return None,
+                Err(error) => { self.error = Some(error); self.state = SourceState::Failed; return None; }
+            }
+        }
+        let size = self.eof_regular_size()?;
+        let end = if line + 1 < self.starts.len() {
+            match self.starts.get(line + 1) {
+                Ok(end) => end,
+                Err(error) => { self.error = Some(error); self.state = SourceState::Failed; return None; }
+            }
+        } else { size };
+        Some((end, size))
+    }
+
     pub(crate) fn eof_regular_size(&mut self) -> Option<u64> {
         if !self.is_finished() { return None; }
         match &self.source {

@@ -1817,10 +1817,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["upstream-colorbars-info", "navigation-file-info-short-eof", "navigation-file-info-single-line", "navigation-file-info-colored-unterminated", "navigation-file-info-control-g", "navigation-file-info-colon-f"],
+      "cases": ["upstream-colorbars-info", "navigation-file-info-short-eof", "navigation-file-info-single-line", "navigation-file-info-colored-unterminated", "navigation-file-info-control-g", "navigation-file-info-colon-f", "navigation-file-info-before-eof", "navigation-file-info-before-eof-fraction", "navigation-file-info-before-eof-half"],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "The =, Ctrl-G and :f commands report lines and bytes for the named fully read regular-file EOF cases. Non-EOF, streams, filters and multiple files remain open."
+      "cause": "The =, Ctrl-G and :f commands report lines and bytes for the named fully scanned regular-file views. Files not yet fully scanned, streams, filters, multiple files and wrapped rows remain open."
     },
     {
       "id": "man-0393",

@@ -1226,12 +1226,20 @@ impl Pager {
         }
     }
 
-    fn show_eof_file_info(&mut self) {
-        if self.eof_displayed && self.filter.is_none() && self.files.count == 1
-            && let Some(size) = self.buffer.eof_regular_size()
-            && let (Some(name), Some(last)) = (&self.filename, self.last_visible_line) {
+    fn show_file_info(&mut self) {
+        if self.filter.is_none() && self.files.count == 1
+            && let (Some(name), Some(last)) = (&self.filename, self.last_visible_line)
+            && let Some((position, size)) = self.buffer.regular_file_position(last) {
             let first = self.top_line + 1;
-            let message = format!("{name} lines {first}-{}/{total} byte {size}/{size} (END)  (press RETURN)", last + 1, total = self.buffer.len());
+            let progress = if self.eof_displayed { "(END)".to_owned() } else {
+                let numerator = u128::from(position) * 100;
+                let denominator = u128::from(size);
+                let quotient = numerator / denominator;
+                let remainder = numerator % denominator;
+                let rounded = quotient + u128::from(remainder > denominator / 2 || (denominator % 2 == 0 && remainder == denominator / 2 && quotient % 2 == 1));
+                format!("{rounded}%")
+            };
+            let message = format!("{name} lines {first}-{}/{total} byte {position}/{size} {progress}  (press RETURN)", last + 1, total = self.buffer.len());
             let repaint = self.squished;
             if repaint { self.position_initialized(); }
             self.status_msg = Some(message);
@@ -1344,7 +1352,7 @@ impl Pager {
                         let direction = if direction == 'n' { "next" } else { "previous" };
                         self.command_error(format!("No {ordinal}{direction} file"), ErrorAction::Dismiss);
                     }
-                    Key::Char('f') => self.show_eof_file_info(),
+                    Key::Char('f') => self.show_file_info(),
                     Key::Char('q' | 'Q') => return true,
                     Key::Escape => {},
                     _ => self.bell_requested = true,
@@ -1424,7 +1432,7 @@ impl Pager {
                     self.command_error("Cannot seek to that file position".into(), ErrorAction::Dismiss);
                 }
             }
-            Key::Char('=') | Key::Ctrl('g') => self.show_eof_file_info(),
+            Key::Char('=') | Key::Ctrl('g') => self.show_file_info(),
             Key::Char('m') => self.mode = Mode::SetMark,
             Key::Char('\'') => self.mode = Mode::JumpMark,
 
