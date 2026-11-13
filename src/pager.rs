@@ -1386,12 +1386,22 @@ impl Pager {
             Key::Char('j' | 'e') | Key::Ctrl('e' | 'n') | Key::Down | Key::Enter => self.scroll_down(count.unwrap_or(1)),
             Key::Char('k' | 'y') | Key::Ctrl('y' | 'p' | 'k') | Key::Up => self.scroll_up(count.unwrap_or(1)),
             Key::Char('J') => {
+                let leading = self.leading_rows;
                 self.position_initialized();
-                let target = self.top_line.saturating_add(count.unwrap_or(1));
+                let moved = leading.min(count.unwrap_or(1));
+                self.leading_rows = leading - moved;
+                let target = self.top_line.saturating_add(count.unwrap_or(1) - moved);
                 if self.filter.is_none() { self.buffer.get_line(target); }
                 self.top_line = target.min(self.display_line_count().saturating_sub(1));
             }
-            Key::Char('K' | 'Y') => { self.position_initialized(); self.scroll_up(count.unwrap_or(1)); }
+            Key::Char('K' | 'Y') => {
+                let leading = self.leading_rows;
+                self.position_initialized();
+                let amount = count.unwrap_or(1);
+                let moved = self.top_line.min(amount);
+                self.top_line -= moved;
+                self.leading_rows = leading.saturating_add(amount - moved).min(self.content_height());
+            }
             Key::Char('d' | 'u') | Key::Ctrl('d' | 'u') => {
                 if let Some(amount) = count.and_then(std::num::NonZeroUsize::new) { self.scroll_defaults.half_page = amount; }
                 let amount = self.scroll_defaults.half_page.get();
@@ -1831,6 +1841,10 @@ impl Pager {
     }
 
     fn scroll_down(&mut self, lines: usize) {
+        if self.leading_rows > 0 && self.eof_displayed && self.buffer.is_finished() {
+            self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
+            return;
+        }
         let previous = self.top_line;
         let moved_leading = lines.min(self.leading_rows);
         self.leading_rows -= moved_leading;
@@ -2115,7 +2129,8 @@ impl Pager {
     fn visible_end_of_file(&mut self) -> io::Result<bool> {
         let width = usize::from(self.term_width).max(1);
         let height = self.content_height();
-        let mut rows = 0;
+        let mut rows = self.leading_rows.min(height);
+        if rows == height { return Ok(false); }
         let mut index = self.top_line;
         loop {
             let Some(actual) = self.display_line_idx(index) else { return Ok(self.buffer.is_finished()); };
