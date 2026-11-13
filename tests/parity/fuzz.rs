@@ -140,7 +140,7 @@ fn signature(result: &Value) -> Option<(String, String)> {
 }
 
 #[derive(Clone, Copy)]
-enum ReductionPart { Events, Arguments, FixtureBytes, Environment, AuxiliaryFiles, AuxiliaryBytes, RepeatCount }
+enum ReductionPart { Events, Arguments, FixtureBytes, Environment, AuxiliaryFiles, AuxiliaryBytes, RepeatCount, RepeatUnit, RepeatSuffix }
 
 impl ReductionPart {
     fn len(self, case: &Case) -> usize {
@@ -152,6 +152,8 @@ impl ReductionPart {
             Self::AuxiliaryFiles => case.files.len(),
             Self::AuxiliaryBytes => case.files.values().map(|fixture| match fixture { Fixture::Bytes(bytes) => bytes.len(), _ => 0 }).sum(),
             Self::RepeatCount => match &case.fixture { Fixture::Repeated(recipe) => recipe.count as usize, _ => 0 },
+            Self::RepeatUnit => match &case.fixture { Fixture::Repeated(recipe) => recipe.repeat.len(), _ => 0 },
+            Self::RepeatSuffix => match &case.fixture { Fixture::Repeated(recipe) => recipe.suffix.len(), _ => 0 },
         }
     }
 
@@ -181,6 +183,8 @@ impl ReductionPart {
                 }
             }
             Self::RepeatCount => if let Fixture::Repeated(recipe) = &mut case.fixture { recipe.count -= range.len() as u64; },
+            Self::RepeatUnit => if let Fixture::Repeated(recipe) = &mut case.fixture { recipe.repeat.drain(range); },
+            Self::RepeatSuffix => if let Fixture::Repeated(recipe) = &mut case.fixture { recipe.suffix.drain(range); },
         }
     }
 }
@@ -282,13 +286,15 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
                     let (environment, observation, environment_attempts) = reduce_part(&fixture, &observation, ReductionPart::Environment, |case| observe_case(reference, candidate, case));
                     let (auxiliary, observation, auxiliary_attempts) = reduce_part(&environment, &observation, ReductionPart::AuxiliaryFiles, |case| observe_case(reference, candidate, case));
                     let (auxiliary_bytes, observation, auxiliary_byte_attempts) = reduce_part(&auxiliary, &observation, ReductionPart::AuxiliaryBytes, |case| observe_case(reference, candidate, case));
-                    let (minimized, observation, repeat_attempts) = reduce_part(&auxiliary_bytes, &observation, ReductionPart::RepeatCount, |case| observe_case(reference, candidate, case));
+                    let (repeat_count, observation, repeat_attempts) = reduce_part(&auxiliary_bytes, &observation, ReductionPart::RepeatCount, |case| observe_case(reference, candidate, case));
+                    let (repeat_unit, observation, unit_attempts) = reduce_part(&repeat_count, &observation, ReductionPart::RepeatUnit, |case| observe_case(reference, candidate, case));
+                    let (minimized, observation, suffix_attempts) = reduce_part(&repeat_unit, &observation, ReductionPart::RepeatSuffix, |case| observe_case(reference, candidate, case));
                     fs::write(directory.join("minimized-case.json"), serde_json::to_vec_pretty(&minimized)?)?;
                     save(&directory.join("minimized-observation.json.gz"), &observation)?;
-                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":true,"attempts":{"events":event_attempts,"arguments":argument_attempts,"fixture":fixture_attempts,"environment":environment_attempts,"auxiliary_files":auxiliary_attempts,"auxiliary_bytes":auxiliary_byte_attempts,"repeat_count":repeat_attempts},"original_repetitions":ReductionPart::RepeatCount.len(case),"minimized_repetitions":ReductionPart::RepeatCount.len(&minimized),"original_auxiliary_bytes":ReductionPart::AuxiliaryBytes.len(case),"minimized_auxiliary_bytes":ReductionPart::AuxiliaryBytes.len(&minimized),"original_auxiliary_files":case.files.len(),"minimized_auxiliary_files":minimized.files.len(),"original_environment":case.env.len(),"minimized_environment":minimized.env.len(),"original_events":case.events.len(),"minimized_events":minimized.events.len(),"original_arguments":case.args.len(),"minimized_arguments":minimized.args.len(),"original_fixture_bytes":ReductionPart::FixtureBytes.len(case),"minimized_fixture_bytes":ReductionPart::FixtureBytes.len(&minimized)}))?)?;
+                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":true,"attempts":{"events":event_attempts,"arguments":argument_attempts,"fixture":fixture_attempts,"environment":environment_attempts,"auxiliary_files":auxiliary_attempts,"auxiliary_bytes":auxiliary_byte_attempts,"repeat_count":repeat_attempts,"repeat_unit":unit_attempts,"repeat_suffix":suffix_attempts},"original_repeat_unit_bytes":ReductionPart::RepeatUnit.len(case),"minimized_repeat_unit_bytes":ReductionPart::RepeatUnit.len(&minimized),"original_repeat_suffix_bytes":ReductionPart::RepeatSuffix.len(case),"minimized_repeat_suffix_bytes":ReductionPart::RepeatSuffix.len(&minimized),"original_repetitions":ReductionPart::RepeatCount.len(case),"minimized_repetitions":ReductionPart::RepeatCount.len(&minimized),"original_auxiliary_bytes":ReductionPart::AuxiliaryBytes.len(case),"minimized_auxiliary_bytes":ReductionPart::AuxiliaryBytes.len(&minimized),"original_auxiliary_files":case.files.len(),"minimized_auxiliary_files":minimized.files.len(),"original_environment":case.env.len(),"minimized_environment":minimized.env.len(),"original_events":case.events.len(),"minimized_events":minimized.events.len(),"original_arguments":case.args.len(),"minimized_arguments":minimized.args.len(),"original_fixture_bytes":ReductionPart::FixtureBytes.len(case),"minimized_fixture_bytes":ReductionPart::FixtureBytes.len(&minimized)}))?)?;
                 } else {
                     save(&directory.join("reproduction-observation.json.gz"), &reproduced)?;
-                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":false,"attempts":{"events":0,"arguments":0,"fixture":0,"environment":0,"auxiliary_files":0,"auxiliary_bytes":0,"repeat_count":0},"reason":"failure signature changed or belongs to the oracle; original failure remains strict"}))?)?;
+                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":false,"attempts":{"events":0,"arguments":0,"fixture":0,"environment":0,"auxiliary_files":0,"auxiliary_bytes":0,"repeat_count":0,"repeat_unit":0,"repeat_suffix":0},"reason":"failure signature changed or belongs to the oracle; original failure remains strict"}))?)?;
                 }
             }
             break;
@@ -398,18 +404,21 @@ pub(super) fn selftest() -> Result<()> {
         return Err("auxiliary byte reduction changed a recipe or missed a file boundary".into());
     }
     let mut recipe_case = input_case.clone();
-    recipe_case.fixture = Fixture::Repeated(super::fixtures::Repeat { repeat:b"X\n".to_vec(), count:8, suffix:Vec::new() });
+    recipe_case.fixture = Fixture::Repeated(super::fixtures::Repeat { repeat:b"abcXdef\n".to_vec(), count:8, suffix:b"abZcd\n".to_vec() });
     let recipe_fault = control.path().join("recipe-fault");
-    fs::write(&recipe_fault, format!("#!/bin/sh\nexec 3<input\nIFS= read -r first <&3 || :\nIFS= read -r second <&3 || :\nfault=none\nif [ \"$first\" = X ] && [ \"$second\" = X ]; then fault=attribute; fi\nexec '{quoted}' --fixture \"$fault\"\n"))?;
+    fs::write(&recipe_fault, format!("#!/bin/sh\nexec 3<input\nIFS= read -r first <&3 || :\nIFS= read -r second <&3 || :\nlast=\nwhile IFS= read -r line <&3; do last=$line; done\nfault=none\ncase \"$first:$second:$last\" in *X*:*X*:*Z*) fault=attribute;; esac\nexec '{quoted}' --fixture \"$fault\"\n"))?;
     fs::set_permissions(&recipe_fault, fs::Permissions::from_mode(0o700))?;
     let observe_recipe = |candidate: &Case| observe_case(&good, &recipe_fault, candidate);
     let recipe_original = observe_recipe(&recipe_case);
     if signature(&recipe_original).is_none() { return Err("repeat control did not produce an attribute mismatch".into()); }
-    let (recipe_reduced, recipe_result, _) = reduce_part(&recipe_case, &recipe_original, ReductionPart::RepeatCount, observe_recipe);
+    let (repeat_count, recipe_result, _) = reduce_part(&recipe_case, &recipe_original, ReductionPart::RepeatCount, observe_recipe);
+    let (repeat_unit, recipe_result, _) = reduce_part(&repeat_count, &recipe_result, ReductionPart::RepeatUnit, observe_recipe);
+    let (recipe_reduced, recipe_result, _) = reduce_part(&repeat_unit, &recipe_result, ReductionPart::RepeatSuffix, observe_recipe);
     let remaining = ReductionPart::RepeatCount.len(&recipe_reduced);
-    if !(2..8).contains(&remaining) || signature(&recipe_result) != signature(&recipe_original)
-        || signature(&observe_recipe(&recipe_reduced)) != signature(&recipe_original) {
-        return Err("repeat reduction lost required repetitions or mismatch category".into());
+    if !(2..8).contains(&remaining) || ReductionPart::RepeatUnit.len(&recipe_reduced) >= ReductionPart::RepeatUnit.len(&recipe_case)
+        || ReductionPart::RepeatSuffix.len(&recipe_reduced) >= ReductionPart::RepeatSuffix.len(&recipe_case)
+        || signature(&recipe_result) != signature(&recipe_original) || signature(&observe_recipe(&recipe_reduced)) != signature(&recipe_original) {
+        return Err("repeat reduction lost required repetitions, unit, suffix or mismatch category".into());
     }
     let path = control.path().join("observation.json.gz");
     save(&path, &result)?;

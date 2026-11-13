@@ -94,6 +94,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12p accepted:** the parity harness exposes the existing fuzz controls through `--fuzz-selftest`; the full selftest retains its call. The focused command passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS.
 
+**S12q accepted:** generated-failure reduction shrinks the primary repeat unit and suffix as well as its count; the report includes attempts and byte counts. The real PTY control requires all three components and retains the mismatch. Focused fuzz selftests passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Numbered and auxiliary recipes remain open.
+
 **S04au:** interactive `-R` toggles color display and carries it across file switches. Six cases pass on macOS and in a Linux arm64 container, covering the upstream `github329` fixture, short and long views, raw mode, prompt replay and interruption. `Pager::control_display` exposes the current mode. Other option commands, suppression, queries and startup interactions remain open; the upstream translation is partial.
 
 **S04av:** interactive `-r` toggles raw display, switches from color mode and remains in effect across file switches in the named cases on macOS and in a Linux arm64 container. Other option interactions remain open.
