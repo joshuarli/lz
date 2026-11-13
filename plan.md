@@ -82,6 +82,12 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12j:** the original `github216` fixture and four color-spanning searches pass on macOS and in a Linux arm64 container through a generic terminal, including its edited search prompt. Its option prompt, horizontal navigation and original per-key/custom termcap checkpoints remain untranslated.
 
+**S08p planned:** check `man-0310` `Esc-u` after a search with no matches. Own `src/pager.rs` and the named parity case; S08j and S08o prompts are prerequisites. Acceptance: `make parity-test CASE=search-toggle-after-no-match`.
+
+**S02i:** auxiliary files accept the same bounded fixture recipes as the primary fixture; existing inline-byte files retain their prior behavior. PTY and redirected numbered-file cases pass on macOS and in a Linux arm64 container, and harness controls pass. The parity-case schema has an additive auxiliary-file form.
+
+**S08q planned:** match `man-0310` highlight preparation across file switches, including empty, nearby and far-away matches. The reference accepts a nearby off-screen match and rejects a far-away one; visible-only and whole-file scans are both incorrect. Own `src/pager.rs`, its byte-layout dependencies and named cases; S08p and bounded source access are prerequisites. Acceptance: the three `sessions-search-toggle-*` cases.
+
 **S09j:** the active search and its direction survive next-file switches; the match position remains file-local. Forward highlighting and repeat, backward repeat and the generating seed pass on macOS; the named cases also pass in a Linux arm64 container. Public `SearchSession` carries this state through `Config` and `Pager::take_search_session`. Other search and file-transition interactions remain open.
 
 **S08j:** missing patterns display the reference acknowledgment prompt, and non-acknowledgment keys replay after it. The direct search case and cross-file backward case pass on macOS and in a Linux arm64 container; all 64 admitted macOS search cases pass. Other search diagnostics remain open.

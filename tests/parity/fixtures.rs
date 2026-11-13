@@ -99,6 +99,10 @@ pub(super) fn selftest() -> super::Result<()> {
     if serde_json::from_value::<Fixture>(serde_json::json!({"numbered":{"count":3,"needle_lines":[],"unknown":true}})).is_ok() {
         return Err("unknown numbered fixture field accepted".into());
     }
+    let world = super::stdio::world()?;
+    let large_inline = vec![42; INLINE_BYTES + 1];
+    super::write_auxiliary_fixture(&world.path().join("inline"), &Fixture::Bytes(large_inline.clone()))?;
+    if std::fs::read(world.path().join("inline"))? != large_inline { return Err("auxiliary inline fixture changed bytes".into()); }
     println!("streamed fixture bytes match across block boundaries; empty/oversized recipes rejected");
     Ok(())
 }

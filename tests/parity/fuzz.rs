@@ -53,7 +53,7 @@ fn generate(seed: u64) -> Case {
         fixture.push(b'\n');
     }
     let mut files = BTreeMap::new();
-    files.insert("second".into(), fixture.clone());
+    files.insert("second".into(), fixture.clone().into());
     args.push(Argument::from("second"));
     let mut top = 1usize;
     let mut marks = [None; 2];

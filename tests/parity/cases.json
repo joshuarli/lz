@@ -591642,5 +591642,51 @@
   "fixture": [27,91,49,59,51,51,109,54,57,52,27,91,48,109,27,91,75,58,35,105,102,100,101,102,32,27,91,51,48,59,52,51,109,85,83,69,95,83,77,84,51,27,91,48,109,27,91,75,10], "args": ["-R", "input"], "env": {}, "size": [102, 28], "locale": "C.UTF-8",
   "events": [{"type":"checkpoint","ready":"input (END)","row":27}, {"type":"send","bytes":[47,102]}, {"type":"checkpoint","ready":"/f","row":27}, {"type":"send","bytes":[10]}, {"type":"checkpoint","ready":"(END)","row":27}, {"type":"send","bytes":[47,52,46,46,46]}, {"type":"checkpoint","ready":"/4...","row":27}, {"type":"send","bytes":[10]}, {"type":"checkpoint","ready":"(END)","row":27}, {"type":"send","bytes":[47,102,46,46,46]}, {"type":"checkpoint","ready":"/f...","row":27}, {"type":"send","bytes":[10]}, {"type":"checkpoint","ready":"(END)","row":27}, {"type":"send","bytes":[47,102,32,47,8,46,46,46]}, {"type":"checkpoint","ready":"/f ...","row":27}, {"type":"send","bytes":[10]}, {"type":"checkpoint","ready":"(END)","row":27}, {"type":"send","bytes":[113]}],
   "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "search-toggle-after-no-match",
+  "family": "search", "admitted": false, "source": "pty",
+  "fixture": {"numbered":{"count":40,"needle_lines":[]}},
+  "args": ["input"], "env": {}, "size": [80, 8], "locale": "C",
+  "events": [{"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[47,109,105,115,115,105,110,103,10]}, {"type":"checkpoint","ready":"Pattern not found","row":7}, {"type":"send","bytes":[13]}, {"type":"checkpoint","ready":":","row":7}, {"type":"send","bytes":[27,117]}, {"type":"checkpoint","ready":"No previous regular expression","row":7}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "sessions-search-toggle-no-match-next-file",
+  "family": "sessions", "admitted": false, "source": "pty",
+  "fixture": {"numbered":{"count":40,"needle_lines":[8]}},
+  "args": ["input","second"], "env": {}, "size": [80, 8], "locale": "C",
+  "events": [{"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[47,110,101,101,100,108,101,10]}, {"type":"checkpoint","ready":"000008","row":0}, {"type":"send","bytes":[58,110]}, {"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[27,117]}, {"type":"checkpoint","ready":"No previous regular expression","row":7}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {"second":{"numbered":{"count":40,"needle_lines":[]}}}
+},
+{
+  "id": "sessions-search-toggle-match-below",
+  "family": "sessions", "admitted": true, "source": "pty",
+  "fixture": {"numbered":{"count":40,"needle_lines":[8]}},
+  "args": ["input","second"], "env": {}, "size": [80, 8], "locale": "C",
+  "events": [{"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[47,110,101,101,100,108,101,10]}, {"type":"checkpoint","ready":"000008","row":0}, {"type":"send","bytes":[58,110]}, {"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[27,117,47]}, {"type":"checkpoint","ready":"/","row":7}, {"type":"send","bytes":[3]}, {"type":"checkpoint","ready":":","row":7}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {"second":{"numbered":{"count":40,"needle_lines":[20]}}}
+},
+{
+  "id": "sessions-auxiliary-numbered-fixture",
+  "family": "sessions", "admitted": true, "source": "pty",
+  "fixture": {"numbered":{"count":40,"needle_lines":[]}},
+  "args": ["input","second"], "env": {}, "size": [80, 8], "locale": "C",
+  "events": [{"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[50,103]}, {"type":"checkpoint","ready":"000002","row":0}, {"type":"send","bytes":[58,110]}, {"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[47,110,101,101,100,108,101,10]}, {"type":"checkpoint","ready":"000008","row":0}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {"second":{"numbered":{"count":40,"needle_lines":[8]}}}
+},
+{
+  "id": "redirected-auxiliary-numbered-fixture",
+  "family": "redirected", "admitted": true, "source": "file",
+  "fixture": [], "args": ["second"], "env": {}, "size": [80, 8], "locale": "C",
+  "events": [], "fixture_name": [105, 110, 112, 117, 116], "files": {"second":{"numbered":{"count":3,"needle_lines":[2]}}}
+},
+{
+  "id": "sessions-search-toggle-match-far-below",
+  "family": "sessions", "admitted": false, "source": "pty",
+  "fixture": {"numbered":{"count":40,"needle_lines":[8]}},
+  "args": ["input","second"], "env": {}, "size": [80, 8], "locale": "C",
+  "events": [{"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[47,110,101,101,100,108,101,10]}, {"type":"checkpoint","ready":"000008","row":0}, {"type":"send","bytes":[58,110]}, {"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[27,117]}, {"type":"checkpoint","ready":"No previous regular expression","row":7}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {"second":{"numbered":{"count":1000,"needle_lines":[900]}}}
 }
 ]

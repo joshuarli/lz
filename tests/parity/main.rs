@@ -56,6 +56,13 @@ fn write_fixture(path: &Path, fixture: &Fixture) -> Result<()> {
     Ok(())
 }
 
+fn write_auxiliary_fixture(path: &Path, fixture: &Fixture) -> Result<()> {
+    match fixture {
+        Fixture::Bytes(bytes) => fs::write(path, bytes).map_err(Into::into),
+        _ => write_fixture(path, fixture),
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct Case {
@@ -70,7 +77,7 @@ struct Case {
     fixture: Fixture,
     args: Vec<Argument>,
     fixture_name: Vec<u8>,
-    files: BTreeMap<String, Vec<u8>>,
+    files: BTreeMap<String, Fixture>,
     env: BTreeMap<String, String>,
     size: [u16; 2],
     locale: String,

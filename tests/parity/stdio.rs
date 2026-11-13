@@ -70,11 +70,15 @@ fn wait(child: &mut Child, paths: &[PathBuf]) -> io::Result<ExitStatus> {
     }
 }
 
-pub fn redirected(binary: &Path, fixture_data: &super::Fixture, source: &str, args: &[OsString], fixture_name: &[u8], files: &BTreeMap<String, Vec<u8>>) -> super::Result<Value> {
+pub fn redirected(binary: &Path, fixture_data: &super::Fixture, source: &str, args: &[OsString], fixture_name: &[u8], files: &BTreeMap<String, super::Fixture>) -> super::Result<Value> {
     let dir = world()?;
     let cwd = dir.path();
     let fixture = cwd.join(OsString::from_vec(fixture_name.to_vec()));
-    for (name, bytes) in files { fs::write(cwd.join(name), bytes)?; }
+    for (name, data) in files {
+        let path = cwd.join(name);
+        if let Some(parent) = path.parent() { fs::create_dir_all(parent)?; }
+        super::write_auxiliary_fixture(&path, data)?;
+    }
     super::write_fixture(&fixture, fixture_data)?;
     let out = cwd.join("stdout");
     let err = cwd.join("stderr");

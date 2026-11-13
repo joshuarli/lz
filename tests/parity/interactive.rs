@@ -181,10 +181,10 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
     for (key, value) in &case.env { environment = environment.env(key, value); }
     let world = environment.paths().root().to_owned();
     super::write_fixture(&world.join(std::ffi::OsString::from_vec(case.fixture_name.clone())), &case.fixture)?;
-    for (name, bytes) in &case.files {
+    for (name, fixture) in &case.files {
         let path = world.join(name);
         if let Some(parent) = path.parent() { fs::create_dir_all(parent)?; }
-        fs::write(path, bytes)?;
+        super::write_auxiliary_fixture(&path, fixture)?;
     }
     let command = if case.source == "pty-pipe" {
         CommandSpec::new(std::env::current_exe()?).arg("--pipe-supervisor").arg(binary)
