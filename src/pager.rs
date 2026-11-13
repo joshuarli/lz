@@ -1999,6 +1999,20 @@ impl Pager {
         if let Mode::CommandError(error) = &mut self.mode { error.repaint = repaint; }
     }
 
+    fn show_first_screen_search_match(&mut self, search: &Search, line: usize) {
+        if self.left_col == 0 || self.search_nonmatch || self.controls == ControlDisplay::Raw { return; }
+        let actual = if self.filter.is_some() { self.filtered_lines.get(line).copied() } else { Some(line) };
+        let Some(actual) = actual else { return; };
+        let width = usize::from(self.term_width);
+        let content_width = width.saturating_sub(self.number_gutter(actual, width).len()).saturating_sub(1);
+        let Some(source) = self.buffer.get_line(actual) else { return; };
+        if source.bytes().any(|byte| !byte.is_ascii() || byte == 127 || (byte < 32 && byte != 27)) { return; }
+        let text = if self.controls == ControlDisplay::Color { std::borrow::Cow::Owned(strip_ansi(source)) }
+            else if source.contains('\x1b') { return; }
+            else { std::borrow::Cow::Borrowed(source) };
+        if search.first_match_stripped(&text).is_some_and(|(_, end)| end < content_width) { self.left_col = 0; }
+    }
+
     fn do_search(&mut self, forward: bool, keep_position: bool) {
         self.search_highlight = true;
         let search = match self.search.take() {
@@ -2045,6 +2059,7 @@ impl Pager {
         match found {
             Some(line) => {
                 self.current_match_line = Some(line);
+                self.show_first_screen_search_match(&search, line);
                 if keep_position && self.squished { self.position_initialized(); }
                 if !keep_position {
                     self.position_initialized();

@@ -204,15 +204,24 @@ impl RegexMatcher {
         self.first.is_match(&mut caches.first, text)
     }
 
+    fn find_from(&self, caches: &mut RegexCaches, text: &str, from: usize) -> Option<(usize, usize)> {
+        let first = self.first.find(&mut caches.first, Input::new(text).range(from..))?;
+        // POSIX selects the longest match at the earliest start, independent of alternative order.
+        let found = self.longest.find(&mut caches.longest, Input::new(text).range(first.start()..).anchored(Anchored::Yes)).unwrap();
+        Some((found.start(), found.end()))
+    }
+
+    fn find_first(&self, text: &str) -> Option<(usize, usize)> {
+        let mut caches = self.caches.lock().unwrap_or_else(|error| error.into_inner());
+        self.find_from(&mut caches, text, 0)
+    }
+
     fn find_all(&self, text: &str) -> Vec<(usize, usize)> {
         let mut caches = self.caches.lock().unwrap_or_else(|error| error.into_inner());
         let mut matches: Vec<(usize, usize)> = Vec::new();
         let mut from = 0;
         let mut previous_end = None;
-        while let Some(first) = self.first.find(&mut caches.first, Input::new(text).range(from..)) {
-            // POSIX selects the longest match at the earliest start, independent of alternative order.
-            let found = self.longest.find(&mut caches.longest, Input::new(text).range(first.start()..).anchored(Anchored::Yes)).unwrap();
-            let (start, end) = (found.start(), found.end());
+        while let Some((start, end)) = self.find_from(&mut caches, text, from) {
             if start != end || previous_end != Some(end) {
                 matches.push((start, end));
                 previous_end = Some(end);
@@ -320,6 +329,13 @@ impl Search {
 
     pub(crate) fn uses_byte_regex(&self) -> bool {
         matches!(&self.matcher, Matcher::Regex(regex) if regex.byte_mode)
+    }
+
+    pub(crate) fn first_match_stripped(&self, text: &str) -> Option<(usize, usize)> {
+        match &self.matcher {
+            Matcher::Literal(bmh) => bmh.find_from(text.as_bytes(), 0).map(|start| (start, start + bmh.needle.len())),
+            Matcher::Regex(regex) => regex.find_first(text),
+        }
     }
 
     /// Find all match byte ranges in ANSI-stripped text.

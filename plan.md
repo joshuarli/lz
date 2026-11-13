@@ -150,6 +150,10 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12av accepted:** interactive differential cases use the pinned reference build's `lessecho` helper unless overridden; setup checks its version and fails when it is absent. Missing-file examine cases and all 51 admitted session cases passed on macOS arm64 and Linux arm64 Docker. The test environment contract changed.
 
+**S08au accepted (partial):** searches restore the first screen for tested ASCII matches wholly inside it, including colored and numbered views. Five focused cases pass on macOS arm64 and Linux arm64 Docker; 129 previously admitted search cases, 41 search unit tests and all-target Clippy pass on macOS. Other horizontal match positions, Unicode, tabs, backspaces, raw controls and non-match searches remain open.
+
+**S12be accepted (partial translation):** the two original `colorbars` searches after the horizontal cycle pass generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Later navigation, option changes, per-key checks and original custom termcap remain open.
+
 **S12bd accepted (partial translation):** the original `colorbars` sequence through its counted and single-column right-arrow cycles passes generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Later searches, option changes, per-key checks and original custom termcap remain open.
 
 **S12bc accepted:** generator version 16 passed fixed seeds 0–999 on macOS arm64 and Linux arm64 Docker. Commit-seeded and held-out campaigns remain open; native Linux remains unproven.
