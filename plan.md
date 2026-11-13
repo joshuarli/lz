@@ -108,6 +108,10 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12w accepted:** generator version 13 passed seeds 0–999 on macOS arm64 after the seed-117 resize fix. This covers the current bounded grammar only; remaining event families, holdouts, other platforms and the hardening gate remain open.
 
+**S12x planned:** translate the original `chinese1` upstream fixture and first four scrolling steps to the generic terminal comparator. Own its parity case, upstream disposition and documentation; the pinned upstream fixture and existing UTF-8 layout are prerequisites. Acceptance: strict per-step comparison on macOS and Linux arm64, or a retained mismatch with a concrete retry condition. The original custom termcap and remaining key sequence remain untranslated.
+
+**S06k accepted:** `man-2365` accepts the pinned reference’s `LESSCHARSET=utf8` alias. The focused charset unit test and the upstream fixture’s startup screen passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Other character sets and aliases remain open.
+
 **S07aj accepted:** seed 117 exposed a `terminal-lifecycle` resize position mismatch after returning to a file and moving to its first line. The reference preserves position zero in a newly grown table, treats that table as empty, and restores the file-entry position. The pager now retains the maximum position-table height across visits and follows the tested behavior. Seven minimal and boundary cases plus neighboring resize cases passed on macOS arm64 and Linux arm64 Docker; seed 117 and all-target Clippy passed on macOS. Wrapped, filtered and other resize interactions remain open.
 
 **S04au:** interactive `-R` toggles color display and carries it across file switches. Six cases pass on macOS and in a Linux arm64 container, covering the upstream `github329` fixture, short and long views, raw mode, prompt replay and interruption. `Pager::control_display` exposes the current mode. Other option commands, suppression, queries and startup interactions remain open; the upstream translation is partial.

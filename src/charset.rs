@@ -37,7 +37,7 @@ impl Charset {
         if let Some(name) = explicit.filter(|name| !name.is_empty()) {
             return match name {
                 "ascii" | "US-ASCII" | "ANSI_X3.4-1968" => Ok(Self::Ascii),
-                "utf-8" | "UTF-8" | "UTF8" => Ok(Self::Utf8),
+                "utf-8" | "UTF-8" | "utf8" | "UTF8" => Ok(Self::Utf8),
                 _ => Err(io::Error::new(io::ErrorKind::Unsupported, format!("unsupported character set: {name:?}"))),
             };
         }
@@ -87,6 +87,7 @@ mod tests {
         assert_eq!(Charset::resolve(None, Some("en_US.UTF-8")).unwrap(), Charset::Utf8);
         assert_eq!(Charset::resolve(Some("ascii"), Some("en_US.UTF-8")).unwrap(), Charset::Ascii);
         assert_eq!(Charset::resolve(Some("utf-8"), Some("C")).unwrap(), Charset::Utf8);
+        assert_eq!(Charset::resolve(Some("utf8"), Some("C")).unwrap(), Charset::Utf8);
         assert_eq!(Charset::resolve(Some("unsupported"), Some("C")).unwrap_err().kind(), io::ErrorKind::Unsupported);
     }
 

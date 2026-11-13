@@ -7141,10 +7141,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["invocation-charset-utf8-alias"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenario",
+      "cause": "The utf8 spelling selects UTF-8 in the named case. Other character sets and aliases remain open."
     },
     {
       "id": "man-2367",
