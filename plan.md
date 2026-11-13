@@ -34,6 +34,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S08g:** musl `\b` matches at line edges even beside non-word characters. Three cases pass on macOS and in a Linux arm64 container after preserving that behavior. The negative boundary and other regex dialect forms remain open.
 
+**S04ar:** previous-file commands inside standalone help show the reference error. Three cases cover counts, acknowledgment and replay.
+
 The following work remains local and actionable: complete the nonparked S04–S11 behaviors and interactions, upstream scenario translations, bounded fuzzing and holdouts, parity CI checks, final performance and size gates, cleanup, and independent review. The inventory retains behavior-specific causes and cases. The S06 shared renderer still needs bounded long-line startup, Unicode, OSC, and multirow handling. POSIX search, cancellation, headers, helper and pipe transitions, history concurrency, and lifecycle hardening remain incomplete.
 
 Parked conditions are:

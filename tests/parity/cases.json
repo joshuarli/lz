@@ -587920,5 +587920,176 @@
     116
   ],
   "files": {}
+},
+{
+  "id": "invocation-help-no-previous-file",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        58,
+        112
+      ]
+    },
+    {
+      "type": "checkpoint",
+      "ready": "No previous file",
+      "row": 23
+    },
+    {
+      "type": "send",
+      "bytes": [
+        10
+      ]
+    },
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-no-previous-file-count",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "--help",
+    "input"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        50,
+        58,
+        112
+      ]
+    },
+    {
+      "type": "checkpoint",
+      "ready": "No (N-th) previous file",
+      "row": 23
+    },
+    {
+      "type": "send",
+      "bytes": [
+        10
+      ]
+    },
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-no-previous-file-replay",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        58,
+        112
+      ]
+    },
+    {
+      "type": "checkpoint",
+      "ready": "No previous file",
+      "row": 23
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
 }
 ]

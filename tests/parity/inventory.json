@@ -2267,7 +2267,10 @@
         "invocation-help-next-file-out-of-range",
         "invocation-help-no-next-file-replay",
         "invocation-help-no-next-file-interrupt",
-        "invocation-help-previous"
+        "invocation-help-previous",
+        "invocation-help-no-previous-file",
+        "invocation-help-no-previous-file-count",
+        "invocation-help-no-previous-file-replay"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",

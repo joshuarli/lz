@@ -1123,13 +1123,14 @@ impl Pager {
         if let Some(prefix) = self.help_prefix.take() {
             if matches!((prefix, &key), (HelpPrefix::Colon(_), Key::Char('q' | 'Q')) | (HelpPrefix::Quit, Key::Char('Z'))) {
                 self.leave_help();
-            } else if let (HelpPrefix::Colon(count), Key::Char('n'), Some(files)) = (prefix, &key, self.standalone_help) {
-                if files == HelpFiles::Registered && count.get() <= self.files.count {
+            } else if let (HelpPrefix::Colon(count), Key::Char(direction @ ('n' | 'p')), Some(files)) = (prefix, &key, self.standalone_help) {
+                if *direction == 'n' && files == HelpFiles::Registered && count.get() <= self.files.count {
                     self.exit = PagerExit::VisitFile(FileVisit { index:count.get() - 1, startup_command:None });
                     self.mode = Mode::Normal;
                 } else {
                     let ordinal = if count.get() > 1 { "(N-th) " } else { "" };
-                    self.command_error(format!("No {ordinal}next file"), ErrorAction::Dismiss);
+                    let name = if *direction == 'n' { "next" } else { "previous" };
+                    self.command_error(format!("No {ordinal}{name} file"), ErrorAction::Dismiss);
                     if let Mode::CommandError(error) = &mut self.mode { error.destination = ErrorDestination::Help; }
                 }
             } else if key != Key::Ctrl('c') { self.bell_requested = true; }
