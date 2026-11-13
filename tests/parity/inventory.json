@@ -1843,10 +1843,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["invocation-toggle-raw-long-name","invocation-toggle-color-long-name","invocation-unknown-long-interactive"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Raw and color long-name toggles complete unique prefixes, and unknown names display a notice. Other option names and editing interactions remain open."
     },
     {
       "id": "man-0410",
