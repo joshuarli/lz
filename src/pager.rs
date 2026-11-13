@@ -2047,7 +2047,7 @@ impl Pager {
             else { search.find_next_line(&mut self.buffer, from, forward) };
         if let Some(line) = found {
             self.position_initialized();
-            let row = self.jump_target.row(self.term_height);
+            let row = self.search_target_row();
             self.top_line = line.saturating_sub(row);
             self.leading_rows = row.saturating_sub(line);
             self.incremental_preview = Some(search);
@@ -2064,8 +2064,12 @@ impl Pager {
         self.do_search(forward, false);
     }
 
+    fn search_target_row(&self) -> usize {
+        self.jump_target.row(self.term_height).max(self.header_lines.min(self.content_height().saturating_sub(1)))
+    }
+
     fn target_line(&self) -> usize {
-        self.top_line.saturating_add(self.jump_target.row(self.term_height).saturating_sub(self.leading_rows))
+        self.top_line.saturating_add(self.search_target_row().saturating_sub(self.leading_rows))
     }
 
     fn search_wrapped_notice(&mut self, forward: bool, repaint: bool) {
@@ -2145,7 +2149,7 @@ impl Pager {
                 if keep_position && self.squished { self.position_initialized(); }
                 if !keep_position {
                     self.position_initialized();
-                    let row = self.jump_target.row(self.term_height);
+                    let row = self.search_target_row();
                     self.top_line = line.saturating_sub(row);
                     self.leading_rows = row.saturating_sub(line);
                 }

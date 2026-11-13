@@ -150,6 +150,10 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12av accepted:** interactive differential cases use the pinned reference build's `lessecho` helper unless overridden; setup checks its version and fails when it is absent. Missing-file examine cases and all 51 admitted session cases passed on macOS arm64 and Linux arm64 Docker. The test environment contract changed.
 
+**S08aw accepted (partial):** tested plain-line search matches, repeats and incremental previews target below fixed header rows, including a current-line anchor and an explicit target row. Six focused and two neighboring cases pass on macOS arm64 and Linux arm64 Docker; all-target Clippy passes on macOS. Filters, other header anchors and target rows, and wrapped multirow interactions remain open.
+
+**S12bl accepted (partial translation):** the original table sequence through its first search with fixed headers passes generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Later navigation, header columns, per-key checks and original custom termcap remain open.
+
 **S12bk accepted (partial translation):** the original table sequence through the next nine right-arrow commands with fixed headers passes generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Later searches, navigation, per-key checks and original custom termcap remain open.
 
 **S12bj accepted (partial translation):** the original `table-50x200` prefix through header-row setup and its first horizontal and vertical movements passes generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Later commands, per-key checks and original custom termcap remain open.
