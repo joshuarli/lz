@@ -7,7 +7,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const GENERATOR_VERSION: u32 = 11;
+const GENERATOR_VERSION: u32 = 12;
 
 struct Random(u64);
 impl Random {
@@ -19,6 +19,9 @@ impl Random {
         ((value ^ (value >> 31)) % upper as u64) as usize
     }
 }
+
+#[derive(Clone, Copy)]
+enum FileVisit { First, Second { first_top: usize }, Returned }
 
 fn checkpoint(line: usize) -> Event { Event::Checkpoint { ready: format!("{line:06}"), row: Some(0) } }
 
@@ -57,10 +60,10 @@ fn generate(seed: u64) -> Case {
     args.push(Argument::from("second"));
     let mut top = 1usize;
     let mut marks = [None; 2];
-    let mut switched = false;
+    let mut visit = FileVisit::First;
     let mut events = vec![checkpoint(top)];
     for _ in 0..8 {
-        let action = if random.choose(10) < 3 { 13 } else { random.choose(13) };
+        let action = if random.choose(10) < 3 { 14 } else { random.choose(14) };
         let count = 1 + random.choose(4);
         let (bytes, target) = match action {
             0 if top + count <= last => {
@@ -99,12 +102,12 @@ fn generate(seed: u64) -> Case {
                 let target = if before_resize == 1 { 2 } else { 1 };
                 (format!("{target}g").into_bytes(), target)
             }
-            10 if !switched => {
+            10 if matches!(visit, FileVisit::First) => {
                 let before_switch = if top == 2 { 3 } else { 2 };
                 events.push(Event::Send { bytes: format!("{before_switch}g").into_bytes() });
                 events.push(checkpoint(before_switch));
                 marks = [None; 2];
-                switched = true;
+                visit = FileVisit::Second { first_top: before_switch };
                 (b":n".to_vec(), 1)
             }
             11 => (vec![b'-', 16, b'N'], top),
@@ -112,7 +115,18 @@ fn generate(seed: u64) -> Case {
                 let target = 1 + random.choose(top - 1);
                 (format!("?{target:06} seed\n").into_bytes(), target)
             }
-            13 => {
+            13 => match visit {
+                FileVisit::Second { first_top } => {
+                    marks = [None; 2];
+                    visit = FileVisit::Returned;
+                    (b":p".to_vec(), first_top)
+                }
+                FileVisit::First | FileVisit::Returned => {
+                    let target = if top == 1 { 2 } else { 1 };
+                    (format!("{target}g").into_bytes(), target)
+                }
+            },
+            14 => {
                 let target = if top == 1 { 2 } else { 1 };
                 (format!("a{target}g").into_bytes(), target)
             }
@@ -367,7 +381,7 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
     }
     fs::write(directory.join("summary.json"), serde_json::to_vec_pretty(&json!({
         "metadata":meta,"seed":seed,"generator_version":GENERATOR_VERSION,"requested":count,"executed":summaries.len(),"oracle_only":oracle_only,"results":summaries,
-        "grammar":"logical-line movement, ordinary in-file marks, forward and backward literal searches, resize-and-jump, next-file transitions, quiet line-number toggles and quit or SIGTERM with CLI/LESS display options over ASCII, UTF-8 or isolated malformed bytes; 30% invalid-command actions; eight actions; 40x12 or 80x24",
+        "grammar":"logical-line movement, ordinary in-file marks, forward and backward literal searches, resize-and-jump, next- and previous-file transitions, quiet line-number toggles and quit or SIGTERM with CLI/LESS display options over ASCII, UTF-8 or isolated malformed bytes; 30% invalid-command actions; eight actions; 40x12 or 80x24",
         "limits":{"case_seconds":10,"trace_bytes":64*1024*1024,"pty_rss_bytes":u64::from(super::resources::RssLimit::default()),"pty_spill_bytes":u64::from(super::spill::Limit::default()),"actions":8,"workers":4,"reduction_attempts_per_dimension":8},
         "open_limits":["stdio/helper/producer RSS enforcement","stdio/helper/producer spill accounting","broader CLI/config/byte-text/file-transition/signal grammar","event boundary weighting","search variants and adversarial/stream/helper grammar"]
     }))?)?;
@@ -386,10 +400,12 @@ pub(super) fn generator_selftest() -> Result<()> {
     }
     let mut generated_toggles = 0;
     let mut generated_backward_searches = 0;
+    let mut generated_returns = 0;
     for seed in 0..1000 {
         let generated = generate(seed);
         generated_toggles += generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes == &[b'-', 16, b'N'])).count();
         generated_backward_searches += generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes.first() == Some(&b'?'))).count();
+        generated_returns += generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes == b":p")).count();
         let Fixture::Bytes(bytes) = &generated.fixture else { return Err("generated fixture is not inline bytes".into()); };
         if bytes[..bytes.len().min(256)].contains(&0xff) { return Err("generated malformed byte enters the binary sample".into()); }
         for line in bytes.split(|byte| *byte == b'\n').filter(|line| !line.is_empty()) {
@@ -402,7 +418,8 @@ pub(super) fn generator_selftest() -> Result<()> {
     }
     if generated_toggles == 0 { return Err("generated sessions never toggle line numbers".into()); }
     if generated_backward_searches == 0 { return Err("generated sessions never search backward".into()); }
-    println!("generated sessions are deterministic and cover line-number toggles and backward searches");
+    if generated_returns == 0 { return Err("generated sessions never return to the previous file".into()); }
+    println!("generated sessions are deterministic and cover line-number toggles, backward searches and previous-file returns");
     Ok(())
 }
 

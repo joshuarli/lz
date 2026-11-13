@@ -102,6 +102,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12t accepted:** generator version 11 includes backward literal searches from known positions. Fifty differential seeds passed on macOS arm64; the new `--generator-selftest` proves deterministic backward-action coverage on macOS and Linux arm64 Docker, and remains part of the full fuzz selftest. All-target Clippy passed on macOS. Other search and grammar boundaries remain open.
 
+**S12u accepted:** generator version 12 can return once to the previous file at its known saved position. Fifty differential seeds passed on macOS arm64, including four return actions; deterministic controls passed on macOS and Linux arm64 Docker, and all-target Clippy passed on macOS. Repeated transitions remain open.
+
 **S04au:** interactive `-R` toggles color display and carries it across file switches. Six cases pass on macOS and in a Linux arm64 container, covering the upstream `github329` fixture, short and long views, raw mode, prompt replay and interruption. `Pager::control_display` exposes the current mode. Other option commands, suppression, queries and startup interactions remain open; the upstream translation is partial.
 
 **S04av:** interactive `-r` toggles raw display, switches from color mode and remains in effect across file switches in the named cases on macOS and in a Linux arm64 container. Other option interactions remain open.
