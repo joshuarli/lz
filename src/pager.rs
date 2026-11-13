@@ -937,9 +937,18 @@ impl Pager {
         };
         if !setting {
             match character {
-                '^' => { let previous = self.mark_position(); self.top_line = 0; self.remember_jump_from(previous); return; }
+                '^' => { self.handle_normal_key(Key::Char('g')); return; }
                 '$' => { let previous = self.mark_position(); self.buffer.read_all(); self.scroll_to_bottom(); self.remember_jump_from(previous); return; }
-                '.' => return,
+                '.' => {
+                    if self.content_painted {
+                        self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
+                        if self.command_context == CommandContext::Interactive {
+                            self.squished = false;
+                            self.compact_initial = false;
+                        }
+                    }
+                    return;
+                }
                 _ => {}
             }
         }
