@@ -462516,5 +462516,45 @@
     ],
     "files": {},
     "trace_check": "captured"
+  },
+  {
+    "id": "invocation-quit-one-screen-long-color",
+    "family": "invocation",
+    "admitted": false,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        27,
+        91,
+        48,
+        109
+      ],
+      "count": 10000,
+      "suffix": [
+        120,
+        10
+      ]
+    },
+    "args": [
+      "-F",
+      "-R",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
   }
 ]
