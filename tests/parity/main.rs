@@ -305,6 +305,7 @@ fn run(args: &[String]) -> Result<()> {
     let mode = value("--mode").unwrap_or("admitted");
     if args.iter().any(|s| s == "--inventory-check" || s == "--report") { return inventory::check_and_report(); }
     if args.iter().any(|s| s == "--fuzz") { return fuzz::run(args, &oracle(), Path::new(env!("CARGO_BIN_EXE_lz"))); }
+    if args == ["--fuzz-selftest"] { return fuzz::selftest(); }
     if !matches!(mode, "admit" | "admitted" | "all") { return Err("unknown mode".into()); }
     let mut i = 0;
     while i < args.len() {
