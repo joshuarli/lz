@@ -123,6 +123,29 @@ enum Mode {
 #[derive(Clone, Copy, PartialEq)]
 enum OptionCommand { Toggle, ToggleQuietly, Reset, ResetQuietly, Set, SetQuietly, Query }
 
+impl OptionCommand {
+    fn modified(self, key: &Key) -> Option<Self> {
+        use OptionCommand::*;
+        match (self, key) {
+            (Toggle, Key::Char('+')) | (Set, Key::Char('+')) => Some(Reset),
+            (ToggleQuietly, Key::Char('+')) | (SetQuietly, Key::Char('+')) => Some(ResetQuietly),
+            (Reset, Key::Char('+')) => Some(Toggle),
+            (ResetQuietly, Key::Char('+')) => Some(ToggleQuietly),
+            (Toggle, Key::Char('!')) | (Reset, Key::Char('!')) => Some(Set),
+            (ToggleQuietly, Key::Char('!')) | (ResetQuietly, Key::Char('!')) => Some(SetQuietly),
+            (Set, Key::Char('!')) => Some(Toggle),
+            (SetQuietly, Key::Char('!')) => Some(ToggleQuietly),
+            (Toggle, Key::Ctrl('p')) => Some(ToggleQuietly),
+            (ToggleQuietly, Key::Ctrl('p')) => Some(Toggle),
+            (Reset, Key::Ctrl('p')) => Some(ResetQuietly),
+            (ResetQuietly, Key::Ctrl('p')) => Some(Reset),
+            (Set, Key::Ctrl('p')) => Some(SetQuietly),
+            (SetQuietly, Key::Ctrl('p')) => Some(Set),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Clone, PartialEq)]
 enum OptionName { Typing(String), Raw, Color }
 
@@ -1112,15 +1135,7 @@ impl Pager {
             Mode::Normal => self.handle_normal_key(key),
             Mode::SetMark | Mode::JumpMark => { self.handle_mark_key(key); false }
             Mode::OptionPrefix(command) => {
-                if key == Key::Ctrl('p') && command == OptionCommand::Toggle { self.mode = Mode::OptionPrefix(OptionCommand::ToggleQuietly); return false; }
-                let modified = match (command, &key) {
-                    (OptionCommand::Toggle, Key::Char('+')) => Some(OptionCommand::Reset),
-                    (OptionCommand::ToggleQuietly, Key::Char('+')) => Some(OptionCommand::ResetQuietly),
-                    (OptionCommand::Toggle, Key::Char('!')) => Some(OptionCommand::Set),
-                    (OptionCommand::ToggleQuietly, Key::Char('!')) => Some(OptionCommand::SetQuietly),
-                    _ => None,
-                };
-                if let Some(command) = modified { self.mode = Mode::OptionPrefix(command); return false; }
+                if let Some(command) = command.modified(&key) { self.mode = Mode::OptionPrefix(command); return false; }
                 if (command == OptionCommand::Query && key == Key::Char('_')) || (command != OptionCommand::Query && key == Key::Char('-')) {
                     self.mode = Mode::OptionLong(command, OptionName::Typing(String::new()));
                     return false;
@@ -1132,6 +1147,10 @@ impl Pager {
                 false
             }
             Mode::OptionLong(command, name) => {
+                if let OptionName::Typing(ref name) = name && name.is_empty() && let Some(modified) = command.modified(&key) {
+                    self.mode = Mode::OptionLong(modified, OptionName::Typing(name.clone()));
+                    return false;
+                }
                 match (name, key) {
                     (OptionName::Raw, Key::Enter) => { self.mode = Mode::Normal; self.apply_control_option(command, 'r'); }
                     (OptionName::Color, Key::Enter) => { self.mode = Mode::Normal; self.apply_control_option(command, 'R'); }
