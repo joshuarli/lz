@@ -8506,9 +8506,9 @@
       "file": "lesstest/lt/utf8-2.txt.lt",
       "sha256": "def0b49526232eaf2a3cc544bfde56190b488cbdc82bf8c4e830cea58537d91a",
       "instrumented": "pass",
-      "cases": ["upstream-utf8-initial-scroll", "upstream-utf8-fifteen-scrolls", "upstream-utf8-regex-search", "upstream-utf8-after-search-navigation", "upstream-utf8-horizontal-vertical", "upstream-utf8-horizontal-cycle", "upstream-utf8-second-search", "upstream-utf8-wide-horizontal-cycle", "upstream-utf8-color-final-navigation"],
+      "cases": ["upstream-utf8-initial-scroll", "upstream-utf8-fifteen-scrolls", "upstream-utf8-regex-search", "upstream-utf8-after-search-navigation", "upstream-utf8-horizontal-vertical", "upstream-utf8-horizontal-cycle", "upstream-utf8-second-search", "upstream-utf8-wide-horizontal-cycle", "upstream-utf8-color-final-navigation", "upstream-utf8-examine-missing", "upstream-utf8-complete-sequence"],
       "disposition": "partial translation",
-      "cause": "The original Unicode fixture, first fifteen line-scroll commands, two regex searches and the subsequent color/navigation sequence pass generic-terminal comparisons in C.UTF-8; the search also passed en_US.UTF-8 on macOS. The intervening examine command, original custom termcap and exact Linux locale remain open."
+      "cause": "The original fixture and command sequence pass generic-terminal checkpoints in C.UTF-8, including the missing-file examine command; the search also passed en_US.UTF-8 on macOS. Original custom termcap and exact Linux locale remain open."
     },
     {
       "id": "version.c",
