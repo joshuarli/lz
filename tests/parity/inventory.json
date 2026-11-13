@@ -3361,10 +3361,34 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-jump-target-line",
+        "invocation-jump-target-negative",
+        "invocation-jump-target-fraction",
+        "invocation-jump-target-zero",
+        "invocation-jump-target-first",
+        "invocation-jump-target-uncounted",
+        "invocation-jump-target-counted-end",
+        "invocation-jump-target-startup",
+        "invocation-jump-target-env-override",
+        "invocation-jump-target-fraction-resize",
+        "invocation-jump-target-beyond-screen",
+        "invocation-jump-target-invalid",
+        "invocation-jump-target-invalid-fraction",
+        "invocation-jump-target-overflow",
+        "invocation-jump-target-negative-overflow",
+        "invocation-resize-initial-prompt",
+        "search-jump-target-forward",
+        "search-jump-target-repeat",
+        "search-jump-target-backward",
+        "search-jump-target-default",
+        "search-jump-target-leading-rows",
+        "search-jump-target-repeat-after-move",
+        "search-jump-target-backward-after-move"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named line-jump, search, repeat, fraction, resize, option precedence and diagnostic cases pass on macOS. A focused subset passes in a Linux arm64 container. Wrapped and filtered positions, headers, percentage jumps and interactive changes remain open"
     },
     {
       "id": "man-0931",

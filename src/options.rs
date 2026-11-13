@@ -94,12 +94,12 @@ pub(super) enum Diagnostic {
     FlagAssignment(Vec<u8>),
     LineNumberWidthTooLarge,
     NegativeLineNumberWidth,
-    InvalidShift { fraction: bool },
+    InvalidPosition { fraction: bool },
 }
 
 impl Diagnostic {
     pub(super) fn needs_acknowledgment(&self) -> bool {
-        matches!(self, Self::LineNumberWidthTooLarge | Self::NegativeLineNumberWidth | Self::InvalidShift { .. })
+        matches!(self, Self::LineNumberWidthTooLarge | Self::NegativeLineNumberWidth | Self::InvalidPosition { .. })
     }
 
     pub(super) fn write(&self, output: &mut impl Write) -> io::Result<()> {
@@ -113,7 +113,7 @@ impl Diagnostic {
             Self::FlagAssignment(name) => { output.write_all(b"The ")?; output.write_all(name)?; return output.write_all(b" option should not be followed by =\n"); }
             Self::LineNumberWidthTooLarge => return writeln!(output, "Line number width must not be larger than {}", lz::pager::LineNumberWidth::MAX),
             Self::NegativeLineNumberWidth => return output.write_all(b"Line number width must not be negative\n"),
-            Self::InvalidShift { fraction } => return output.write_all(if *fraction { b"Invalid fraction\n" } else { b"Invalid number\n" }),
+            Self::InvalidPosition { fraction } => return output.write_all(if *fraction { b"Invalid fraction\n" } else { b"Invalid number\n" }),
         }
         output.write_all(b" (\"lz --help\" for help)\n")
     }
@@ -142,6 +142,7 @@ pub(super) struct Args {
     pub horizontal_shift: Option<lz::pager::HorizontalShift>,
     pub search_case: CaseSensitivity,
     pub search_start: SearchStart,
+    pub jump_target: lz::pager::JumpTarget,
     pub history_duplicates: lz::history::DuplicatePolicy,
     pub tab_stops: lz::tabs::TabStops,
     pub filenames: Vec<OsString>,
@@ -153,7 +154,7 @@ pub(super) struct Args {
 impl Default for Args {
     fn default() -> Self {
         Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, eof_policy: Default::default(), bell_policy: Default::default(), control_display: ControlDisplay::default(), chop: false, line_numbers: false, show_eof_markers: true, window: None, horizontal_shift: None, search_case: CaseSensitivity::Sensitive,
-            line_number_width: Default::default(), search_start: SearchStart::default(), history_duplicates: Default::default(), tab_stops: Default::default(), filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
+            line_number_width: Default::default(), search_start: SearchStart::default(), jump_target: Default::default(), history_duplicates: Default::default(), tab_stops: Default::default(), filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
 
@@ -231,6 +232,17 @@ impl Scanner {
                     "pattern" => self.args.startup_commands.push([b"/".as_slice(), &payload[..end]].concat()),
                     "tag" => self.args.tag = Some(OsString::from_vec(payload[..end].to_vec())),
                     "tag-file" => self.args.tags_file = Some(OsString::from_vec(payload[..end].to_vec())),
+                    "jump-target" => {
+                        let fraction = payload.starts_with(b".");
+                        let start = usize::from(fraction || payload.starts_with(b"-"));
+                        let digits = payload[start..end].iter().take_while(|byte| byte.is_ascii_digit()).count();
+                        let consumed = start + digits;
+                        match lz::pager::JumpTarget::parse(&payload[..consumed]) {
+                            Some(target) => self.args.jump_target = target,
+                            None => self.args.diagnostics.push(Diagnostic::InvalidPosition { fraction }),
+                        }
+                        return consumed;
+                    },
                     "shift" => {
                         let fraction = payload.starts_with(b".");
                         let start = usize::from(fraction);
@@ -238,7 +250,7 @@ impl Scanner {
                         let consumed = start + digits;
                         match lz::pager::HorizontalShift::parse(&payload[..consumed]) {
                             Some(shift) => self.args.horizontal_shift = Some(shift),
-                            None => self.args.diagnostics.push(Diagnostic::InvalidShift { fraction }),
+                            None => self.args.diagnostics.push(Diagnostic::InvalidPosition { fraction }),
                         }
                         return consumed;
                     },

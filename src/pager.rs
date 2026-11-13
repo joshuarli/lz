@@ -425,7 +425,27 @@ enum CommandContinuation { Inline, NextCommand }
 pub enum InitialDisplay { Startup, StartupFileSwitch(StartupFileSwitch), FileSwitch(Option<SavedPosition>) }
 
 #[derive(Clone, Copy)]
-enum ShiftValue { Default, Fixed(std::num::NonZeroUsize), Fraction(u32) }
+struct ScreenFraction(u32);
+
+impl ScreenFraction {
+    fn parse(digits: &[u8]) -> Option<Self> {
+        if digits.is_empty() || !digits.iter().all(u8::is_ascii_digit) { return None; }
+        let mut fraction = 0u32;
+        for &digit in digits.iter().take(6) { fraction = fraction * 10 + u32::from(digit - b'0'); }
+        for _ in digits.len().min(6)..6 { fraction *= 10; }
+        Some(Self(fraction))
+    }
+
+    fn scale(self, dimension: u16) -> usize {
+        let product = u64::from(dimension) * u64::from(self.0);
+        let whole = product / 1_000_000;
+        let remainder = product % 1_000_000;
+        (whole + u64::from(remainder > 500_000 || (remainder == 500_000 && whole % 2 != 0))) as usize
+    }
+}
+
+#[derive(Clone, Copy)]
+enum ShiftValue { Default, Fixed(std::num::NonZeroUsize), Fraction(ScreenFraction) }
 
 /// A validated horizontal shift, expressed in columns or as a fraction of the screen.
 #[derive(Clone, Copy)]
@@ -435,11 +455,7 @@ impl HorizontalShift {
     /// Parse the less-compatible integer or decimal-fraction form.
     pub fn parse(bytes: &[u8]) -> Option<Self> {
         if let Some(digits) = bytes.strip_prefix(b".") {
-            if digits.is_empty() || !digits.iter().all(u8::is_ascii_digit) { return None; }
-            let mut fraction = 0u32;
-            for &digit in digits.iter().take(6) { fraction = fraction * 10 + u32::from(digit - b'0'); }
-            for _ in digits.len().min(6)..6 { fraction *= 10; }
-            return Some(Self(ShiftValue::Fraction(fraction)));
+            return Some(Self(ShiftValue::Fraction(ScreenFraction::parse(digits)?)));
         }
         if bytes.is_empty() || !bytes.iter().all(u8::is_ascii_digit) { return None; }
         let mut columns = 0u32;
@@ -449,12 +465,40 @@ impl HorizontalShift {
     }
 }
 
+#[derive(Clone, Copy, Default)]
+enum JumpRow { #[default] Default, Line(i32), Fraction(ScreenFraction) }
+
+/// A validated screen row for positioning line and search targets.
+#[derive(Clone, Copy, Default)]
+pub struct JumpTarget(JumpRow);
+
+impl JumpTarget {
+    /// Parse an integer screen row or a fraction of terminal height.
+    pub fn parse(bytes: &[u8]) -> Option<Self> {
+        if let Some(digits) = bytes.strip_prefix(b".") { return Some(Self(JumpRow::Fraction(ScreenFraction::parse(digits)?))); }
+        let text = std::str::from_utf8(bytes).ok()?;
+        if text.is_empty() || text.starts_with('+') { return None; }
+        let line: i32 = text.parse().ok()?;
+        if line == i32::MIN { return None; }
+        Some(Self(JumpRow::Line(line)))
+    }
+
+    fn row(self, height: u16) -> usize {
+        let line = match self.0 {
+            JumpRow::Default => 1i64,
+            JumpRow::Line(line) => i64::from(line),
+            JumpRow::Fraction(fraction) => fraction.scale(height) as i64,
+        };
+        line.clamp(1, i64::from(height).max(1)) as usize - 1
+    }
+}
+
 /// Numeric scrolling defaults belong to the terminal session, across file visits.
 #[derive(Clone, Copy)]
 pub struct ScrollDefaults {
     half_page: std::num::NonZeroUsize,
     horizontal: Option<std::num::NonZeroUsize>,
-    horizontal_fraction: Option<u32>,
+    horizontal_fraction: Option<ScreenFraction>,
     window: WindowSize,
 }
 
@@ -485,12 +529,7 @@ impl ScrollDefaults {
     }
 
     fn horizontal_step(self, width: u16) -> usize {
-        let fraction = self.horizontal_fraction.map(|fraction| {
-            let product = u64::from(width) * u64::from(fraction);
-            let whole = product / 1_000_000;
-            let remainder = product % 1_000_000;
-            (whole + u64::from(remainder > 500_000 || (remainder == 500_000 && whole % 2 != 0))) as usize
-        }).filter(|columns| *columns > 0);
+        let fraction = self.horizontal_fraction.map(|fraction| fraction.scale(width)).filter(|columns| *columns > 0);
         self.horizontal.map(std::num::NonZeroUsize::get).or(fraction).unwrap_or_else(|| (usize::from(width) / 2).max(1))
     }
 
@@ -541,6 +580,7 @@ pub struct Config {
     pub show_eof_markers: bool,
     pub search_case: CaseSensitivity,
     pub search_start: SearchStart,
+    pub jump_target: JumpTarget,
 }
 
 pub struct Pager {
@@ -564,6 +604,7 @@ pub struct Pager {
     search: Option<Search>,
     search_case: CaseSensitivity,
     search_start: SearchStart,
+    jump_target: JumpTarget,
     last_visible_line: Option<usize>,
     search_dir: SearchDir,
     current_match_line: Option<usize>,
@@ -632,6 +673,7 @@ impl Pager {
             search: None,
             search_case: config.search_case,
             search_start: config.search_start,
+            jump_target: config.jump_target,
             last_visible_line: None,
             search_dir: SearchDir::Forward,
             current_match_line: None,
@@ -805,6 +847,7 @@ impl Pager {
                 continue;
             }
             if terminal::WINCH_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst) {
+                self.filename_prompt = false;
                 let (w, h) = terminal::get_terminal_size();
                 self.term_width = w;
                 self.term_height = h;
@@ -1064,9 +1107,13 @@ impl Pager {
                 let previous_leading = self.leading_rows;
                 self.position_initialized();
                 let target = count.unwrap_or(1).saturating_sub(1);
-                if self.command_context == CommandContext::Interactive && self.content_painted && self.top_line == target && previous_leading == 0 { self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now()); }
-                self.top_line = target;
-                self.buffer.get_line(self.top_line);
+                let row = if count.is_some() { self.jump_target.row(self.term_height) } else { 0 };
+                let top = target.saturating_sub(row);
+                let leading = row.saturating_sub(target);
+                if self.command_context == CommandContext::Interactive && self.content_painted && self.top_line == top && previous_leading == leading { self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now()); }
+                self.top_line = top;
+                self.leading_rows = leading;
+                self.buffer.get_line(target);
                 self.remember_jump_from(previous);
                 self.left_col = 0;
             }
@@ -1075,7 +1122,13 @@ impl Pager {
                 let previous = self.mark_position();
                 self.position_initialized();
                 self.bottom_aligned = bottom_aligned;
-                if let Some(count) = count { self.top_line = count.saturating_sub(1); self.buffer.get_line(self.top_line); }
+                if let Some(count) = count {
+                    let target = count.saturating_sub(1);
+                    let row = self.jump_target.row(self.term_height);
+                    self.top_line = target.saturating_sub(row);
+                    self.leading_rows = row.saturating_sub(target);
+                    self.buffer.get_line(target);
+                }
                 else { self.buffer.read_all(); self.scroll_to_bottom(); }
                 self.remember_jump_from(previous);
             }
@@ -1354,6 +1407,10 @@ impl Pager {
         self.do_search(forward);
     }
 
+    fn target_line(&self) -> usize {
+        self.top_line.saturating_add(self.jump_target.row(self.term_height).saturating_sub(self.leading_rows))
+    }
+
     fn do_search(&mut self, forward: bool) {
         let search = match self.search.take() {
             Some(s) => s,
@@ -1364,8 +1421,11 @@ impl Pager {
             self.buffer.len()
         } else { match (self.search_start, forward) {
             (SearchStart::AfterScreen, true) => self.last_visible_line.map_or(self.top_line, |line| line.saturating_add(1)),
-            (SearchStart::AfterScreen | SearchStart::AfterTarget, false) => self.top_line,
-            (SearchStart::AfterTarget, true) if self.content_painted => self.top_line.saturating_add(1),
+            (SearchStart::AfterScreen, false) => self.top_line,
+            (SearchStart::AfterTarget, false) => self.target_line(),
+            (SearchStart::AfterTarget, true) if self.content_painted => self.target_line().saturating_add(1),
+            (SearchStart::Default, true) if self.current_match_line.is_some() && !matches!(self.jump_target.0, JumpRow::Default) => self.target_line().saturating_add(1),
+            (SearchStart::Default, false) if self.current_match_line.is_some() && !matches!(self.jump_target.0, JumpRow::Default) => self.target_line(),
             (SearchStart::Default, false) if self.current_match_line.is_none() => self.last_visible_line.map_or(self.top_line, |line| line.saturating_add(1)),
             (_, true) => self.current_match_line.map_or(self.top_line, |line| line.saturating_add(1)),
             (_, false) => self.current_match_line.unwrap_or(self.top_line),
@@ -1374,7 +1434,9 @@ impl Pager {
             Some(line) => {
                 self.position_initialized();
                 self.current_match_line = Some(line);
-                self.top_line = line;
+                let row = self.jump_target.row(self.term_height);
+                self.top_line = line.saturating_sub(row);
+                self.leading_rows = row.saturating_sub(line);
             }
             None => {
                 self.status_msg = Some("Pattern not found".to_string());
@@ -1998,6 +2060,16 @@ impl Pager {
 #[cfg(test)]
 mod one_screen_tests {
     use super::*;
+
+    #[test]
+    fn jump_target_rejects_invalid_settings() {
+        assert!(JumpTarget::parse(b"").is_none());
+        assert!(JumpTarget::parse(b".").is_none());
+        assert!(JumpTarget::parse(b"2147483648").is_none());
+        assert_eq!(JumpTarget::parse(b"3").unwrap().row(24), 2);
+        assert_eq!(JumpTarget::parse(b".5").unwrap().row(24), 11);
+        assert_eq!(JumpTarget::parse(b"-1").unwrap().row(24), 0);
+    }
 
     #[test]
     fn long_color_line_spills_without_materializing_its_output() {
