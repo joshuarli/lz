@@ -38,6 +38,7 @@ The following work remains local and actionable: complete the nonparked S04–S1
 
 Parked conditions are:
 
+- `parity/s08h-nonboundary` at `425b399`: `search-posix-non-boundary-edge` mismatches on Linux musl. Retry with a position-aware matcher that preserves anchors, alternatives, and leftmost-longest selection. Padding breaks anchors; rejecting the first invalid alternative can hide a valid one.
 - `parity/S04c-hup`: retain the approved lz cleanup divergence. The pinned oracle leaks terminal state. Do not mark the strict mismatch compatible.
 - `parity/s11l-suspend` at `eec9e03`: instrument reference job-control transitions before retrying the helper suspension case.
 - `parity/s04ah-negative` at `16b74f0`: the reference produced no output within three seconds for a negative line-number width. Retry only with a usable bounded reference observation.
