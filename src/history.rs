@@ -195,6 +195,8 @@ impl SearchHistory {
         Some(&self.entries[self.cursor].text)
     }
 
+    pub(crate) fn at_oldest(&self) -> bool { !self.entries.is_empty() && self.cursor == 0 }
+
     pub fn newer(&mut self) -> Option<&str> {
         if self.cursor >= self.entries.len() { return None; }
         self.cursor += 1;

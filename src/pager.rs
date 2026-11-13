@@ -1138,6 +1138,7 @@ impl Pager {
                 }
             }
             Key::Up => {
+                if self.history.at_oldest() { self.bell_requested = true; }
                 if let Some(entry) = self.history.older(&self.search_input.content) {
                     self.search_input.content = entry.to_string();
                     self.search_input.cursor = self.search_input.content.len();
