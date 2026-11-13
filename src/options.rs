@@ -60,7 +60,7 @@ pub(super) struct Args {
     pub control_display: ControlDisplay,
     pub use_color: bool,
     pub backspaces: BackspaceDisplay,
-    pub header_lines: usize,
+    pub header: lz::pager::HeaderDimensions,
     pub incremental_search: bool,
     pub chop: bool,
     pub line_numbers: lz::pager::LineNumberMode,
@@ -81,7 +81,7 @@ pub(super) struct Args {
 
 impl Default for Args {
     fn default() -> Self {
-        Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, eof_policy: Default::default(), bell_policy: Default::default(), control_display: ControlDisplay::default(), use_color: false, backspaces: BackspaceDisplay::Overstrike, header_lines: 0, incremental_search: false, chop: false, line_numbers: Default::default(), show_eof_markers: true, window: None, horizontal_shift: None, search_case: CaseSensitivity::Sensitive,
+        Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, eof_policy: Default::default(), bell_policy: Default::default(), control_display: ControlDisplay::default(), use_color: false, backspaces: BackspaceDisplay::Overstrike, header: Default::default(), incremental_search: false, chop: false, line_numbers: Default::default(), show_eof_markers: true, window: None, horizontal_shift: None, search_case: CaseSensitivity::Sensitive,
             line_number_width: Default::default(), search_start: SearchStart::default(), jump_target: Default::default(), history_duplicates: Default::default(), tab_stops: Default::default(), filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
@@ -176,7 +176,7 @@ impl Scanner {
                     "tabs" => if let Some(stops) = lz::tabs::TabStops::parse(&payload[..end]) { self.args.tab_stops = stops; },
                     "header" => {
                         let value = &payload[..end];
-                        if let Some(lines) = lz::pager::parse_header_lines(value, self.args.header_lines) { self.args.header_lines = lines; }
+                        if let Some(header) = lz::pager::parse_header(value, Default::default()) { self.args.header = header; }
                         else { self.args.diagnostics.push(Diagnostic::UnsupportedHeader(value.to_vec())); }
                     },
                     _ => {}
@@ -301,11 +301,11 @@ mod tests {
 
     #[test]
     fn unsupported_header_fields_are_reported() {
-        let args = parse(vec!["--header=2,5".into(), "input".into()], None);
+        let args = parse(vec!["--header=2,5,3".into(), "input".into()], None);
         assert_eq!(args.diagnostics.len(), 1);
         let mut output = Vec::new();
         args.diagnostics[0].write(&mut output).unwrap();
-        assert_eq!(output, b"Unsupported header specification: 2,5\n");
+        assert_eq!(output, b"Unsupported header specification: 2,5,3\n");
     }
 
     #[test]
