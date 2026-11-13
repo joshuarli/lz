@@ -7,7 +7,7 @@ use crate::layout::{DisplayPrefix, NotationStyle};
 use crate::buffer::{LineBuffer, LineFragment};
 use crate::history::SearchHistory;
 use crate::input::{Key, KeyReader};
-use crate::search::{CaseSensitivity, Search, SearchStart};
+use crate::search::{CaseSensitivity, RegexLocale, Search, SearchStart};
 use crate::terminal;
 use crate::tabs::TabStops;
 
@@ -753,6 +753,8 @@ pub struct Config {
     pub tab_stops: TabStops,
     pub show_eof_markers: bool,
     pub search_case: CaseSensitivity,
+    /// Character interpretation used for regular expressions.
+    pub regex_locale: RegexLocale,
     pub search_start: SearchStart,
     pub search_session: SearchSession,
     pub jump_target: JumpTarget,
@@ -786,6 +788,7 @@ pub struct Pager {
     incremental_search: bool,
     incremental_preview: Option<Search>,
     search_case: CaseSensitivity,
+    regex_locale: RegexLocale,
     search_start: SearchStart,
     jump_target: JumpTarget,
     last_visible_line: Option<usize>,
@@ -868,6 +871,7 @@ impl Pager {
             incremental_search: config.incremental_search,
             incremental_preview: None,
             search_case: config.search_case,
+            regex_locale: config.regex_locale,
             search_start: config.search_start,
             jump_target: config.jump_target,
             last_visible_line: None,
@@ -1818,7 +1822,7 @@ impl Pager {
                     self.current_match_line = Some(self.target_line());
                     return;
                 }
-                match Search::new(&pattern, self.search_case) {
+                match Search::new_with_locale(&pattern, self.search_case, self.regex_locale) {
                     Ok(s) => {
                         self.search = Some(s);
                         self.search_nonmatch = self.search_input_nonmatch;
@@ -1866,7 +1870,7 @@ impl Pager {
     }
 
     fn update_incremental_search(&mut self) {
-        let Ok(search) = Search::new(&self.search_input.content, self.search_case) else {
+        let Ok(search) = Search::new_with_locale(&self.search_input.content, self.search_case, self.regex_locale) else {
             self.incremental_preview = None;
             return;
         };
@@ -1904,7 +1908,7 @@ impl Pager {
         let search = match self.search.take() {
             Some(s) => s,
             None => match self.history.last_pattern() {
-                Some(pattern) => match Search::new(pattern, self.search_case) {
+                Some(pattern) => match Search::new_with_locale(pattern, self.search_case, self.regex_locale) {
                     Ok(search) => { self.history.note_recalled_pattern(); self.current_match_line = Some(self.target_line()); search }
                     Err(error) => { self.command_error(error, ErrorAction::Dismiss); return; }
                 },
@@ -1943,6 +1947,7 @@ impl Pager {
         match found {
             Some(line) => {
                 self.current_match_line = Some(line);
+                if keep_position && self.squished { self.position_initialized(); }
                 if !keep_position {
                     self.position_initialized();
                     let row = self.jump_target.row(self.term_height);
@@ -1976,7 +1981,7 @@ impl Pager {
                     self.clear_filter();
                     return;
                 }
-                match Search::new(&pattern, self.search_case) {
+                match Search::new_with_locale(&pattern, self.search_case, self.regex_locale) {
                     Ok(s) => {
                         self.filter = Some(s);
                         self.rebuild_filter();
@@ -2469,6 +2474,16 @@ impl Pager {
             let stripped = strip_ansi(display);
             let searchable = source.search_text(&stripped, start);
             let mut matches: Vec<_> = search.find_matches_stripped(&searchable).into_iter().filter(|(start, end)| start < end).collect();
+            if search.uses_byte_regex() {
+                let mut aligned: Vec<(usize, usize)> = Vec::new();
+                for (mut start, mut end) in matches {
+                    while !searchable.is_char_boundary(start) { start -= 1; }
+                    while !searchable.is_char_boundary(end) { end += 1; }
+                    if let Some((_, previous)) = aligned.last_mut() && *previous > start { *previous = (*previous).max(end); }
+                    else { aligned.push((start, end)); }
+                }
+                matches = aligned;
+            }
             if self.search_nonmatch { matches.truncate(1); }
             if !matches.is_empty() {
                 let colored = self.use_color;

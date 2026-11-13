@@ -169,6 +169,7 @@ enum Matcher {
 }
 
 struct RegexMatcher {
+    byte_mode: bool,
     first: PikeVM,
     longest: PikeVM,
     caches: Mutex<RegexCaches>,
@@ -177,14 +178,25 @@ struct RegexMatcher {
 struct RegexCaches { first: Cache, longest: Cache }
 
 impl RegexMatcher {
-    fn new(pattern: &str, case_insensitive: bool) -> Result<Self, String> {
+    fn new(pattern: &str, case_insensitive: bool, locale: RegexLocale) -> Result<Self, String> {
+        let byte_mode = locale == RegexLocale::C;
+        let translated = translate_posix_escapes(pattern);
+        let expression = if byte_mode {
+            let mut expression = String::new();
+            for byte in translated.bytes() {
+                if byte.is_ascii() { expression.push(char::from(byte)); }
+                else { expression.push_str(&format!("\\x{byte:02x}")); }
+            }
+            expression
+        } else { translated };
         let first = PikeVM::builder()
-            .syntax(regex_automata::util::syntax::Config::new().case_insensitive(case_insensitive))
-            .build(&translate_posix_escapes(pattern)).map_err(|error| format!("Invalid regex: {error}"))?;
+            .syntax(regex_automata::util::syntax::Config::new().case_insensitive(case_insensitive).unicode(!byte_mode).utf8(!byte_mode))
+            .thompson(regex_automata::nfa::thompson::Config::new().utf8(!byte_mode))
+            .build(&expression).map_err(|error| format!("Invalid regex: {error}"))?;
         let longest = PikeVM::builder().configure(PikeVM::config().match_kind(MatchKind::All))
             .build_from_nfa(first.get_nfa().clone()).map_err(|error| format!("Invalid regex: {error}"))?;
         let caches = Mutex::new(RegexCaches { first: first.create_cache(), longest: longest.create_cache() });
-        Ok(Self { first, longest, caches })
+        Ok(Self { byte_mode, first, longest, caches })
     }
 
     fn is_match(&self, text: &str) -> bool {
@@ -194,7 +206,7 @@ impl RegexMatcher {
 
     fn find_all(&self, text: &str) -> Vec<(usize, usize)> {
         let mut caches = self.caches.lock().unwrap_or_else(|error| error.into_inner());
-        let mut matches = Vec::new();
+        let mut matches: Vec<(usize, usize)> = Vec::new();
         let mut from = 0;
         let mut previous_end = None;
         while let Some(first) = self.first.find(&mut caches.first, Input::new(text).range(from..)) {
@@ -206,8 +218,13 @@ impl RegexMatcher {
                 previous_end = Some(end);
             }
             if start == end {
-                let Some(character) = text[end..].chars().next() else { break; };
-                from = end + character.len_utf8();
+                if self.byte_mode {
+                    if end == text.len() { break; }
+                    from = end + 1;
+                } else {
+                    let Some(character) = text[end..].chars().next() else { break; };
+                    from = end + character.len_utf8();
+                }
             } else { from = end; }
         }
         matches
@@ -222,6 +239,16 @@ pub enum CaseSensitivity {
     Insensitive,
 }
 
+/// Select the character interpretation used by regular expressions.
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+pub enum RegexLocale {
+    /// Interpret patterns and text as bytes, as in the C locale.
+    C,
+    /// Interpret patterns and text as UTF-8 characters.
+    #[default]
+    Unicode,
+}
+
 /// Select where searches start relative to the displayed viewport.
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub enum SearchStart { #[default] Default, AfterScreen, AfterTarget }
@@ -234,6 +261,11 @@ pub struct Search {
 impl Search {
     /// Compile a pattern using the case policy selected by the caller.
     pub fn new(pattern: &str, case: CaseSensitivity) -> Result<Self, String> {
+        Self::new_with_locale(pattern, case, RegexLocale::Unicode)
+    }
+
+    /// Compile a pattern using the selected case and regex locale policies.
+    pub fn new_with_locale(pattern: &str, case: CaseSensitivity, locale: RegexLocale) -> Result<Self, String> {
         if pattern.is_empty() {
             return Err("Empty pattern".to_string());
         }
@@ -247,7 +279,7 @@ impl Search {
         let matcher = if is_literal(pattern) {
             Matcher::Literal(Box::new(Bmh::new(pattern.as_bytes(), case_insensitive)))
         } else {
-            Matcher::Regex(Box::new(RegexMatcher::new(pattern, case_insensitive)?))
+            Matcher::Regex(Box::new(RegexMatcher::new(pattern, case_insensitive, locale)?))
         };
 
         Ok(Search {
@@ -284,6 +316,10 @@ impl Search {
             Matcher::Literal(bmh) => bmh.is_match(text.as_bytes()),
             Matcher::Regex(regex) => regex.is_match(text),
         }
+    }
+
+    pub(crate) fn uses_byte_regex(&self) -> bool {
+        matches!(&self.matcher, Matcher::Regex(regex) if regex.byte_mode)
     }
 
     /// Find all match byte ranges in ANSI-stripped text.
@@ -569,6 +605,18 @@ mod tests {
         assert_eq!(search.find_matches("aa ab"), vec![(0, 1), (3, 5)]);
         let search = Search::new("x*", CaseSensitivity::Sensitive).unwrap();
         assert_eq!(search.find_matches("éx"), vec![(0, 0), (2, 3)]);
+    }
+
+    #[test]
+    fn regex_locale_controls_match_byte_ranges() {
+        let bytes = Search::new_with_locale("e..", CaseSensitivity::Sensitive, RegexLocale::C).unwrap();
+        let unicode = Search::new_with_locale("e..", CaseSensitivity::Sensitive, RegexLocale::Unicode).unwrap();
+        assert_eq!(bytes.find_matches("eıʃ"), vec![(0, 3)]);
+        assert_eq!(unicode.find_matches("eıʃ"), vec![(0, 5)]);
+        let partial = Search::new_with_locale("ı.", CaseSensitivity::Sensitive, RegexLocale::C).unwrap();
+        assert_eq!(partial.find_matches("eıʃ"), vec![(1, 4)]);
+        let partial = Search::new_with_locale("e.", CaseSensitivity::Sensitive, RegexLocale::C).unwrap();
+        assert_eq!(partial.find_matches("eıʃ"), vec![(0, 2)]);
     }
 
     #[test]

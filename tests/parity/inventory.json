@@ -1009,11 +1009,16 @@
         "search-ui-color-colon-parameters",
         "search-ui-color-colon-simple",
         "search-ui-color-colon-prior-style",
-        "search-ui-color-colon-color-space"
+        "search-ui-color-colon-color-space",
+        "search-utf8-charset-c-regex",
+        "search-utf8-charset-c-partial",
+        "search-utf8-charset-c-dot",
+        "search-utf8-charset-c-unicode-pattern",
+        "search-utf8-charset-unicode-regex"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Literal search, named leftmost-longest alternatives, escaped alphanumerics and bracket literals pass on macOS arm64 and in a Linux arm64 container. A missing pattern uses the reference acknowledgment prompt in the named case. Musl differs for escaped letters and word boundaries; native Linux, other bracket forms, full dialect, further diagnostics, Unicode, modifiers, colors and layout interactions remain open"
+      "cause": "Literal search, named leftmost-longest alternatives, escaped alphanumerics, bracket literals and tested C versus UTF-8 locale regex ranges pass on macOS arm64 and in a Linux arm64 container. A missing pattern uses the reference acknowledgment prompt in the named case. Musl differs for escaped letters and word boundaries; native Linux, other bracket forms, full dialect, further diagnostics, Unicode, modifiers, colors and layout interactions remain open"
     },
     {
       "id": "man-0220",

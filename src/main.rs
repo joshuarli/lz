@@ -237,6 +237,7 @@ fn run() -> Result<ExitAction, String> {
     let locale = ["LC_ALL", "LC_CTYPE", "LANG"].into_iter().map(text_setting).collect::<Result<Vec<_>, _>>()?
         .into_iter().flatten().find(|value| !value.is_empty());
     let charset = Charset::resolve(explicit_charset.as_deref(), locale.as_deref()).map_err(|error| error.to_string())?;
+    let regex_locale = if locale.as_deref().is_none_or(|locale| matches!(locale, "C" | "POSIX")) { lz::search::RegexLocale::C } else { lz::search::RegexLocale::Unicode };
     let suspension = if security.allows(security::Feature::Stop) { terminal::SuspendPolicy::Allow } else { terminal::SuspendPolicy::Ignore };
     let mut session = terminal::Session::start(terminal::Screen::Primary, suspension).map_err(|error| error.to_string())?;
     let preprocessing = if args.use_lessopen && security.allows(security::Feature::Lessopen) { preprocessor::Template::from_environment() } else { Ok(None) };
@@ -335,7 +336,7 @@ fn run() -> Result<ExitAction, String> {
         let mut startup_commands = std::mem::take(&mut args.startup_commands);
         if let Some(command) = &args.every_file_command { startup_commands.push(command.clone()); }
         let alternate = opened.alternate.take();
-        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, use_color: args.use_color, incremental_search: args.incremental_search, chop: args.chop, line_numbers: args.line_numbers, line_number_width: args.line_number_width, tab_stops: args.tab_stops.clone(), show_eof_markers: args.show_eof_markers, search_case: args.search_case, search_start: args.search_start, search_session, jump_target: args.jump_target }, opened.name, history);
+        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, use_color: args.use_color, incremental_search: args.incremental_search, chop: args.chop, line_numbers: args.line_numbers, line_number_width: args.line_number_width, tab_stops: args.tab_stops.clone(), show_eof_markers: args.show_eof_markers, search_case: args.search_case, regex_locale, search_start: args.search_start, search_session, jump_target: args.jump_target }, opened.name, history);
         let result = if showing_help { pager.run_help(session.keys_mut(), help_files) }
             else if std::mem::take(&mut startup_one_screen) { pager.run_one_screen_startup(session.keys_mut()) }
             else { pager.run(session.keys_mut()) };
