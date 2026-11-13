@@ -242,7 +242,7 @@ impl LineEditor {
 enum CommandContext { StartupUnpositioned, StartupPositioned, StartupAborted, Interactive }
 
 #[derive(Clone, PartialEq)]
-struct CommandError { action: ErrorAction, context: CommandContext, remainder: Vec<u8>, destination: ErrorDestination }
+struct CommandError { action: ErrorAction, context: CommandContext, remainder: Vec<u8>, destination: ErrorDestination, repaint: bool }
 
 #[derive(Clone, PartialEq)]
 enum ErrorDestination { Normal, Help }
@@ -1576,7 +1576,7 @@ impl Pager {
 
     fn command_error(&mut self, message: String, action: ErrorAction) {
         self.status_msg = Some(format!("{message}  (press RETURN)"));
-        self.mode = Mode::CommandError(CommandError { action, context: self.command_context, remainder: Vec::new(), destination: ErrorDestination::Normal });
+        self.mode = Mode::CommandError(CommandError { action, context: self.command_context, remainder: Vec::new(), destination: ErrorDestination::Normal, repaint: false });
     }
 
     fn handle_help_key(&mut self, key: Key) {
@@ -1857,6 +1857,7 @@ impl Pager {
             }
             None => {
                 self.command_error("Pattern not found".to_string(), ErrorAction::Dismiss);
+                if let Mode::CommandError(error) = &mut self.mode { error.repaint = true; }
             }
         }
         self.search = Some(search);
@@ -2087,7 +2088,7 @@ impl Pager {
         if boundary_bell && self.bell_policy.is_audible(terminal::BellKind::Boundary) { buf.push(7); }
         if general_bell && self.bell_policy.is_audible(terminal::BellKind::General) { buf.push(7); }
         buf.extend_from_slice(b"\x1b[?25l");
-        if matches!(self.mode, Mode::CommandError(_) | Mode::OptionNotice { repaint:false }) {
+        if matches!(&self.mode, Mode::CommandError(CommandError { repaint:false, .. }) | Mode::OptionNotice { repaint:false }) {
             if !self.content_painted { for row in 0..ch { buf.position(row); terminal::clear_line(&mut buf); } }
             if let Some(row) = self.display_anchor.row { buf.padding = ch.saturating_sub(row); }
             self.render_status(&mut buf, w);

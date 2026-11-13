@@ -140,6 +140,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S07ap accepted:** normal-mode numeric-prefix display preserves zero and leading zeros in the tested count. The zero sequence and ordinary counted upstream movement pass on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Overflow display and other command modes remain open.
 
+**S12ag accepted (partial translation):** the original `search-hist` fixture, search entries, editing and first five history-up actions match with generic-terminal checkpoints. A failed new search now repaints the view to remove stale highlights. Three upstream-derived cases and neighboring missing-search and non-match cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Later history actions and custom termcap remain open.
+
 **S08ao accepted:** `!` and Ctrl-N toggle non-match search in the tested plain-line views; search, forward and reverse repeat, first-occurrence highlighting and cancellation match the reference. Three focused cases, the remaining `seq200` interaction sequence and neighboring search/filter cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Filtered and wrapped geometry, cross-file interactions, other modifiers and custom termcap remain open.
 
 **S08an accepted:** Backspace cancels the tested empty search prompt and preserves the previous search for repeat. The cancellation and neighboring upstream search/filter cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Search modifiers and other prompt editing remain open.
