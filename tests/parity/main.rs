@@ -176,7 +176,8 @@ fn metadata(candidate: &Path) -> Result<Value> {
         "executables": digest(&[candidate.to_owned(), reference])?,
         "sources": digest(&paths)?,
         "platform": std::env::consts::OS, "architecture": std::env::consts::ARCH,
-        "locale": "per scenario", "term": "xterm-256color"
+        "locale": "per scenario", "term": "xterm-256color",
+        "core_dump_limits": resources::core_dump_limits()?
     }))
 }
 
@@ -238,7 +239,7 @@ fn observe_case(reference: &Path, candidate: &Path, case: &Case) -> Value {
     };
     let actual = match execute(candidate, case) {
         Ok(actual) => actual,
-        Err(error) if error.is::<TraceViolation>() || error.is::<interactive::CheckpointTimeout>() || error.is::<resources::Violation>() || error.is::<interactive::KernelViolation>() || error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. } | ptytest::PtyTestError::SnapshotMismatch { .. })) => {
+        Err(error) if error.is::<TraceViolation>() || error.is::<interactive::CheckpointTimeout>() || error.is::<interactive::ClosedInput>() || error.is::<resources::Violation>() || error.is::<interactive::KernelViolation>() || error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. } | ptytest::PtyTestError::SnapshotMismatch { .. })) => {
             return json!({"case":case,"outcome":"mismatch","expected":expected.observation,"resources":{"oracle":expected.resources},
                 "actual_error":error.to_string(),"actual_error_detail":format!("{error:#?}"),
                 "difference":"candidate failed a readiness, lifecycle, trace or resource assertion after the oracle completed"});
@@ -331,6 +332,7 @@ fn run(args: &[String]) -> Result<()> {
 }
 
 fn main() -> Result<()> {
+    resources::disable_core_dumps()?;
     let raw_args: Vec<_> = std::env::args_os().skip(1).collect();
     if raw_args.first().is_some_and(|arg| arg == "--pipe-supervisor") {
         if raw_args.len() < 6 { return Err("missing supervisor arguments".into()); }

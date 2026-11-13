@@ -32,6 +32,7 @@ const SIGCONT: i32 = 19;
 const SIGCONT: i32 = 18;
 const SIGTERM: i32 = 15;
 const SIGINT: i32 = 2;
+const SIGQUIT: i32 = 3;
 const SIGHUP: i32 = 1;
 #[cfg(target_os = "macos")]
 const SIGSTOP: i32 = 17;
@@ -39,6 +40,7 @@ const SIGSTOP: i32 = 17;
 const SIGSTOP: i32 = 19;
 
 const SIG_DFL: usize = 0;
+const SIG_IGN: usize = 1;
 
 pub static WINCH_FLAG: AtomicBool = AtomicBool::new(false);
 pub static TSTP_FLAG: AtomicBool = AtomicBool::new(false);
@@ -127,7 +129,7 @@ extern "C" fn handle_interrupt(_sig: i32) {
 
 fn install_signal_handlers() -> io::Result<Vec<(i32, usize)>> {
     let mut previous = Vec::new();
-    for (number, handler) in [(SIGWINCH, handle_winch as *const () as usize), (SIGTSTP, handle_tstp as *const () as usize), (SIGCONT, handle_cont as *const () as usize), (SIGTERM, handle_term as *const () as usize), (SIGHUP, handle_term as *const () as usize), (SIGINT, handle_interrupt as *const () as usize)] {
+    for (number, handler) in [(SIGWINCH, handle_winch as *const () as usize), (SIGTSTP, handle_tstp as *const () as usize), (SIGCONT, handle_cont as *const () as usize), (SIGTERM, handle_term as *const () as usize), (SIGHUP, handle_term as *const () as usize), (SIGINT, handle_interrupt as *const () as usize), (SIGQUIT, SIG_IGN)] {
         // SAFETY: each handler has C ABI and only updates a lock-free atomic flag.
         let saved = unsafe { signal(number, handler) };
         if saved == usize::MAX {

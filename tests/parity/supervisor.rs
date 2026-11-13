@@ -213,7 +213,7 @@ pub fn run(binary: &Path, fixture: Option<&Path>, manifest: &Path, args: &[std::
         for number in forwarded {
             if pending & (1 << number) != 0 {
                 group_signal(pager.child.id(), number)?;
-                if matches!(number, 1 | 3 | 15) && cancellation_deadline.is_none() { cancellation_deadline = Some(Instant::now() + Duration::from_millis(100)); }
+                if matches!(number, 1 | 15) && cancellation_deadline.is_none() { cancellation_deadline = Some(Instant::now() + Duration::from_millis(100)); }
             }
         }
         if cancellation_deadline.is_some_and(|deadline| Instant::now() >= deadline) {
@@ -295,7 +295,8 @@ pub fn probe(args: &[std::ffi::OsString]) -> Result<()> {
     // SAFETY: tty is a live controlling-terminal descriptor; both calls return kernel process-group identifiers.
     let foreground = unsafe { tcgetpgrp(tty.as_raw_fd()) == getpgrp() };
     let observation = json!({"input":bytes, "args": args.iter().map(|arg| arg.as_bytes()).collect::<Vec<_>>(),
-        "environment":std::env::var_os("SUPERVISOR_PROBE").map(|value| value.as_bytes().to_vec()),"foreground":foreground});
+        "environment":std::env::var_os("SUPERVISOR_PROBE").map(|value| value.as_bytes().to_vec()),"foreground":foreground,
+        "core_dump_limits":super::resources::core_dump_limits()?});
     fs::write("pipe-probe", serde_json::to_vec(&observation)?)?;
     if args.first().is_some_and(|arg| arg == "hang") {
         disposition(15, 1)?;

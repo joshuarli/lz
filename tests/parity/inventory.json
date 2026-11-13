@@ -7552,11 +7552,17 @@
         "lifecycle-int-binary",
         "lifecycle-int-diagnostic",
         "lifecycle-int-preserve",
-        "lifecycle-int-filter-history"
+        "lifecycle-int-filter-history",
+        "lifecycle-quit-ignored",
+        "lifecycle-quit-preserve",
+        "lifecycle-quit-on-int-policy",
+        "lifecycle-quit-binary",
+        "lifecycle-quit-search",
+        "lifecycle-quit-navigation"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "TERM cleanup and default SIGINT continuation pass in normal/search/filter/follow/prefix modes, binary/diagnostic prompts and preserved-screen/no-keypad sessions. Keyboard Ctrl-C rings and continues in normal mode. Quit-on-interrupt policy, suspend/resume, other signals, inherited dispositions and long operations remain open Pending interrupted filter input is retained in explicit history."
+      "cause": "TERM cleanup, default SIGINT continuation and configured interruption pass in named scenarios. SIGQUIT is ignored in normal and pending search input, binary prompts, preserved/no-keypad sessions and under quit-on-interrupt policy; navigation continues beyond the supervisor escalation interval. Suspend/resume, inherited dispositions, custom control characters and long operations remain open."
     },
     {
       "id": "input-boundaries",

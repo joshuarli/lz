@@ -31,6 +31,21 @@ impl std::fmt::Display for CheckpointTimeout {
 }
 impl std::error::Error for CheckpointTimeout {}
 
+#[derive(Debug)]
+pub(super) struct ClosedInput {
+    exit: ExitStatus,
+    cause: ptytest::PtyTestError,
+    artifact_dir: std::path::PathBuf,
+}
+impl std::fmt::Display for ClosedInput {
+    fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(output, "PTY input closed and child exited {:?}: {}; retained evidence: {}", self.exit, self.cause, self.artifact_dir.display())
+    }
+}
+impl std::error::Error for ClosedInput {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> { Some(&self.cause) }
+}
+
 fn retain_checkpoint(terminal: &PtyTest, id: &str) -> Result<std::path::PathBuf> {
     let directory = super::stdio::world()?.keep();
     fs::write(directory.join("input.bin"), terminal.raw_input())?;
@@ -150,7 +165,16 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
     let mut checkpoints = Vec::new();
     for event in &case.events {
         match event {
-            Event::Send { bytes } => terminal.send_bytes(checkpoint_deadline(), bytes)?,
+            Event::Send { bytes } => {
+                if let Err(error) = terminal.send_bytes(checkpoint_deadline(), bytes) {
+                    if matches!(&error, ptytest::PtyTestError::System { errno, .. } if *errno == libc::EIO) {
+                        let exit = terminal.wait_for_exit(checkpoint_deadline())?;
+                        let artifact_dir = retain_checkpoint(&terminal, &case.id)?;
+                        return Err(Box::new(ClosedInput { exit, cause: error, artifact_dir }));
+                    }
+                    return Err(error.into());
+                }
+            }
             Event::Checkpoint { ready, row } => {
                 let deadline = total.min(Instant::now() + Duration::from_secs(3));
                 wait_checkpoint(&mut terminal, &case.id, deadline, ready, *row)?;
@@ -269,6 +293,8 @@ pub fn selftest() -> Result<()> {
     if pipe["exit"] != format!("{:?}", ExitStatus::Code(7)) { return Err("supervisor changed a nonzero child exit".into()); }
     let bytes: Vec<u8> = serde_json::from_value(pipe["files"]["pipe-probe"]["bytes"].clone())?;
     let probe: Value = serde_json::from_slice(&bytes)?;
+    if probe["core_dump_limits"] != json!([0, 0]) { return Err("owned child did not inherit zero core-file limits".into()); }
+    println!("owned child inherits zero soft/hard core-file limits");
     if probe["input"] != json!(b"owned data\n") || probe["args"] != json!([b"exit".to_vec(), vec![255,32,39,36]])
         || probe["environment"] != json!(b"inherited-value") || probe["foreground"] != true {
         return Err("supervisor changed stdin, argv, environment or foreground ownership".into());

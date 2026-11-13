@@ -6,6 +6,20 @@ use std::path::{Path, PathBuf};
 
 const MAX_RSS: u64 = 512 * 1024 * 1024;
 
+pub(super) fn disable_core_dumps() -> Result<()> {
+    let limit = libc::rlimit { rlim_cur: 0, rlim_max: 0 };
+    // SAFETY: setrlimit changes only this owned runner's limits; zero disables inherited core files.
+    if unsafe { libc::setrlimit(libc::RLIMIT_CORE, &limit) } != 0 { return Err(io::Error::last_os_error().into()); }
+    Ok(())
+}
+
+pub(super) fn core_dump_limits() -> Result<[libc::rlim_t; 2]> {
+    let mut limit = libc::rlimit { rlim_cur: 0, rlim_max: 0 };
+    // SAFETY: getrlimit writes the platform rlimit structure owned by this call.
+    if unsafe { libc::getrlimit(libc::RLIMIT_CORE, &mut limit) } != 0 { return Err(io::Error::last_os_error().into()); }
+    Ok([limit.rlim_cur, limit.rlim_max])
+}
+
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 #[serde(try_from = "u64", into = "u64")]
 pub(super) struct RssLimit(u64);
