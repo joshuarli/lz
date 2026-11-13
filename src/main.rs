@@ -347,6 +347,7 @@ fn run() -> Result<ExitAction, String> {
         display_anchor = pager.display_anchor();
         scroll_defaults = pager.scroll_defaults();
         args.control_display = pager.control_display();
+        args.line_numbers = pager.line_numbers();
         search_session = pager.take_search_session();
         args.startup_commands = pager.take_startup_commands();
         history = pager.into_history();

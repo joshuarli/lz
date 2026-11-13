@@ -100,6 +100,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S04bc accepted:** `man-0404` supports the tested editing and `=` termination of interactive long display option names. Three new cases passed on macOS arm64 and Linux arm64 Docker; the neighboring query case passed in both environments and all-target Clippy passed on macOS. Other long names and editing interactions remain open.
 
+**S04bd accepted:** `man-0393` interactive `-N` toggles numbered display and carries it between files. The public pager exposes the displayed-number setting. Three on/off, startup and next-file cases passed on macOS arm64 and Linux arm64 Docker, as did a neighboring long-option case; all-target Clippy passed on macOS. The distinct `-n` state and other interactions remain open.
+
 The subsequent macOS arm64 invocation check passed all 332 admitted cases after the option-prefix changes.
 
 **S08p:** `Esc-u` after a search with no matches reports the reference no-previous-pattern prompt. The case passes on macOS and in a Linux arm64 container; cross-file prepared regions are parked separately.

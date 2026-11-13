@@ -862,6 +862,9 @@ impl Pager {
     /// Return the control-display mode to carry to the next file.
     pub fn control_display(&self) -> ControlDisplay { self.controls }
 
+    /// Return whether line numbers are displayed.
+    pub fn line_numbers(&self) -> bool { self.line_numbers }
+
     /// Transfer the active search to the next file in the session.
     pub fn take_search_session(&mut self) -> SearchSession { SearchSession { search:self.search.take(), direction:self.search_dir, highlight:self.search_highlight } }
 
@@ -1143,6 +1146,13 @@ impl Pager {
                 self.mode = Mode::Normal;
                 if let Key::Char(choice @ ('r' | 'R')) = key {
                     self.apply_control_option(command, choice);
+                } else if key == Key::Char('N') && command == OptionCommand::Toggle {
+                    self.line_numbers = !self.line_numbers;
+                    let repaint = self.squished;
+                    if repaint { self.position_initialized(); }
+                    let message = if self.line_numbers { "Constantly display line numbers" } else { "Don't use line numbers" };
+                    self.status_msg = Some(format!("{message}  (press RETURN)"));
+                    self.mode = Mode::OptionNotice { repaint };
                 } else if key != Key::Escape { self.bell_requested = true; }
                 false
             }
