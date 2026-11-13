@@ -957,6 +957,7 @@ impl Pager {
         self.squished = false;
         self.startup_bottom = false;
         self.startup_echo = None;
+        if self.content_painted && self.command_context == CommandContext::Interactive { self.compact_initial = false; }
         if self.command_context == CommandContext::StartupUnpositioned { self.command_context = CommandContext::StartupPositioned; }
     }
 

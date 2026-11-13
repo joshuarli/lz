@@ -4059,8 +4059,8 @@
         "invocation-tilde-no-init"
       ],
       "implementation": "partial",
-      "evidence": "partially compatible",
-      "cause": "EOF marker suppression passes named cases; primary-screen repositioning under -X remains incompatible independently of this option"
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named startup, reset, chopped and primary-screen cases pass on macOS arm64; interactive option toggles and other geometries remain open"
     },
     {
       "id": "man-1295",

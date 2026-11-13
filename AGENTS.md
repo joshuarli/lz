@@ -111,7 +111,7 @@ All raw terminal interaction via libc FFI.
 - Signal handling: `SIGWINCH` (terminal resize), `SIGTSTP` (external and keyboard suspension), `SIGCONT` (resume after suspend), `SIGTERM` (clean exit). Signals are caught via `signal()` or `sigaction` FFI calls; handlers set atomic flags that the event loop checks.
 - Buffered output helpers: wraps `stdout` writes so that each rendered frame is assembled in memory and flushed with a single `write()` syscall.
 
-`Config::show_eof_markers` controls the tildes drawn after EOF. The `-~` and `--tilde` startup options disable them. Primary-screen repositioning after `g` remains incomplete.
+`Config::show_eof_markers` controls the tildes drawn after EOF. The `-~` and `--tilde` startup options disable them. On the primary screen, interactive positioning expands the compact initial display; short-file bottom jumps and mark feedback remain incomplete.
 
 `BellPolicy` distinguishes audible, visual and suppressed feedback for boundary and general errors. `--no-vbell` suppresses visual feedback after options and LESS defaults are resolved.
 
