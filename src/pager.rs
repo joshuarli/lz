@@ -1327,7 +1327,7 @@ impl Pager {
     fn render_status(&self, buf: &mut Frame, w: usize) {
         buf.position(self.term_height.saturating_sub(1) as usize);
         let status = self.build_status();
-        let emphasized = self.mode == Mode::Follow || (self.filename_prompt && self.filename.is_some()) || status.starts_with("(END)") || self.status_msg.is_some();
+        let emphasized = self.mode == Mode::Follow || (self.filename_prompt && (self.filename.is_some() || self.files.count > 1)) || status.starts_with("(END)") || self.status_msg.is_some();
         if emphasized { buf.extend_from_slice(b"\x1b[7m"); }
         let mut suffix_width = 0;
         let mut start = status.len();
@@ -1378,9 +1378,10 @@ impl Pager {
             return msg.clone();
         }
 
-        let name = self.filename.as_ref().map(|name| {
-            if self.files.count > 1 { format!("{name} (file {} of {})", self.files.index + 1, self.files.count) } else { name.clone() }
-        });
+        let name = if self.files.count > 1 {
+            let prefix = self.filename.as_ref().map_or_else(String::new, |name| format!("{name} "));
+            Some(format!("{prefix}(file {} of {})", self.files.index + 1, self.files.count))
+        } else { self.filename.clone() };
         if self.buffer.is_finished() && self.top_line.saturating_add(self.content_height()) >= self.display_line_count() {
             let mut status = if self.filename_prompt { name.map_or_else(|| "(END)".to_owned(), |name| format!("{name} (END)")) } else { "(END)".to_owned() };
             if let Some(next) = &self.files.next_name { status.push_str(&format!(" - Next: {next}")); }

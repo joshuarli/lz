@@ -5116,11 +5116,22 @@
         "integrations-lessopen-invalid-term",
         "integrations-lessopen-invalid-disabled",
         "integrations-lessopen-invalid-secure",
-        "integrations-lessopen-invalid-combined"
+        "integrations-lessopen-invalid-combined",
+        "integrations-lessopen-stdin-ignored",
+        "integrations-lessopen-stdin-valid-ignored",
+        "integrations-lessopen-stdin-enabled",
+        "integrations-lessopen-stdin-invalid-enabled",
+        "integrations-lessopen-stdin-read",
+        "integrations-lessopen-stdin-disabled",
+        "integrations-lessopen-stdin-secure",
+        "integrations-lessopen-stdin-secure-allow",
+        "integrations-lessopen-stdin-to-file",
+        "integrations-lessopen-file-to-stdin",
+        "integrations-lessopen-file-to-enabled-stdin"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "File-return preprocessors substitute one quoted filename, preserve literal percent escapes, read the first stdout line through LF/EOF, ignore nonzero exit after data, and fall back on empty output. Inert helpers prove hostile filename bytes, secure denial/allowance, -L/long/reset effects, foreground tty input and TERM cleanup. Live pipes, LESSCLOSE, custom shell/metachar settings, interrupted/stopped helpers and further file transitions remain open. Initial file-return template diagnostics preserve exact text, one acknowledgment, non-Return quit, ordinary/configured interruption and TERM. Disabled or denied preprocessing suppresses validation. Combined secure/template diagnostics share acknowledgment. Stdin-prefix applicability and repeated interactive diagnostics remain open."
+      "cause": "Named file-return scenarios cover quoted filename bytes, percent substitution, first-line/EOF and empty fallback, exit status, secure and CLI policies, exact initial diagnostics and acknowledgment, foreground tty input and TERM cleanup. A leading dash extends execution and validation to stdin. The file-return form retains stdin regardless of the returned filename, and helper reads consume stdin. Named file/stdin transitions retain applicability, data and file-count prompts. Live pipes, LESSCLOSE, custom shell/metachar settings, repeated interactive diagnostics and interrupted/stopped helper interactions remain open."
     },
     {
       "id": "man-1869",
@@ -7070,11 +7081,22 @@
         "integrations-lessopen-invalid-term",
         "integrations-lessopen-invalid-disabled",
         "integrations-lessopen-invalid-secure",
-        "integrations-lessopen-invalid-combined"
+        "integrations-lessopen-invalid-combined",
+        "integrations-lessopen-stdin-ignored",
+        "integrations-lessopen-stdin-valid-ignored",
+        "integrations-lessopen-stdin-enabled",
+        "integrations-lessopen-stdin-invalid-enabled",
+        "integrations-lessopen-stdin-read",
+        "integrations-lessopen-stdin-disabled",
+        "integrations-lessopen-stdin-secure",
+        "integrations-lessopen-stdin-secure-allow",
+        "integrations-lessopen-stdin-to-file",
+        "integrations-lessopen-file-to-stdin",
+        "integrations-lessopen-file-to-enabled-stdin"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "File-return preprocessors substitute one quoted filename, preserve literal percent escapes, read the first stdout line through LF/EOF, ignore nonzero exit after data, and fall back on empty output. Inert helpers prove hostile filename bytes, secure denial/allowance, -L/long/reset effects, foreground tty input and TERM cleanup. Live pipes, LESSCLOSE, custom shell/metachar settings, interrupted/stopped helpers and further file transitions remain open. Initial file-return template diagnostics preserve exact text, one acknowledgment, non-Return quit, ordinary/configured interruption and TERM. Disabled or denied preprocessing suppresses validation. Combined secure/template diagnostics share acknowledgment. Stdin-prefix applicability and repeated interactive diagnostics remain open."
+      "cause": "Named file-return scenarios cover quoted filename bytes, percent substitution, first-line/EOF and empty fallback, exit status, secure and CLI policies, exact initial diagnostics and acknowledgment, foreground tty input and TERM cleanup. A leading dash extends execution and validation to stdin. The file-return form retains stdin regardless of the returned filename, and helper reads consume stdin. Named file/stdin transitions retain applicability, data and file-count prompts. Live pipes, LESSCLOSE, custom shell/metachar settings, repeated interactive diagnostics and interrupted/stopped helper interactions remain open."
     },
     {
       "id": "man-2426",

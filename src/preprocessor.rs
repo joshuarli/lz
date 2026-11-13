@@ -3,10 +3,19 @@ use std::io;
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
 use std::process::Command;
 
-pub(super) struct Template { bytes: Vec<u8> }
+#[derive(Clone, Copy, Debug)]
+enum InputScope { Files, FilesAndStdin }
+impl InputScope {
+    fn includes(self, filename: &OsStr) -> bool { filename != "-" || matches!(self, Self::FilesAndStdin) }
+}
+
+pub(super) struct Template { bytes: Vec<u8>, scope: InputScope }
 
 #[derive(Debug)]
-pub(super) struct InvalidTemplate;
+pub(super) struct InvalidTemplate { scope: InputScope }
+impl InvalidTemplate {
+    pub fn applies_to(&self, filename: &OsStr) -> bool { self.scope.includes(filename) }
+}
 impl std::fmt::Display for InvalidTemplate {
     fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         output.write_str("LESSOPEN ignored: must contain exactly one %s")
@@ -19,7 +28,7 @@ impl Template {
         let Some(value) = std::env::var_os("LESSOPEN") else { return Ok(None); };
         let mut bytes = value.as_bytes();
         if bytes.is_empty() || bytes[0] == b'|' { return Ok(None); }
-        if bytes[0] == b'-' { bytes = &bytes[1..]; }
+        let scope = if bytes[0] == b'-' { bytes = &bytes[1..]; InputScope::FilesAndStdin } else { InputScope::Files };
         let mut placeholders = 0;
         let mut cursor = 0;
         while cursor < bytes.len() {
@@ -28,17 +37,17 @@ impl Template {
                 match bytes.get(cursor) {
                     Some(b's') => placeholders += 1,
                     Some(b'%') => {},
-                    _ => return Err(InvalidTemplate),
+                    _ => return Err(InvalidTemplate { scope }),
                 }
             }
             cursor += 1;
         }
-        if placeholders != 1 { return Err(InvalidTemplate); }
-        Ok(Some(Self { bytes:bytes.to_vec() }))
+        if placeholders != 1 { return Err(InvalidTemplate { scope }); }
+        Ok(Some(Self { bytes:bytes.to_vec(), scope }))
     }
 
     pub fn run(&self, filename: &OsStr, session: &mut lz::terminal::Session) -> io::Result<Option<OsString>> {
-        if filename == "-" { return Ok(None); }
+        if !self.scope.includes(filename) { return Ok(None); }
         let quoted = quote(filename.as_bytes());
         let mut command = Vec::new();
         let mut cursor = 0;

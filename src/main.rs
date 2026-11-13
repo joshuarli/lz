@@ -116,10 +116,10 @@ fn finish_session(result: io::Result<ExitAction>, session: terminal::Session) ->
 struct OpenedInput { buffer: buffer::LineBuffer, name: Option<String>, binary_name: Option<OsString> }
 
 fn open_input(filename: &std::ffi::OsStr, charset: Charset, controls: ControlDisplay, force: bool, preprocessor: Option<&preprocessor::Template>, session: &mut terminal::Session) -> io::Result<OpenedInput> {
+    let replacement = preprocessor.map(|template| template.run(filename, session)).transpose()?.flatten();
     if filename == "-" {
         return Ok(OpenedInput { buffer: buffer::LineBuffer::from_stdin(io::stdin())?, name: None, binary_name: None });
     }
-    let replacement = preprocessor.map(|template| template.run(filename, session)).transpose()?.flatten();
     let file = File::open(replacement.as_deref().unwrap_or(filename))?;
     let binary_name = if !force && buffer::LineBuffer::check_binary(&file, charset, controls)? { Some(filename.to_owned()) } else { None };
     let mut name = Vec::new();
@@ -210,7 +210,8 @@ fn run() -> Result<ExitAction, String> {
     let suspension = if security.allows(security::Feature::Stop) { terminal::SuspendPolicy::Allow } else { terminal::SuspendPolicy::Ignore };
     let mut session = terminal::Session::start(terminal::Screen::Primary, suspension).map_err(|error| error.to_string())?;
     let preprocessing = if args.use_lessopen && security.allows(security::Feature::Lessopen) { preprocessor::Template::from_environment() } else { Ok(None) };
-    if let Err(diagnostic) = &preprocessing { write!(io::stderr().lock(), "{diagnostic}\r\n").map_err(|error| error.to_string())?; }
+    let preprocessing_diagnostic = preprocessing.as_ref().err().filter(|diagnostic| diagnostic.applies_to(&args.filenames[0]));
+    if let Some(diagnostic) = preprocessing_diagnostic { write!(io::stderr().lock(), "{diagnostic}\r\n").map_err(|error| error.to_string())?; }
     let preprocessor = preprocessing.as_ref().ok().and_then(Option::as_ref);
     let mut opened = open_input(&args.filenames[0], charset, args.control_display, args.force, preprocessor, &mut session)
         .map_err(|error| format!("{}: {error}", args.filenames[0].to_string_lossy()))?;
@@ -224,7 +225,7 @@ fn run() -> Result<ExitAction, String> {
         }
     }
 
-    if security.has_diagnostics() || preprocessing.is_err() {
+    if security.has_diagnostics() || preprocessing_diagnostic.is_some() {
         match acknowledge_diagnostics(session.keys_mut()) {
             Ok(DiagnosticAnswer::Continue) => {},
             Ok(DiagnosticAnswer::Interrupted) => {
