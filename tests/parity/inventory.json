@@ -8377,9 +8377,9 @@
       "file": "lesstest/lt/chinese1.lt",
       "sha256": "d81a2c4d23f16ab28169e62f7be6dbf54090a1d0ea332f7ba7f9453b0afae1d7",
       "instrumented": "pass",
-      "cases": ["upstream-chinese1-scroll", "upstream-chinese1-force-boundary", "upstream-chinese1-unicode-search", "upstream-chinese1-use-color", "upstream-chinese1-colored-regex"],
+      "cases": ["upstream-chinese1-scroll", "upstream-chinese1-force-boundary", "upstream-chinese1-unicode-search", "upstream-chinese1-use-color", "upstream-chinese1-colored-regex", "upstream-chinese1-per-key"],
       "disposition": "partial translation",
-      "cause": "The original fixture and key sequence are covered with generic-terminal checkpoints. Intermediate per-key and original custom termcap checkpoints remain untranslated. Remaining keys and original custom termcap checkpoints are untranslated."
+      "cause": "The original fixture and key sequence have per-key generic-terminal checkpoints. Original custom termcap checkpoints remain untranslated. Remaining keys and original custom termcap checkpoints are untranslated."
     },
     {
       "id": "colorbars",

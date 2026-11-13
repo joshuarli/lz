@@ -126,6 +126,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12aa accepted (partial translation):** the remaining `chinese1` backward movement and Unicode regex search pass with generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. The original key sequence is represented, but intermediate per-key and custom termcap checkpoints remain open.
 
+**S12ab accepted (partial translation):** the original `chinese1` key sequence now has per-key generic-terminal checkpoints, passing on macOS arm64 and Linux arm64 Docker. The original custom termcap checkpoints remain a separate proof requirement.
+
 **S07aj accepted:** seed 117 exposed a `terminal-lifecycle` resize position mismatch after returning to a file and moving to its first line. The reference preserves position zero in a newly grown table, treats that table as empty, and restores the file-entry position. The pager now retains the maximum position-table height across visits and follows the tested behavior. Seven minimal and boundary cases plus neighboring resize cases passed on macOS arm64 and Linux arm64 Docker; seed 117 and all-target Clippy passed on macOS. Wrapped, filtered and other resize interactions remain open.
 
 **S04au:** interactive `-R` toggles color display and carries it across file switches. Six cases pass on macOS and in a Linux arm64 container, covering the upstream `github329` fixture, short and long views, raw mode, prompt replay and interruption. `Pager::control_display` exposes the current mode. Other option commands, suppression, queries and startup interactions remain open; the upstream translation is partial.
