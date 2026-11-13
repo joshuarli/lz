@@ -1,4 +1,4 @@
-use std::io::{self, Seek, Write};
+use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::collections::{HashMap, VecDeque};
 
 use crate::ansi::{ControlDisplay, strip_ansi, visible_width};
@@ -23,8 +23,12 @@ impl DisplayAnchor {
     }
 }
 
+enum FramePart { Bytes(Vec<u8>), Spill { offset: u64, length: u64 } }
+
 struct Frame {
     bytes: Vec<u8>,
+    parts: Vec<FramePart>,
+    spill: Option<std::fs::File>,
     relative_row: Option<usize>,
     padding: usize,
     retain_initial_column: bool,
@@ -40,6 +44,47 @@ impl std::ops::DerefMut for Frame {
 }
 
 impl Frame {
+    fn append_color_line(&mut self, buffer: &mut LineBuffer, line: usize, width: usize, before: impl FnOnce(&mut Self)) -> io::Result<Option<bool>> {
+        if self.spill.is_none() { self.spill = Some(crate::storage::anonymous_file()?); }
+        let spill = self.spill.as_mut().unwrap();
+        let offset = spill.seek(SeekFrom::End(0))?;
+        match scan_color_line(buffer, line, width, spill)? {
+            ColorLine::Fits(sgr) => {
+                let end = spill.stream_position()?;
+                before(self);
+                self.parts.push(FramePart::Bytes(std::mem::take(&mut self.bytes)));
+                self.parts.push(FramePart::Spill { offset, length:end - offset });
+                Ok(Some(sgr))
+            }
+            ColorLine::Unsupported | ColorLine::Waiting => {
+                spill.set_len(offset)?;
+                spill.seek(SeekFrom::Start(offset))?;
+                if self.parts.is_empty() { self.spill = None; }
+                Ok(None)
+            }
+        }
+    }
+
+    fn write_to(&mut self, output: &mut impl Write) -> io::Result<()> {
+        for part in &self.parts {
+            match part {
+                FramePart::Bytes(bytes) => output.write_all(bytes)?,
+                FramePart::Spill { offset, length } => {
+                    let spill = self.spill.as_mut().ok_or_else(|| io::Error::other("missing frame spill"))?;
+                    spill.seek(SeekFrom::Start(*offset))?;
+                    if io::copy(&mut spill.take(*length), output)? != *length { return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "short frame spill")); }
+                }
+            }
+        }
+        output.write_all(&self.bytes)
+    }
+
+    fn clear(&mut self) {
+        self.bytes.clear();
+        self.parts.clear();
+        self.spill = None;
+    }
+
     fn position(&mut self, row: usize) {
         if std::mem::take(&mut self.retain_initial_column) { return; }
         if let Some(previous) = self.relative_row {
@@ -284,44 +329,53 @@ fn number_gutter(line: usize, width: usize, enabled: bool, minimum: LineNumberWi
 }
 
 enum SgrScan { Text, Escape, Sequence }
+enum ColorLine { Fits(bool), Unsupported, Waiting }
 enum StreamedLine { Fits(std::fs::File, bool), Unsupported, Waiting }
 
-fn stream_color_line(buffer: &mut LineBuffer, line: usize, width: usize) -> io::Result<StreamedLine> {
-    let mut file = crate::storage::anonymous_file()?;
+fn scan_color_line(buffer: &mut LineBuffer, line: usize, width: usize, output: &mut impl Write) -> io::Result<ColorLine> {
     let mut offset = 0u64;
     let mut columns = 0usize;
     let mut sgr = false;
     let mut state = SgrScan::Text;
     loop {
-        if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return Ok(StreamedLine::Waiting); }
-        if terminal::interrupt_pending() { return Ok(StreamedLine::Unsupported); }
+        if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return Ok(ColorLine::Waiting); }
+        if terminal::interrupt_pending() { return Ok(ColorLine::Unsupported); }
         let Some(chunk) = buffer.byte_chunk(line, offset, 64 * 1024)? else {
             if let Some(error) = buffer.take_error() { return Err(error); }
-            return Ok(StreamedLine::Waiting);
+            return Ok(ColorLine::Waiting);
         };
         for &byte in &chunk.bytes {
             state = match state {
                 SgrScan::Text if byte == 0x1b => SgrScan::Escape,
                 SgrScan::Text if (0x20..=0x7e).contains(&byte) => {
                     columns += 1;
-                    if columns > width { return Ok(StreamedLine::Unsupported); }
+                    if columns > width { return Ok(ColorLine::Unsupported); }
                     SgrScan::Text
                 }
                 SgrScan::Escape if byte == b'[' => SgrScan::Sequence,
                 SgrScan::Sequence if byte == b'm' => { sgr = true; SgrScan::Text }
                 SgrScan::Sequence if b"0123456789:;[?!\"'#%()*+ ".contains(&byte) => SgrScan::Sequence,
-                _ => return Ok(StreamedLine::Unsupported),
+                _ => return Ok(ColorLine::Unsupported),
             };
         }
-        file.write_all(&chunk.bytes)?;
+        output.write_all(&chunk.bytes)?;
         offset += chunk.bytes.len() as u64;
         if chunk.complete {
-            return Ok(if matches!(state, SgrScan::Text) { StreamedLine::Fits(file, sgr) } else { StreamedLine::Unsupported });
+            return Ok(if matches!(state, SgrScan::Text) { ColorLine::Fits(sgr) } else { ColorLine::Unsupported });
         }
         if chunk.bytes.is_empty() {
             if let Some(error) = buffer.take_error() { return Err(error); }
-            return Ok(StreamedLine::Waiting);
+            return Ok(ColorLine::Waiting);
         }
+    }
+}
+
+fn stream_color_line(buffer: &mut LineBuffer, line: usize, width: usize) -> io::Result<StreamedLine> {
+    let mut file = crate::storage::anonymous_file()?;
+    match scan_color_line(buffer, line, width, &mut file)? {
+        ColorLine::Fits(sgr) => Ok(StreamedLine::Fits(file, sgr)),
+        ColorLine::Unsupported => Ok(StreamedLine::Unsupported),
+        ColorLine::Waiting => Ok(StreamedLine::Waiting),
     }
 }
 
@@ -1647,7 +1701,7 @@ impl Pager {
             self.buffer.byte_prefix(0, 0)?;
             if self.buffer.is_empty() && self.buffer.state() == crate::buffer::SourceState::Waiting { return Ok(()); }
         }
-        let mut buf = Frame { bytes: Vec::with_capacity(4096), relative_row: self.display_anchor.row, padding: 0, retain_initial_column: false };
+        let mut buf = Frame { bytes: Vec::with_capacity(4096), parts: Vec::new(), spill: None, relative_row: self.display_anchor.row, padding: 0, retain_initial_column: false };
         let w = self.term_width as usize;
         let ch = self.content_height();
 
@@ -1668,7 +1722,7 @@ impl Pager {
             self.render_status(&mut buf, w);
             buf.extend_from_slice(b"\x1b[?25h");
             let mut stdout = io::stdout().lock();
-            stdout.write_all(&buf)?;
+            buf.write_to(&mut stdout)?;
             return stdout.flush();
         }
         let first_row = if self.mode == Mode::Help { 0 } else { self.initial_content_row(w, ch)? }.saturating_sub(self.bottom_gap);
@@ -1706,7 +1760,7 @@ impl Pager {
             terminal::clear_line(&mut buf);
             buf.extend_from_slice(b"\x1b[?25h");
             let mut output = io::stdout().lock();
-            output.write_all(&buf)?;
+            buf.write_to(&mut output)?;
             output.flush()?;
             buf.clear();
             if visual_boundary { self.bell_policy.write_to(&mut output, terminal::BellKind::Boundary)?; }
@@ -1721,7 +1775,7 @@ impl Pager {
         buf.extend_from_slice(b"\x1b[?25h");
 
         let mut stdout = io::stdout().lock();
-        stdout.write_all(&buf)?;
+        buf.write_to(&mut stdout)?;
         stdout.flush()?;
 
         Ok(())
@@ -1772,6 +1826,16 @@ impl Pager {
         }
     }
 
+    fn can_stream_visible_color_line(&self, line: usize, width: usize, fragment: &DisplayLine) -> bool {
+        !fragment.complete() && self.controls == ControlDisplay::Color && self.left_col == 0
+            && self.search.is_none() && fragment.columns() <= width && self.buffer.line_readable_without_waiting(line)
+    }
+
+    fn visible_color_line_fits(&mut self, line: usize, width: usize, fragment: &DisplayLine) -> io::Result<bool> {
+        if !self.can_stream_visible_color_line(line, width, fragment) { return Ok(false); }
+        Ok(matches!(scan_color_line(&mut self.buffer, line, width, &mut io::sink())?, ColorLine::Fits(_)))
+    }
+
     fn wrapped_prefix_rows(&self, fragment: &DisplayLine, actual: usize, width: usize, available: usize) -> usize {
         if !fragment.complete() { return available; }
         let columns = width.saturating_sub(self.number_gutter(actual, width).len()).max(1);
@@ -1787,8 +1851,11 @@ impl Pager {
             let Some(actual) = self.display_line_idx(index) else { return Ok(self.buffer.is_finished()); };
             let limit = width.saturating_mul(height.saturating_sub(rows)).saturating_add(1).saturating_mul(16).max(4096);
             let Some(fragment) = self.display_prefix(actual, limit)? else { return Ok(self.buffer.is_finished()); };
-            if !fragment.complete() { return Ok(false); }
-            let occupied = if self.wraps() { self.wrapped_prefix_rows(&fragment, actual, width, height.saturating_sub(rows)) } else { 1 };
+            let gutter = self.number_gutter(actual, width);
+            let content_width = width.saturating_sub(gutter.len()).max(1);
+            let streamed = if fragment.complete() { false } else { self.visible_color_line_fits(actual, content_width, &fragment)? };
+            if !fragment.complete() && !streamed { return Ok(false); }
+            let occupied = if streamed { 1 } else if self.wraps() { self.wrapped_prefix_rows(&fragment, actual, width, height.saturating_sub(rows)) } else { 1 };
             rows = rows.saturating_add(occupied);
             if rows > height { return Ok(false); }
             index += 1;
@@ -1809,7 +1876,10 @@ impl Pager {
             let Some(fragment) = self.display_prefix(actual, width.saturating_mul(height - rows).saturating_add(1).saturating_mul(16).max(4096))? else {
                 return Ok(if self.buffer.is_finished() { height - rows } else { 0 });
             };
-            rows += if self.wraps() { self.wrapped_prefix_rows(&fragment, actual, width, height - rows) } else { 1 };
+            let gutter = self.number_gutter(actual, width);
+            let content_width = width.saturating_sub(gutter.len()).max(1);
+            let streamed = if fragment.complete() || !self.wraps() { false } else { self.visible_color_line_fits(actual, content_width, &fragment)? };
+            rows += if streamed { 1 } else if self.wraps() { self.wrapped_prefix_rows(&fragment, actual, width, height - rows) } else { 1 };
             index += 1;
         }
         Ok(0)
@@ -1839,6 +1909,13 @@ impl Pager {
                     let gutter = self.number_gutter(line_idx, w);
                     Self::write_number_gutter(buf, &gutter);
                     let content_width = w.saturating_sub(gutter.len());
+                    if self.can_stream_visible_color_line(line_idx, content_width, &fragment)
+                        && let Some(sgr) = buf.append_color_line(&mut self.buffer, line_idx, content_width, |_| {})? {
+                        if sgr { buf.extend_from_slice(b"\x1b[m"); }
+                        if row + 1 == ch { self.probe_after_complete_line(line_idx)?; }
+                        terminal::clear_line(buf);
+                        continue;
+                    }
                     let line_width = fragment.columns();
                     let chopped = (!fragment.complete() || line_width > self.left_col.saturating_add(content_width)) && content_width > 0;
                     let display = fragment.display(self.left_col, content_width.saturating_sub(usize::from(chopped)));
@@ -1864,6 +1941,20 @@ impl Pager {
                     self.last_visible_line = Some(actual);
                     let gutter_width = self.number_gutter(actual, w).len();
                     let content_width = w.saturating_sub(gutter_width).max(1);
+                    let gutter = self.number_gutter(actual, w);
+                    if self.can_stream_visible_color_line(actual, content_width, &fragment)
+                        && let Some(sgr) = buf.append_color_line(&mut self.buffer, actual, content_width, |frame| {
+                            frame.position(screen_row);
+                            Self::write_number_gutter(frame, &gutter);
+                        })? {
+                        if sgr { buf.extend_from_slice(b"\x1b[m"); }
+                        buf.wrapped_row(screen_row);
+                        screen_row += 1;
+                        terminal::clear_line(buf);
+                        if screen_row == ch { self.probe_after_complete_line(actual)?; }
+                        display_idx = display_idx.saturating_add(1);
+                        continue;
+                    }
                     let rows_needed = self.wrapped_prefix_rows(&fragment, actual, w, ch - screen_row);
                     let available_rows = ch - screen_row;
                     for wrap_row in 0..rows_needed {
@@ -2060,6 +2151,36 @@ impl Pager {
 #[cfg(test)]
 mod one_screen_tests {
     use super::*;
+
+    #[test]
+    fn frame_spills_preserve_output_order_and_report_write_errors() {
+        let mut input = tempfile::NamedTempFile::new().unwrap();
+        input.write_all(b"\x1b[31mone\n").unwrap();
+        input.write_all(&b"\x1b[0m".repeat(16_384)).unwrap();
+        input.write_all(b"wide\n\x1b[32mtwo\n").unwrap();
+        let mut buffer = LineBuffer::from_file(std::fs::File::open(input.path()).unwrap());
+        let mut frame = Frame { bytes:Vec::new(), parts:Vec::new(), spill:None, relative_row:None, padding:0, retain_initial_column:false };
+        frame.extend_from_slice(b"before");
+        assert_eq!(frame.append_color_line(&mut buffer, 0, 3, |_| {}).unwrap(), Some(true));
+        frame.extend_from_slice(b" between");
+        assert_eq!(frame.append_color_line(&mut buffer, 1, 2, |_| panic!("unsupported line inserted")).unwrap(), None);
+        assert_eq!(frame.append_color_line(&mut buffer, 2, 3, |_| {}).unwrap(), Some(true));
+        frame.extend_from_slice(b" after");
+        let mut output = Vec::new();
+        frame.write_to(&mut output).unwrap();
+        assert_eq!(output, b"before\x1b[31mone between\x1b[32mtwo after");
+        struct Closed;
+        impl Write for Closed {
+            fn write(&mut self, _: &[u8]) -> io::Result<usize> { Err(io::ErrorKind::BrokenPipe.into()) }
+            fn flush(&mut self) -> io::Result<()> { Ok(()) }
+        }
+        assert_eq!(frame.write_to(&mut Closed).unwrap_err().kind(), io::ErrorKind::BrokenPipe);
+        frame.clear();
+        frame.extend_from_slice(b"fresh");
+        let mut output = Vec::new();
+        frame.write_to(&mut output).unwrap();
+        assert_eq!(output, b"fresh");
+    }
 
     #[test]
     fn jump_target_rejects_invalid_settings() {

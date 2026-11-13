@@ -483808,7 +483808,7 @@
   {
     "id": "invocation-one-screen-sgr-startup",
     "family": "invocation",
-    "admitted": false,
+    "admitted": true,
     "source": "pty",
     "fixture": {
       "repeat": [
@@ -590696,6 +590696,691 @@
   ],
   "locale": "C",
   "events": [],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "rendering-long-sgr-interactive",
+  "family": "rendering",
+  "admitted": true,
+  "source": "pty",
+  "fixture": {
+    "repeat": [
+      27,
+      91,
+      48,
+      109
+    ],
+    "count": 10000,
+    "suffix": [
+      27,
+      91,
+      51,
+      49,
+      109,
+      120,
+      10,
+      115,
+      101,
+      99,
+      111,
+      110,
+      100,
+      10
+    ]
+  },
+  "args": [
+    "-R",
+    "input"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "second",
+      "row": null
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "rendering-long-sgr-chopped-numbered",
+  "family": "rendering",
+  "admitted": true,
+  "source": "pty",
+  "fixture": {
+    "repeat": [
+      27,
+      91,
+      48,
+      109
+    ],
+    "count": 10000,
+    "suffix": [
+      27,
+      91,
+      51,
+      49,
+      109,
+      120,
+      10,
+      115,
+      101,
+      99,
+      111,
+      110,
+      100,
+      10
+    ]
+  },
+  "args": [
+    "-R",
+    "-S",
+    "-N",
+    "input"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "second",
+      "row": null
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "rendering-long-sgr-primary",
+  "family": "rendering",
+  "admitted": true,
+  "source": "pty",
+  "fixture": {
+    "repeat": [
+      27,
+      91,
+      48,
+      109
+    ],
+    "count": 10000,
+    "suffix": [
+      27,
+      91,
+      51,
+      49,
+      109,
+      120,
+      10,
+      115,
+      101,
+      99,
+      111,
+      110,
+      100,
+      10
+    ]
+  },
+  "args": [
+    "-R",
+    "-X",
+    "input"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "second",
+      "row": null
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "rendering-long-sgr-startup",
+  "family": "rendering",
+  "admitted": true,
+  "source": "pty",
+  "fixture": {
+    "repeat": [
+      27,
+      91,
+      48,
+      109
+    ],
+    "count": 10000,
+    "suffix": [
+      27,
+      91,
+      51,
+      49,
+      109,
+      120,
+      10,
+      115,
+      101,
+      99,
+      111,
+      110,
+      100,
+      10
+    ]
+  },
+  "args": [
+    "-R",
+    "+g",
+    "input"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "second",
+      "row": null
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-one-screen-sgr-startup-numbered",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": {
+    "repeat": [
+      27,
+      91,
+      48,
+      109
+    ],
+    "count": 10000,
+    "suffix": [
+      27,
+      91,
+      51,
+      49,
+      109,
+      120,
+      10,
+      115,
+      101,
+      99,
+      111,
+      110,
+      100,
+      10
+    ]
+  },
+  "args": [
+    "-F",
+    "-R",
+    "-N",
+    "+g",
+    "input"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "rendering-long-sgr-megabyte",
+  "family": "rendering",
+  "admitted": true,
+  "source": "pty",
+  "fixture": {
+    "repeat": [
+      27,
+      91,
+      48,
+      109
+    ],
+    "count": 262144,
+    "suffix": [
+      27,
+      91,
+      51,
+      49,
+      109,
+      120,
+      10,
+      115,
+      101,
+      99,
+      111,
+      110,
+      100,
+      10
+    ]
+  },
+  "args": [
+    "-R",
+    "input"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "second",
+      "row": null
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "rendering-long-sgr-exact-width",
+  "family": "rendering",
+  "admitted": true,
+  "source": "pty",
+  "fixture": {
+    "repeat": [
+      27,
+      91,
+      48,
+      109
+    ],
+    "count": 10000,
+    "suffix": [
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      10,
+      115,
+      101,
+      99,
+      111,
+      110,
+      100,
+      10
+    ]
+  },
+  "args": [
+    "-R",
+    "input"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "second",
+      "row": null
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "rendering-long-sgr-crlf",
+  "family": "rendering",
+  "admitted": true,
+  "source": "pty",
+  "fixture": {
+    "repeat": [
+      27,
+      91,
+      48,
+      109
+    ],
+    "count": 10000,
+    "suffix": [
+      120,
+      13,
+      10,
+      115,
+      101,
+      99,
+      111,
+      110,
+      100,
+      10
+    ]
+  },
+  "args": [
+    "-R",
+    "input"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "second",
+      "row": null
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "rendering-long-sgr-split-sequence",
+  "family": "rendering",
+  "admitted": true,
+  "source": "pty",
+  "fixture": {
+    "repeat": [
+      27,
+      91,
+      48,
+      109
+    ],
+    "count": 16383,
+    "suffix": [
+      27,
+      91,
+      51,
+      49,
+      109,
+      120,
+      10,
+      115,
+      101,
+      99,
+      111,
+      110,
+      100,
+      10
+    ]
+  },
+  "args": [
+    "-R",
+    "input"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "second",
+      "row": null
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "rendering-long-sgr-sixteen-mib",
+  "family": "rendering",
+  "admitted": true,
+  "source": "pty",
+  "fixture": {
+    "repeat": [
+      27,
+      91,
+      48,
+      109
+    ],
+    "count": 4194304,
+    "suffix": [
+      27,
+      91,
+      51,
+      49,
+      109,
+      120,
+      10,
+      115,
+      101,
+      99,
+      111,
+      110,
+      100,
+      10
+    ]
+  },
+  "args": [
+    "-R",
+    "input"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "input (END)",
+      "row": 23
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
   "fixture_name": [
     105,
     110,

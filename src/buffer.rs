@@ -89,6 +89,10 @@ impl LineBuffer {
         past_end
     }
 
+    pub(crate) fn line_readable_without_waiting(&self, line: usize) -> bool {
+        matches!(self.source, Source::File(_)) || self.starts.len() > line.saturating_add(1) || self.is_finished()
+    }
+
     pub(crate) fn refresh_waiting(&mut self) -> bool {
         self.state == SourceState::Waiting && self.scan()
     }
@@ -299,15 +303,19 @@ mod tests {
         let mut buffer = LineBuffer::from_stream(File::from(descriptor)).unwrap();
         assert!(buffer.line_prefix(0, 4096).unwrap().is_none());
         assert_eq!(buffer.state(), SourceState::Waiting);
+        assert!(!buffer.line_readable_without_waiting(0));
         producer.write_all(b"part").unwrap();
         let fragment = buffer.line_prefix(0, 4096).unwrap().unwrap();
         assert_eq!(fragment.text, "part");
         assert!(!fragment.complete);
         assert_eq!(buffer.state(), SourceState::Waiting);
+        assert!(!buffer.line_readable_without_waiting(0));
         producer.write_all(&[255, b'\n', b't', b'a', b'i', b'l']).unwrap();
         assert!(buffer.refresh_waiting());
         let fragment = buffer.line_prefix(0, 4096).unwrap().unwrap();
         assert!(fragment.complete);
+        assert!(buffer.line_readable_without_waiting(0));
+        assert!(!buffer.line_readable_without_waiting(1));
         let mut bytes = [0; 10];
         buffer.source.file().read_exact_at(&mut bytes, 0).unwrap();
         assert_eq!(&bytes, b"part\xff\ntail");
@@ -316,6 +324,7 @@ mod tests {
         drop(producer);
         assert_eq!(buffer.get_line(1), Some("tail"));
         assert_eq!(buffer.state(), SourceState::Eof);
+        assert!(buffer.line_readable_without_waiting(1));
         assert_eq!(buffer.get_line(2), None);
     }
 

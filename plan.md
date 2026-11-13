@@ -44,7 +44,9 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S02h:** 19 duplicate numbered fixtures use a bounded additive recipe. Both original fixture byte sequences were compared before replacement. All 19 cases, harness self-tests and Clippy passed. Existing inline and repeated recipes remain supported.
 
-The following work remains local and actionable: complete the nonparked S04–S11 behaviors and interactions, upstream scenario translations, bounded fuzzing and holdouts, parity CI checks, final performance and size gates, cleanup, and independent review. The inventory retains behavior-specific causes and cases. The S06 shared renderer still needs bounded long-line startup, Unicode, OSC, and multirow handling. POSIX search, cancellation, headers, helper and pipe transitions, history concurrency, and lifecycle hardening remain incomplete.
+**S06f:** long single-row ASCII SGR lines render through one anonymous disk-backed frame spill. Eleven cases cover startup, interactive views, screen options, chunk boundaries, CRLF and exact width. A 16 MiB case passes within resource limits on macOS and in a Linux arm64 container. The renderer scans a live stream only after the line is fully buffered. Search highlighting, Unicode, OSC, multirow content and cancellation during a long write remain open.
+
+The following work remains local and actionable: complete the nonparked S04–S11 behaviors and interactions, upstream scenario translations, bounded fuzzing and holdouts, parity CI checks, final performance and size gates, cleanup, and independent review. The inventory retains behavior-specific causes and cases. The S06 shared renderer still needs bounded Unicode, OSC, and multirow handling. POSIX search, cancellation, headers, helper and pipe transitions, history concurrency, and lifecycle hardening remain incomplete.
 
 Parked conditions are:
 
@@ -53,7 +55,6 @@ Parked conditions are:
 - `parity/s11l-suspend` at `eec9e03`: instrument reference job-control transitions before retrying the helper suspension case.
 - `parity/s04ah-negative` at `16b74f0`: the reference produced no output within three seconds for a negative line-number width. Retry only with a usable bounded reference observation.
 - `parity/s04ai-large-raw` at `d728fbe`: the billion-column raw-tab oracle exceeded its 512 MiB budget. Retry only with a usable bounded oracle observation.
-- `invocation-one-screen-sgr-startup`: the candidate mismatches in the shared long-line renderer. Keep the discovery case unadmitted until the renderer is fixed.
 - Release archive inclusion of `LESS-LICENSE`: release automation is outside the execution grant. Do not publish an archive until license packaging is resolved.
 
 Native Linux musl arm64 and x86-64, macOS x86-64, and hosted CI proof are unavailable. Disk-backed Linux arm64 and emulated x86-64 containers previously passed 144 Rust tests, harness controls, and five focused cases. Emulation does not prove native performance. macOS cannot create the invalid-byte filename fixture. Timing gates are deferred while the host is swap-constrained. No remote runs are authorized.
