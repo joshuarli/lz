@@ -1824,10 +1824,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["upstream-github329-toggle-color", "invocation-toggle-color-long-file", "invocation-toggle-color-replay", "invocation-toggle-color-from-raw", "invocation-toggle-color-interrupt", "sessions-toggle-color-next-file", "invocation-toggle-raw", "invocation-toggle-raw-from-color", "sessions-toggle-raw-next-file", "invocation-toggle-color-no-message", "invocation-toggle-raw-no-message", "invocation-toggle-color-no-message-long", "invocation-toggle-line-numbers","invocation-toggle-line-numbers-startup","sessions-toggle-line-numbers-next-file"],
+      "cases": ["upstream-github329-toggle-color", "invocation-toggle-color-long-file", "invocation-toggle-color-replay", "invocation-toggle-color-from-raw", "invocation-toggle-color-interrupt", "sessions-toggle-color-next-file", "invocation-toggle-raw", "invocation-toggle-raw-from-color", "sessions-toggle-raw-next-file", "invocation-toggle-color-no-message", "invocation-toggle-raw-no-message", "invocation-toggle-color-no-message-long", "invocation-toggle-line-numbers","invocation-toggle-line-numbers-startup","sessions-toggle-line-numbers-next-file", "invocation-line-number-states","invocation-line-number-off-startup","sessions-line-number-state-next-file","invocation-line-number-set-quiet"],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Interactive -R and -r toggle color and raw modes with the named prompt, suppression, replay, interruption and file-switch cases. The named -N cases toggle displayed line numbers and carry the setting across files. Other interactive options, queries and startup interactions remain open."
+      "cause": "Interactive -R and -r toggle color and raw modes with the named prompt, suppression, replay, interruption and file-switch cases. The named -n and -N cases retain and query three option states, toggle displayed numbers and carry state across files; other effects of disabling counting remain unfinished. Other interactive options, queries and startup interactions remain open."
     },
     {
       "id": "man-0404",

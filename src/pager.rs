@@ -685,6 +685,23 @@ impl Default for SearchSession {
     fn default() -> Self { Self { search: None, direction: SearchDir::Forward, highlight: true } }
 }
 
+/// Selected line-number option state; not all counting behavior is implemented.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum LineNumberMode {
+    /// The no-line-number option state.
+    Off,
+    /// The default line-number option state.
+    #[default]
+    Enabled,
+    /// Display line numbers beside each line.
+    Displayed,
+}
+
+impl LineNumberMode {
+    /// Return whether numbers are displayed beside each line.
+    pub fn displayed(self) -> bool { self == Self::Displayed }
+}
+
 pub struct Config {
     pub interrupt_policy: InterruptPolicy,
     pub eof_policy: EofPolicy,
@@ -697,7 +714,7 @@ pub struct Config {
     pub charset: Charset,
     pub controls: ControlDisplay,
     pub chop: bool,
-    pub line_numbers: bool,
+    pub line_numbers: LineNumberMode,
     pub line_number_width: LineNumberWidth,
     pub tab_stops: TabStops,
     pub show_eof_markers: bool,
@@ -721,7 +738,7 @@ pub struct Pager {
     marks: HashMap<MarkName, MarkPosition>,
     left_col: usize,
     wrap: bool,
-    line_numbers: bool,
+    line_numbers: LineNumberMode,
     line_number_width: LineNumberWidth,
     tab_stops: TabStops,
     show_eof_markers: bool,
@@ -862,8 +879,8 @@ impl Pager {
     /// Return the control-display mode to carry to the next file.
     pub fn control_display(&self) -> ControlDisplay { self.controls }
 
-    /// Return whether line numbers are displayed.
-    pub fn line_numbers(&self) -> bool { self.line_numbers }
+    /// Return the selected line-number option state.
+    pub fn line_numbers(&self) -> LineNumberMode { self.line_numbers }
 
     /// Transfer the active search to the next file in the session.
     pub fn take_search_session(&mut self) -> SearchSession { SearchSession { search:self.search.take(), direction:self.search_dir, highlight:self.search_highlight } }
@@ -1041,7 +1058,7 @@ impl Pager {
     fn finish_follow_one_screen(&mut self) -> io::Result<bool> {
         if !self.follow_one_screen || self.mode != Mode::Normal { return Ok(false); }
         self.follow_one_screen = false;
-        let options = OneScreenOptions { width:self.term_width, height:self.term_height, charset:self.charset, controls:self.controls, chop:!self.wrap, line_numbers:self.line_numbers, line_number_width:self.line_number_width, tab_stops:self.tab_stops.clone() };
+        let options = OneScreenOptions { width:self.term_width, height:self.term_height, charset:self.charset, controls:self.controls, chop:!self.wrap, line_numbers:self.line_numbers.displayed(), line_number_width:self.line_number_width, tab_stops:self.tab_stops.clone() };
         match one_screen(&mut self.buffer, options)? {
             OneScreen::Fits(_) => {},
             OneScreen::Overflows => { self.follow_screen_overflowed = true; return Ok(false); },
@@ -1146,13 +1163,21 @@ impl Pager {
                 self.mode = Mode::Normal;
                 if let Key::Char(choice @ ('r' | 'R')) = key {
                     self.apply_control_option(command, choice);
-                } else if key == Key::Char('N') && command == OptionCommand::Toggle {
-                    self.line_numbers = !self.line_numbers;
+                } else if let Key::Char(choice @ ('n' | 'N')) = key {
+                    let selected = if choice == 'n' { LineNumberMode::Enabled } else { LineNumberMode::Displayed };
+                    self.line_numbers = match command {
+                        OptionCommand::Toggle | OptionCommand::ToggleQuietly => if self.line_numbers == selected { LineNumberMode::Off } else { selected },
+                        OptionCommand::Reset | OptionCommand::ResetQuietly => LineNumberMode::Enabled,
+                        OptionCommand::Set | OptionCommand::SetQuietly => if choice == 'n' { LineNumberMode::Off } else { LineNumberMode::Displayed },
+                        OptionCommand::Query => self.line_numbers,
+                    };
                     let repaint = self.squished;
                     if repaint { self.position_initialized(); }
-                    let message = if self.line_numbers { "Constantly display line numbers" } else { "Don't use line numbers" };
-                    self.status_msg = Some(format!("{message}  (press RETURN)"));
-                    self.mode = Mode::OptionNotice { repaint };
+                    let message = match self.line_numbers { LineNumberMode::Off => "Don't use line numbers", LineNumberMode::Enabled => "Use line numbers", LineNumberMode::Displayed => "Constantly display line numbers" };
+                    if !matches!(command, OptionCommand::ToggleQuietly | OptionCommand::ResetQuietly | OptionCommand::SetQuietly) {
+                        self.status_msg = Some(format!("{message}  (press RETURN)"));
+                        self.mode = Mode::OptionNotice { repaint };
+                    }
                 } else if key != Key::Escape { self.bell_requested = true; }
                 false
             }
@@ -1987,7 +2012,7 @@ impl Pager {
     }
 
     fn number_gutter(&self, line: usize, width: usize) -> String {
-        number_gutter(line, width, self.line_numbers, self.line_number_width)
+        number_gutter(line, width, self.line_numbers.displayed(), self.line_number_width)
     }
 
     fn write_number_gutter(buf: &mut Vec<u8>, gutter: &str) {
