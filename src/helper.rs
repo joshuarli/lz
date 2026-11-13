@@ -12,7 +12,9 @@ unsafe extern "C" {
     fn kill(pid: i32, number: i32) -> i32;
 }
 
+const SIGINT: i32 = 2;
 const SIGTTOU: i32 = 22;
+const ESRCH: i32 = 3;
 
 struct ForegroundChild {
     child: Child,
@@ -79,7 +81,9 @@ pub(crate) fn read_line(mut command: Command, tty: i32) -> io::Result<Vec<u8>> {
         let mut output = child.child.stdout.take().ok_or_else(|| io::Error::other("missing helper output"))?;
         let mut line = Vec::new();
         let mut bytes = [0; 4096];
+        let mut interrupt_forwarded = false;
         loop {
+            forward_interrupt(&child, &mut interrupt_forwarded)?;
             if cancelled() { return Err(io::Error::new(io::ErrorKind::Interrupted, "helper interrupted")); }
             if !crate::readiness::readable(output.as_raw_fd(), 20)? { continue; }
             let count = match output.read(&mut bytes) {
@@ -94,6 +98,7 @@ pub(crate) fn read_line(mut command: Command, tty: i32) -> io::Result<Vec<u8>> {
         drop(output);
         loop {
             if let Some(_status) = child.child.try_wait()? { child.reaped = true; break; }
+            forward_interrupt(&child, &mut interrupt_forwarded)?;
             if cancelled() { return Err(io::Error::new(io::ErrorKind::Interrupted, "helper interrupted")); }
             std::thread::sleep(Duration::from_millis(10));
         }
@@ -107,6 +112,18 @@ pub(crate) fn read_line(mut command: Command, tty: i32) -> io::Result<Vec<u8>> {
     }
 }
 
+fn forward_interrupt(child: &ForegroundChild, forwarded: &mut bool) -> io::Result<()> {
+    if !*forwarded && crate::terminal::interrupt_pending() {
+        // SAFETY: the unreaped child reserves its isolated process group.
+        if unsafe { kill(-(child.child.id() as i32), SIGINT) } < 0 {
+            let error = io::Error::last_os_error();
+            if error.raw_os_error() != Some(ESRCH) { return Err(error); }
+        }
+        *forwarded = true;
+    }
+    Ok(())
+}
+
 fn cancelled() -> bool {
-    crate::terminal::TERMINATION_SIGNAL.load(Ordering::SeqCst) != 0 || crate::terminal::interrupt_pending()
+    crate::terminal::TERMINATION_SIGNAL.load(Ordering::SeqCst) != 0
 }

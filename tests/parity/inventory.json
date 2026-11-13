@@ -5127,11 +5127,14 @@
         "integrations-lessopen-stdin-secure-allow",
         "integrations-lessopen-stdin-to-file",
         "integrations-lessopen-file-to-stdin",
-        "integrations-lessopen-file-to-enabled-stdin"
+        "integrations-lessopen-file-to-enabled-stdin",
+        "integrations-lessopen-int",
+        "integrations-lessopen-int-quit",
+        "integrations-lessopen-keyboard-int"
       ],
       "implementation": "partial",
-      "evidence": "compatible in the named tested scenarios",
-      "cause": "Named file-return scenarios cover quoted filename bytes, percent substitution, first-line/EOF and empty fallback, exit status, secure and CLI policies, exact initial diagnostics and acknowledgment, foreground tty input and TERM cleanup. A leading dash extends execution and validation to stdin. The file-return form retains stdin regardless of the returned filename, and helper reads consume stdin. Named file/stdin transitions retain applicability, data and file-count prompts. Live pipes, LESSCLOSE, custom shell/metachar settings, repeated interactive diagnostics and interrupted/stopped helper interactions remain open."
+      "evidence": "partially compatible",
+      "cause": "Named file-return scenarios cover quoted filename bytes, percent substitution, first-line/EOF and empty fallback, exit status, secure and CLI policies, exact initial diagnostics and acknowledgment, foreground tty input and TERM cleanup. A leading dash extends execution and validation to stdin. The file-return form retains stdin regardless of the returned filename, and helper reads consume stdin. Named file/stdin transitions retain applicability, data and file-count prompts. Live pipes, LESSCLOSE, custom shell/metachar settings, repeated interactive diagnostics and interrupted/stopped helper interactions remain open. Real SIGINT cleanup and -K are covered; keyboard SIGINT still misses pager interrupt behavior while the helper owns a separate foreground group."
     },
     {
       "id": "man-1869",

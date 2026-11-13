@@ -549,7 +549,10 @@ impl Pager {
             self.filename_prompt = false;
             false
         } else {
-            self.handle_key(Key::Ctrl('c'))
+            let filename_prompt = self.filename_prompt;
+            let quit = self.handle_key(Key::Ctrl('c'));
+            if !self.content_painted { self.filename_prompt = filename_prompt; }
+            quit
         }
     }
 
