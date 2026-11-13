@@ -20,7 +20,7 @@ All source lives in `src/`:
 src/
   lib.rs        Library root (modules below) and binary test suite
   main.rs       CLI entry point, arg parsing, panic hook
-  tags.rs       Byte-preserving numeric ctags startup selection
+  tags.rs       Byte-preserving numeric and literal-prefix ctags startup selection
   security.rs   Secure feature-name parsing, permission mask and diagnostics
   options.rs    Binary-only CLI option-name diagnostics
   pager.rs      Main event loop and rendering
@@ -85,7 +85,7 @@ Entry point and CLI argument parsing.
 - Installs a panic hook that restores the terminal (exits alt screen, disables raw mode) before printing the panic message, so a crash does not leave the terminal broken.
 - Calls into `pager::run()` with a constructed config.
 
-Startup `-t` resolves a numeric ctags address before opening the selected file. `-T` changes the tags file. `tags::Selection` retains filename bytes and a nonzero line number. Records follow the reference’s 1024-byte input-buffer boundary. Pattern addresses, duplicates, interactive tags and helper formats remain open.
+Startup `-t` resolves a numeric or literal-prefix ctags address; `-T` changes the tags file. `tags::Selection` retains filename bytes and an `Address` containing a nonzero line number or literal prefix with optional end matching. Pattern matching uses bounded `LineBuffer::raw_byte_prefix` reads without changing search state. Raw prefixes exclude LF but retain CR and arbitrary bytes; the display adapter separately normalizes CRLF. Records follow the reference’s 1024-byte input-buffer boundary. Duplicates, error prompts, color conversion, long-running cancellation, interactive tags and GLOBAL helpers remain open.
 
 Key types: none (thin glue layer).
 

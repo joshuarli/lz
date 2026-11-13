@@ -3582,11 +3582,28 @@
       "cases": [
         "integrations-tag-number",
         "integrations-tag-extended",
-        "integrations-tag-secure-startup"
+        "integrations-tag-secure-startup",
+        "integrations-tag-pattern-exact",
+        "integrations-tag-pattern-prefix",
+        "integrations-tag-pattern-question",
+        "integrations-tag-pattern-unescape",
+        "integrations-tag-pattern-end-without-start",
+        "integrations-tag-pattern-escaped-dollar",
+        "integrations-tag-pattern-empty",
+        "integrations-tag-pattern-extended",
+        "integrations-tag-pattern-slash",
+        "integrations-tag-pattern-literal",
+        "integrations-tag-pattern-carriage",
+        "integrations-tag-pattern-empty-line",
+        "integrations-tag-pattern-end-reject-prefix",
+        "integrations-tag-pattern-raw-byte",
+        "integrations-tag-pattern-crlf",
+        "integrations-tag-pattern-secure",
+        "integrations-tag-pattern-nul-ending"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Numeric startup ctags selection passes, including secure startup; pattern addresses, duplicates, diagnostics and interactive selection remain open"
+      "cause": "Numeric and literal-prefix startup ctags addresses pass, including optional end matching, escapes, raw bytes, CRLF, extended records and secure startup. Duplicates, error prompts, color conversion, long-running cancellation, interactive tags and GLOBAL helpers remain open"
     },
     {
       "id": "man-1197",

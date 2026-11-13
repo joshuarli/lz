@@ -36,9 +36,9 @@ impl Source {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SourceState { Ready, Waiting, Eof, Failed }
 
-pub(crate) struct ByteFragment {
-    pub(crate) bytes: Vec<u8>,
-    pub(crate) complete: bool,
+pub struct ByteFragment {
+    pub bytes: Vec<u8>,
+    pub complete: bool,
 }
 
 pub struct LineFragment {
@@ -117,16 +117,26 @@ impl LineBuffer {
         let mut bytes = vec![0; length];
         self.source.file().read_exact_at(&mut bytes, start)?;
         let complete = complete && start + length as u64 == end;
-        if complete && bytes.last() == Some(&b'\r') && self.starts.len() > index + 1 { bytes.pop(); }
         Ok(Some(ByteFragment { bytes, complete }))
     }
 
-    pub(crate) fn byte_prefix(&mut self, index: usize, bytes: usize) -> io::Result<Option<ByteFragment>> {
+    /// Read at most bytes from a line, excluding LF and retaining CR and arbitrary source bytes.
+    pub fn raw_byte_prefix(&mut self, index: usize, bytes: usize) -> io::Result<Option<ByteFragment>> {
         self.byte_fragment(index, Some(bytes))
     }
 
+    fn content_fragment(&mut self, index: usize, limit: Option<usize>) -> io::Result<Option<ByteFragment>> {
+        let Some(mut fragment) = self.byte_fragment(index, limit)? else { return Ok(None); };
+        if fragment.complete && fragment.bytes.last() == Some(&b'\r') && self.starts.len() > index + 1 { fragment.bytes.pop(); }
+        Ok(Some(fragment))
+    }
+
+    pub(crate) fn byte_prefix(&mut self, index: usize, bytes: usize) -> io::Result<Option<ByteFragment>> {
+        self.content_fragment(index, Some(bytes))
+    }
+
     fn fragment(&mut self, index: usize, limit: Option<usize>) -> io::Result<Option<LineFragment>> {
-        let Some(ByteFragment { mut bytes, complete }) = self.byte_fragment(index, limit)? else { return Ok(None); };
+        let Some(ByteFragment { mut bytes, complete }) = self.content_fragment(index, limit)? else { return Ok(None); };
         if !complete && let Err(error) = std::str::from_utf8(&bytes)
             && error.error_len().is_none() { bytes.truncate(error.valid_up_to()); }
         Ok(Some(LineFragment { text: String::from_utf8_lossy(&bytes).into_owned(), complete }))
@@ -202,6 +212,23 @@ mod tests {
     }
 
     // --- LineBuffer from file ---
+
+    #[test]
+    fn raw_prefixes_preserve_line_bytes_while_display_normalizes_crlf() {
+        let (file, _tmp) = make_temp_file("first\r\nlast\r");
+        let mut buffer = LineBuffer::from_file(file);
+        let prefix = buffer.raw_byte_prefix(0, 3).unwrap().unwrap();
+        assert_eq!(prefix.bytes, b"fir");
+        assert!(!prefix.complete);
+        let first = buffer.raw_byte_prefix(0, 20).unwrap().unwrap();
+        assert_eq!(first.bytes, b"first\r");
+        assert!(first.complete);
+        assert_eq!(buffer.get_line(0), Some("first"));
+        let last = buffer.raw_byte_prefix(1, 20).unwrap().unwrap();
+        assert_eq!(last.bytes, b"last\r");
+        assert!(last.complete);
+        assert_eq!(buffer.get_line(1), Some("last\r"));
+    }
 
     #[test]
     fn open_stream_preserves_bytes_and_distinguishes_waiting_from_eof() {

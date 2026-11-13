@@ -166,6 +166,7 @@ fn run() -> Result<ExitAction, String> {
         return Ok(ExitAction::Success);
     }
 
+    let mut tag_address = None;
     if let Some(tag) = &args.tag {
         if args.stdin_explicit || args.filenames.iter().any(|filename| filename != "-") {
             eprintln!("No filenames allowed with -t option");
@@ -174,7 +175,7 @@ fn run() -> Result<ExitAction, String> {
         let selected = tags::select(args.tags_file.as_deref().unwrap_or(std::ffi::OsStr::new("tags")), tag)
             .map_err(|error| error.to_string())?;
         args.filenames = vec![selected.filename];
-        args.startup_commands.insert(0, format!("{}g", selected.line).into_bytes());
+        tag_address = Some(selected.address);
     }
     let is_stdin = args.filenames.first().is_some_and(|name| name == "-");
 
@@ -212,6 +213,13 @@ fn run() -> Result<ExitAction, String> {
         }
     }
     if primary && let Err(error) = session.enter_interactive(args.terminal) { return finish_session(Err(error), session); }
+    if let Some(address) = tag_address {
+        match address.locate(&mut opened.buffer) {
+            Ok(line) => args.startup_commands.insert(0, format!("{line}g").into_bytes()),
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => return finish_session(Ok(ExitAction::Success), session),
+            Err(error) => return finish_session(Err(error), session),
+        }
+    }
     let history_file = if security.allows(security::Feature::History) { history::HistoryFile::from_environment() } else { None };
     let mut history = history_file.as_ref().map(history::HistoryFile::load).unwrap_or_default();
 
