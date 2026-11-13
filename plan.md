@@ -140,6 +140,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S07ap accepted:** normal-mode numeric-prefix display preserves zero and leading zeros in the tested count. The zero sequence and ordinary counted upstream movement pass on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Overflow display and other command modes remain open.
 
+**S08an accepted:** Backspace cancels the tested empty search prompt and preserves the previous search for repeat. The cancellation and neighboring upstream search/filter cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Search modifiers and other prompt editing remain open.
+
 **S12af accepted (partial translation):** the original `seq200` initial search, filter, three forward repeats and filter clearing pass with generic-terminal checkpoints; an additional backward repeat also passes. Both cases and neighboring filter, reload and interruption cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Filtered search geometry beyond the named plain-line cases, later upstream commands and custom termcap remain open.
 
 **S12ae accepted (partial translation):** the original `colorbars` chop toggle and first counted right arrow pass on macOS arm64 and Linux arm64 Docker, alongside neighboring toggle and horizontal cases; all-target Clippy passed on macOS. The normal command prompt displays the tested positive numeric prefix. Leading-zero and overflow prefix display, remaining upstream actions and custom termcap remain open.

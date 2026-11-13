@@ -1776,6 +1776,7 @@ impl Pager {
                     self.search_input.cursor = self.search_input.content.len();
                 }
             },
+            Key::Backspace if self.search_input.content.is_empty() => self.mode = Mode::Normal,
             Key::Backspace => self.search_input.backspace(),
             Key::Delete => self.search_input.delete(),
             Key::Left => self.search_input.move_left(),
