@@ -7,7 +7,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const GENERATOR_VERSION: u32 = 14;
+const GENERATOR_VERSION: u32 = 15;
 
 struct Random(u64);
 impl Random {
@@ -63,7 +63,7 @@ fn generate(seed: u64) -> Case {
     let mut visit = FileVisit::First { second_top: None };
     let mut events = vec![checkpoint(top)];
     for _ in 0..8 {
-        let action = if random.choose(10) < 3 { 14 } else { random.choose(14) };
+        let action = if random.choose(10) < 3 { 15 } else { random.choose(15) };
         let count = 1 + random.choose(4);
         let (bytes, target) = match action {
             0 if top + count <= last => {
@@ -136,6 +136,13 @@ fn generate(seed: u64) -> Case {
                 }
             },
             14 => {
+                events.push(Event::Send { bytes: b"1g".to_vec() });
+                events.push(checkpoint(1));
+                events.push(Event::Send { bytes: b"&^0000[123][0-9] \n".to_vec() });
+                events.push(checkpoint(10));
+                (b"&\n".to_vec(), 10)
+            }
+            15 => {
                 let target = if top == 1 { 2 } else { 1 };
                 if random.choose(2) == 0 { (format!("a{target}g").into_bytes(), target) }
                 else {
@@ -395,7 +402,7 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
     }
     fs::write(directory.join("summary.json"), serde_json::to_vec_pretty(&json!({
         "metadata":meta,"seed":seed,"generator_version":GENERATOR_VERSION,"requested":count,"executed":summaries.len(),"oracle_only":oracle_only,"results":summaries,
-        "grammar":"logical-line movement, ordinary in-file marks, forward and backward literal searches, resize-and-jump, next- and previous-file transitions, quiet line-number toggles and quit or SIGTERM with CLI/LESS display options over ASCII, UTF-8 or isolated malformed bytes; 30% invalid-command or missing-search actions; eight actions; 40x12 or 80x24",
+        "grammar":"logical-line movement, ordinary in-file marks, forward and backward literal searches, selective filtering and clearing, resize-and-jump, next- and previous-file transitions, quiet line-number toggles and quit or SIGTERM with CLI/LESS display options over ASCII, UTF-8 or isolated malformed bytes; 30% invalid-command or missing-search actions; eight actions; 40x12 or 80x24",
         "limits":{"case_seconds":10,"trace_bytes":64*1024*1024,"pty_rss_bytes":u64::from(super::resources::RssLimit::default()),"pty_spill_bytes":u64::from(super::spill::Limit::default()),"actions":8,"workers":4,"reduction_attempts_per_dimension":8},
         "open_limits":["stdio/helper/producer RSS enforcement","stdio/helper/producer spill accounting","broader CLI/config/byte-text/file-transition/signal grammar","event boundary weighting","search variants and adversarial/stream/helper grammar"]
     }))?)?;
@@ -416,6 +423,7 @@ pub(super) fn generator_selftest() -> Result<()> {
     let mut generated_backward_searches = 0;
     let mut generated_returns = 0;
     let mut generated_missing_searches = 0;
+    let mut generated_filters = 0;
     let mut first_repeated_transition = None;
     for seed in 0..1000 {
         let generated = generate(seed);
@@ -423,6 +431,7 @@ pub(super) fn generator_selftest() -> Result<()> {
         generated_backward_searches += generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes.first() == Some(&b'?'))).count();
         generated_returns += generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes == b":p")).count();
         generated_missing_searches += generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes.starts_with(b"/missing-"))).count();
+        generated_filters += generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes == b"&^0000[123][0-9] \n")).count();
         if generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes == b":n" || bytes == b":p")).count() >= 3 {
             first_repeated_transition.get_or_insert(seed);
         }
@@ -440,8 +449,9 @@ pub(super) fn generator_selftest() -> Result<()> {
     if generated_backward_searches == 0 { return Err("generated sessions never search backward".into()); }
     if generated_returns == 0 { return Err("generated sessions never return to the previous file".into()); }
     if generated_missing_searches == 0 { return Err("generated sessions never search for missing patterns".into()); }
+    if generated_filters == 0 { return Err("generated sessions never filter lines".into()); }
     let seed = first_repeated_transition.ok_or("generated sessions never revisit a file")?;
-    println!("generated sessions are deterministic and cover line-number toggles, backward and missing searches and repeated file transitions; first repeat seed {seed}");
+    println!("generated sessions are deterministic and cover line-number toggles, searches, filters and repeated file transitions; first repeat seed {seed}");
     Ok(())
 }
 
