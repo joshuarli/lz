@@ -406,10 +406,19 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-horizontal-default",
+        "navigation-horizontal-count",
+        "navigation-horizontal-chopped",
+        "navigation-horizontal-odd-width",
+        "navigation-horizontal-arrows",
+        "navigation-horizontal-left-boundary",
+        "navigation-horizontal-short-boundary",
+        "navigation-horizontal-numbered"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Default, counted, chopped, odd-width, application-arrow, boundary and numbered movement pass; configurable shift, resizing, cross-file behavior and wrapped-row positions remain open"
     },
     {
       "id": "man-0097",
@@ -425,10 +434,19 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-horizontal-default",
+        "navigation-horizontal-count",
+        "navigation-horizontal-chopped",
+        "navigation-horizontal-odd-width",
+        "navigation-horizontal-arrows",
+        "navigation-horizontal-left-boundary",
+        "navigation-horizontal-short-boundary",
+        "navigation-horizontal-numbered"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Default, counted, chopped, odd-width, application-arrow, boundary and numbered movement pass; configurable shift, resizing, cross-file behavior and wrapped-row positions remain open"
     },
     {
       "id": "man-0102",

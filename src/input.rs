@@ -192,6 +192,8 @@ impl KeyReader {
             None => Ok(Key::Escape),
             Some(b'[') => self.parse_csi(),
             Some(b'O') => self.parse_ss3(),
+            Some(b')') => Ok(Key::Right),
+            Some(b'(') => Ok(Key::Left),
             Some(_) => Ok(Key::Escape),
         }
     }

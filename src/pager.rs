@@ -421,6 +421,7 @@ pub enum InitialDisplay { Startup, StartupFileSwitch(StartupFileSwitch), FileSwi
 #[derive(Clone, Copy)]
 pub struct ScrollDefaults {
     half_page: std::num::NonZeroUsize,
+    horizontal: Option<std::num::NonZeroUsize>,
     window: WindowSize,
 }
 
@@ -438,7 +439,7 @@ impl WindowSize {
 
 impl ScrollDefaults {
     pub fn new(terminal_height: u16) -> Self {
-        Self { half_page: std::num::NonZeroUsize::new(usize::from(terminal_height).div_ceil(2).max(1)).unwrap(), window: WindowSize::ScreenMinus(1) }
+        Self { half_page: std::num::NonZeroUsize::new(usize::from(terminal_height).div_ceil(2).max(1)).unwrap(), horizontal: None, window: WindowSize::ScreenMinus(1) }
     }
 
     /// Positive settings select rows; nonpositive settings subtract from the current terminal height.
@@ -1000,15 +1001,12 @@ impl Pager {
                 else { self.buffer.read_all(); self.scroll_to_bottom(); }
                 self.remember_jump_from(previous);
             }
-            Key::Right => {
-                if !self.wrap {
-                    self.left_col = self.left_col.saturating_add(8);
-                }
-            }
-            Key::Left => {
-                if !self.wrap {
-                    self.left_col = self.left_col.saturating_sub(8);
-                }
+            Key::Right | Key::Left => {
+                self.position_initialized();
+                if let Some(amount) = count.and_then(std::num::NonZeroUsize::new) { self.scroll_defaults.horizontal = Some(amount); }
+                let amount = self.scroll_defaults.horizontal.map_or_else(|| (usize::from(self.term_width) / 2).max(1), std::num::NonZeroUsize::get);
+                if key == Key::Right { self.left_col = self.left_col.saturating_add(amount); }
+                else { self.left_col = self.left_col.saturating_sub(amount); }
             }
             Key::Char('/') => {
                 self.search_dir = SearchDir::Forward;
@@ -1362,14 +1360,14 @@ impl Pager {
         let moved_leading = lines.min(self.leading_rows);
         self.leading_rows -= moved_leading;
         let lines = lines - moved_leading;
-        if self.wrap {
+        if self.wraps() {
             self.scroll_down_wrapped(lines);
         } else {
             self.top_line = self.top_line.saturating_add(lines);
             self.clamp_top_line();
         }
         if moved_leading == 0 && self.content_painted && self.top_line == previous && self.buffer.is_finished()
-            && (!self.wrap || self.wrapped_line_rows(self.top_line) <= self.content_height()) {
+            && (!self.wraps() || self.wrapped_line_rows(self.top_line) <= self.content_height()) {
             self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
         }
     }
@@ -1377,7 +1375,7 @@ impl Pager {
     fn scroll_up(&mut self, lines: usize) {
         let previous = self.top_line;
         self.squished = false;
-        if self.wrap { self.scroll_up_wrapped(lines); }
+        if self.wraps() { self.scroll_up_wrapped(lines); }
         else { self.top_line = self.top_line.saturating_sub(lines); }
         if self.content_painted && self.top_line == previous && previous == 0 {
             self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
@@ -1539,17 +1537,17 @@ impl Pager {
         if self.mode != Mode::Help { self.last_visible_line = None; }
         if self.mode == Mode::Help {
             self.render_help(&mut buf, w, ch);
-        } else if self.wrap {
+        } else if self.wraps() {
             self.render_wrapped(&mut buf, w, ch, first_row)?;
         } else {
             self.render_nowrap(&mut buf, w, ch, first_row)?;
         }
 
         if let Some(error) = self.buffer.take_error() { return Err(error); }
-        if self.eof_policy != EofPolicy::Manual {
+        if self.eof_policy != EofPolicy::Manual || self.buffer.is_finished() {
             self.eof_displayed = self.visible_end_of_file()?;
             if let Some(error) = self.buffer.take_error() { return Err(error); }
-        }
+        } else { self.eof_displayed = false; }
         let visual_boundary = boundary_bell && self.bell_policy.is_visual(terminal::BellKind::Boundary);
         let visual_general = general_bell && self.bell_policy.is_visual(terminal::BellKind::General);
         if visual_boundary || visual_general {
@@ -1611,10 +1609,12 @@ impl Pager {
         } else { buf.extend_from_slice(gutter.as_bytes()); }
     }
 
+    fn wraps(&self) -> bool { self.wrap && self.left_col == 0 }
+
     fn display_prefix(&mut self, line: usize, bytes: usize) -> io::Result<Option<DisplayLine>> {
         if self.controls != ControlDisplay::Raw {
             let width = self.term_width as usize;
-            let wrap_width = self.wrap.then(|| std::num::NonZeroUsize::new(width.saturating_sub(self.number_gutter(line, width).len()).max(1)).unwrap());
+            let wrap_width = self.wraps().then(|| std::num::NonZeroUsize::new(width.saturating_sub(self.number_gutter(line, width).len()).max(1)).unwrap());
             Ok(self.buffer.byte_prefix(line, bytes)?.map(|fragment| DisplayLine::Mapped(DisplayPrefix::new(fragment.bytes, self.charset, fragment.complete, wrap_width, self.controls, &self.tab_stops))))
         } else {
             Ok(self.buffer.line_prefix(line, bytes)?.map(|fragment| DisplayLine::Raw { fragment, tabs:self.tab_stops.clone() }))
@@ -1637,7 +1637,7 @@ impl Pager {
             let limit = width.saturating_mul(height.saturating_sub(rows)).saturating_add(1).saturating_mul(16).max(4096);
             let Some(fragment) = self.display_prefix(actual, limit)? else { return Ok(self.buffer.is_finished()); };
             if !fragment.complete() { return Ok(false); }
-            let occupied = if self.wrap { self.wrapped_prefix_rows(&fragment, actual, width, height.saturating_sub(rows)) } else { 1 };
+            let occupied = if self.wraps() { self.wrapped_prefix_rows(&fragment, actual, width, height.saturating_sub(rows)) } else { 1 };
             rows = rows.saturating_add(occupied);
             if rows > height { return Ok(false); }
             index += 1;
@@ -1658,7 +1658,7 @@ impl Pager {
             let Some(fragment) = self.display_prefix(actual, width.saturating_mul(height - rows).saturating_add(1).saturating_mul(16).max(4096))? else {
                 return Ok(if self.buffer.is_finished() { height - rows } else { 0 });
             };
-            rows += if self.wrap { self.wrapped_prefix_rows(&fragment, actual, width, height - rows) } else { 1 };
+            rows += if self.wraps() { self.wrapped_prefix_rows(&fragment, actual, width, height - rows) } else { 1 };
             index += 1;
         }
         Ok(0)
@@ -1678,6 +1678,7 @@ impl Pager {
     fn render_nowrap(&mut self, buf: &mut Frame, w: usize, ch: usize, first_row: usize) -> io::Result<()> {
         for row in first_row..ch {
             buf.position(row);
+            terminal::clear_line(buf);
             let display_idx = self.top_line.saturating_add(row - first_row);
             let actual = self.display_line_idx(display_idx);
             let fragment = match actual { Some(index) => self.display_prefix(index, self.left_col.saturating_add(w).saturating_add(1).saturating_mul(16).max(4096))?, None => None };
@@ -1888,7 +1889,7 @@ impl Pager {
             let prefix = self.filename.as_ref().map_or_else(String::new, |name| format!("{name} "));
             Some(format!("{prefix}(file {} of {})", self.files.index + 1, self.files.count))
         } else { self.filename.clone() };
-        if self.buffer.is_finished() && self.top_line.saturating_add(self.content_height()) >= self.display_line_count() {
+        if self.buffer.is_finished() && self.eof_displayed {
             let mut status = if self.filename_prompt { name.map_or_else(|| "(END)".to_owned(), |name| format!("{name} (END)")) } else { "(END)".to_owned() };
             if let Some(next) = &self.files.next_name { status.push_str(&format!(" - Next: {next}")); }
             return status;
