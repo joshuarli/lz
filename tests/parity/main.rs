@@ -236,7 +236,7 @@ fn observe_case(reference: &Path, candidate: &Path, case: &Case) -> Value {
     };
     let actual = match execute(candidate, case) {
         Ok(actual) => actual,
-        Err(error) if error.is::<TraceViolation>() || error.is::<resources::Violation>() || error.is::<interactive::KernelViolation>() || error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. } | ptytest::PtyTestError::SnapshotMismatch { .. })) => {
+        Err(error) if error.is::<TraceViolation>() || error.is::<interactive::CheckpointTimeout>() || error.is::<resources::Violation>() || error.is::<interactive::KernelViolation>() || error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. } | ptytest::PtyTestError::SnapshotMismatch { .. })) => {
             return json!({"case":case,"outcome":"mismatch","expected":expected.observation,"resources":{"oracle":expected.resources},
                 "actual_error":error.to_string(),"actual_error_detail":format!("{error:#?}"),
                 "difference":"candidate failed a readiness, lifecycle, trace or resource assertion after the oracle completed"});
@@ -291,7 +291,7 @@ fn run(args: &[String]) -> Result<()> {
             i += 2;
         }
     }
-    if args.iter().any(|s| s == "--selftest") { interactive::selftest()?; fuzz::selftest()?; return resources::selftest(); }
+    if args.iter().any(|s| s == "--selftest") { interactive::selftest()?; interactive::checkpoint_selftest()?; fuzz::selftest()?; return resources::selftest(); }
     let reference = oracle();
     let baseline = args.iter().any(|s| s == "--baseline");
     let candidate_path = if baseline { root().join(".work/tools/baseline-target/debug/lz") } else { PathBuf::from(env!("CARGO_BIN_EXE_lz")) };

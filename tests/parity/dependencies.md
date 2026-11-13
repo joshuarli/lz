@@ -63,3 +63,12 @@ screen snapshots. A scoped child owner closes compression input, checks exit,
 and reaps on errors; the selftest verifies decompression round-trip. The same
 four-worker collector retains case order and drains each in-flight batch before
 stopping on failure.
+
+The pinned PTY API drains continuously available bytes until its deadline.
+Readiness therefore uses public `wait_for_output` calls in bounded 20 ms slices
+before checking the semantic predicate. Once ready, raw output must remain quiet
+for 20 ms within a 250 ms settling bound and the original checkpoint deadline.
+A continuously redrawing program still fails; its typed readiness/quiescence
+timeout retains input, output and screen artifacts. Candidate-only failure after
+oracle completion is a mismatch. Oracle failure and trace-limit exhaustion remain
+harness errors. No dependency pin, trace budget or comparison is relaxed.

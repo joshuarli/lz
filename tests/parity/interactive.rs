@@ -18,6 +18,45 @@ impl std::fmt::Display for KernelViolation {
 }
 impl std::error::Error for KernelViolation {}
 
+#[derive(Debug)]
+pub(super) enum CheckpointTimeout { Readiness { artifact_dir: std::path::PathBuf }, Quiescence { artifact_dir: std::path::PathBuf } }
+impl std::fmt::Display for CheckpointTimeout {
+    fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (operation, directory) = match self {
+            Self::Readiness { artifact_dir } => ("checkpoint readiness", artifact_dir),
+            Self::Quiescence { artifact_dir } => ("checkpoint output quiescence", artifact_dir),
+        };
+        write!(output, "{operation} timed out; retained evidence: {}", directory.display())
+    }
+}
+impl std::error::Error for CheckpointTimeout {}
+
+fn retain_checkpoint(terminal: &PtyTest, id: &str) -> Result<std::path::PathBuf> {
+    let directory = super::stdio::world()?.keep();
+    fs::write(directory.join("input.bin"), terminal.raw_input())?;
+    fs::write(directory.join("output.bin"), terminal.raw_output())?;
+    fs::write(directory.join("screen.json"), serde_json::to_vec_pretty(&screen(&terminal.screen()))?)?;
+    fs::write(directory.join("context.json"), serde_json::to_vec_pretty(&json!({"case":id,"input_bytes":terminal.raw_input().len(),"output_bytes":terminal.raw_output().len()}))?)?;
+    Ok(directory)
+}
+
+fn wait_checkpoint(terminal: &mut PtyTest, id: &str, deadline: Instant, ready: &str, row: Option<usize>) -> Result<()> {
+    const QUIET: Duration = Duration::from_millis(20);
+    loop {
+        let screen = terminal.screen();
+        if row.map_or_else(|| screen.contains(ready), |row| screen.row(row).is_some_and(|text| text.contains(ready))) { break; }
+        if Instant::now() >= deadline {
+            return Err(Box::new(CheckpointTimeout::Readiness { artifact_dir:retain_checkpoint(terminal, id)? }));
+        }
+        terminal.wait_for_output(Deadline::from_instant(deadline.min(Instant::now() + QUIET)))?;
+    }
+    let settle = Deadline::from_instant(deadline.min(Instant::now() + Duration::from_millis(250)));
+    if !terminal.wait_for_quiescence(settle, QUIET)? {
+        return Err(Box::new(CheckpointTimeout::Quiescence { artifact_dir:retain_checkpoint(terminal, id)? }));
+    }
+    Ok(())
+}
+
 fn screen(snapshot: &ScreenSnapshot) -> Value {
     let rows: Vec<_> = (0..snapshot.row_count()).map(|row| {
         let cells: Vec<_> = (0..snapshot.size().columns() as usize).map(|column| {
@@ -113,9 +152,8 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
         match event {
             Event::Send { bytes } => terminal.send_bytes(checkpoint_deadline(), bytes)?,
             Event::Checkpoint { ready, row } => {
-                let deadline = checkpoint_deadline();
-                terminal.wait_for_screen(deadline, ready, |screen| row.map_or_else(|| screen.contains(ready), |row| screen.row(row).is_some_and(|text| text.contains(ready))))?;
-                if !terminal.wait_for_quiescence(deadline, Duration::from_millis(20))? { return Err("harness-error: no output quiescence".into()); }
+                let deadline = total.min(Instant::now() + Duration::from_secs(3));
+                wait_checkpoint(&mut terminal, &case.id, deadline, ready, *row)?;
                 checkpoints.push(json!({"screen": screen(&terminal.screen()), "files": files(&world)?, "bells": terminal.raw_output().iter().filter(|b| **b == 7).count()}));
             }
             Event::Resize { columns, rows } => terminal.resize(Size::new(*columns, *rows)?)?,
@@ -174,6 +212,7 @@ pub fn fixture(fault: &str) -> Result<()> {
     }
     stdout.flush()?;
     if fault == "timeout" { loop { std::thread::park(); } }
+    if fault == "flood" { loop { stdout.write_all(b"\rprobe")?; stdout.flush()?; } }
     let mut byte = [0];
     while std::io::stdin().read(&mut byte)? != 0 { if byte[0] == b'\n' { break; } }
     if fault == "exit" { std::process::exit(7); }
@@ -338,5 +377,35 @@ pub fn selftest() -> Result<()> {
     let path = super::stdio::world()?.keep().join("selftest.json");
     fs::write(&path, serde_json::to_vec_pretty(&report)?)?;
     println!("oracle independent-world startup/quit/lifecycle self-comparison passes; {}", path.display());
+    Ok(())
+}
+
+pub(super) fn checkpoint_selftest() -> Result<()> {
+    let world = super::stdio::world()?;
+    let quoted = std::env::current_exe()?.to_str().ok_or("non-UTF-8 checkpoint fixture path")?.replace('\'', "'\\''");
+    for (name, fault) in [("quiet", "none"), ("noisy", "flood")] {
+        let path = world.path().join(name);
+        fs::write(&path, format!("#!/bin/sh\nexec '{quoted}' --fixture {fault}\n"))?;
+        fs::set_permissions(path, fs::Permissions::from_mode(0o700))?;
+    }
+    let case = Case {
+        id:"checkpoint-control".into(),family:"harness".into(),admitted:false,source:"pty".into(),
+        pty_rss_limit:Default::default(),pty_spill_limit:Default::default(),
+        fixture:Vec::new().into(),args:Vec::new(),fixture_name:b"input".to_vec(),files:BTreeMap::new(),env:BTreeMap::new(),
+        size:[40,8],locale:"C".into(),events:vec![Event::Checkpoint {ready:"probe".into(),row:Some(0)},Event::Send {bytes:b"q\n".to_vec()}],
+        trace_check:super::TraceCheck::Captured,
+    };
+    let quiet = world.path().join("quiet");
+    let noisy = world.path().join("noisy");
+    let result = super::observe_case(&quiet, &noisy, &case);
+    if result["outcome"] != "mismatch" || !result["actual_error_detail"].as_str().is_some_and(|detail| detail.starts_with("Quiescence {")) {
+        return Err(format!("continuous redraw did not retain its candidate-only quiescence failure: {} {}", result["outcome"], result["actual_error_detail"]).into());
+    }
+    let result = super::observe_case(&noisy, &noisy, &case);
+    if result["outcome"] != "harness-error" || result["side"] != "oracle"
+        || !result["error_detail"].as_str().is_some_and(|detail| detail.starts_with("Quiescence {")) {
+        return Err("oracle nonquiescence was counted as parity".into());
+    }
+    println!("bounded output slices preserve 20ms raw quiescence; continuous redraw is a candidate mismatch or oracle harness error, with trace cap unchanged");
     Ok(())
 }
