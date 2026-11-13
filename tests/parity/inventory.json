@@ -1086,10 +1086,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-keep-position", "search-keep-position-toggle", "search-keep-position-no-match"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "The tested plain-line modifier, toggle, missing pattern and subsequent repeat match. Incremental, control-notation, filtered and wrapped interactions remain open."
     },
     {
       "id": "man-0235",

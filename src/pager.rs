@@ -770,6 +770,7 @@ pub struct Pager {
     search_highlight: bool,
     search_nonmatch: bool,
     search_input_nonmatch: bool,
+    search_input_keep_position: bool,
     incremental_search: bool,
     incremental_preview: Option<Search>,
     search_case: CaseSensitivity,
@@ -851,6 +852,7 @@ impl Pager {
             search_highlight: config.search_session.highlight,
             search_nonmatch: config.search_session.nonmatch,
             search_input_nonmatch: false,
+            search_input_keep_position: false,
             incremental_search: config.incremental_search,
             incremental_preview: None,
             search_case: config.search_case,
@@ -1575,6 +1577,7 @@ impl Pager {
                 self.mode = Mode::SearchInput;
                 self.search_input.clear();
                 self.search_input_nonmatch = false;
+                self.search_input_keep_position = false;
                 self.incremental_preview = None;
                 self.history.reset_cursor();
             }
@@ -1583,6 +1586,7 @@ impl Pager {
                 self.mode = Mode::SearchInput;
                 self.search_input.clear();
                 self.search_input_nonmatch = false;
+                self.search_input_keep_position = false;
                 self.incremental_preview = None;
                 self.history.reset_cursor();
             }
@@ -1788,6 +1792,7 @@ impl Pager {
             Key::Escape => self.mode = Mode::Normal,
             Key::Ctrl('c') => { self.history.push(&self.search_input.content); self.mode = Mode::Normal; self.bell_requested = true; }
             Key::Ctrl('n') | Key::Char('!') if self.search_input.content.is_empty() => { self.search_input_nonmatch = !self.search_input_nonmatch; }
+            Key::Ctrl('k') if self.search_input.content.is_empty() => { self.search_input_keep_position = !self.search_input_keep_position; }
             Key::Enter => {
                 let pattern = self.search_input.content.clone();
                 self.mode = Mode::Normal;
@@ -1807,7 +1812,7 @@ impl Pager {
                         self.search_nonmatch = self.search_input_nonmatch;
                         self.search_inherited = false;
                         self.current_match_line = None;
-                        self.search_same_dir();
+                        self.do_search(self.search_dir == SearchDir::Forward, self.search_input_keep_position);
                     }
                     Err(e) => {
                         self.status_msg = Some(e);
@@ -1869,19 +1874,19 @@ impl Pager {
 
     fn search_same_dir(&mut self) {
         let forward = self.search_dir == SearchDir::Forward;
-        self.do_search(forward);
+        self.do_search(forward, false);
     }
 
     fn search_opposite_dir(&mut self) {
         let forward = self.search_dir == SearchDir::Backward;
-        self.do_search(forward);
+        self.do_search(forward, false);
     }
 
     fn target_line(&self) -> usize {
         self.top_line.saturating_add(self.jump_target.row(self.term_height).saturating_sub(self.leading_rows))
     }
 
-    fn do_search(&mut self, forward: bool) {
+    fn do_search(&mut self, forward: bool, keep_position: bool) {
         self.search_highlight = true;
         let search = match self.search.take() {
             Some(s) => s,
@@ -1920,11 +1925,13 @@ impl Pager {
         else { search.find_next_line(&mut self.buffer, from, forward) };
         match found {
             Some(line) => {
-                self.position_initialized();
                 self.current_match_line = Some(line);
-                let row = self.jump_target.row(self.term_height);
-                self.top_line = line.saturating_sub(row);
-                self.leading_rows = row.saturating_sub(line);
+                if !keep_position {
+                    self.position_initialized();
+                    let row = self.jump_target.row(self.term_height);
+                    self.top_line = line.saturating_sub(row);
+                    self.leading_rows = row.saturating_sub(line);
+                }
             }
             None => {
                 self.command_error("Pattern not found".to_string(), ErrorAction::Dismiss);
@@ -2590,8 +2597,9 @@ impl Pager {
             } else {
                 '?'
             };
-            let modifier = if self.search_input_nonmatch { "Non-match " } else { "" };
-            return format!("{modifier}{}{}", ch, self.search_input.content);
+            let nonmatch = if self.search_input_nonmatch { "Non-match " } else { "" };
+            let keep = if self.search_input_keep_position { "Keep-pos " } else { "" };
+            return format!("{nonmatch}{keep}{}{}", ch, self.search_input.content);
         }
 
         if self.mode == Mode::FilterInput {
