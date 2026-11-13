@@ -6,7 +6,9 @@ The owner authorized unattended local execution. Keep one writer, commit verifie
 
 The last full macOS arm64 milestone accounted for 664 cases before the latest navigation slices. The candidate passed 661, with two strict mismatches, one filesystem limitation, and no harness errors. The baseline passed 3, with 660 mismatches and the same filesystem limitation. The milestone passed 149 Rust tests and Clippy. [Coverage](tests/parity/coverage.md) and the [inventory](tests/parity/inventory.json) distinguish named-case results from complete features. Refresh all four candidate and baseline shards before generating a new report.
 
-Recent accepted slices cover help entry and navigation, CLI help, horizontal movement, fixed and fractional shifts, and repaint. The latest focused checks pass. Public `HorizontalShift` values validate configuration before entering `ScrollDefaults`. Full help search, version text, shift overflow and interactive toggles, cross-file movement, and wrapped-row positioning remain open.
+Recent accepted slices cover help entry and navigation, CLI help, horizontal movement, fixed and fractional shifts, and repaint. The latest focused checks pass. Public `HorizontalShift` values validate configuration before entering `ScrollDefaults`. Full help search, version text, shift interactive toggles, cross-file movement, and wrapped-row positioning remain open.
+
+**S04am:** five redirected cases cover shift overflow, the maximum integer, negative input, and invalid trailing option bytes. The reference and candidate match.
 
 The following work remains local and actionable: complete the nonparked S04–S11 behaviors and interactions, upstream scenario translations, bounded fuzzing and holdouts, parity CI checks, final performance and size gates, cleanup, and independent review. The inventory retains behavior-specific causes and cases. The S06 shared renderer still needs bounded long-line startup, Unicode, OSC, and multirow handling. POSIX search, cancellation, headers, helper and pipe transitions, history concurrency, and lifecycle hardening remain incomplete.
 

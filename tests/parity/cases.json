@@ -575274,5 +575274,135 @@
   ],
   "files": {},
   "trace_check": "captured"
+},
+{
+  "id": "invocation-shift-overflow",
+  "family": "invocation",
+  "admitted": true,
+  "source": "file",
+  "fixture": [],
+  "args": [
+    "--shift=2147483648",
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-shift-negative",
+  "family": "invocation",
+  "admitted": true,
+  "source": "file",
+  "fixture": [],
+  "args": [
+    "--shift=-1",
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-shift-invalid-tail",
+  "family": "invocation",
+  "admitted": true,
+  "source": "file",
+  "fixture": [],
+  "args": [
+    "--shift=123abc",
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-shift-fraction-tail",
+  "family": "invocation",
+  "admitted": true,
+  "source": "file",
+  "fixture": [],
+  "args": [
+    "--shift=.a",
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-shift-int-max",
+  "family": "invocation",
+  "admitted": true,
+  "source": "file",
+  "fixture": [],
+  "args": [
+    "--shift=2147483647",
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
 }
 ]

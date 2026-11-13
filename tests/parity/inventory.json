@@ -4204,11 +4204,16 @@
         "invocation-shift-less-override",
         "invocation-shift-rounding",
         "invocation-shift-precision",
-        "invocation-shift-invalid-terminal"
+        "invocation-shift-invalid-terminal",
+        "invocation-shift-overflow",
+        "invocation-shift-negative",
+        "invocation-shift-invalid-tail",
+        "invocation-shift-fraction-tail",
+        "invocation-shift-int-max"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Fixed, fractional and zero shifts, resize, counts, LESS precedence and named invalid inputs pass; overflow, other invalid forms, interactive toggles and cross-file interactions remain open"
+      "cause": "Fixed, fractional and zero shifts, resize, counts, LESS precedence and named invalid inputs pass; interactive toggles, other invalid forms and cross-file interactions remain open"
     },
     {
       "id": "man-1305",
