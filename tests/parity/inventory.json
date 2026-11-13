@@ -107,10 +107,23 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-help-enter-return",
+        "navigation-help-uppercase",
+        "navigation-help-after-scroll",
+        "navigation-help-narrow",
+        "navigation-help-primary",
+        "navigation-help-numbered",
+        "navigation-help-short",
+        "navigation-help-quit-uppercase",
+        "navigation-help-reenter",
+        "navigation-help-raw",
+        "navigation-help-short-primary",
+        "navigation-help-number-width"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named initial help and return cases pass at multiple widths, modes and line-number settings; help paging, search and other commands remain open"
     },
     {
       "id": "man-0057",

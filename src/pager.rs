@@ -900,9 +900,11 @@ impl Pager {
                 false
             }
             Mode::Help => {
-                match key {
-                    Key::Char('h') | Key::Char('q') | Key::Escape => self.mode = Mode::Normal,
-                    _ => {}
+                if let Key::Char('q' | 'Q') = key {
+                    self.mode = Mode::Normal;
+                    self.filename_prompt = true;
+                    self.squished = false;
+                    self.compact_initial = false;
                 }
                 false
             }
@@ -1030,7 +1032,7 @@ impl Pager {
                 self.buffer.read_all();
                 self.scroll_to_bottom();
             }
-            Key::Char('h') => {
+            Key::Char('h' | 'H') => {
                 self.mode = Mode::Help;
             }
             Key::Char(character) if is_unbound_ascii(character) => self.early_bells = self.early_bells.saturating_add(1),
@@ -1469,7 +1471,7 @@ impl Pager {
         else { for row in 0..first_row { buf.position(row); if self.bottom_aligned || self.leading_rows > 0 { self.write_eof_marker(&mut buf); } terminal::clear_line(&mut buf); } }
         if self.mode != Mode::Help { self.last_visible_line = None; }
         if self.mode == Mode::Help {
-            Self::render_help(&mut buf, w, ch);
+            self.render_help(&mut buf, w, ch);
         } else if self.wrap {
             self.render_wrapped(&mut buf, w, ch, first_row)?;
         } else {
@@ -1709,48 +1711,39 @@ impl Pager {
         buf.extend_from_slice(display.as_bytes());
     }
 
-    fn render_help(buf: &mut Frame, w: usize, ch: usize) {
-        const HELP: &[&str] = &[
-            "",
-            "  NAVIGATION",
-            "    j / Down / Enter   Scroll down one line",
-            "    k / Up             Scroll up one line",
-            "    d / Ctrl-D         Half page down",
-            "    u / Ctrl-U         Half page up",
-            "    Space / PgDn       Page down",
-            "    b / PgUp           Page up",
-            "    g / Home           Go to top",
-            "    G / End            Go to bottom",
-            "    Left / Right       Horizontal scroll",
-            "",
-            "  SEARCH",
-            "    /                  Search forward",
-            "    ?                  Search backward",
-            "    n                  Next match",
-            "    N                  Previous match",
-            "    &                  Filter lines by pattern",
-            "",
-            "  OTHER",
-            "    z / w              Forward / backward window",
-            "    F                  Follow mode (tail -f)",
-            "    h                  Toggle this help",
-            "    q / Q / :q / :Q / ZZ  Quit",
-        ];
-
-        for row in 0..ch {
-            buf.position(row);
-            if let Some(line) = HELP.get(row) {
-                let truncated = if line.len() > w { &line[..w] } else { line };
-                buf.extend_from_slice(truncated.as_bytes());
+    fn render_help(&self, buf: &mut Frame, w: usize, ch: usize) {
+        let width = w.max(1);
+        let mut row = 0;
+        for (line_index, line) in include_bytes!("less-help.txt").split(|byte| *byte == b'\n').enumerate() {
+            if row >= ch { break; }
+            let gutter = self.number_gutter(line_index, width);
+            let content_width = width.saturating_sub(gutter.len()).max(1);
+            let layout = DisplayPrefix::new(line.to_vec(), Charset::Ascii, true, std::num::NonZeroUsize::new(content_width), ControlDisplay::Standard, &self.tab_stops);
+            let rows = layout.columns.div_ceil(content_width).max(1);
+            for offset in 0..rows {
+                if row >= ch { break; }
+                if offset == 0 { buf.position(row); }
+                Self::write_number_gutter(buf, &gutter);
+                buf.extend_from_slice(&layout.display(offset * content_width, width.saturating_sub(gutter.len())));
+                buf.wrapped_row(row);
+                row += 1;
+                if offset + 1 == rows || !layout.fills_row(offset * content_width, content_width) {
+                    terminal::clear_line(buf);
+                    if offset + 1 < rows && row < ch { buf.position(row); }
+                }
             }
+        }
+        while row < ch {
+            buf.position(row);
             terminal::clear_line(buf);
+            row += 1;
         }
     }
 
     fn render_status(&self, buf: &mut Frame, w: usize) {
         buf.position(self.term_height.saturating_sub(1) as usize);
         let status = self.build_status();
-        let emphasized = self.mode == Mode::Follow || (self.filename_prompt && (self.filename.is_some() || self.files.count > 1)) || status.starts_with("(END)") || self.status_msg.is_some();
+        let emphasized = matches!(self.mode, Mode::Follow | Mode::Help) || (self.filename_prompt && (self.filename.is_some() || self.files.count > 1)) || status.starts_with("(END)") || self.status_msg.is_some();
         if emphasized { buf.extend_from_slice(b"\x1b[7m"); }
         let mut suffix_width = 0;
         let mut start = status.len();
@@ -1790,7 +1783,7 @@ impl Pager {
         }
 
         if self.mode == Mode::Help {
-            return "h: return".to_string();
+            return "HELP -- Press RETURN for more, or q when done".to_string();
         }
 
         if self.mode == Mode::Follow {

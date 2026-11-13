@@ -117,7 +117,9 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: lz-${{ matrix.target }}
-          path: lz-*
+          path: |
+            lz-*
+            LESS-LICENSE
 
   release:
     name: Create pre-release
@@ -209,7 +211,8 @@ jobs:
             expected=${spec%%:*}
             artifact=${spec#*:}
             actual=$(find "dist/$artifact" -type f -print | sed 's|.*/||' | LC_ALL=C sort)
-            if [[ "$actual" != "$expected" ]]; then
+            expected_files=$(printf '%s\n' LESS-LICENSE "$expected" | LC_ALL=C sort)
+            if [[ "$actual" != "$expected_files" ]]; then
               echo "Unexpected files in artifact $artifact:" >&2
               printf '%s\n' "$actual" >&2
               exit 1
@@ -220,7 +223,7 @@ jobs:
             dist/lz-aarch64-apple-darwin/lz-aarch64-apple-darwin \
             dist/lz-aarch64-unknown-linux-musl/lz-aarch64-unknown-linux-musl-static \
             dist/lz-x86_64-unknown-linux-musl/lz-x86_64-unknown-linux-musl-static; do
-            zip -9 --junk-paths "dist/zips/$(basename "$file").zip" "$file"
+            zip -9 --junk-paths "dist/zips/$(basename "$file").zip" "$file" "$(dirname "$file")/LESS-LICENSE"
           done
           cd dist/zips
           sha256sum *.zip | LC_ALL=C sort -k2 > SHA256SUMS
