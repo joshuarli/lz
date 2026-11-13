@@ -3,6 +3,16 @@ use unicode_width::UnicodeWidthChar;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ControlDisplay { #[default] Standard, Raw, Color }
 
+/// Select how backspaces are represented in displayed text.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum BackspaceDisplay {
+    /// Apply overstrike and underline interpretation.
+    #[default]
+    Overstrike,
+    /// Display backspaces as control-character notation.
+    Control,
+}
+
 pub(crate) enum ColorSpan { Sgr(usize), Hyperlink(usize), Discard(usize), Incomplete }
 
 pub(crate) fn color_span(bytes: &[u8], charset: crate::charset::Charset) -> ColorSpan {

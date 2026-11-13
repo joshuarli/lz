@@ -4757,10 +4757,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["rendering-backspace-control-reset"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Startup lowercase reset restores tested overstrike display; interactions with -u/-U and interactive toggles remain open."
     },
     {
       "id": "man-1464",
@@ -4776,10 +4776,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["rendering-backspace-control-bold", "rendering-backspace-control-underline", "rendering-backspace-control-ordinary", "rendering-backspace-control-color", "rendering-backspace-control-one-screen", "rendering-overstrike-wide-control-c-utf8", "rendering-overstrike-combining-control-c-utf8"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Startup control notation passes the named regular, color and one-screen views. Search, interactive toggles and mixed overrides remain open."
     },
     {
       "id": "man-1467",

@@ -4,7 +4,7 @@ use std::num::NonZeroUsize;
 use unicode_width::UnicodeWidthChar;
 
 use crate::charset::{Charset, Unit, Units};
-use crate::ansi::{ControlDisplay, ColorSpan, color_span};
+use crate::ansi::{BackspaceDisplay, ControlDisplay, ColorSpan, color_span};
 use crate::tabs::TabStops;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -43,7 +43,7 @@ pub(crate) struct DisplayPrefix {
 }
 
 impl DisplayPrefix {
-    pub(crate) fn new(mut bytes: Vec<u8>, charset: Charset, complete: bool, wrap_width: Option<NonZeroUsize>, controls: ControlDisplay, tabs: &TabStops) -> Self {
+    pub(crate) fn new(mut bytes: Vec<u8>, charset: Charset, complete: bool, wrap_width: Option<NonZeroUsize>, controls: ControlDisplay, backspaces: BackspaceDisplay, tabs: &TabStops) -> Self {
         if !complete && charset == Charset::Utf8 && let Err(error) = std::str::from_utf8(&bytes)
             && error.error_len().is_none() { bytes.truncate(error.valid_up_to()); }
         let mut glyphs: Vec<Glyph> = Vec::new();
@@ -68,7 +68,7 @@ impl DisplayPrefix {
                 }
                 continue;
             }
-            if matches!(unit, Unit::Character('\u{8}')) && !glyphs.last().is_some_and(|glyph| matches!(glyph.representation, Representation::Notation | Representation::Sgr | Representation::Hyperlink)) {
+            if backspaces == BackspaceDisplay::Overstrike && matches!(unit, Unit::Character('\u{8}')) && !glyphs.last().is_some_and(|glyph| matches!(glyph.representation, Representation::Notation | Representation::Sgr | Representation::Hyperlink)) {
                 overstrike = pop_glyph(&mut glyphs);
                 while overstrike.as_ref().is_some_and(|glyph| glyph.columns.is_empty()) && !glyphs.is_empty() { overstrike = pop_glyph(&mut glyphs); }
                 if let Some(previous) = &overstrike { columns = previous.columns.start; }
@@ -238,7 +238,7 @@ mod tests {
 
     #[test]
     fn bytes_map_to_columns_before_clipping() {
-        let layout = DisplayPrefix::new(b"A\tB\x01\xff".to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard, &TabStops::default());
+        let layout = DisplayPrefix::new(b"A\tB\x01\xff".to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard, BackspaceDisplay::Overstrike, &TabStops::default());
         assert_eq!(layout.columns, 15);
         assert_eq!(layout.display(0, 8, NotationStyle::Inverse), "A       ".as_bytes());
         assert_eq!(layout.display(8, 7, NotationStyle::Inverse), "B\x1b[7m^A<FF>\x1b[m".as_bytes());
@@ -247,35 +247,35 @@ mod tests {
 
     #[test]
     fn atomic_notation_and_wide_characters_leave_short_rows() {
-        let layout = DisplayPrefix::new(b"abcdefg\x01B".to_vec(), Charset::Ascii, true, NonZeroUsize::new(8), ControlDisplay::Standard, &TabStops::default());
+        let layout = DisplayPrefix::new(b"abcdefg\x01B".to_vec(), Charset::Ascii, true, NonZeroUsize::new(8), ControlDisplay::Standard, BackspaceDisplay::Overstrike, &TabStops::default());
         assert_eq!(layout.display(0, 8, NotationStyle::Inverse), "abcdefg".as_bytes());
         assert!(!layout.fills_row(0, 8));
         assert_eq!(layout.display(8, 8, NotationStyle::Inverse), "\x1b[7m^A\x1b[mB".as_bytes());
-        let layout = DisplayPrefix::new("abcdefg界B".as_bytes().to_vec(), Charset::Utf8, true, NonZeroUsize::new(8), ControlDisplay::Standard, &TabStops::default());
+        let layout = DisplayPrefix::new("abcdefg界B".as_bytes().to_vec(), Charset::Utf8, true, NonZeroUsize::new(8), ControlDisplay::Standard, BackspaceDisplay::Overstrike, &TabStops::default());
         assert_eq!(layout.display(0, 8, NotationStyle::Inverse), "abcdefg".as_bytes());
         assert_eq!(layout.display(8, 8, NotationStyle::Inverse), "界B".as_bytes());
     }
 
     #[test]
     fn backspace_replaces_a_base_and_its_combining_marks() {
-        let layout = DisplayPrefix::new("e\u{301}\u{8}e".as_bytes().to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard, &TabStops::default());
+        let layout = DisplayPrefix::new("e\u{301}\u{8}e".as_bytes().to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard, BackspaceDisplay::Overstrike, &TabStops::default());
         assert_eq!(layout.columns, 1);
         assert_eq!(layout.display(0, 8, NotationStyle::Inverse), "\x1b[1me\x1b[m".as_bytes());
-        let layout = DisplayPrefix::new(b"X\x08_\x08X".to_vec(), Charset::Ascii, true, None, ControlDisplay::Standard, &TabStops::default());
+        let layout = DisplayPrefix::new(b"X\x08_\x08X".to_vec(), Charset::Ascii, true, None, ControlDisplay::Standard, BackspaceDisplay::Overstrike, &TabStops::default());
         assert_eq!(layout.display(0, 8, NotationStyle::Inverse), "\x1b[1;4mX\x1b[m".as_bytes());
     }
 
     #[test]
     fn split_scalar_waits_for_more_source_bytes() {
-        let layout = DisplayPrefix::new(vec![b'x', 0xe2, 0x82], Charset::Utf8, false, None, ControlDisplay::Standard, &TabStops::default());
+        let layout = DisplayPrefix::new(vec![b'x', 0xe2, 0x82], Charset::Utf8, false, None, ControlDisplay::Standard, BackspaceDisplay::Overstrike, &TabStops::default());
         assert_eq!(layout.display(0, 8, NotationStyle::Inverse), "x".as_bytes());
-        let layout = DisplayPrefix::new(vec![b'x', 0xe2, 0x82], Charset::Utf8, true, None, ControlDisplay::Standard, &TabStops::default());
+        let layout = DisplayPrefix::new(vec![b'x', 0xe2, 0x82], Charset::Utf8, true, None, ControlDisplay::Standard, BackspaceDisplay::Overstrike, &TabStops::default());
         assert_eq!(layout.display(0, 16, NotationStyle::Inverse), "x\x1b[7m<E2><82>\x1b[m".as_bytes());
     }
 
     #[test]
     fn combining_mark_at_right_edge_stays_with_visible_base() {
-        let layout = DisplayPrefix::new("xe\u{301}\u{327}z".as_bytes().to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard, &TabStops::default());
+        let layout = DisplayPrefix::new("xe\u{301}\u{327}z".as_bytes().to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard, BackspaceDisplay::Overstrike, &TabStops::default());
         assert_eq!(layout.display(0, 2, NotationStyle::Inverse), "xe\u{301}\u{327}".as_bytes());
         assert_eq!(layout.display(1, 1, NotationStyle::Inverse), "e\u{301}\u{327}".as_bytes());
         assert_eq!(layout.display(0, 0, NotationStyle::Inverse), b"");

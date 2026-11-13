@@ -152,6 +152,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12bc accepted:** generator version 16 passed fixed seeds 0–999 on macOS arm64 and Linux arm64 Docker. Commit-seeded and held-out campaigns remain open; native Linux remains unproven.
 
+**S04au accepted (partial):** startup `--PROC-BACKSPACE` displays backspaces as controls in the tested regular, color, one-screen, wide and combining views; lowercase restores overstrike processing. Ten focused cases passed on macOS arm64 and Linux arm64 Docker. The 76 previously admitted rendering cases, five layout tests and all-target Clippy passed on macOS. `BackspaceDisplay` changes the public pager and one-screen configuration. Interactive toggles, `-u`/`-U`, search conversion and mixed overrides remain open; exact Linux en_US.UTF-8 remains untested.
+
 **S12bb accepted:** generator version 16 adds same- and opposite-direction search repeats, with movement preconditions that avoid accidental boundary bells. Generator controls and seeds 0–49 pass on macOS arm64 and Linux arm64 Docker; the macOS run included 14 repeat sequences. All-target Clippy passed on macOS. Other search forms and holdouts remain open.
 
 **S12ba accepted:** generator version 15 adds selective filtering and clearing with source-position checks. Generator controls and seeds 0–49 pass on macOS arm64 and Linux arm64 Docker; the macOS run included 13 filter actions. All-target Clippy passed on macOS. Broader filter and boundary interactions remain open.

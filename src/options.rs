@@ -2,7 +2,7 @@ use std::ffi::OsString;
 use std::io::{self, Write};
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
 use lz::search::{CaseSensitivity, SearchStart};
-use lz::ansi::ControlDisplay;
+use lz::ansi::{BackspaceDisplay, ControlDisplay};
 
 use lz::option_catalog::{all, lookup, OptionLookupError, OptionSpec, ValueKind};
 
@@ -57,6 +57,7 @@ pub(super) struct Args {
     pub bell_policy: lz::terminal::BellPolicy,
     pub control_display: ControlDisplay,
     pub use_color: bool,
+    pub backspaces: BackspaceDisplay,
     pub incremental_search: bool,
     pub chop: bool,
     pub line_numbers: lz::pager::LineNumberMode,
@@ -77,7 +78,7 @@ pub(super) struct Args {
 
 impl Default for Args {
     fn default() -> Self {
-        Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, eof_policy: Default::default(), bell_policy: Default::default(), control_display: ControlDisplay::default(), use_color: false, incremental_search: false, chop: false, line_numbers: Default::default(), show_eof_markers: true, window: None, horizontal_shift: None, search_case: CaseSensitivity::Sensitive,
+        Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, eof_policy: Default::default(), bell_policy: Default::default(), control_display: ControlDisplay::default(), use_color: false, backspaces: BackspaceDisplay::Overstrike, incremental_search: false, chop: false, line_numbers: Default::default(), show_eof_markers: true, window: None, horizontal_shift: None, search_case: CaseSensitivity::Sensitive,
             line_number_width: Default::default(), search_start: SearchStart::default(), jump_target: Default::default(), history_duplicates: Default::default(), tab_stops: Default::default(), filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
@@ -128,6 +129,7 @@ impl Scanner {
             "search-skip-screen" => self.args.search_start = if reset { SearchStart::Default } else if upper { SearchStart::AfterTarget } else { SearchStart::AfterScreen },
             "no-histdups" => self.args.history_duplicates = if reset { lz::history::DuplicatePolicy::Allow } else { lz::history::DuplicatePolicy::MoveToEnd },
             "raw-control-chars" => self.args.control_display = if reset { ControlDisplay::default() } else if upper { ControlDisplay::Color } else { ControlDisplay::Raw },
+            "proc-backspace" => self.args.backspaces = if !reset && upper { BackspaceDisplay::Control } else { BackspaceDisplay::Overstrike },
             "use-color" => self.args.use_color = !reset,
             "incsearch" => self.args.incremental_search = !reset,
             "chop-long-lines" => self.args.chop = !reset,
