@@ -119,7 +119,7 @@ fn files(root: &Path) -> Result<Value> {
                 let length = metadata.len();
                 let mode = metadata.permissions().mode() & 0o7777;
                 if length > 64 * 1024 {
-                    let output = std::process::Command::new("/usr/bin/shasum").args(["-a", "256"]).stdin(fs::File::open(path)?).output()?;
+                    let output = super::sha256_command().stdin(fs::File::open(path)?).output()?;
                     if !output.status.success() { return Err("file-effect hash failed".into()); }
                     let digest = std::str::from_utf8(&output.stdout)?.split_whitespace().next().ok_or("missing file-effect hash")?;
                     if digest.len() != 64 || !digest.bytes().all(|byte| byte.is_ascii_hexdigit()) { return Err("invalid file-effect hash".into()); }

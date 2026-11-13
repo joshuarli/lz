@@ -153,8 +153,15 @@ fn execute(binary: &Path, case: &Case) -> Result<Execution> {
     }
 }
 
+fn sha256_command() -> Command {
+    #[cfg(target_os = "macos")]
+    { let mut command = Command::new("/usr/bin/shasum"); command.args(["-a", "256"]); command }
+    #[cfg(not(target_os = "macos"))]
+    { Command::new("sha256sum") }
+}
+
 fn digest(paths: &[PathBuf]) -> Result<String> {
-    let output = Command::new("/usr/bin/shasum").args(["-a", "256"]).args(paths).output()?;
+    let output = sha256_command().args(paths).output()?;
     if !output.status.success() { return Err("cannot hash evidence inputs".into()); }
     Ok(String::from_utf8(output.stdout)?)
 }
