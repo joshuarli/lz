@@ -80,6 +80,8 @@ struct AlternateInput { original: OsString, replacement: OsString }
 
 struct OpenedInput { buffer: buffer::LineBuffer, name: Option<String>, binary_name: Option<OsString>, alternate: Option<AlternateInput> }
 
+enum PagingOutcome { Quit, Interrupted, Visit(pager::FileVisit), Examine { index: usize, input: OpenedInput }, Error(io::Error) }
+
 enum CloseContext { Switching { squished: bool, interrupt_policy: pager::InterruptPolicy, bell_policy: terminal::BellPolicy }, Exiting }
 
 fn close_alternate(alternate: Option<AlternateInput>, session: &mut terminal::Session, context: CloseContext) -> io::Result<()> {
@@ -136,6 +138,11 @@ fn finish_opened(result: io::Result<ExitAction>, opened: OpenedInput, mut sessio
     finish_session(result, session)
 }
 
+fn file_identity(filename: &std::ffi::OsStr) -> std::path::PathBuf {
+    if filename == "-" { filename.into() }
+    else { std::fs::canonicalize(filename).unwrap_or_else(|_| filename.into()) }
+}
+
 fn open_input(filename: &std::ffi::OsStr, charset: Charset, controls: ControlDisplay, force: bool, preprocessor: Option<&preprocessor::Template>, session: &mut terminal::Session) -> io::Result<OpenedInput> {
     let replacement = preprocessor.map(|template| template.run(filename, session)).transpose()?.flatten();
     let alternate = replacement.map(|replacement| AlternateInput { original: filename.to_owned(), replacement });
@@ -174,9 +181,7 @@ fn run() -> Result<ExitAction, String> {
     }
     let mut seen = std::collections::BTreeSet::new();
     args.filenames.retain(|filename| {
-        let resolved = if filename == "-" { std::path::PathBuf::from(filename) }
-            else { std::fs::canonicalize(filename).unwrap_or_else(|_| filename.into()) };
-        seen.insert(resolved)
+        seen.insert(file_identity(filename))
     });
 
     if !io::stdout().is_terminal() {
@@ -336,12 +341,64 @@ fn run() -> Result<ExitAction, String> {
         let mut startup_commands = std::mem::take(&mut args.startup_commands);
         if let Some(command) = &args.every_file_command { startup_commands.push(command.clone()); }
         let alternate = opened.alternate.take();
-        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, use_color: args.use_color, incremental_search: args.incremental_search, chop: args.chop, line_numbers: args.line_numbers, line_number_width: args.line_number_width, tab_stops: args.tab_stops.clone(), show_eof_markers: args.show_eof_markers, search_case: args.search_case, regex_locale, search_start: args.search_start, search_session, jump_target: args.jump_target }, opened.name, history);
-        let result = if showing_help { pager.run_help(session.keys_mut(), help_files) }
-            else if std::mem::take(&mut startup_one_screen) { pager.run_one_screen_startup(session.keys_mut()) }
-            else { pager.run(session.keys_mut()) };
+        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, use_color: args.use_color, incremental_search: args.incremental_search, allow_examine: security.allows(security::Feature::Examine), chop: args.chop, line_numbers: args.line_numbers, line_number_width: args.line_number_width, tab_stops: args.tab_stops.clone(), show_eof_markers: args.show_eof_markers, search_case: args.search_case, regex_locale, search_start: args.search_start, search_session, jump_target: args.jump_target }, opened.name, history);
+        let mut first_run = true;
+        let result = loop {
+            let result = if first_run && showing_help { pager.run_help(session.keys_mut(), help_files) }
+                else if first_run && std::mem::take(&mut startup_one_screen) { pager.run_one_screen_startup(session.keys_mut()) }
+                else { pager.run(session.keys_mut()) };
+            first_run = false;
+            let name = match result {
+                Ok(pager::PagerExit::Examine(name)) => name,
+                Ok(pager::PagerExit::Quit) => break PagingOutcome::Quit,
+                Ok(pager::PagerExit::Interrupted) => break PagingOutcome::Interrupted,
+                Ok(pager::PagerExit::VisitFile(visit)) => break PagingOutcome::Visit(visit),
+                Err(error) => break PagingOutcome::Error(error),
+            };
+            let mut input = match open_input(&name, charset, pager.control_display(), args.force, preprocessor, &mut session) {
+                Ok(input) => input,
+                Err(error) => {
+                    let text = error.to_string();
+                    let text = text.rsplit_once(" (os error ").map_or(text.as_str(), |(text, _)| text);
+                    let mut formatted = Vec::new();
+                    if let Err(error) = charset.write_filename(name.as_bytes(), &mut formatted) { break PagingOutcome::Error(error); }
+                    pager.examine_error(format!("{}: {text}", String::from_utf8_lossy(&formatted)));
+                    continue;
+                }
+            };
+            if let Some(binary_name) = input.binary_name.take() {
+                match confirm_binary(&binary_name, charset, session.keys_mut(), args.bell_policy) {
+                    Ok(BinaryAnswer::Open) => {},
+                    Ok(BinaryAnswer::Refuse) => {
+                        if let Err(error) = close_opened(Ok(()), input, &mut session) { break PagingOutcome::Error(error); }
+                        continue;
+                    }
+                    Ok(BinaryAnswer::Quit) => {
+                        if let Err(error) = close_opened(Ok(()), input, &mut session) { break PagingOutcome::Error(error); }
+                        break PagingOutcome::Quit;
+                    }
+                    Err(error) => break PagingOutcome::Error(close_opened::<()>(Err(error), input, &mut session).unwrap_err()),
+                }
+            }
+            let identity = file_identity(&name);
+            let index = if let Some(index) = args.filenames.iter().position(|filename| file_identity(filename) == identity) { index }
+                else {
+                    let index = file_index + 1;
+                    args.filenames.insert(index, name.clone());
+                    positions.insert(index, None);
+                    index
+                };
+            break PagingOutcome::Examine { index, input };
+        };
         let result = if pager.follow_screen_overflowed() && args.terminal.screen == terminal::ScreenMode::Alternate {
-            with_cleanup(result, session.defer_deinitialization(args.terminal))
+            match session.defer_deinitialization(args.terminal) {
+                Ok(()) => result,
+                Err(cleanup) => match result {
+                    PagingOutcome::Error(error) => PagingOutcome::Error(with_cleanup::<()>(Err(error), Err(cleanup)).unwrap_err()),
+                    PagingOutcome::Examine { input, .. } => PagingOutcome::Error(close_opened::<()>(Err(cleanup), input, &mut session).unwrap_err()),
+                    _ => PagingOutcome::Error(cleanup),
+                },
+            }
         } else { result };
         positions[file_index] = pager.saved_position();
         let squished = pager.is_squished();
@@ -355,16 +412,20 @@ fn run() -> Result<ExitAction, String> {
         search_session = pager.take_search_session();
         args.startup_commands = pager.take_startup_commands();
         history = pager.into_history();
-        let visit = match result {
-            Err(error) => break with_cleanup(Err(error), close_alternate(alternate, &mut session, CloseContext::Exiting)),
-            Ok(pager::PagerExit::Quit) => break close_alternate(alternate, &mut session, CloseContext::Exiting).map(|()| ExitAction::Success),
-            Ok(pager::PagerExit::Interrupted) => break close_alternate(alternate, &mut session, CloseContext::Exiting).map(|()| ExitAction::Interrupted),
-            Ok(pager::PagerExit::VisitFile(visit)) => visit,
+        let (next_index, next_display, prepared) = match result {
+            PagingOutcome::Error(error) => break with_cleanup(Err(error), close_alternate(alternate, &mut session, CloseContext::Exiting)),
+            PagingOutcome::Quit => break close_alternate(alternate, &mut session, CloseContext::Exiting).map(|()| ExitAction::Success),
+            PagingOutcome::Interrupted => break close_alternate(alternate, &mut session, CloseContext::Exiting).map(|()| ExitAction::Interrupted),
+            PagingOutcome::Visit(visit) => (visit.index(), visit.initial_display(positions[visit.index()]), None),
+            PagingOutcome::Examine { index, input } => (index, pager::InitialDisplay::FileSwitch(positions[index]), Some(input)),
         };
         showing_help = false;
-        file_index = visit.index();
-        opened = match open_input(&args.filenames[file_index], charset, args.control_display, args.force, preprocessor, &mut session) {
-            Ok(input) => input, Err(error) => break with_cleanup(Err(error), close_alternate(alternate, &mut session, CloseContext::Exiting)),
+        file_index = next_index;
+        opened = match prepared {
+            Some(input) => input,
+            None => match open_input(&args.filenames[file_index], charset, args.control_display, args.force, preprocessor, &mut session) {
+                Ok(input) => input, Err(error) => break with_cleanup(Err(error), close_alternate(alternate, &mut session, CloseContext::Exiting)),
+            },
         };
         if let Some(name) = opened.binary_name.take() {
             let answer = match confirm_binary(&name, charset, session.keys_mut(), args.bell_policy) {
@@ -382,7 +443,7 @@ fn run() -> Result<ExitAction, String> {
             let result = if error.kind() == io::ErrorKind::Interrupted && args.interrupt_policy == pager::InterruptPolicy::Quit { Ok(ExitAction::Interrupted) } else { Err(error) };
             break close_opened(result, opened, &mut session);
         }
-        initial_display = visit.initial_display(positions[file_index]);
+        initial_display = next_display;
     };
     if let Some(file) = history_file { file.save(&mut history); }
     finish_session(result, session)

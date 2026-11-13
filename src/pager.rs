@@ -108,6 +108,7 @@ enum Mode {
     Normal,
     SearchInput,
     FilterInput,
+    ExamineInput,
     Follow,
     Help,
     FileCommand(std::num::NonZeroUsize),
@@ -528,8 +529,8 @@ pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Res
     Ok(OneScreen::Overflows)
 }
 
-#[derive(Clone, Copy)]
-pub enum PagerExit { Quit, Interrupted, VisitFile(FileVisit) }
+#[derive(Clone)]
+pub enum PagerExit { Quit, Interrupted, VisitFile(FileVisit), Examine(std::ffi::OsString) }
 
 /// Select default continuation or exit status 2 after an interrupt.
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
@@ -750,6 +751,8 @@ pub struct Config {
     pub use_color: bool,
     /// Enable incremental search while editing a search pattern.
     pub incremental_search: bool,
+    /// Allow interactive examine-file commands.
+    pub allow_examine: bool,
     pub chop: bool,
     pub line_numbers: LineNumberMode,
     pub line_number_width: LineNumberWidth,
@@ -804,6 +807,9 @@ pub struct Pager {
     standalone_help: Option<HelpFiles>,
     search_input: LineEditor,
     filter_input: LineEditor,
+    examine_input: LineEditor,
+    allow_examine: bool,
+    restore_after_failed_examine: bool,
     filter: Option<Search>,
     filtered_lines: Vec<usize>,
     history: SearchHistory,
@@ -887,6 +893,9 @@ impl Pager {
             standalone_help: None,
             search_input: LineEditor::new(),
             filter_input: LineEditor::new(),
+            examine_input: LineEditor::new(),
+            allow_examine: config.allow_examine,
+            restore_after_failed_examine: false,
             filter: None,
             filtered_lines: Vec::new(),
             history,
@@ -1160,7 +1169,16 @@ impl Pager {
             if self.follow_one_screen { output.write_all(b"\r\x1b[K")?; }
             output.flush()?;
         }
-        Ok(self.exit)
+        Ok(std::mem::replace(&mut self.exit, PagerExit::Quit))
+    }
+
+    /// Report an examine-file failure while keeping the current pager active.
+    pub fn examine_error(&mut self, message: String) {
+        let repaint = self.squished;
+        if repaint { self.position_initialized(); }
+        self.restore_after_failed_examine = true;
+        self.command_error(message, ErrorAction::Dismiss);
+        if let Mode::CommandError(error) = &mut self.mode { error.repaint = repaint; }
     }
 
     fn interrupt(&mut self, keys: &mut KeyReader) -> bool {
@@ -1168,6 +1186,7 @@ impl Pager {
             match self.mode {
                 Mode::SearchInput => self.handle_search_input_key(Key::Ctrl('c')),
                 Mode::FilterInput => self.handle_filter_input_key(Key::Ctrl('c')),
+                Mode::ExamineInput => { self.mode = Mode::Normal; },
                 _ => {},
             }
             self.bell_requested = true;
@@ -1314,6 +1333,42 @@ impl Pager {
         }
     }
 
+    fn begin_examine(&mut self) {
+        if self.allow_examine {
+            self.examine_input.clear();
+            self.mode = Mode::ExamineInput;
+        } else {
+            let repaint = self.squished;
+            if repaint { self.position_initialized(); }
+            self.command_error("Command not available".into(), ErrorAction::Dismiss);
+            if let Mode::CommandError(error) = &mut self.mode { error.repaint = repaint; }
+        }
+    }
+
+    fn handle_examine_key(&mut self, key: Key) -> bool {
+        match key {
+            Key::Enter => {
+                self.mode = Mode::Normal;
+                if !self.examine_input.content.is_empty() {
+                    self.exit = PagerExit::Examine(std::ffi::OsString::from(&self.examine_input.content));
+                    return true;
+                }
+            }
+            Key::Escape => self.mode = Mode::Normal,
+            Key::Ctrl('c') => { if self.squished { self.position_initialized(); } self.mode = Mode::Normal; },
+            Key::Backspace if self.examine_input.content.is_empty() => self.mode = Mode::Normal,
+            Key::Backspace => self.examine_input.backspace(),
+            Key::Delete => self.examine_input.delete(),
+            Key::Left => self.examine_input.move_left(),
+            Key::Right => self.examine_input.move_right(),
+            Key::Home => self.examine_input.move_home(),
+            Key::End => self.examine_input.move_end(),
+            Key::Char(character) => self.examine_input.insert(character),
+            _ => {}
+        }
+        false
+    }
+
     fn handle_key(&mut self, key: Key) -> bool {
         match self.mode.clone() {
             Mode::Normal => self.handle_normal_key(key),
@@ -1425,12 +1480,14 @@ impl Pager {
                         self.command_error(format!("No {ordinal}{direction} file"), ErrorAction::Dismiss);
                     }
                     Key::Char('f') => self.show_file_info(),
+                    Key::Char('e') => self.begin_examine(),
                     Key::Char('q' | 'Q') => return true,
                     Key::Escape => {},
                     _ => self.bell_requested = true,
                 }
                 false
             }
+            Mode::ExamineInput => self.handle_examine_key(key),
             Mode::SearchInput => {
                 self.handle_search_input_key(key);
                 false
@@ -1451,13 +1508,16 @@ impl Pager {
                 if let ErrorAction::Retry(command) = error.action && self.handle_normal_key(command) { return true; }
                 if self.command_context == CommandContext::StartupAborted { self.command_context = CommandContext::StartupUnpositioned; }
                 else if !error.remainder.is_empty() { self.startup_commands.push_front(error.remainder); }
+                if self.restore_after_failed_examine { self.filename_prompt = true; }
                 if !key.is_prompt_acknowledgement() { return self.handle_key(key); }
+                self.restore_after_failed_examine = false;
                 false
             }
         }
     }
 
     fn handle_normal_key(&mut self, key: Key) -> bool {
+        if !matches!(key, Key::Char('/' | '?')) { self.restore_after_failed_examine = false; }
         self.filename_prompt = false;
         self.status_msg = None;
         if let Key::Char(character @ '0'..='9') = key {
@@ -1485,6 +1545,7 @@ impl Pager {
         }
         match key {
             Key::Char('q' | 'Q') | Key::Escape => return true,
+            Key::Char('E') => self.begin_examine(),
             Key::Ctrl('c') => self.bell_requested = true,
             Key::Char('Z') => self.mode = Mode::QuitPrefix,
             Key::Char('-') => self.mode = Mode::OptionPrefix(OptionCommand::Toggle),
@@ -1832,6 +1893,10 @@ impl Pager {
                         self.search_inherited = false;
                         self.current_match_line = None;
                         self.do_search(self.search_dir == SearchDir::Forward, self.search_input_keep_position);
+                        if self.restore_after_failed_examine && self.mode == Mode::Normal {
+                            self.filename_prompt = true;
+                            self.restore_after_failed_examine = false;
+                        }
                     }
                     Err(e) => {
                         self.status_msg = Some(e);
@@ -2695,6 +2760,7 @@ impl Pager {
         if matches!(self.mode, Mode::FileCommand(_)) { return " :".into(); }
         if self.mode == Mode::SetMark { return "set mark: ".into(); }
         if self.mode == Mode::JumpMark { return "goto mark: ".into(); }
+        if self.mode == Mode::ExamineInput { return format!("Examine: {}", self.examine_input.content); }
         if self.mode == Mode::SearchInput {
             let ch = if self.search_dir == SearchDir::Forward {
                 '/'
