@@ -206,6 +206,20 @@ impl LineBuffer {
 
     pub fn is_finished(&self) -> bool { self.state == SourceState::Eof }
 
+    pub(crate) fn eof_regular_size(&mut self) -> Option<u64> {
+        if !self.is_finished() { return None; }
+        match &self.source {
+            Source::File(file) => match file.metadata() {
+                Ok(metadata) if metadata.is_file() && metadata.len() == self.scanned => Some(self.scanned),
+                Ok(_) => None,
+                Err(error) => { self.error = Some(error); None }
+            },
+            Source::Pipe { .. } => None,
+        }
+    }
+
+
+
     /// Finish a waiting stream at its buffered boundary after an interrupt.
     pub fn finish_interrupted_stream(&mut self) -> io::Result<()> {
         if self.state != SourceState::Waiting { return Err(io::Error::new(io::ErrorKind::InvalidInput, "stream is not waiting")); }

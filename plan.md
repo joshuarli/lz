@@ -140,6 +140,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12ad accepted (partial translation):** the `colorbars` page movement after four line scrolls passes on macOS arm64 and Linux arm64 Docker. Later file information, options, horizontal movement and custom termcap remain open.
 
+**S07am accepted:** `man-0386` `=` reports the tested line and byte information for fully read, unfiltered single regular files at EOF. Four cases, including the original colorbars notice, plus a neighboring prompt case passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Non-EOF, streams, filters, multiple files and other information commands remain open.
+
 **S07aj accepted:** seed 117 exposed a `terminal-lifecycle` resize position mismatch after returning to a file and moving to its first line. The reference preserves position zero in a newly grown table, treats that table as empty, and restores the file-entry position. The pager now retains the maximum position-table height across visits and follows the tested behavior. Seven minimal and boundary cases plus neighboring resize cases passed on macOS arm64 and Linux arm64 Docker; seed 117 and all-target Clippy passed on macOS. Wrapped, filtered and other resize interactions remain open.
 
 **S04au:** interactive `-R` toggles color display and carries it across file switches. Six cases pass on macOS and in a Linux arm64 container, covering the upstream `github329` fixture, short and long views, raw mode, prompt replay and interruption. `Pager::control_display` exposes the current mode. Other option commands, suppression, queries and startup interactions remain open; the upstream translation is partial.

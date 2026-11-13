@@ -1410,6 +1410,18 @@ impl Pager {
                     self.command_error("Cannot seek to that file position".into(), ErrorAction::Dismiss);
                 }
             }
+            Key::Char('=') => {
+                if self.eof_displayed && self.filter.is_none() && self.files.count == 1
+                    && let Some(size) = self.buffer.eof_regular_size()
+                    && let (Some(name), Some(last)) = (&self.filename, self.last_visible_line) {
+                    let first = self.top_line + 1;
+                    let message = format!("{name} lines {first}-{}/{total} byte {size}/{size} (END)  (press RETURN)", last + 1, total = self.buffer.len());
+                    let repaint = self.squished;
+                    if repaint { self.position_initialized(); }
+                    self.status_msg = Some(message);
+                    self.mode = Mode::OptionNotice { repaint };
+                }
+            }
             Key::Char('m') => self.mode = Mode::SetMark,
             Key::Char('\'') => self.mode = Mode::JumpMark,
 

@@ -1817,10 +1817,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["upstream-colorbars-info", "navigation-file-info-short-eof", "navigation-file-info-single-line", "navigation-file-info-colored-unterminated"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "The = command reports lines and bytes for the named fully read regular-file EOF cases. Non-EOF, streams, filters, multiple files and other aliases remain open."
     },
     {
       "id": "man-0393",
@@ -8395,9 +8395,9 @@
       "file": "lesstest/lt/colorbars.lt",
       "sha256": "31955351b939e145948079a5a040a5590f061b01b9361698209381a7d57ff132",
       "instrumented": "pass",
-      "cases": ["upstream-colorbars-scroll", "upstream-colorbars-page"],
+      "cases": ["upstream-colorbars-scroll", "upstream-colorbars-page", "upstream-colorbars-info"],
       "disposition": "partial translation",
-      "cause": "The original fixture and first four line-scroll steps and the subsequent page are covered with generic-terminal checkpoints. Remaining commands and custom termcap checkpoints are untranslated."
+      "cause": "The original fixture and first four line-scroll steps, subsequent page and EOF file-information notice are covered with generic-terminal checkpoints. Remaining commands and custom termcap checkpoints are untranslated."
     },
     {
       "id": "github216",
