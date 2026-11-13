@@ -2224,11 +2224,20 @@
       "cases": [
         "invocation-help-long",
         "invocation-help-short",
-        "invocation-help-invalid"
+        "invocation-help-invalid",
+        "invocation-help-terminal",
+        "invocation-help-terminal-short",
+        "invocation-help-terminal-scroll",
+        "invocation-help-terminal-primary",
+        "invocation-help-terminal-numbered",
+        "invocation-help-terminal-file",
+        "invocation-help-terminal-startup-end",
+        "invocation-help-terminal-one-screen",
+        "invocation-help-terminal-pipe"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Redirected long and short help options and invalid-option diagnostics match; terminal output and version precedence remain open"
+      "cause": "Redirected and terminal help cases pass, including startup end, navigation, screen options and piped input; file transitions, tags and remaining help interactions remain open"
     },
     {
       "id": "man-0635",

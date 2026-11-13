@@ -577825,5 +577825,364 @@
     116
   ],
   "files": {}
+},
+{
+  "id": "invocation-help-terminal",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-terminal-short",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "-?"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-terminal-scroll",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        106
+      ]
+    },
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 0
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-terminal-primary",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "-X",
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-terminal-numbered",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "-N",
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-terminal-file",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "--help",
+    "input"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        58,
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-terminal-startup-end",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "--help",
+    "+G"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "HELP -- END",
+      "row": 23
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-terminal-one-screen",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "-F",
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-terminal-pipe",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty-pipe",
+  "fixture": [
+    112,
+    97,
+    121,
+    108,
+    111,
+    97,
+    100,
+    10
+  ],
+  "args": [
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
 }
 ]

@@ -164,8 +164,10 @@ fn run() -> Result<ExitAction, String> {
     for diagnostic in &args.diagnostics {
         diagnostic.write(&mut io::stderr().lock()).map_err(|error| error.to_string())?;
     }
+    let help_requested = matches!(args.action, options::Action::Help);
     match args.action {
-        options::Action::Help => { io::stdout().lock().write_all(include_bytes!("less-help.txt")).map_err(|error| error.to_string())?; return Ok(ExitAction::Success); }
+        options::Action::Help if !io::stdout().is_terminal() => { io::stdout().lock().write_all(include_bytes!("less-help.txt")).map_err(|error| error.to_string())?; return Ok(ExitAction::Success); }
+        options::Action::Help => {}
         options::Action::Version => { println!("lz {}", VERSION); return Ok(ExitAction::Success); }
         options::Action::Stop => return Ok(ExitAction::Success),
         options::Action::Page => {}
@@ -222,7 +224,7 @@ fn run() -> Result<ExitAction, String> {
     }
     let is_stdin = args.filenames.first().is_some_and(|name| name == "-");
 
-    if is_stdin && atty_stdin() && !args.stdin_explicit {
+    if !help_requested && is_stdin && atty_stdin() && !args.stdin_explicit {
         eprintln!("lz: missing filename (use '-' for stdin)");
         process::exit(2);
     }
@@ -237,12 +239,16 @@ fn run() -> Result<ExitAction, String> {
     let charset = Charset::resolve(explicit_charset.as_deref(), locale.as_deref()).map_err(|error| error.to_string())?;
     let suspension = if security.allows(security::Feature::Stop) { terminal::SuspendPolicy::Allow } else { terminal::SuspendPolicy::Ignore };
     let mut session = terminal::Session::start(terminal::Screen::Primary, suspension).map_err(|error| error.to_string())?;
-    let preprocessing = if args.use_lessopen && security.allows(security::Feature::Lessopen) { preprocessor::Template::from_environment() } else { Ok(None) };
+    let preprocessing = if !help_requested && args.use_lessopen && security.allows(security::Feature::Lessopen) { preprocessor::Template::from_environment() } else { Ok(None) };
     let preprocessing_diagnostic = preprocessing.as_ref().err().filter(|diagnostic| diagnostic.applies_to(&args.filenames[0]));
     if let Some(diagnostic) = preprocessing_diagnostic { write!(io::stderr().lock(), "{diagnostic}\r\n").map_err(|error| error.to_string())?; }
     let preprocessor = preprocessing.as_ref().ok().and_then(Option::as_ref);
-    let mut opened = open_input(&args.filenames[0], charset, args.control_display, args.force, preprocessor, &mut session)
-        .map_err(|error| format!("{}: {error}", args.filenames[0].to_string_lossy()))?;
+    let mut opened = if help_requested {
+        OpenedInput { buffer:buffer::LineBuffer::from_file(File::open("/dev/null").map_err(|error| error.to_string())?), name:None, binary_name:None, alternate:None }
+    } else {
+        open_input(&args.filenames[0], charset, args.control_display, args.force, preprocessor, &mut session)
+            .map_err(|error| format!("{}: {error}", args.filenames[0].to_string_lossy()))?
+    };
     if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return finish_opened(Ok(ExitAction::Success), opened, session); }
     if let Some(name) = opened.binary_name.take() {
         match confirm_binary(&name, charset, session.keys_mut(), args.bell_policy) {
@@ -264,7 +270,7 @@ fn run() -> Result<ExitAction, String> {
         }
     }
     let mut startup_one_screen = false;
-    if args.quit_if_one_screen && args.filenames.len() == 1 && tag_address.is_none() {
+    if !help_requested && args.quit_if_one_screen && args.filenames.len() == 1 && tag_address.is_none() {
         loop {
             let (width, height) = terminal::get_terminal_size();
             let options = pager::OneScreenOptions { width, height, charset, controls:args.control_display, chop:args.chop, line_numbers:args.line_numbers, line_number_width:args.line_number_width, tab_stops:args.tab_stops.clone() };
@@ -327,7 +333,9 @@ fn run() -> Result<ExitAction, String> {
         if let Some(command) = &args.every_file_command { startup_commands.push(command.clone()); }
         let alternate = opened.alternate.take();
         let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, line_number_width: args.line_number_width, tab_stops: args.tab_stops.clone(), show_eof_markers: args.show_eof_markers, search_case: args.search_case, search_start: args.search_start }, opened.name, history);
-        let result = if std::mem::take(&mut startup_one_screen) { pager.run_one_screen_startup(session.keys_mut()) } else { pager.run(session.keys_mut()) };
+        let result = if help_requested { pager.run_help(session.keys_mut()) }
+            else if std::mem::take(&mut startup_one_screen) { pager.run_one_screen_startup(session.keys_mut()) }
+            else { pager.run(session.keys_mut()) };
         let result = if pager.follow_screen_overflowed() && args.terminal.screen == terminal::ScreenMode::Alternate {
             with_cleanup(result, session.defer_deinitialization(args.terminal))
         } else { result };

@@ -564,6 +564,7 @@ pub struct Pager {
     help_top: usize,
     help_rows: usize,
     help_prefix: Option<HelpPrefix>,
+    standalone_help: bool,
     search_input: LineEditor,
     filter_input: LineEditor,
     filter: Option<Search>,
@@ -631,6 +632,7 @@ impl Pager {
             help_top: 0,
             help_rows: 0,
             help_prefix: None,
+            standalone_help: false,
             search_input: LineEditor::new(),
             filter_input: LineEditor::new(),
             filter: None,
@@ -749,6 +751,15 @@ impl Pager {
             self.bottom_aligned = true;
             self.follow_one_screen = true;
         }
+        self.run(keys)
+    }
+
+    /// Display the help document as the initial view, exiting when it is closed.
+    pub fn run_help(&mut self, keys: &mut KeyReader) -> io::Result<PagerExit> {
+        self.mode = Mode::Help;
+        self.standalone_help = true;
+        let width = usize::from(self.term_width).max(1);
+        self.help_rows = Self::help_lines().enumerate().map(|(index, line)| self.help_line(index, line, width).3).sum();
         self.run(keys)
     }
 
@@ -960,7 +971,7 @@ impl Pager {
             }
             Mode::Help => {
                 self.handle_help_key(key);
-                false
+                self.standalone_help && self.mode != Mode::Help
             }
             Mode::Follow => self.handle_follow_key(key),
             Mode::CommandError(error) => {

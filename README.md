@@ -78,7 +78,7 @@ PTY runs now use the same foreground-process supervisor for files and pipes. It 
 | `-S`, `--chop-long-lines` | Chop long lines instead of folding |
 | `-N` | Show line numbers |
 | `-r`, `--raw` | Show ANSI escapes literally |
-| `-?`, `--help` | Show help |
+| `-?`, `--help` | Open help on a terminal or write it to redirected output |
 | `-V`, `--version` | Show version |
 
 Backward searches start at the bottom of the displayed screen; startup backward searches begin at EOF. The search-start options cover the default target line; filtered views and configurable target lines remain unfinished. Search is case-sensitive by default. Regex highlighting selects the longest match at the earliest position for the tested POSIX alternatives. Full POSIX dialect, diagnostics and Unicode parity remain open. Simple `-i` and `-I` entries in `LESS` apply before the command line. `-+i` resets the case policy. Unknown and ambiguous CLI options emit diagnostics while redirected file copying continues. Option parsing stops at the first filename. Numeric and string arguments are consumed by one parser, including missing-value and overflow diagnostics. `-h` takes a number. Lines fold by default. `-S` shows an inverse right-edge marker for chopped content. `-N` displays line numbers. Full option effects and Unicode case-folding parity remain open.
