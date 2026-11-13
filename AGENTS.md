@@ -113,6 +113,8 @@ All raw terminal interaction via libc FFI.
 
 `one_screen` returns `OneScreenOutput`, which writes retained bytes through `write_to` and can spill long SGR/ASCII lines to an anonymous file. Other long layout forms and long color input with startup commands remain incomplete.
 
+`LineNumberWidth` constrains the shared interactive and one-screen number gutter to 0 through 16 columns. Values above 16 use the reference diagnostic; negative values produce an explicit error while the bounded reference probe remains unresolved.
+
 `Config::show_eof_markers` controls the tildes drawn after EOF. The `-~` and `--tilde` startup options disable them. Interactive positioning expands the compact initial primary-screen display. End jumps align short files at the bottom, retaining preceding display rows for subsequent movement; resizing clears those rows. Setting a mark repaints the initial view, and a jump to the current mark gives boundary feedback. Marks retain the leading display row for short-file views; special beginning, end and current marks use boundary feedback at their destinations. Wrapped-line offsets remain incomplete.
 
 `BellPolicy` distinguishes audible, visual and suppressed feedback for boundary and general errors. `--no-vbell` suppresses visual feedback after options and LESS defaults are resolved.

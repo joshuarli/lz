@@ -67,6 +67,7 @@ PTY runs now use the same foreground-process supervisor for files and pipes. It 
 | `+F` | Start in follow mode (like `tail -f`) |
 | `-a`, `--search-skip-screen` | Start searches beyond the displayed screen |
 | `-A`, `--SEARCH-SKIP-SCREEN` | Start searches beyond the target line |
+| `--line-num-width=N` | Set line-number width from 0 to 16 |
 | `-f`, `--force` | View binary files |
 | `-i`, `--ignore-case` | Use smart case for ASCII search |
 | `-I`, `--IGNORE-CASE` | Ignore ASCII search case |

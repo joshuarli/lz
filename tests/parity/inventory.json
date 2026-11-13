@@ -4238,10 +4238,25 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-line-number-width-zero",
+        "invocation-line-number-width-three",
+        "invocation-line-number-width-max",
+        "invocation-line-number-width-wrap",
+        "invocation-line-number-width-chop",
+        "invocation-line-number-width-navigation",
+        "invocation-line-number-width-env",
+        "invocation-line-number-width-override",
+        "invocation-line-number-width-over-max",
+        "invocation-line-number-width-over-max-interrupt",
+        "invocation-line-number-width-over-max-env",
+        "invocation-line-number-width-over-max-override",
+        "invocation-line-number-width-long-color",
+        "invocation-line-number-width-over-max-redirected"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Widths 0 through 16 and over-limit diagnostics pass named cases; negative width has an oracle timeout and lz reports an explicit error, while interactive option changes remain open"
     },
     {
       "id": "man-1373",

@@ -201,6 +201,20 @@ impl DisplayLine {
 /// The result of probing whether a source fits in a terminal viewport.
 pub enum OneScreen { Fits(OneScreenOutput), Overflows, Waiting }
 
+/// Minimum width reserved for a line number.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct LineNumberWidth(u8);
+
+impl LineNumberWidth {
+    pub const MAX: u8 = 16;
+    pub fn new(width: u8) -> Option<Self> { (width <= Self::MAX).then_some(Self(width)) }
+    fn columns(self) -> usize { usize::from(self.0) }
+}
+
+impl Default for LineNumberWidth {
+    fn default() -> Self { Self(7) }
+}
+
 enum OneScreenStorage { Memory(Vec<u8>), File(std::fs::File) }
 
 /// Output retained by a successful one-screen probe.
@@ -245,15 +259,16 @@ pub struct OneScreenOptions {
     pub controls: ControlDisplay,
     pub chop: bool,
     pub line_numbers: bool,
+    pub line_number_width: LineNumberWidth,
 }
 
 fn is_unbound_ascii(character: char) -> bool {
     matches!(character, '"' | '$' | '*' | ',' | ';' | '@' | 'A' | 'B' | 'C' | 'D' | 'I' | 'L' | 'O' | 'S' | 'U' | 'W' | 'X' | '\\' | '^' | '`' | 'a' | 'c' | 'i' | 'l' | 'o' | 'x' | '~')
 }
 
-fn number_gutter(line: usize, width: usize, enabled: bool) -> String {
+fn number_gutter(line: usize, width: usize, enabled: bool, minimum: LineNumberWidth) -> String {
     if !enabled { return String::new(); }
-    format!("{:>7} ", line + 1).chars().take(width).collect()
+    format!("{:>columns$} ", line + 1, columns = minimum.columns()).chars().take(width).collect()
 }
 
 enum SgrScan { Text, Escape, Sequence }
@@ -305,7 +320,7 @@ pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Res
     let mut output = OneScreenOutput::new();
     let mut rows = 0;
     for index in 0..height {
-        let gutter = number_gutter(index, width, options.line_numbers);
+        let gutter = number_gutter(index, width, options.line_numbers, options.line_number_width);
         let content_width = width.saturating_sub(gutter.len()).max(1);
         let limit = width.saturating_mul(height - rows).saturating_add(1).saturating_mul(16).max(4096);
         let fragment = if options.controls == ControlDisplay::Raw {
@@ -461,6 +476,7 @@ pub struct Config {
     pub controls: ControlDisplay,
     pub chop: bool,
     pub line_numbers: bool,
+    pub line_number_width: LineNumberWidth,
     pub show_eof_markers: bool,
     pub search_case: CaseSensitivity,
     pub search_start: SearchStart,
@@ -481,6 +497,7 @@ pub struct Pager {
     left_col: usize,
     wrap: bool,
     line_numbers: bool,
+    line_number_width: LineNumberWidth,
     show_eof_markers: bool,
     search: Option<Search>,
     search_case: CaseSensitivity,
@@ -543,6 +560,7 @@ impl Pager {
             left_col: 0,
             wrap: !config.chop,
             line_numbers: config.line_numbers,
+            line_number_width: config.line_number_width,
             show_eof_markers: config.show_eof_markers,
             search: None,
             search_case: config.search_case,
@@ -760,7 +778,7 @@ impl Pager {
     fn finish_follow_one_screen(&mut self) -> io::Result<bool> {
         if !self.follow_one_screen || self.mode != Mode::Normal { return Ok(false); }
         self.follow_one_screen = false;
-        let options = OneScreenOptions { width:self.term_width, height:self.term_height, charset:self.charset, controls:self.controls, chop:!self.wrap, line_numbers:self.line_numbers };
+        let options = OneScreenOptions { width:self.term_width, height:self.term_height, charset:self.charset, controls:self.controls, chop:!self.wrap, line_numbers:self.line_numbers, line_number_width:self.line_number_width };
         match one_screen(&mut self.buffer, options)? {
             OneScreen::Fits(_) => {},
             OneScreen::Overflows => { self.follow_screen_overflowed = true; return Ok(false); },
@@ -1499,7 +1517,7 @@ impl Pager {
     }
 
     fn number_gutter(&self, line: usize, width: usize) -> String {
-        number_gutter(line, width, self.line_numbers)
+        number_gutter(line, width, self.line_numbers, self.line_number_width)
     }
 
     fn write_number_gutter(buf: &mut Vec<u8>, gutter: &str) {
@@ -1798,7 +1816,7 @@ mod one_screen_tests {
         for _ in 0..32 { input.write_all(&block).unwrap(); }
         input.write_all(b"x\n").unwrap();
         let mut buffer = LineBuffer::from_file(std::fs::File::open(input.path()).unwrap());
-        let options = OneScreenOptions { width:80, height:24, charset:Charset::Ascii, controls:ControlDisplay::Color, chop:false, line_numbers:false };
+        let options = OneScreenOptions { width:80, height:24, charset:Charset::Ascii, controls:ControlDisplay::Color, chop:false, line_numbers:false, line_number_width:Default::default() };
         let OneScreen::Fits(output) = one_screen(&mut buffer, options).unwrap() else { panic!("color line should fit"); };
         assert!(matches!(&output.storage, OneScreenStorage::File(_)));
         let mut written = tempfile::NamedTempFile::new().unwrap();

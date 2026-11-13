@@ -92,9 +92,15 @@ pub(super) enum Diagnostic {
     InvalidNumber(Vec<u8>),
     Overflow(Vec<u8>),
     FlagAssignment(Vec<u8>),
+    LineNumberWidthTooLarge,
+    NegativeLineNumberWidth,
 }
 
 impl Diagnostic {
+    pub(super) fn needs_acknowledgment(&self) -> bool {
+        matches!(self, Self::LineNumberWidthTooLarge | Self::NegativeLineNumberWidth)
+    }
+
     pub(super) fn write(&self, output: &mut impl Write) -> io::Result<()> {
         match self {
             Self::UnknownShort(letter) => { output.write_all(b"There is no -")?; output.write_all(&[*letter])?; output.write_all(b" option")?; }
@@ -104,6 +110,8 @@ impl Diagnostic {
             Self::InvalidNumber(label) => { output.write_all(b"Number is required after ")?; output.write_all(label)?; return output.write_all(b"\n"); }
             Self::Overflow(label) => { output.write_all(b"Number too large in '")?; output.write_all(label)?; return output.write_all(b"'\n"); }
             Self::FlagAssignment(name) => { output.write_all(b"The ")?; output.write_all(name)?; return output.write_all(b" option should not be followed by =\n"); }
+            Self::LineNumberWidthTooLarge => return writeln!(output, "Line number width must not be larger than {}", lz::pager::LineNumberWidth::MAX),
+            Self::NegativeLineNumberWidth => return output.write_all(b"Line number width must not be negative\n"),
         }
         output.write_all(b" (\"lz --help\" for help)\n")
     }
@@ -126,6 +134,7 @@ pub(super) struct Args {
     pub control_display: ControlDisplay,
     pub chop: bool,
     pub line_numbers: bool,
+    pub line_number_width: lz::pager::LineNumberWidth,
     pub show_eof_markers: bool,
     pub window: Option<i32>,
     pub search_case: CaseSensitivity,
@@ -140,7 +149,7 @@ pub(super) struct Args {
 impl Default for Args {
     fn default() -> Self {
         Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, eof_policy: Default::default(), bell_policy: Default::default(), control_display: ControlDisplay::default(), chop: false, line_numbers: false, show_eof_markers: true, window: None, search_case: CaseSensitivity::Sensitive,
-            search_start: SearchStart::default(), history_duplicates: Default::default(), filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
+            line_number_width: Default::default(), search_start: SearchStart::default(), history_duplicates: Default::default(), filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
 
@@ -225,6 +234,17 @@ impl Scanner {
             ValueKind::Number => match scan_number(payload) {
                 NumberScan::Number { bytes, value } => {
                     if option.names[0] == "window" { self.args.window = Some(value); }
+                    if option.names[0] == "line-num-width" {
+                        if value < 0 {
+                            self.args.line_number_width = Default::default();
+                            self.args.diagnostics.push(Diagnostic::NegativeLineNumberWidth);
+                        } else if let Ok(width) = u8::try_from(value) && let Some(width) = lz::pager::LineNumberWidth::new(width) {
+                            self.args.line_number_width = width;
+                        } else {
+                            self.args.line_number_width = Default::default();
+                            self.args.diagnostics.push(Diagnostic::LineNumberWidthTooLarge);
+                        }
+                    }
                     bytes
                 },
                 NumberScan::Missing => { self.args.diagnostics.push(Diagnostic::InvalidNumber(label)); 0 }
@@ -317,4 +337,19 @@ pub(super) fn parse(arguments: Vec<OsString>, defaults: Option<OsString>) -> Arg
     scanner.args.stdin_explicit = scanner.args.filenames.iter().any(|name| name.as_bytes() == b"-");
     if scanner.args.filenames.is_empty() { scanner.args.filenames.push(OsString::from_vec(b"-".to_vec())); }
     scanner.args
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn negative_line_number_width_reports_an_error() {
+        let args = parse(vec!["--line-num-width=-1".into(), "input".into()], None);
+        assert_eq!(args.diagnostics.len(), 1);
+        let mut output = Vec::new();
+        args.diagnostics[0].write(&mut output).unwrap();
+        assert_eq!(output, b"Line number width must not be negative\n");
+        assert!(args.diagnostics[0].needs_acknowledgment());
+    }
 }
