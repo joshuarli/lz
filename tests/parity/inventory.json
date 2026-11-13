@@ -481,10 +481,16 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-horizontal-first-column",
+        "navigation-horizontal-first-column-count",
+        "navigation-horizontal-first-column-chopped",
+        "navigation-horizontal-first-column-boundary",
+        "navigation-horizontal-first-column-numbered"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "First-column command passes wrapped, chopped, numbered, counted and boundary cases; control-arrow and other interactions remain open"
     },
     {
       "id": "man-0106",

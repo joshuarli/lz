@@ -1051,6 +1051,7 @@ impl Pager {
                 else { self.buffer.read_all(); self.scroll_to_bottom(); }
                 self.remember_jump_from(previous);
             }
+            Key::HorizontalStart => { self.position_initialized(); self.left_col = 0; }
             Key::Right | Key::Left => {
                 self.position_initialized();
                 if let Some(amount) = count.and_then(std::num::NonZeroUsize::new) { self.scroll_defaults.horizontal = Some(amount); }

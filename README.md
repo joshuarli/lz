@@ -98,6 +98,7 @@ Backward searches start at the bottom of the displayed screen; startup backward 
 | `g` / `Home` | Go to top |
 | `G` / `End` | Go to bottom |
 | `Left` / `Right`, `Esc-(` / `Esc-)` | Scroll horizontally by half the screen; a count sets the step |
+| `Esc-{` | Return to the first column |
 | `m` + letter / `'` + letter | Set / return to an in-file mark |
 | `r` / `Ctrl-R` / `Ctrl-L` | Repaint the screen |
 

@@ -11,6 +11,7 @@ pub enum Key {
     Down,
     Left,
     Right,
+    HorizontalStart,
     PageUp,
     PageDown,
     Home,
@@ -194,6 +195,7 @@ impl KeyReader {
             Some(b'O') => self.parse_ss3(),
             Some(b')') => Ok(Key::Right),
             Some(b'(') => Ok(Key::Left),
+            Some(b'{') => Ok(Key::HorizontalStart),
             Some(_) => Ok(Key::Escape),
         }
     }
