@@ -348,6 +348,7 @@ impl FileStatus {
 pub struct Config {
     pub interrupt_policy: InterruptPolicy,
     pub eof_policy: EofPolicy,
+    pub bell_policy: terminal::BellPolicy,
     pub scroll_defaults: ScrollDefaults,
     pub display_anchor: DisplayAnchor,
     pub files: FileStatus,
@@ -363,6 +364,7 @@ pub struct Config {
 pub struct Pager {
     interrupt_policy: InterruptPolicy,
     eof_policy: EofPolicy,
+    bell_policy: terminal::BellPolicy,
     eof_displayed: bool,
     startup_echo: Option<FileCommand>,
     paint_before_commands: bool,
@@ -404,6 +406,7 @@ pub struct Pager {
     exit: PagerExit,
     command_context: CommandContext,
     bell_requested: bool,
+    boundary_bell_requested: bool,
 }
 
 impl Pager {
@@ -417,6 +420,7 @@ impl Pager {
         Pager {
             interrupt_policy: config.interrupt_policy,
             eof_policy: config.eof_policy,
+            bell_policy: config.bell_policy,
             eof_displayed: false,
             startup_echo: match config.initial_display { InitialDisplay::StartupFileSwitch(switch) => Some(switch.command), _ => None },
             paint_before_commands: matches!(config.initial_display, InitialDisplay::StartupFileSwitch(StartupFileSwitch { continuation: CommandContinuation::NextCommand, .. })) && !config.startup_commands.is_empty(),
@@ -458,6 +462,7 @@ impl Pager {
             exit: PagerExit::Quit,
             command_context: CommandContext::StartupUnpositioned,
             bell_requested: false,
+            boundary_bell_requested: false,
         }
     }
 
@@ -647,7 +652,7 @@ impl Pager {
     fn finish_run(&mut self) -> io::Result<PagerExit> {
         if matches!(self.exit, PagerExit::Interrupted) && std::mem::take(&mut self.bell_requested) {
             let mut output = io::stdout().lock();
-            output.write_all(&[7])?;
+            self.bell_policy.write_to(&mut output, terminal::BellKind::General)?;
             if self.follow_one_screen { output.write_all(b"\r\x1b[K")?; }
             output.flush()?;
         }
@@ -805,7 +810,7 @@ impl Pager {
                     self.scroll_defaults.window = WindowSize::Fixed(amount);
                 }
                 let amount = count.unwrap_or_else(|| self.scroll_defaults.window.lines(self.term_height));
-                if amount == 0 { self.bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now()); }
+                if amount == 0 { self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now()); }
                 else if matches!(key, Key::Char('b' | 'w') | Key::PageUp | Key::Ctrl('b')) { self.scroll_up(amount); }
                 else { self.scroll_down(amount); }
             }
@@ -813,7 +818,7 @@ impl Pager {
                 let previous = self.top_line;
                 self.position_initialized();
                 let target = count.unwrap_or(1).saturating_sub(1);
-                if self.command_context == CommandContext::Interactive && self.content_painted && self.top_line == target { self.bell_requested = true; }
+                if self.command_context == CommandContext::Interactive && self.content_painted && self.top_line == target { self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now()); }
                 self.top_line = target;
                 self.buffer.get_line(self.top_line);
                 self.remember_jump_from(previous);
@@ -1094,16 +1099,18 @@ impl Pager {
         }
         if self.content_painted && self.top_line == previous && self.buffer.is_finished()
             && (!self.wrap || self.wrapped_line_rows(self.top_line) <= self.content_height()) {
-            self.bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
+            self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
         }
     }
 
     fn scroll_up(&mut self, lines: usize) {
-        if self.wrap {
-            self.scroll_up_wrapped(lines);
-            return;
+        let previous = self.top_line;
+        self.squished = false;
+        if self.wrap { self.scroll_up_wrapped(lines); }
+        else { self.top_line = self.top_line.saturating_sub(lines); }
+        if self.content_painted && self.top_line == previous && previous == 0 {
+            self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
         }
-        self.top_line = self.top_line.saturating_sub(lines);
     }
 
     fn scroll_to_bottom(&mut self) {
@@ -1218,7 +1225,10 @@ impl Pager {
         let w = self.term_width as usize;
         let ch = self.content_height();
 
-        if self.bell_requested { buf.push(7); self.bell_requested = false; }
+        let boundary_bell = std::mem::take(&mut self.boundary_bell_requested);
+        let general_bell = std::mem::take(&mut self.bell_requested);
+        if boundary_bell && !self.bell_policy.is_visual(terminal::BellKind::Boundary) { buf.push(7); }
+        if general_bell && !self.bell_policy.is_visual(terminal::BellKind::General) { buf.push(7); }
         buf.extend_from_slice(b"\x1b[?25l");
         if matches!(self.mode, Mode::CommandError(_)) {
             if !self.content_painted { for row in 0..ch { buf.position(row); terminal::clear_line(&mut buf); } }
@@ -1254,6 +1264,19 @@ impl Pager {
         if self.eof_policy != EofPolicy::Manual {
             self.eof_displayed = self.visible_end_of_file()?;
             if let Some(error) = self.buffer.take_error() { return Err(error); }
+        }
+        let visual_boundary = boundary_bell && self.bell_policy.is_visual(terminal::BellKind::Boundary);
+        let visual_general = general_bell && self.bell_policy.is_visual(terminal::BellKind::General);
+        if visual_boundary || visual_general {
+            buf.position(ch);
+            terminal::clear_line(&mut buf);
+            buf.extend_from_slice(b"\x1b[?25h");
+            let mut output = io::stdout().lock();
+            output.write_all(&buf)?;
+            output.flush()?;
+            buf.clear();
+            if visual_boundary { self.bell_policy.write_to(&mut output, terminal::BellKind::Boundary)?; }
+            if visual_general { self.bell_policy.write_to(&mut output, terminal::BellKind::General)?; }
         }
         if status { self.render_status(&mut buf, w); }
         else { buf.position(ch); terminal::clear_line(&mut buf); }

@@ -3600,10 +3600,20 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-quiet-eof",
+        "invocation-quiet-error",
+        "invocation-quiet-prefix-error",
+        "invocation-quiet-start",
+        "invocation-quiet-back",
+        "invocation-quiet-interrupt",
+        "invocation-quiet-reset",
+        "invocation-quiet-eof-term",
+        "invocation-quiet-invalid"
+      ],
+      "implementation": "partial",
+      "evidence": "partially compatible",
+      "cause": "Named cases cover xterm visual or audible feedback for boundaries, prompts and interrupts. Unknown-command feedback differs, and other terminal capabilities remain open."
     },
     {
       "id": "man-1109",
@@ -3619,10 +3629,22 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-silent-eof",
+        "invocation-silent-error",
+        "invocation-silent-prefix-error",
+        "invocation-silent-start",
+        "invocation-silent-interrupt",
+        "invocation-silent-interrupt-quit",
+        "invocation-silent-binary-interrupt",
+        "invocation-silent-long-option",
+        "invocation-silent-one-screen-pipe-int",
+        "invocation-silent-one-screen-pipe-int-quit",
+        "invocation-silent-invalid"
+      ],
+      "implementation": "partial",
+      "evidence": "partially compatible",
+      "cause": "Named cases cover xterm visual or audible feedback for boundaries, prompts and interrupts. Unknown-command feedback differs, and other terminal capabilities remain open."
     },
     {
       "id": "man-1114",

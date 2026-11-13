@@ -58,14 +58,14 @@ enum BinaryAnswer { Open, Refuse, Quit }
 
 enum DiagnosticAnswer { Continue, Interrupted, Terminated }
 
-fn read_prompt_key(keys: &mut lz::input::KeyReader) -> io::Result<Option<lz::input::Key>> {
+fn read_prompt_key(keys: &mut lz::input::KeyReader, bell_policy: terminal::BellPolicy) -> io::Result<Option<lz::input::Key>> {
     loop {
         if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return Ok(None); }
         let key = if terminal::take_interrupt() { Some(lz::input::Key::Ctrl('c')) } else { keys.read_key_timeout(100)? };
         if let Some(key) = key {
             if key == lz::input::Key::Ctrl('c') {
                 let mut output = io::stdout().lock();
-                output.write_all(&[7])?;
+                bell_policy.write_to(&mut output, terminal::BellKind::General)?;
                 output.flush()?;
             }
             return Ok(Some(key));
@@ -73,11 +73,11 @@ fn read_prompt_key(keys: &mut lz::input::KeyReader) -> io::Result<Option<lz::inp
     }
 }
 
-fn acknowledge_diagnostics(keys: &mut lz::input::KeyReader) -> io::Result<DiagnosticAnswer> {
+fn acknowledge_diagnostics(keys: &mut lz::input::KeyReader, bell_policy: terminal::BellPolicy) -> io::Result<DiagnosticAnswer> {
     let mut output = io::stderr().lock();
     output.write_all(b"Press RETURN to continue ")?;
     output.flush()?;
-    let Some(key) = read_prompt_key(keys)? else { return Ok(DiagnosticAnswer::Terminated); };
+    let Some(key) = read_prompt_key(keys, bell_policy)? else { return Ok(DiagnosticAnswer::Terminated); };
     let answer = if key == lz::input::Key::Ctrl('c') { DiagnosticAnswer::Interrupted } else { DiagnosticAnswer::Continue };
     if !key.is_prompt_acknowledgement() { keys.unread_key(key)?; }
     output.write_all(b"\r\n")?;
@@ -85,13 +85,13 @@ fn acknowledge_diagnostics(keys: &mut lz::input::KeyReader) -> io::Result<Diagno
     Ok(answer)
 }
 
-fn confirm_binary(name: &std::ffi::OsStr, charset: Charset, keys: &mut lz::input::KeyReader) -> io::Result<BinaryAnswer> {
+fn confirm_binary(name: &std::ffi::OsStr, charset: Charset, keys: &mut lz::input::KeyReader, bell_policy: terminal::BellPolicy) -> io::Result<BinaryAnswer> {
     let mut output = io::stdout().lock();
     output.write_all(b"\"")?;
     charset.write_filename(name.as_bytes(), &mut output)?;
     output.write_all(b"\" may be a binary file.  See it anyway? ")?;
     output.flush()?;
-    let Some(key) = read_prompt_key(keys)? else { return Ok(BinaryAnswer::Refuse); };
+    let Some(key) = read_prompt_key(keys, bell_policy)? else { return Ok(BinaryAnswer::Refuse); };
     let answer = match key { lz::input::Key::Char('y' | 'Y') => BinaryAnswer::Open,
         lz::input::Key::Char('Q') => BinaryAnswer::Quit, _ => BinaryAnswer::Refuse };
     output.write_all(b"\r\n")?;
@@ -117,7 +117,7 @@ struct AlternateInput { original: OsString, replacement: OsString }
 
 struct OpenedInput { buffer: buffer::LineBuffer, name: Option<String>, binary_name: Option<OsString>, alternate: Option<AlternateInput> }
 
-enum CloseContext { Switching { squished: bool, interrupt_policy: pager::InterruptPolicy }, Exiting }
+enum CloseContext { Switching { squished: bool, interrupt_policy: pager::InterruptPolicy, bell_policy: terminal::BellPolicy }, Exiting }
 
 fn close_alternate(alternate: Option<AlternateInput>, session: &mut terminal::Session, context: CloseContext) -> io::Result<()> {
     let Some(alternate) = alternate else { return Ok(()); };
@@ -125,7 +125,7 @@ fn close_alternate(alternate: Option<AlternateInput>, session: &mut terminal::Se
         const MESSAGE: &str = "LESSCLOSE ignored; must contain no more than 2 %s";
         match context {
             CloseContext::Exiting => eprintln!("{MESSAGE}"),
-            CloseContext::Switching { squished, interrupt_policy } => {
+            CloseContext::Switching { squished, interrupt_policy, bell_policy } => {
                 let mut frame = Vec::new();
                 let (_, height) = terminal::get_terminal_size();
                 if squished {
@@ -142,7 +142,7 @@ fn close_alternate(alternate: Option<AlternateInput>, session: &mut terminal::Se
                 output.write_all(&frame)?;
                 output.flush()?;
                 drop(output);
-                if let Some(key) = read_prompt_key(session.keys_mut())? {
+                if let Some(key) = read_prompt_key(session.keys_mut(), bell_policy)? {
                     if key == lz::input::Key::Ctrl('c') && interrupt_policy == pager::InterruptPolicy::Quit {
                         return Err(io::Error::new(io::ErrorKind::Interrupted, "postprocessor diagnostic interrupted"));
                     }
@@ -282,7 +282,7 @@ fn run() -> Result<ExitAction, String> {
         .map_err(|error| format!("{}: {error}", args.filenames[0].to_string_lossy()))?;
     if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return finish_opened(Ok(ExitAction::Success), opened, session); }
     if let Some(name) = opened.binary_name.take() {
-        match confirm_binary(&name, charset, session.keys_mut()) {
+        match confirm_binary(&name, charset, session.keys_mut(), args.bell_policy) {
             Ok(BinaryAnswer::Refuse) => return finish_opened(Ok(ExitAction::FileError), opened, session),
             Ok(BinaryAnswer::Quit) => return finish_opened(Ok(ExitAction::Success), opened, session),
             Err(error) => return finish_opened(Err(error), opened, session),
@@ -291,7 +291,7 @@ fn run() -> Result<ExitAction, String> {
     }
 
     if security.has_diagnostics() || preprocessing_diagnostic.is_some() {
-        match acknowledge_diagnostics(session.keys_mut()) {
+        match acknowledge_diagnostics(session.keys_mut(), args.bell_policy) {
             Ok(DiagnosticAnswer::Continue) => {},
             Ok(DiagnosticAnswer::Interrupted) => {
                 if args.interrupt_policy == pager::InterruptPolicy::Quit { return finish_opened(Ok(ExitAction::Interrupted), opened, session); }
@@ -321,8 +321,11 @@ fn run() -> Result<ExitAction, String> {
                     if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return finish_opened(Ok(ExitAction::Success), opened, session); }
                     if terminal::take_interrupt() {
                         let mut output = io::stdout().lock();
-                        let suffix: &[u8] = if args.interrupt_policy == pager::InterruptPolicy::Quit { b"\x07\r\r\x1b[K" } else { b"\x07" };
-                        if let Err(error) = output.write_all(suffix).and_then(|()| output.flush()) { return finish_opened(Err(error), opened, session); }
+                        let result = args.bell_policy.write_to(&mut output, terminal::BellKind::General).and_then(|()| {
+                            if args.interrupt_policy == pager::InterruptPolicy::Quit { output.write_all(b"\r\r\x1b[K")?; }
+                            output.flush()
+                        });
+                        if let Err(error) = result { return finish_opened(Err(error), opened, session); }
                         drop(output);
                         if args.interrupt_policy == pager::InterruptPolicy::Quit { return finish_opened(Ok(ExitAction::Interrupted), opened, session); }
                         if let Err(error) = opened.buffer.finish_interrupted_stream() { return finish_opened(Err(error), opened, session); }
@@ -358,7 +361,7 @@ fn run() -> Result<ExitAction, String> {
         let mut startup_commands = std::mem::take(&mut args.startup_commands);
         if let Some(command) = &args.every_file_command { startup_commands.push(command.clone()); }
         let alternate = opened.alternate.take();
-        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, opened.name, history);
+        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, opened.name, history);
         let result = if std::mem::take(&mut startup_one_screen) { pager.run_one_screen_startup(session.keys_mut()) } else { pager.run(session.keys_mut()) };
         let result = if pager.follow_screen_overflowed() && args.terminal.screen == terminal::ScreenMode::Alternate {
             with_cleanup(result, session.defer_deinitialization(args.terminal))
@@ -380,7 +383,7 @@ fn run() -> Result<ExitAction, String> {
             Ok(input) => input, Err(error) => break with_cleanup(Err(error), close_alternate(alternate, &mut session, CloseContext::Exiting)),
         };
         if let Some(name) = opened.binary_name.take() {
-            let answer = match confirm_binary(&name, charset, session.keys_mut()) {
+            let answer = match confirm_binary(&name, charset, session.keys_mut(), args.bell_policy) {
                 Ok(BinaryAnswer::Refuse) => Some(Ok(ExitAction::FileError)),
                 Ok(BinaryAnswer::Quit) => Some(Ok(ExitAction::Success)),
                 Ok(BinaryAnswer::Open) => None,
@@ -391,7 +394,7 @@ fn run() -> Result<ExitAction, String> {
                 break with_cleanup(result, close_alternate(alternate, &mut session, CloseContext::Exiting));
             }
         }
-        if let Err(error) = close_alternate(alternate, &mut session, CloseContext::Switching { squished, interrupt_policy:args.interrupt_policy }) {
+        if let Err(error) = close_alternate(alternate, &mut session, CloseContext::Switching { squished, interrupt_policy:args.interrupt_policy, bell_policy:args.bell_policy }) {
             let result = if error.kind() == io::ErrorKind::Interrupted && args.interrupt_policy == pager::InterruptPolicy::Quit { Ok(ExitAction::Interrupted) } else { Err(error) };
             break close_opened(result, opened, &mut session);
         }

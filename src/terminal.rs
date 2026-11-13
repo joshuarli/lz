@@ -113,6 +113,32 @@ impl BellRate {
 
 pub(crate) fn request_eof_bell(at: std::time::SystemTime) -> bool { EOF_BELL.request(at) }
 
+/// Select audible or visual feedback for boundary and other errors.
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+pub enum BellPolicy { #[default] Audible, QuietBoundary, Visual }
+
+/// Distinguish boundary feedback from other errors.
+#[derive(Clone, Copy)]
+pub enum BellKind { Boundary, General }
+
+impl BellPolicy {
+    pub fn is_visual(self, kind: BellKind) -> bool {
+        self == Self::Visual || (self == Self::QuietBoundary && matches!(kind, BellKind::Boundary))
+    }
+
+    pub fn write_to(self, output: &mut impl io::Write, kind: BellKind) -> io::Result<()> {
+        if self.is_visual(kind) {
+            output.write_all(b"\x1b[?5h")?;
+            output.flush()?;
+            for _ in 0..10 {
+                if TERMINATION_SIGNAL.load(Ordering::SeqCst) != 0 { break; }
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+            output.write_all(b"\x1b[?5l")
+        } else { output.write_all(b"\x07") }
+    }
+}
+
 extern "C" fn handle_winch(_sig: i32) {
     WINCH_FLAG.store(true, Ordering::SeqCst);
 }
