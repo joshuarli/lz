@@ -4,7 +4,7 @@
 
 The owner authorized unattended local execution. Keep one writer, commit verified slices, and do not push. Preserve the pinned toolchain and do not run formatters. Baseline: `2ae5660`. Git history records accepted slices.
 
-The latest macOS arm64 integration check passed all 751 admitted cases across four shards, 155 Rust tests, and Clippy. The previous complete candidate and baseline report covered 664 cases before later slices. It recorded two strict mismatches, one filesystem limitation, and no harness errors. [Coverage](tests/parity/coverage.md) and the [inventory](tests/parity/inventory.json) distinguish named-case results from complete features. Refresh all four candidate and baseline shards before generating a new report.
+The latest macOS arm64 integration check passed all 785 admitted cases across four shards, 157 Rust tests, and Clippy. The previous complete candidate and baseline report covered 664 cases before later slices. It recorded two strict mismatches, one filesystem limitation, and no harness errors; the long-color startup mismatch has since been fixed in S06f. [Coverage](tests/parity/coverage.md) and the [inventory](tests/parity/inventory.json) distinguish named-case results from complete features. Refresh all four candidate and baseline shards before generating a new report.
 
 The 50-seed navigation fuzz smoke passes. Its generator covers ordinary ASCII navigation only and does not meet the S12 grammar requirement.
 
