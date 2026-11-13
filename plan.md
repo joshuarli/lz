@@ -84,6 +84,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12k accepted:** generator version 10 includes quiet interactive line-number toggles among navigation, search and file switches. The selftest verifies deterministic generation and action coverage; 50 differential seeds and all-target Clippy passed on macOS arm64. The remaining grammar and hardening gates are still open.
 
+**S12l accepted:** generated-failure reduction removes explicit environment entries under the existing attempt and signature limits; the report includes environment attempts and counts. The real PTY control retains a required environment variable, argument, fixture byte and mismatch category while shrinking inputs. The selftest passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Other fixture recipes and auxiliary files remain open.
+
 **S04au:** interactive `-R` toggles color display and carries it across file switches. Six cases pass on macOS and in a Linux arm64 container, covering the upstream `github329` fixture, short and long views, raw mode, prompt replay and interruption. `Pager::control_display` exposes the current mode. Other option commands, suppression, queries and startup interactions remain open; the upstream translation is partial.
 
 **S04av:** interactive `-r` toggles raw display, switches from color mode and remains in effect across file switches in the named cases on macOS and in a Linux arm64 container. Other option interactions remain open.
