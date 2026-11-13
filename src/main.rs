@@ -273,7 +273,7 @@ fn run() -> Result<ExitAction, String> {
     if !help_requested && args.quit_if_one_screen && args.filenames.len() == 1 && tag_address.is_none() {
         loop {
             let (width, height) = terminal::get_terminal_size();
-            let options = pager::OneScreenOptions { width, height, charset, controls:args.control_display, chop:args.chop, line_numbers:args.line_numbers.displayed(), line_number_width:args.line_number_width, tab_stops:args.tab_stops.clone() };
+            let options = pager::OneScreenOptions { width, height, charset, controls:args.control_display, use_color:args.use_color, chop:args.chop, line_numbers:args.line_numbers.displayed(), line_number_width:args.line_number_width, tab_stops:args.tab_stops.clone() };
             match pager::one_screen(&mut opened.buffer, options) {
                 Ok(pager::OneScreen::Fits(output)) => {
                     if !args.startup_commands.is_empty() || args.every_file_command.is_some() {

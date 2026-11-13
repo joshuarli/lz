@@ -345,6 +345,8 @@ pub struct OneScreenOptions {
     pub height: u16,
     pub charset: Charset,
     pub controls: ControlDisplay,
+    /// Select the tested UI color classes.
+    pub use_color: bool,
     pub chop: bool,
     pub line_numbers: bool,
     pub line_number_width: LineNumberWidth,
@@ -468,7 +470,7 @@ pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Res
                 match stream_color_line(buffer, index, content_width, options.charset)? {
                     StreamedLine::Fits(file, sgr) => {
                         let mut number = Vec::new();
-                        Pager::write_number_gutter(&mut number, &gutter);
+                        Pager::write_number_gutter(&mut number, &gutter, options.use_color);
                         output.append(&number)?;
                         output.append_file(file)?;
                         if sgr { output.append(b"\x1b[m")?; }
@@ -484,7 +486,7 @@ pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Res
         }
         for row in 0..line_rows {
             let mut number = Vec::new();
-            Pager::write_number_gutter(&mut number, &gutter);
+            Pager::write_number_gutter(&mut number, &gutter, options.use_color);
             output.append(&number)?;
             output.append(&fragment.display(row * content_width, width.saturating_sub(gutter.len())))?;
             if row + 1 < line_rows && fragment.fills_row(row * content_width, content_width) { output.append(b" \x08")?; }
@@ -1074,7 +1076,7 @@ impl Pager {
     fn finish_follow_one_screen(&mut self) -> io::Result<bool> {
         if !self.follow_one_screen || self.mode != Mode::Normal { return Ok(false); }
         self.follow_one_screen = false;
-        let options = OneScreenOptions { width:self.term_width, height:self.term_height, charset:self.charset, controls:self.controls, chop:!self.wrap, line_numbers:self.line_numbers.displayed(), line_number_width:self.line_number_width, tab_stops:self.tab_stops.clone() };
+        let options = OneScreenOptions { width:self.term_width, height:self.term_height, charset:self.charset, controls:self.controls, use_color:self.use_color, chop:!self.wrap, line_numbers:self.line_numbers.displayed(), line_number_width:self.line_number_width, tab_stops:self.tab_stops.clone() };
         match one_screen(&mut self.buffer, options)? {
             OneScreen::Fits(_) => {},
             OneScreen::Overflows => { self.follow_screen_overflowed = true; return Ok(false); },
@@ -2115,11 +2117,11 @@ impl Pager {
         number_gutter(line, width, self.line_numbers.displayed(), self.line_number_width)
     }
 
-    fn write_number_gutter(buf: &mut Vec<u8>, gutter: &str) {
+    fn write_number_gutter(buf: &mut Vec<u8>, gutter: &str, use_color: bool) {
         if let Some(first) = gutter.bytes().position(|byte| byte.is_ascii_digit()) {
             let last = gutter.bytes().rposition(|byte| byte.is_ascii_digit()).unwrap() + 1;
             buf.extend_from_slice(&gutter.as_bytes()[..first]);
-            buf.extend_from_slice(b"\x1b[1m");
+            buf.extend_from_slice(if use_color { b"\x1b[1;36m" } else { b"\x1b[1m" });
             buf.extend_from_slice(&gutter.as_bytes()[first..last]);
             buf.extend_from_slice(b"\x1b[m");
             buf.extend_from_slice(&gutter.as_bytes()[last..]);
@@ -2220,7 +2222,7 @@ impl Pager {
                 Some((line_idx, fragment)) => {
                     self.last_visible_line = Some(line_idx);
                     let gutter = self.number_gutter(line_idx, w);
-                    Self::write_number_gutter(buf, &gutter);
+                    Self::write_number_gutter(buf, &gutter, self.use_color);
                     let content_width = w.saturating_sub(gutter.len());
                     if self.can_stream_visible_color_line(line_idx, content_width, &fragment)
                         && let Some(sgr) = buf.append_color_line(&mut self.buffer, line_idx, content_width, self.charset, |_| {})? {
@@ -2255,10 +2257,11 @@ impl Pager {
                     let gutter_width = self.number_gutter(actual, w).len();
                     let content_width = w.saturating_sub(gutter_width).max(1);
                     let gutter = self.number_gutter(actual, w);
+                    let use_color = self.use_color;
                     if self.can_stream_visible_color_line(actual, content_width, &fragment)
                         && let Some(sgr) = buf.append_color_line(&mut self.buffer, actual, content_width, self.charset, |frame| {
                             frame.position(screen_row);
-                            Self::write_number_gutter(frame, &gutter);
+                            Self::write_number_gutter(frame, &gutter, use_color);
                         })? {
                         if sgr { buf.extend_from_slice(b"\x1b[m"); }
                         buf.wrapped_row(screen_row);
@@ -2274,7 +2277,7 @@ impl Pager {
                         if screen_row >= ch { break; }
                         if wrap_row == 0 { buf.position(screen_row); }
                         let gutter = self.number_gutter(actual, w);
-                        Self::write_number_gutter(buf, &gutter);
+                        Self::write_number_gutter(buf, &gutter, self.use_color);
                         let display = fragment.display(wrap_row * content_width, w.saturating_sub(gutter.len()));
                         self.write_line_with_search(buf, &display);
                         buf.wrapped_row(screen_row);
@@ -2386,7 +2389,7 @@ impl Pager {
                 if document_row < self.help_top { document_row += 1; continue; }
                 if row >= ch { break; }
                 if row == 0 || !continued { buf.position(row); }
-                Self::write_number_gutter(buf, &gutter);
+                Self::write_number_gutter(buf, &gutter, self.use_color);
                 buf.extend_from_slice(&layout.display(offset * content_width, width.saturating_sub(gutter.len())));
                 buf.wrapped_row(row);
                 row += 1;
@@ -2570,7 +2573,7 @@ mod one_screen_tests {
         for _ in 0..32 { input.write_all(&block).unwrap(); }
         input.write_all(b"x\n").unwrap();
         let mut buffer = LineBuffer::from_file(std::fs::File::open(input.path()).unwrap());
-        let options = OneScreenOptions { width:80, height:24, charset:Charset::Ascii, controls:ControlDisplay::Color, chop:false, line_numbers:false, line_number_width:Default::default(), tab_stops:Default::default() };
+        let options = OneScreenOptions { width:80, height:24, charset:Charset::Ascii, controls:ControlDisplay::Color, use_color:false, chop:false, line_numbers:false, line_number_width:Default::default(), tab_stops:Default::default() };
         let OneScreen::Fits(output) = one_screen(&mut buffer, options).unwrap() else { panic!("color line should fit"); };
         assert!(matches!(&output.storage, OneScreenStorage::File(_)));
         let mut written = tempfile::NamedTempFile::new().unwrap();

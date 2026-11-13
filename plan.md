@@ -126,6 +126,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S08s accepted:** `man-1534` search colors preserve the tested source SGR state across matches, using bounded foreground/background tracking. Eight indexed, RGB, inverse and colon-form cases plus existing highlight regressions passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Other escape forms, color classes and custom colors remain open.
 
+**S06l accepted:** `man-1534` colors displayed line numbers in the tested interactive, file-switch and one-screen cases. The public one-screen options carry the UI color setting. Three new cases and existing numbered regressions passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Other UI color classes remain open.
+
 **S12aa accepted (partial translation):** the remaining `chinese1` backward movement and Unicode regex search pass with generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. The original key sequence is represented, but intermediate per-key and custom termcap checkpoints remain open.
 
 **S12ab accepted (partial translation):** the original `chinese1` key sequence now has per-key generic-terminal checkpoints, passing on macOS arm64 and Linux arm64 Docker. The original custom termcap checkpoints remain a separate proof requirement.
