@@ -66,6 +66,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12g:** invalid commands have a 30 percent action weight and are followed by a known jump so their bell is observed. Fifty seeds pass with 135 invalid-command actions among 400. The first run exposed S09j and S08k. This covers one boundary class; the full 70/30 grammar remains open.
 
+**S12h:** generated failures reduce events, arguments and inline fixture bytes under separate attempt budgets, retaining the mismatch category and oracle completion. Harness controls include a real PTY fault that depends on a required argument and byte. Other fixture recipes, auxiliary files and environment reduction remain open.
+
 **S09j:** the active search and its direction survive next-file switches; the match position remains file-local. Forward highlighting and repeat, backward repeat and the generating seed pass on macOS; the named cases also pass in a Linux arm64 container. Public `SearchSession` carries this state through `Config` and `Pager::take_search_session`. Other search and file-transition interactions remain open.
 
 **S08j:** missing patterns display the reference acknowledgment prompt, and non-acknowledgment keys replay after it. The direct search case and cross-file backward case pass on macOS and in a Linux arm64 container; all 64 admitted macOS search cases pass. Other search diagnostics remain open.

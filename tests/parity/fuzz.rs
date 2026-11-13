@@ -1,4 +1,5 @@
 use super::{Argument, Case, Event, Result, TraceCheck, collect_cases, json, metadata, observe_case, stdio};
+use super::fixtures::Fixture;
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs::{self, File};
@@ -136,20 +137,41 @@ fn signature(result: &Value) -> Option<(String, String)> {
     Some((difference, kind))
 }
 
-fn reduce_events(case: &Case, original: &Value, mut observe: impl FnMut(&Case) -> Value) -> (Case, Value, usize) {
+#[derive(Clone, Copy)]
+enum ReductionPart { Events, Arguments, FixtureBytes }
+
+impl ReductionPart {
+    fn len(self, case: &Case) -> usize {
+        match self {
+            Self::Events => case.events.len().saturating_sub(1),
+            Self::Arguments => case.args.len(),
+            Self::FixtureBytes => match &case.fixture { Fixture::Bytes(bytes) => bytes.len(), _ => 0 },
+        }
+    }
+
+    fn remove(self, case: &mut Case, range: std::ops::Range<usize>) {
+        match self {
+            Self::Events => { case.events.drain(range); }
+            Self::Arguments => { case.args.drain(range); }
+            Self::FixtureBytes => if let Fixture::Bytes(bytes) = &mut case.fixture { bytes.drain(range); },
+        }
+    }
+}
+
+fn reduce_part(case: &Case, original: &Value, part: ReductionPart, mut observe: impl FnMut(&Case) -> Value) -> (Case, Value, usize) {
     let Some(wanted) = signature(original) else { return (case.clone(), original.clone(), 0); };
     let mut reduced = case.clone();
     let mut result = original.clone();
     let mut attempts = 0;
     let mut divisions = 2;
-    while attempts < 8 && reduced.events.len() > 2 {
-        let length = reduced.events.len() - 1;
+    while attempts < 8 && part.len(&reduced) > 0 {
+        let length = part.len(&reduced);
         let chunk = length.div_ceil(divisions);
         let mut accepted = false;
         for start in (0..length).step_by(chunk) {
             if attempts == 8 { break; }
             let mut candidate = reduced.clone();
-            candidate.events.drain(start..(start + chunk).min(length));
+            part.remove(&mut candidate, start..(start + chunk).min(length));
             attempts += 1;
             let observation = observe(&candidate);
             if signature(&observation).as_ref() == Some(&wanted) {
@@ -227,13 +249,15 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
                 let reproduced = observe_case(reference, candidate, case);
                 let stable = signature(&original).is_some() && signature(&original) == signature(&reproduced);
                 if stable {
-                    let (minimized, observation, attempts) = reduce_events(case, &reproduced, |case| observe_case(reference, candidate, case));
+                    let (events, observation, event_attempts) = reduce_part(case, &reproduced, ReductionPart::Events, |case| observe_case(reference, candidate, case));
+                    let (arguments, observation, argument_attempts) = reduce_part(&events, &observation, ReductionPart::Arguments, |case| observe_case(reference, candidate, case));
+                    let (minimized, observation, fixture_attempts) = reduce_part(&arguments, &observation, ReductionPart::FixtureBytes, |case| observe_case(reference, candidate, case));
                     fs::write(directory.join("minimized-case.json"), serde_json::to_vec_pretty(&minimized)?)?;
                     save(&directory.join("minimized-observation.json.gz"), &observation)?;
-                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":true,"attempts":attempts,"original_events":case.events.len(),"minimized_events":minimized.events.len()}))?)?;
+                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":true,"attempts":{"events":event_attempts,"arguments":argument_attempts,"fixture":fixture_attempts},"original_events":case.events.len(),"minimized_events":minimized.events.len(),"original_arguments":case.args.len(),"minimized_arguments":minimized.args.len(),"original_fixture_bytes":ReductionPart::FixtureBytes.len(case),"minimized_fixture_bytes":ReductionPart::FixtureBytes.len(&minimized)}))?)?;
                 } else {
                     save(&directory.join("reproduction-observation.json.gz"), &reproduced)?;
-                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":false,"attempts":0,"reason":"failure signature changed or belongs to the oracle; original failure remains strict"}))?)?;
+                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":false,"attempts":{"events":0,"arguments":0,"fixture":0},"reason":"failure signature changed or belongs to the oracle; original failure remains strict"}))?)?;
                 }
             }
             break;
@@ -243,7 +267,7 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
     fs::write(directory.join("summary.json"), serde_json::to_vec_pretty(&json!({
         "metadata":meta,"seed":seed,"generator_version":GENERATOR_VERSION,"requested":count,"executed":summaries.len(),"oracle_only":oracle_only,"results":summaries,
         "grammar":"logical-line movement, ordinary in-file marks, forward literal searches, resize-and-jump, next-file transitions and quit or SIGTERM with CLI/LESS display options over ASCII, UTF-8 or isolated malformed bytes; 30% invalid-command actions; eight actions; 40x12 or 80x24",
-        "limits":{"case_seconds":10,"trace_bytes":64*1024*1024,"pty_rss_bytes":u64::from(super::resources::RssLimit::default()),"pty_spill_bytes":u64::from(super::spill::Limit::default()),"actions":8,"workers":4,"reduction_attempts":8},
+        "limits":{"case_seconds":10,"trace_bytes":64*1024*1024,"pty_rss_bytes":u64::from(super::resources::RssLimit::default()),"pty_spill_bytes":u64::from(super::spill::Limit::default()),"actions":8,"workers":4,"reduction_attempts_per_dimension":8},
         "open_limits":["stdio/helper/producer RSS enforcement","stdio/helper/producer spill accounting","broader CLI/config/byte-text/file-transition/signal grammar","event boundary weighting","search variants and adversarial/stream/helper grammar"]
     }))?)?;
     fs::write(stdio::root().join(".work/parity-fuzz-latest"), directory.as_os_str().as_encoded_bytes())?;
@@ -287,9 +311,24 @@ pub(super) fn selftest() -> Result<()> {
     }
     let original = observe_case(&good, &bad, &case);
     if signature(&original).is_none() { return Err("fuzz reduction control did not detect the attribute fault".into()); }
-    let (reduced, result, attempts) = reduce_events(&case, &original, |case| observe_case(&good, &bad, case));
+    let (reduced, result, attempts) = reduce_part(&case, &original, ReductionPart::Events, |case| observe_case(&good, &bad, case));
     if reduced.events.len() >= case.events.len() || signature(&result) != signature(&original) {
         return Err("fuzz reduction did not preserve and shrink the real attribute mismatch".into());
+    }
+    let mut input_case = case.clone();
+    input_case.args = vec![Argument::from("unused"), Argument::from("--required"), Argument::from("extra")];
+    input_case.fixture = b"abXcd\n".to_vec().into();
+    let conditional = control.path().join("conditional");
+    fs::write(&conditional, format!("#!/bin/sh\nrequired=0\nfor argument do [ \"$argument\" = --required ] && required=1; done\nIFS= read -r content < input || :\nfault=none\ncase \"$content\" in *X*) [ \"$required\" = 1 ] && fault=attribute;; esac\nexec '{quoted}' --fixture \"$fault\"\n"))?;
+    fs::set_permissions(&conditional, fs::Permissions::from_mode(0o700))?;
+    let observe_inputs = |candidate: &Case| observe_case(&good, &conditional, candidate);
+    let input_original = observe_inputs(&input_case);
+    if signature(&input_original).is_none() { return Err("conditional input control did not produce an attribute mismatch".into()); }
+    let (arguments, result, _) = reduce_part(&input_case, &input_original, ReductionPart::Arguments, observe_inputs);
+    let (inputs, result, _) = reduce_part(&arguments, &result, ReductionPart::FixtureBytes, observe_inputs);
+    if inputs.args.len() >= input_case.args.len() || ReductionPart::FixtureBytes.len(&inputs) >= ReductionPart::FixtureBytes.len(&input_case)
+        || signature(&result) != signature(&input_original) || signature(&observe_inputs(&inputs)) != signature(&input_original) {
+        return Err("fuzz input reduction lost a required argument, byte or mismatch category".into());
     }
     let path = control.path().join("observation.json.gz");
     save(&path, &result)?;
@@ -297,6 +336,6 @@ pub(super) fn selftest() -> Result<()> {
     if !decoded.status.success() || serde_json::from_slice::<Value>(&decoded.stdout)? != result {
         return Err("compressed observations do not roundtrip".into());
     }
-    println!("deterministic generated cases distinguish seeds; attribute mismatch shrinks from {} to {} events in {attempts} attempts and compressed observations roundtrip", case.events.len(), reduced.events.len());
+    println!("deterministic generated cases distinguish seeds; attribute mismatch shrinks from {} to {} events in {attempts} attempts; input reduction retains required bytes and arguments; compressed observations roundtrip", case.events.len(), reduced.events.len());
     Ok(())
 }
