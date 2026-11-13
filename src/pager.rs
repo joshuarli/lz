@@ -2462,6 +2462,7 @@ impl Pager {
     }
 
     fn build_status(&self) -> String {
+        if self.mode == Mode::Normal && let NumericPrefix::Value(value) = self.numeric_prefix && value > 0 { return format!(":{value}"); }
         if self.mode == Mode::QuitPrefix { return " Z".into(); }
         if let Mode::OptionPrefix(command) = self.mode { return match command { OptionCommand::Toggle => "-", OptionCommand::ToggleQuietly => "-(P)", OptionCommand::Reset => "-+", OptionCommand::ResetQuietly => "-(P)+", OptionCommand::Set => "-!", OptionCommand::SetQuietly => "-(P)!", OptionCommand::Query => "_" }.into(); }
         if let Mode::OptionLong(command, ref name) = self.mode {

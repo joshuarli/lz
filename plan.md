@@ -138,6 +138,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12ac accepted (partial translation):** the original `colorbars` fixture and first four scrolling steps pass strict generic-terminal comparison on macOS arm64 and Linux arm64 Docker. The remaining option, horizontal and custom-termcap steps stay open.
 
+**S12ae accepted (partial translation):** the original `colorbars` chop toggle and first counted right arrow pass on macOS arm64 and Linux arm64 Docker, alongside neighboring toggle and horizontal cases; all-target Clippy passed on macOS. The normal command prompt displays the tested positive numeric prefix. Leading-zero and overflow prefix display, remaining upstream actions and custom termcap remain open.
+
 **S12ad accepted (partial translation):** the `colorbars` page movement after four line scrolls passes on macOS arm64 and Linux arm64 Docker. Later file information, options, horizontal movement and custom termcap remain open.
 
 **S07am accepted:** `man-0386` `=` reports the tested line and byte information for fully read, unfiltered single regular files at EOF. Four cases, including the original colorbars notice, plus a neighboring prompt case passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Non-EOF, streams, filters, multiple files and other information commands remain open.
