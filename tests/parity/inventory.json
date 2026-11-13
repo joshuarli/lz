@@ -1041,10 +1041,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-nonmatch-repeat", "search-nonmatch-cancel"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Ctrl-N/! toggles nonmatch mode in the forward search prompt; named cases pass on macOS arm64 and Linux arm64 Docker; boundaries remain open"
     },
     {
       "id": "man-0222",
@@ -1117,10 +1117,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-keep-position"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Ctrl-K toggles keep-position in the forward search prompt; named case passes on macOS arm64 and Linux arm64 Docker; boundaries remain open"
     },
     {
       "id": "man-0238",
@@ -1155,10 +1155,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-wrap-toggle-off"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Ctrl-W toggles wrap-around in the forward search prompt; named case passes on macOS arm64 and Linux arm64 Docker; boundaries remain open"
     },
     {
       "id": "man-0254",
@@ -1218,10 +1218,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-nonmatch-backward"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Ctrl-N/! toggles nonmatch mode in the backward search prompt; named case passes on macOS arm64 and Linux arm64 Docker; boundaries remain open"
     },
     {
       "id": "man-0267",
@@ -1275,10 +1275,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-keep-position-backward"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Ctrl-K toggles keep-position in the backward search prompt; named case passes on macOS arm64 and Linux arm64 Docker; boundaries remain open"
     },
     {
       "id": "man-0279",
@@ -1332,10 +1332,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-wrap-backward"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Ctrl-W toggles wrap-around in the backward search prompt; named case passes on macOS arm64 and Linux arm64 Docker; boundaries remain open"
     },
     {
       "id": "man-0289",
@@ -1408,10 +1408,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-nonmatch-reverse"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "N repeats the search in the opposite direction; named case passes on macOS arm64 and Linux arm64 Docker; boundaries remain open"
     },
     {
       "id": "man-0304",
