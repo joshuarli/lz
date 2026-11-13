@@ -106,7 +106,7 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12v accepted:** generator version 13 can repeatedly switch files and restore both known saved positions. Seed 280, the first generated repeat-transition seed, and seeds 0–49 passed on macOS arm64. Deterministic controls passed on macOS and Linux arm64 Docker; all-target Clippy passed on macOS. Saved positions are constrained to known near-start lines; broader transition boundaries remain open.
 
-**S12w planned:** run the fixed seeds 0–999 against generator version 13 after the new search, option and repeated-file interactions. Own generated-case verification and status; S12v is the prerequisite. Acceptance: `make parity-fuzz SEED=0 CASES=1000` passes or retains and reduces a strict failure. This does not substitute for the remaining grammar, holdouts or hardening gate.
+**S12w accepted:** generator version 13 passed seeds 0–999 on macOS arm64 after the seed-117 resize fix. This covers the current bounded grammar only; remaining event families, holdouts, other platforms and the hardening gate remain open.
 
 **S07aj accepted:** seed 117 exposed a `terminal-lifecycle` resize position mismatch after returning to a file and moving to its first line. The reference preserves position zero in a newly grown table, treats that table as empty, and restores the file-entry position. The pager now retains the maximum position-table height across visits and follows the tested behavior. Seven minimal and boundary cases plus neighboring resize cases passed on macOS arm64 and Linux arm64 Docker; seed 117 and all-target Clippy passed on macOS. Wrapped, filtered and other resize interactions remain open.
 
