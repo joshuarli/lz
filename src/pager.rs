@@ -3,7 +3,7 @@ use std::collections::{HashMap, VecDeque};
 
 use crate::ansi::{ControlDisplay, strip_ansi, visible_width};
 use crate::charset::Charset;
-use crate::layout::DisplayPrefix;
+use crate::layout::{DisplayPrefix, NotationStyle};
 use crate::buffer::{LineBuffer, LineFragment};
 use crate::history::SearchHistory;
 use crate::input::{Key, KeyReader};
@@ -280,8 +280,8 @@ impl DisplayLine {
         Self::Mapped(prefix) => prefix.fills_row(start, width),
         Self::Raw { .. } => self.columns() >= start.saturating_add(width),
     } }
-    fn display(&self, start: usize, width: usize) -> Vec<u8> { match self {
-        Self::Mapped(prefix) => prefix.display(start, width),
+    fn display(&self, start: usize, width: usize, notation_style: NotationStyle) -> Vec<u8> { match self {
+        Self::Mapped(prefix) => prefix.display(start, width, notation_style),
         Self::Raw { fragment, tabs } => crate::ansi::truncate_raw(&fragment.text, start, width, tabs).into_bytes(),
     } }
 }
@@ -488,7 +488,7 @@ pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Res
             let mut number = Vec::new();
             Pager::write_number_gutter(&mut number, &gutter, options.use_color);
             output.append(&number)?;
-            output.append(&fragment.display(row * content_width, width.saturating_sub(gutter.len())))?;
+            output.append(&fragment.display(row * content_width, width.saturating_sub(gutter.len()), NotationStyle::for_ui_color(options.use_color)))?;
             if row + 1 < line_rows && fragment.fills_row(row * content_width, content_width) { output.append(b" \x08")?; }
             else { output.append(b"\r\n")?; }
         }
@@ -2233,7 +2233,7 @@ impl Pager {
                     }
                     let line_width = fragment.columns();
                     let chopped = (!fragment.complete() || line_width > self.left_col.saturating_add(content_width)) && content_width > 0;
-                    let display = fragment.display(self.left_col, content_width.saturating_sub(usize::from(chopped)));
+                    let display = fragment.display(self.left_col, content_width.saturating_sub(usize::from(chopped)), NotationStyle::for_ui_color(self.use_color));
                     self.write_line_with_search(buf, &display);
                     if chopped { buf.extend_from_slice(if self.use_color { b"\x1b[30;46m>\x1b[m" } else { b"\x1b[7m>\x1b[m" }); }
                     if row + 1 == ch && fragment.complete() { self.probe_after_complete_line(line_idx)?; }
@@ -2278,7 +2278,7 @@ impl Pager {
                         if wrap_row == 0 { buf.position(screen_row); }
                         let gutter = self.number_gutter(actual, w);
                         Self::write_number_gutter(buf, &gutter, self.use_color);
-                        let display = fragment.display(wrap_row * content_width, w.saturating_sub(gutter.len()));
+                        let display = fragment.display(wrap_row * content_width, w.saturating_sub(gutter.len()), NotationStyle::for_ui_color(self.use_color));
                         self.write_line_with_search(buf, &display);
                         buf.wrapped_row(screen_row);
                         screen_row += 1;
@@ -2390,7 +2390,7 @@ impl Pager {
                 if row >= ch { break; }
                 if row == 0 || !continued { buf.position(row); }
                 Self::write_number_gutter(buf, &gutter, self.use_color);
-                buf.extend_from_slice(&layout.display(offset * content_width, width.saturating_sub(gutter.len())));
+                buf.extend_from_slice(&layout.display(offset * content_width, width.saturating_sub(gutter.len()), NotationStyle::for_ui_color(self.use_color)));
                 buf.wrapped_row(row);
                 row += 1;
                 document_row += 1;

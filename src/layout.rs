@@ -7,6 +7,13 @@ use crate::charset::{Charset, Unit, Units};
 use crate::ansi::{ControlDisplay, ColorSpan, color_span};
 use crate::tabs::TabStops;
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum NotationStyle { Inverse, Color }
+
+impl NotationStyle {
+    pub(crate) fn for_ui_color(enabled: bool) -> Self { if enabled { Self::Color } else { Self::Inverse } }
+}
+
 #[derive(Clone, Copy)]
 enum Representation { Literal, Notation, Tab, Sgr, Hyperlink }
 
@@ -138,7 +145,7 @@ impl DisplayPrefix {
         self.glyphs.iter().any(|glyph| glyph.columns.start < end && glyph.columns.end >= end)
     }
 
-    pub(crate) fn display(&self, start: usize, width: usize) -> Vec<u8> {
+    pub(crate) fn display(&self, start: usize, width: usize, notation_style: NotationStyle) -> Vec<u8> {
         let end = start.saturating_add(width);
         let mut output = Vec::new();
         let mut attributes = (false, false, false);
@@ -165,7 +172,8 @@ impl DisplayPrefix {
                     output.extend_from_slice(b"\x1b[m");
                     for sequence in &source_sgr { output.extend_from_slice(sequence); }
                 }
-                let codes = [(notation, "7"), (glyph.bold, "1"), (glyph.underline, "4")].into_iter().filter_map(|(enabled, code)| enabled.then_some(code)).collect::<Vec<_>>();
+                let colored_notation = notation && notation_style == NotationStyle::Color;
+                let codes = [(notation && !colored_notation, "7"), (colored_notation, "30"), (colored_notation, "101"), (glyph.bold, "1"), (glyph.underline, "4")].into_iter().filter_map(|(enabled, code)| enabled.then_some(code)).collect::<Vec<_>>();
                 if !codes.is_empty() { output.extend_from_slice(format!("\x1b[{}m", codes.join(";")).as_bytes()); }
                 attributes = next_attributes;
             }
@@ -196,44 +204,44 @@ mod tests {
     fn bytes_map_to_columns_before_clipping() {
         let layout = DisplayPrefix::new(b"A\tB\x01\xff".to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard, &TabStops::default());
         assert_eq!(layout.columns, 15);
-        assert_eq!(layout.display(0, 8), "A       ".as_bytes());
-        assert_eq!(layout.display(8, 7), "B\x1b[7m^A<FF>\x1b[m".as_bytes());
-        assert_eq!(layout.display(3, 3), b"   ");
+        assert_eq!(layout.display(0, 8, NotationStyle::Inverse), "A       ".as_bytes());
+        assert_eq!(layout.display(8, 7, NotationStyle::Inverse), "B\x1b[7m^A<FF>\x1b[m".as_bytes());
+        assert_eq!(layout.display(3, 3, NotationStyle::Inverse), b"   ");
     }
 
     #[test]
     fn atomic_notation_and_wide_characters_leave_short_rows() {
         let layout = DisplayPrefix::new(b"abcdefg\x01B".to_vec(), Charset::Ascii, true, NonZeroUsize::new(8), ControlDisplay::Standard, &TabStops::default());
-        assert_eq!(layout.display(0, 8), "abcdefg".as_bytes());
+        assert_eq!(layout.display(0, 8, NotationStyle::Inverse), "abcdefg".as_bytes());
         assert!(!layout.fills_row(0, 8));
-        assert_eq!(layout.display(8, 8), "\x1b[7m^A\x1b[mB".as_bytes());
+        assert_eq!(layout.display(8, 8, NotationStyle::Inverse), "\x1b[7m^A\x1b[mB".as_bytes());
         let layout = DisplayPrefix::new("abcdefg界B".as_bytes().to_vec(), Charset::Utf8, true, NonZeroUsize::new(8), ControlDisplay::Standard, &TabStops::default());
-        assert_eq!(layout.display(0, 8), "abcdefg".as_bytes());
-        assert_eq!(layout.display(8, 8), "界B".as_bytes());
+        assert_eq!(layout.display(0, 8, NotationStyle::Inverse), "abcdefg".as_bytes());
+        assert_eq!(layout.display(8, 8, NotationStyle::Inverse), "界B".as_bytes());
     }
 
     #[test]
     fn backspace_replaces_a_base_and_its_combining_marks() {
         let layout = DisplayPrefix::new("e\u{301}\u{8}e".as_bytes().to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard, &TabStops::default());
         assert_eq!(layout.columns, 1);
-        assert_eq!(layout.display(0, 8), "\x1b[1me\x1b[m".as_bytes());
+        assert_eq!(layout.display(0, 8, NotationStyle::Inverse), "\x1b[1me\x1b[m".as_bytes());
         let layout = DisplayPrefix::new(b"X\x08_\x08X".to_vec(), Charset::Ascii, true, None, ControlDisplay::Standard, &TabStops::default());
-        assert_eq!(layout.display(0, 8), "\x1b[1;4mX\x1b[m".as_bytes());
+        assert_eq!(layout.display(0, 8, NotationStyle::Inverse), "\x1b[1;4mX\x1b[m".as_bytes());
     }
 
     #[test]
     fn split_scalar_waits_for_more_source_bytes() {
         let layout = DisplayPrefix::new(vec![b'x', 0xe2, 0x82], Charset::Utf8, false, None, ControlDisplay::Standard, &TabStops::default());
-        assert_eq!(layout.display(0, 8), "x".as_bytes());
+        assert_eq!(layout.display(0, 8, NotationStyle::Inverse), "x".as_bytes());
         let layout = DisplayPrefix::new(vec![b'x', 0xe2, 0x82], Charset::Utf8, true, None, ControlDisplay::Standard, &TabStops::default());
-        assert_eq!(layout.display(0, 16), "x\x1b[7m<E2><82>\x1b[m".as_bytes());
+        assert_eq!(layout.display(0, 16, NotationStyle::Inverse), "x\x1b[7m<E2><82>\x1b[m".as_bytes());
     }
 
     #[test]
     fn combining_mark_at_right_edge_stays_with_visible_base() {
         let layout = DisplayPrefix::new("xe\u{301}\u{327}z".as_bytes().to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard, &TabStops::default());
-        assert_eq!(layout.display(0, 2), "xe\u{301}\u{327}".as_bytes());
-        assert_eq!(layout.display(1, 1), "e\u{301}\u{327}".as_bytes());
-        assert_eq!(layout.display(0, 0), b"");
+        assert_eq!(layout.display(0, 2, NotationStyle::Inverse), "xe\u{301}\u{327}".as_bytes());
+        assert_eq!(layout.display(1, 1, NotationStyle::Inverse), "e\u{301}\u{327}".as_bytes());
+        assert_eq!(layout.display(0, 0, NotationStyle::Inverse), b"");
     }
 }

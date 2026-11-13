@@ -130,6 +130,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S06m accepted:** `man-1534` colors right-edge truncation markers in the named chopped, shifted and styled-source cases. Three new cases and existing marker regressions passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Other UI color classes remain open.
 
+**S06n accepted:** `man-1534` colors the tested control and malformed-byte notation in interactive, one-screen and search-highlight cases. Three new cases and existing layout/search regressions passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Other UI color classes remain open.
+
 **S12aa accepted (partial translation):** the remaining `chinese1` backward movement and Unicode regex search pass with generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. The original key sequence is represented, but intermediate per-key and custom termcap checkpoints remain open.
 
 **S12ab accepted (partial translation):** the original `chinese1` key sequence now has per-key generic-terminal checkpoints, passing on macOS arm64 and Linux arm64 Docker. The original custom termcap checkpoints remain a separate proof requirement.
