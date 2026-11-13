@@ -379,6 +379,10 @@ pub struct OneScreenOptions {
     pub controls: ControlDisplay,
     /// Select how backspaces are displayed.
     pub backspaces: BackspaceDisplay,
+    /// Select the number of initial lines kept as headers.
+    pub header_lines: usize,
+    /// Show end-of-file markers when headers fill a short screen.
+    pub show_eof_markers: bool,
     /// Select the tested UI color classes.
     pub use_color: bool,
     pub chop: bool,
@@ -478,6 +482,7 @@ fn stream_color_line(buffer: &mut LineBuffer, line: usize, width: usize, charset
 pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Result<OneScreen> {
     let width = usize::from(options.width).max(1);
     let height = usize::from(options.height).max(1);
+    let chop = options.chop || options.header_lines > 0;
     let mut output = OneScreenOutput::new();
     let mut rows = 0;
     for index in 0..height {
@@ -487,17 +492,23 @@ pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Res
         let fragment = if options.controls == ControlDisplay::Raw {
             buffer.line_prefix(index, limit)?.map(|fragment| DisplayLine::Raw { fragment, tabs:options.tab_stops.clone() })
         } else {
-            let wrap = (!options.chop).then(|| std::num::NonZeroUsize::new(content_width).unwrap());
+            let wrap = (!chop).then(|| std::num::NonZeroUsize::new(content_width).unwrap());
             buffer.byte_prefix(index, limit)?.map(|fragment| DisplayLine::Mapped(DisplayPrefix::new(fragment.bytes, options.charset, fragment.complete, wrap, options.controls, options.backspaces, &options.tab_stops)))
         };
         let Some(fragment) = fragment else {
             if let Some(error) = buffer.take_error() { return Err(error); }
             if !buffer.is_finished() { return Ok(OneScreen::Waiting); }
+            if options.header_lines > 0 {
+                for _ in rows..height.saturating_sub(1) {
+                    if options.show_eof_markers { output.append(b"\x1b[1m~\x1b[m")?; }
+                    output.append(b"\x1b[K\r\n")?;
+                }
+            }
             output.append(b"\r\x1b[K")?;
             return Ok(OneScreen::Fits(output));
         };
-        if options.chop && fragment.columns() > content_width { return Ok(OneScreen::Overflows); }
-        let line_rows = if options.chop { 1 } else { fragment.columns().div_ceil(content_width).max(1) };
+        if chop && fragment.columns() > content_width { return Ok(OneScreen::Overflows); }
+        let line_rows = if chop { 1 } else { fragment.columns().div_ceil(content_width).max(1) };
         if rows.saturating_add(line_rows) >= height { return Ok(OneScreen::Overflows); }
         if !fragment.complete() {
             if options.controls == ControlDisplay::Color && fragment.columns() <= content_width {
@@ -753,6 +764,8 @@ pub struct Config {
     pub backspaces: BackspaceDisplay,
     /// Select UI colors; prompt, notice and tested search colors are implemented.
     pub use_color: bool,
+    /// Keep this many initial source lines visible at the top of the screen.
+    pub header_lines: usize,
     /// Enable incremental search while editing a search pattern.
     pub incremental_search: bool,
     /// Allow interactive examine-file commands.
@@ -824,6 +837,7 @@ pub struct Pager {
     charset: Charset,
     controls: ControlDisplay,
     backspaces: BackspaceDisplay,
+    header_lines: usize,
     use_color: bool,
     status_msg: Option<String>,
     filename: Option<String>,
@@ -913,6 +927,7 @@ impl Pager {
             charset: config.charset,
             controls: config.controls,
             backspaces: config.backspaces,
+            header_lines: config.header_lines,
             use_color: config.use_color,
             status_msg: None,
             filename,
@@ -1146,7 +1161,7 @@ impl Pager {
     fn finish_follow_one_screen(&mut self) -> io::Result<bool> {
         if !self.follow_one_screen || self.mode != Mode::Normal { return Ok(false); }
         self.follow_one_screen = false;
-        let options = OneScreenOptions { width:self.term_width, height:self.term_height, charset:self.charset, controls:self.controls, backspaces:self.backspaces, use_color:self.use_color, chop:!self.wrap, line_numbers:self.line_numbers.displayed(), line_number_width:self.line_number_width, tab_stops:self.tab_stops.clone() };
+        let options = OneScreenOptions { width:self.term_width, height:self.term_height, charset:self.charset, controls:self.controls, backspaces:self.backspaces, header_lines:self.header_lines, show_eof_markers:self.show_eof_markers, use_color:self.use_color, chop:!self.wrap, line_numbers:self.line_numbers.displayed(), line_number_width:self.line_number_width, tab_stops:self.tab_stops.clone() };
         match one_screen(&mut self.buffer, options)? {
             OneScreen::Fits(_) => {},
             OneScreen::Overflows => { self.follow_screen_overflowed = true; return Ok(false); },
@@ -2427,7 +2442,7 @@ impl Pager {
         } else { buf.extend_from_slice(gutter.as_bytes()); }
     }
 
-    fn wraps(&self) -> bool { self.wrap && self.left_col == 0 }
+    fn wraps(&self) -> bool { self.wrap && self.left_col == 0 && self.header_lines == 0 }
 
     fn display_prefix(&mut self, line: usize, bytes: usize) -> io::Result<Option<DisplayLine>> {
         if self.controls != ControlDisplay::Raw {
@@ -2481,6 +2496,7 @@ impl Pager {
     }
 
     fn initial_content_row(&mut self, width: usize, height: usize) -> io::Result<usize> {
+        if self.header_lines > 0 { return Ok(0); }
         if self.leading_rows > 0 { return Ok(self.leading_rows.min(height)); }
         if !self.compact_initial && !self.squished && !self.bottom_aligned { return Ok(0); }
         let mut rows = 0;
@@ -2515,17 +2531,20 @@ impl Pager {
             buf.position(row);
             terminal::clear_line(buf);
             let display_idx = self.top_line.saturating_add(row - first_row);
-            let actual = self.display_line_idx(display_idx);
+            let actual = if row < self.header_lines { Some(row) } else { self.display_line_idx(display_idx) };
             let fragment = match actual { Some(index) => self.display_prefix(index, self.left_col.saturating_add(w).saturating_add(1).saturating_mul(16).max(4096))?, None => None };
             match actual.zip(fragment) {
                 Some((line_idx, fragment)) => {
                     self.last_visible_line = Some(line_idx);
                     let gutter = self.number_gutter(line_idx, w);
                     Self::write_number_gutter(buf, &gutter, self.use_color);
+                    let underline_header = row + 1 == self.header_lines && self.top_line != 0;
+                    if underline_header { buf.extend_from_slice(b"\x1b[4m"); }
                     let content_width = w.saturating_sub(gutter.len());
                     if self.can_stream_visible_color_line(line_idx, content_width, &fragment)
                         && let Some(sgr) = buf.append_color_line(&mut self.buffer, line_idx, content_width, self.charset, |_| {})? {
                         if sgr { buf.extend_from_slice(b"\x1b[m"); }
+                        if underline_header { buf.extend_from_slice(b"\x1b[24m"); }
                         if row + 1 == ch { self.probe_after_complete_line(line_idx)?; }
                         terminal::clear_line(buf);
                         continue;
@@ -2535,6 +2554,7 @@ impl Pager {
                     let display = fragment.display(self.left_col, content_width.saturating_sub(usize::from(chopped)), NotationStyle::for_ui_color(self.use_color));
                     self.write_line_with_search(buf, &display, &fragment, self.left_col);
                     if chopped { buf.extend_from_slice(if self.use_color { b"\x1b[30;46m>\x1b[m" } else { b"\x1b[7m>\x1b[m" }); }
+                    if underline_header { buf.extend_from_slice(b"\x1b[24m"); }
                     if row + 1 == ch && fragment.complete() { self.probe_after_complete_line(line_idx)?; }
                 }
                 None => self.write_eof_marker(buf),
@@ -2960,7 +2980,7 @@ mod one_screen_tests {
         for _ in 0..32 { input.write_all(&block).unwrap(); }
         input.write_all(b"x\n").unwrap();
         let mut buffer = LineBuffer::from_file(std::fs::File::open(input.path()).unwrap());
-        let options = OneScreenOptions { width:80, height:24, charset:Charset::Ascii, controls:ControlDisplay::Color, backspaces:BackspaceDisplay::Overstrike, use_color:false, chop:false, line_numbers:false, line_number_width:Default::default(), tab_stops:Default::default() };
+        let options = OneScreenOptions { width:80, height:24, charset:Charset::Ascii, controls:ControlDisplay::Color, backspaces:BackspaceDisplay::Overstrike, header_lines:0, show_eof_markers:true, use_color:false, chop:false, line_numbers:false, line_number_width:Default::default(), tab_stops:Default::default() };
         let OneScreen::Fits(output) = one_screen(&mut buffer, options).unwrap() else { panic!("color line should fit"); };
         assert!(matches!(&output.storage, OneScreenStorage::File(_)));
         let mut written = tempfile::NamedTempFile::new().unwrap();

@@ -17,6 +17,7 @@ pub(super) enum Diagnostic {
     LineNumberWidthTooLarge,
     NegativeLineNumberWidth,
     InvalidPosition { fraction: bool },
+    UnsupportedHeader(Vec<u8>),
 }
 
 impl Diagnostic {
@@ -36,6 +37,7 @@ impl Diagnostic {
             Self::LineNumberWidthTooLarge => return writeln!(output, "Line number width must not be larger than {}", lz::pager::LineNumberWidth::MAX),
             Self::NegativeLineNumberWidth => return output.write_all(b"Line number width must not be negative\n"),
             Self::InvalidPosition { fraction } => return output.write_all(if *fraction { b"Invalid fraction\n" } else { b"Invalid number\n" }),
+            Self::UnsupportedHeader(value) => { output.write_all(b"Unsupported header specification: ")?; output.write_all(value)?; return output.write_all(b"\n"); }
         }
         output.write_all(b" (\"lz --help\" for help)\n")
     }
@@ -58,6 +60,7 @@ pub(super) struct Args {
     pub control_display: ControlDisplay,
     pub use_color: bool,
     pub backspaces: BackspaceDisplay,
+    pub header_lines: usize,
     pub incremental_search: bool,
     pub chop: bool,
     pub line_numbers: lz::pager::LineNumberMode,
@@ -78,7 +81,7 @@ pub(super) struct Args {
 
 impl Default for Args {
     fn default() -> Self {
-        Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, eof_policy: Default::default(), bell_policy: Default::default(), control_display: ControlDisplay::default(), use_color: false, backspaces: BackspaceDisplay::Overstrike, incremental_search: false, chop: false, line_numbers: Default::default(), show_eof_markers: true, window: None, horizontal_shift: None, search_case: CaseSensitivity::Sensitive,
+        Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, eof_policy: Default::default(), bell_policy: Default::default(), control_display: ControlDisplay::default(), use_color: false, backspaces: BackspaceDisplay::Overstrike, header_lines: 0, incremental_search: false, chop: false, line_numbers: Default::default(), show_eof_markers: true, window: None, horizontal_shift: None, search_case: CaseSensitivity::Sensitive,
             line_number_width: Default::default(), search_start: SearchStart::default(), jump_target: Default::default(), history_duplicates: Default::default(), tab_stops: Default::default(), filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
@@ -106,6 +109,18 @@ fn scan_number(bytes: &[u8]) -> NumberScan {
     }
     if overflow { NumberScan::Overflow(start + digits) }
     else { NumberScan::Number { bytes: start + digits, value: if sign == 0 { value as i32 } else { -(value as i32) } } }
+}
+
+fn header_lines(value: &[u8], current: usize) -> Option<usize> {
+    if value.starts_with(b"-") { return Some(0); }
+    let mut fields = value.split(|byte| *byte == b',');
+    let lines = fields.next()?;
+    let parse = |field: &[u8]| std::str::from_utf8(field).ok()?.parse::<usize>().ok();
+    let lines = if lines.is_empty() { current } else { parse(lines)? };
+    if let Some(columns) = fields.next() && !columns.is_empty() && parse(columns)? != 0 { return None; }
+    if let Some(start) = fields.next() && !start.is_empty() && parse(start)? > 1 { return None; }
+    if fields.next().is_some() { return None; }
+    Some(lines)
 }
 
 #[derive(Default)]
@@ -171,6 +186,11 @@ impl Scanner {
                         return consumed;
                     },
                     "tabs" => if let Some(stops) = lz::tabs::TabStops::parse(&payload[..end]) { self.args.tab_stops = stops; },
+                    "header" => {
+                        let value = &payload[..end];
+                        if let Some(lines) = header_lines(value, self.args.header_lines) { self.args.header_lines = lines; }
+                        else { self.args.diagnostics.push(Diagnostic::UnsupportedHeader(value.to_vec())); }
+                    },
                     _ => {}
                 }
                 end
@@ -290,6 +310,15 @@ pub(super) fn parse(arguments: Vec<OsString>, defaults: Option<OsString>) -> Arg
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unsupported_header_fields_are_reported() {
+        let args = parse(vec!["--header=2,5".into(), "input".into()], None);
+        assert_eq!(args.diagnostics.len(), 1);
+        let mut output = Vec::new();
+        args.diagnostics[0].write(&mut output).unwrap();
+        assert_eq!(output, b"Unsupported header specification: 2,5\n");
+    }
 
     #[test]
     fn version_stops_option_scanning() {

@@ -279,7 +279,7 @@ fn run() -> Result<ExitAction, String> {
     if !help_requested && args.quit_if_one_screen && args.filenames.len() == 1 && tag_address.is_none() {
         loop {
             let (width, height) = terminal::get_terminal_size();
-            let options = pager::OneScreenOptions { width, height, charset, controls:args.control_display, backspaces:args.backspaces, use_color:args.use_color, chop:args.chop, line_numbers:args.line_numbers.displayed(), line_number_width:args.line_number_width, tab_stops:args.tab_stops.clone() };
+            let options = pager::OneScreenOptions { width, height, charset, controls:args.control_display, backspaces:args.backspaces, header_lines:args.header_lines, show_eof_markers:args.show_eof_markers, use_color:args.use_color, chop:args.chop, line_numbers:args.line_numbers.displayed(), line_number_width:args.line_number_width, tab_stops:args.tab_stops.clone() };
             match pager::one_screen(&mut opened.buffer, options) {
                 Ok(pager::OneScreen::Fits(output)) => {
                     if !args.startup_commands.is_empty() || args.every_file_command.is_some() {
@@ -341,7 +341,7 @@ fn run() -> Result<ExitAction, String> {
         let mut startup_commands = std::mem::take(&mut args.startup_commands);
         if let Some(command) = &args.every_file_command { startup_commands.push(command.clone()); }
         let alternate = opened.alternate.take();
-        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, backspaces: args.backspaces, use_color: args.use_color, incremental_search: args.incremental_search, allow_examine: security.allows(security::Feature::Examine), chop: args.chop, line_numbers: args.line_numbers, line_number_width: args.line_number_width, tab_stops: args.tab_stops.clone(), show_eof_markers: args.show_eof_markers, search_case: args.search_case, regex_locale, search_start: args.search_start, search_session, jump_target: args.jump_target }, opened.name, history);
+        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, backspaces: args.backspaces, header_lines: args.header_lines, use_color: args.use_color, incremental_search: args.incremental_search, allow_examine: security.allows(security::Feature::Examine), chop: args.chop, line_numbers: args.line_numbers, line_number_width: args.line_number_width, tab_stops: args.tab_stops.clone(), show_eof_markers: args.show_eof_markers, search_case: args.search_case, regex_locale, search_start: args.search_start, search_session, jump_target: args.jump_target }, opened.name, history);
         let mut first_run = true;
         let result = loop {
             let result = if first_run && showing_help { pager.run_help(session.keys_mut(), help_files) }

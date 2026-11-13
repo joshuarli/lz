@@ -4435,10 +4435,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["rendering-header-rows-scroll", "rendering-header-rows-numbered", "rendering-header-rows-force-chop", "rendering-header-rows-file-switch", "rendering-header-rows-one-screen"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Startup fixed rows anchored at the first line pass the named views. Header columns and alternate starts are explicitly unsupported; interactive editing, search and other interactions remain open."
     },
     {
       "id": "man-1357",

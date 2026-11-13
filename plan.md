@@ -150,6 +150,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12av accepted:** interactive differential cases use the pinned reference build's `lessecho` helper unless overridden; setup checks its version and fails when it is absent. Missing-file examine cases and all 51 admitted session cases passed on macOS arm64 and Linux arm64 Docker. The test environment contract changed.
 
+**S06o accepted (partial):** startup `--header=L` fixes the first L rows, forces chopping and underlines the last header after movement in the named views. Eleven focused cases pass on macOS arm64 and Linux arm64 Docker; 92 previously admitted rendering cases, the unsupported-form diagnostic test and all-target Clippy pass on macOS. Public pager and one-screen configurations carry the settings. Unsupported column and alternate-start forms report a diagnostic. Header columns, alternate starts, interactive editing, search, filtering and other short-file interactions remain open.
+
 **S12bi accepted (partial translation):** the original `table-50x200` fixture and initial chop toggle pass generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Header configuration, later commands and original custom termcap remain open.
 
 **S07as accepted (partial):** ordinary forward movement preserves a search-positioned plain-line view when EOF is already visible. Two reduced cases, the upstream sequence and four neighboring cases pass on macOS arm64 and Linux arm64 Docker. The 152 previously admitted navigation cases, 62 session cases and all-target Clippy pass on macOS. Wrapped multirow, filters and live streams remain open.
