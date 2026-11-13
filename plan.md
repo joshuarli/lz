@@ -148,7 +148,7 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12ap accepted:** parity cases can bracket bell-sensitive actions in a checked wall-clock-second window; missing, nested and elapsed windows fail as harness errors. Focused checkpoint selftests passed on macOS arm64 and Linux arm64 Docker, and the strict Unicode navigation case passed five macOS and fifteen Linux repetitions. All-target Clippy passed on macOS. The case event schema and focused checkpoint-selftest command are extended.
 
-**S12ao planned:** translate the next upstream `utf8-2.txt` vertical movements and first counted horizontal step after search. Own upstream-derived differential coverage and any necessary local fix; S12an is the prerequisite. Acceptance: the named interactions match on macOS and Linux arm64 in C.UTF-8; later keys and custom termcap remain open.
+**S12ao accepted (partial translation):** the original `utf8-2.txt` post-search vertical movements and first counted horizontal step pass in C.UTF-8 on macOS arm64 and Linux arm64 Docker. A checked same-second window makes the reference bell-rate condition comparable; five macOS and fifteen Linux repetitions passed. Later keys, exact Linux en_US.UTF-8 locale and custom termcap remain open.
 
 **S12an accepted (partial translation):** the original `utf8-2.txt` fixture, first fifteen scrolls and first regex search pass generic-terminal comparison in C.UTF-8 on macOS arm64 and Linux arm64 Docker. The search also passed with the upstream en_US.UTF-8 locale on macOS; that locale is unavailable in the Linux container. Later commands and custom termcap remain open. A separate C-locale regex difference remains local work.
 
