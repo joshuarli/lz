@@ -259,6 +259,10 @@ pub enum PagerExit { Quit, Interrupted, VisitFile(FileVisit) }
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub enum InterruptPolicy { #[default] Continue, Quit }
 
+/// Select when a displayed end of file causes a file transition or exit.
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+pub enum EofPolicy { #[default] Manual, AfterEof, AtEof }
+
 /// A file index validated against the configured command-line file list.
 #[derive(Clone, Copy)]
 pub struct FileVisit { index: usize, startup_command: Option<StartupFileSwitch> }
@@ -343,6 +347,7 @@ impl FileStatus {
 
 pub struct Config {
     pub interrupt_policy: InterruptPolicy,
+    pub eof_policy: EofPolicy,
     pub scroll_defaults: ScrollDefaults,
     pub display_anchor: DisplayAnchor,
     pub files: FileStatus,
@@ -357,6 +362,8 @@ pub struct Config {
 
 pub struct Pager {
     interrupt_policy: InterruptPolicy,
+    eof_policy: EofPolicy,
+    eof_displayed: bool,
     startup_echo: Option<FileCommand>,
     paint_before_commands: bool,
     scroll_defaults: ScrollDefaults,
@@ -409,6 +416,8 @@ impl Pager {
         let (w, h) = terminal::get_terminal_size();
         Pager {
             interrupt_policy: config.interrupt_policy,
+            eof_policy: config.eof_policy,
+            eof_displayed: false,
             startup_echo: match config.initial_display { InitialDisplay::StartupFileSwitch(switch) => Some(switch.command), _ => None },
             paint_before_commands: matches!(config.initial_display, InitialDisplay::StartupFileSwitch(StartupFileSwitch { continuation: CommandContinuation::NextCommand, .. })) && !config.startup_commands.is_empty(),
             scroll_defaults: config.scroll_defaults,
@@ -583,7 +592,13 @@ impl Pager {
 
             if self.buffer.refresh_waiting() { redraw = true; }
             if let Some(error) = self.buffer.take_error() { return Err(error); }
-            if redraw { self.render()?; redraw = false; }
+            if redraw {
+                self.render()?;
+                redraw = false;
+                if self.eof_policy == EofPolicy::AtEof && self.eof_displayed && self.files.index + 1 == self.files.count && self.mode == Mode::Normal {
+                    return self.finish_run();
+                }
+            }
 
             let key = if self.mode == Mode::Follow {
                 let new_lines = self.buffer.poll_new_lines();
@@ -760,6 +775,11 @@ impl Pager {
             self.bell_requested = true;
             return false;
         }
+        if self.eof_policy != EofPolicy::Manual && self.eof_displayed && self.command_context == CommandContext::Interactive
+            && matches!(key, Key::Char('j' | 'e' | 'd' | ' ' | 'f' | 'z') | Key::Down | Key::Enter | Key::PageDown | Key::Ctrl('e' | 'n' | 'd' | 'f' | 'v')) {
+            if self.files.index + 1 < self.files.count { self.exit = PagerExit::VisitFile(FileVisit { index:self.files.index + 1, startup_command:None }); }
+            return true;
+        }
         match key {
             Key::Char('q' | 'Q') | Key::Escape => return true,
             Key::Ctrl('c') => self.bell_requested = true,
@@ -833,7 +853,9 @@ impl Pager {
                 self.filter_input.clear();
             }
             Key::Char('F') => {
+                let startup_bottom = self.command_context != CommandContext::Interactive;
                 self.position_initialized();
+                self.startup_bottom = startup_bottom;
                 self.mode = Mode::Follow;
                 self.buffer.read_all();
                 self.scroll_to_bottom();
@@ -1225,6 +1247,10 @@ impl Pager {
         }
 
         if let Some(error) = self.buffer.take_error() { return Err(error); }
+        if self.eof_policy != EofPolicy::Manual {
+            self.eof_displayed = self.visible_end_of_file()?;
+            if let Some(error) = self.buffer.take_error() { return Err(error); }
+        }
         if status { self.render_status(&mut buf, w); }
         else { buf.position(ch); terminal::clear_line(&mut buf); }
         self.display_anchor.row = if primary { buf.relative_row } else { None };
@@ -1287,6 +1313,27 @@ impl Pager {
         if !fragment.complete() { return available; }
         let columns = width.saturating_sub(self.number_gutter(actual, width).len()).max(1);
         fragment.columns().div_ceil(columns).max(1)
+    }
+
+    fn visible_end_of_file(&mut self) -> io::Result<bool> {
+        let width = usize::from(self.term_width).max(1);
+        let height = self.content_height();
+        let mut rows = 0;
+        let mut index = self.top_line;
+        loop {
+            let Some(actual) = self.display_line_idx(index) else { return Ok(self.buffer.is_finished()); };
+            let limit = width.saturating_mul(height.saturating_sub(rows)).saturating_add(1).saturating_mul(16).max(4096);
+            let Some(fragment) = self.display_prefix(actual, limit)? else { return Ok(self.buffer.is_finished()); };
+            if !fragment.complete() { return Ok(false); }
+            let occupied = if self.wrap { self.wrapped_prefix_rows(&fragment, actual, width, height.saturating_sub(rows)) } else { 1 };
+            rows = rows.saturating_add(occupied);
+            if rows > height { return Ok(false); }
+            index += 1;
+            if rows == height {
+                let Some(next) = self.display_line_idx(index) else { return Ok(self.buffer.is_finished()); };
+                return Ok(self.display_prefix(next, 1)?.is_none() && self.buffer.is_finished());
+            }
+        }
     }
 
     fn initial_content_row(&mut self, width: usize, height: usize) -> io::Result<usize> {

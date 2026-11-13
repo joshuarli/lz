@@ -2934,10 +2934,15 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-quit-at-eof-twice",
+        "invocation-quit-at-eof-twice-long",
+        "invocation-quit-at-eof-twice-multiple",
+        "invocation-quit-at-eof-reset"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named cases cover EOF exit, multiple files, viewport wrapping, reset, completed pipes and follow. Held-open stream readiness and additional command interactions remain open."
     },
     {
       "id": "man-0852",
@@ -2953,10 +2958,20 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-quit-at-eof-once",
+        "invocation-quit-at-eof-once-long",
+        "invocation-quit-at-eof-once-multiple",
+        "invocation-quit-at-eof-once-wrapped",
+        "invocation-quit-at-eof-once-23",
+        "invocation-quit-at-eof-once-one-screen",
+        "invocation-quit-at-eof-long-option",
+        "invocation-quit-at-eof-pipe-eof",
+        "invocation-quit-at-eof-follow"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named cases cover EOF exit, multiple files, viewport wrapping, reset, completed pipes and follow. Held-open stream readiness and additional command interactions remain open."
     },
     {
       "id": "man-0856",

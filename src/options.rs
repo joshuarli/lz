@@ -121,6 +121,7 @@ pub(super) struct Args {
     pub force: bool,
     pub use_lessopen: bool,
     pub quit_if_one_screen: bool,
+    pub eof_policy: lz::pager::EofPolicy,
     pub control_display: ControlDisplay,
     pub chop: bool,
     pub line_numbers: bool,
@@ -134,7 +135,7 @@ pub(super) struct Args {
 
 impl Default for Args {
     fn default() -> Self {
-        Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, control_display: ControlDisplay::default(), chop: false, line_numbers: false, window: None, search_case: CaseSensitivity::Sensitive,
+        Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, eof_policy: Default::default(), control_display: ControlDisplay::default(), chop: false, line_numbers: false, window: None, search_case: CaseSensitivity::Sensitive,
             filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
@@ -187,6 +188,7 @@ impl Scanner {
             "force" => self.args.force = !reset,
             "no-lessopen" => self.args.use_lessopen = reset,
             "quit-if-one-screen" => self.args.quit_if_one_screen = !reset,
+            "quit-at-eof" => self.args.eof_policy = if reset { Default::default() } else if upper { lz::pager::EofPolicy::AtEof } else { lz::pager::EofPolicy::AfterEof },
             "quit-on-intr" => self.args.interrupt_policy = if reset { Default::default() } else { lz::pager::InterruptPolicy::Quit },
             "no-init" => self.args.terminal.screen = if reset { Default::default() } else { lz::terminal::ScreenMode::Preserve },
             "no-keypad" => self.args.terminal.keypad = if reset { Default::default() } else { lz::terminal::KeypadMode::Normal },
