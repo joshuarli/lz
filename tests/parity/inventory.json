@@ -3060,11 +3060,18 @@
         "invocation-quit-one-screen-follow-growth",
         "invocation-quit-one-screen-follow-growth-no-init",
         "invocation-quit-one-screen-follow-growth-no-keypad",
-        "invocation-quit-one-screen-long-color"
+        "invocation-quit-one-screen-long-color",
+        "invocation-one-screen-sgr-chunk-split",
+        "invocation-one-screen-sgr-crlf",
+        "invocation-one-screen-sgr-numbers",
+        "invocation-one-screen-sgr-multiple-lines",
+        "invocation-one-screen-sgr-exact-width",
+        "invocation-one-screen-sgr-no-init",
+        "invocation-one-screen-sgr-pipe"
       ],
       "implementation": "partial",
       "evidence": "partially compatible",
-      "cause": "Initial single-file -F covers boundaries, wrapping, chopping, line numbers, controls, color, -X, resets, stream EOF, interrupts, startup commands and follow growth teardown. Extremely long low-width input and additional startup interactions remain open. A long line of zero-width color escapes is misclassified until layout can scan incrementally within bounded memory."
+      "cause": "Initial single-file -F covers the named boundaries and interactions. Long SGR/ASCII single-row lines stream with bounded memory; long Unicode, other escapes, multi-row long lines and additional startup interactions remain open."
     },
     {
       "id": "man-0870",

@@ -462520,7 +462520,7 @@
   {
     "id": "invocation-quit-one-screen-long-color",
     "family": "invocation",
-    "admitted": false,
+    "admitted": true,
     "source": "pty",
     "fixture": {
       "repeat": [
@@ -483363,6 +483363,377 @@
     "trace_check": "captured"
   },
   {
+    "id": "invocation-one-screen-sgr-chunk-split",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        27,
+        91,
+        51,
+        49,
+        109
+      ],
+      "count": 20000,
+      "suffix": [
+        120,
+        10
+      ]
+    },
+    "args": [
+      "-F",
+      "-R",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-one-screen-sgr-crlf",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        27,
+        91,
+        48,
+        109
+      ],
+      "count": 20000,
+      "suffix": [
+        120,
+        13,
+        10
+      ]
+    },
+    "args": [
+      "-F",
+      "-R",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-one-screen-sgr-numbers",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        27,
+        91,
+        48,
+        109
+      ],
+      "count": 20000,
+      "suffix": [
+        120,
+        10
+      ]
+    },
+    "args": [
+      "-F",
+      "-R",
+      "-N",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-one-screen-sgr-multiple-lines",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        27,
+        91,
+        48,
+        109
+      ],
+      "count": 20000,
+      "suffix": [
+        120,
+        10,
+        115,
+        104,
+        111,
+        114,
+        116,
+        10
+      ]
+    },
+    "args": [
+      "-F",
+      "-R",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-one-screen-sgr-exact-width",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        27,
+        91,
+        48,
+        109
+      ],
+      "count": 20000,
+      "suffix": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        10
+      ]
+    },
+    "args": [
+      "-F",
+      "-R",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-one-screen-sgr-no-init",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        27,
+        91,
+        48,
+        109
+      ],
+      "count": 10000,
+      "suffix": [
+        120,
+        10
+      ]
+    },
+    "args": [
+      "-F",
+      "-R",
+      "-X",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-one-screen-sgr-pipe",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty-pipe",
+    "fixture": {
+      "repeat": [
+        27,
+        91,
+        48,
+        109
+      ],
+      "count": 20000,
+      "suffix": [
+        120,
+        10
+      ]
+    },
+    "args": [
+      "-F",
+      "-R",
+      "-"
+    ],
+    "env": {
+      "LZ_PARITY_PRODUCER_CLOSE": "1"
+    },
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
     "id": "invocation-quit-one-screen-follow-small-growth",
     "family": "invocation",
     "admitted": true,
@@ -483424,6 +483795,47 @@
         ]
       }
     ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-one-screen-sgr-startup",
+    "family": "invocation",
+    "admitted": false,
+    "source": "pty",
+    "fixture": {
+      "repeat": [
+        27,
+        91,
+        48,
+        109
+      ],
+      "count": 10000,
+      "suffix": [
+        120,
+        10
+      ]
+    },
+    "args": [
+      "-F",
+      "-R",
+      "+g",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
     "fixture_name": [
       105,
       110,

@@ -135,6 +135,25 @@ impl LineBuffer {
         self.content_fragment(index, Some(bytes))
     }
 
+    pub(crate) fn byte_chunk(&mut self, index: usize, offset: u64, limit: usize) -> io::Result<Option<ByteFragment>> {
+        if !self.ensure_line(index) { return Ok(None); }
+        let start = self.starts.get(index)?;
+        let chunk_start = start.checked_add(offset).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "line offset overflow"))?;
+        let wanted = chunk_start.saturating_add(limit as u64);
+        while self.starts.len() <= index + 1 && !self.is_finished() && self.scanned < wanted {
+            if !self.scan() { break; }
+        }
+        let terminated = self.starts.len() > index + 1;
+        let end = if terminated { self.starts.get(index + 1)? - 1 } else { self.scanned };
+        if chunk_start > end { return Err(io::Error::new(io::ErrorKind::InvalidInput, "line offset outside scanned data")); }
+        let length = (end - chunk_start).min(limit as u64) as usize;
+        let mut bytes = vec![0; length];
+        self.source.file().read_exact_at(&mut bytes, chunk_start)?;
+        let complete = (terminated || self.is_finished()) && chunk_start + length as u64 == end;
+        if bytes.last() == Some(&b'\r') && (terminated || !complete) { bytes.pop(); }
+        Ok(Some(ByteFragment { bytes, complete }))
+    }
+
     fn fragment(&mut self, index: usize, limit: Option<usize>) -> io::Result<Option<LineFragment>> {
         let Some(ByteFragment { mut bytes, complete }) = self.content_fragment(index, limit)? else { return Ok(None); };
         if !complete && let Err(error) = std::str::from_utf8(&bytes)
@@ -235,6 +254,21 @@ mod tests {
         assert_eq!(last.bytes, b"last\r");
         assert!(last.complete);
         assert_eq!(buffer.get_line(1), Some("last\r"));
+    }
+
+    #[test]
+    fn chunks_normalize_crlf_across_a_read_boundary() {
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(&vec![b'x'; BLOCK_BYTES - 1]).unwrap();
+        tmp.write_all(b"\r\nnext\n").unwrap();
+        let mut buffer = LineBuffer::from_file(File::open(tmp.path()).unwrap());
+        let first = buffer.byte_chunk(0, 0, BLOCK_BYTES).unwrap().unwrap();
+        assert_eq!(first.bytes, vec![b'x'; BLOCK_BYTES - 1]);
+        assert!(!first.complete);
+        let last = buffer.byte_chunk(0, first.bytes.len() as u64, BLOCK_BYTES).unwrap().unwrap();
+        assert!(last.bytes.is_empty());
+        assert!(last.complete);
+        assert_eq!(buffer.byte_chunk(1, 0, BLOCK_BYTES).unwrap().unwrap().bytes, b"next");
     }
 
     #[test]

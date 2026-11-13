@@ -313,7 +313,7 @@ fn run() -> Result<ExitAction, String> {
                     }
                     if args.terminal.screen == terminal::ScreenMode::Preserve
                         && let Err(error) = session.enter_interactive(args.terminal) { return finish_opened(Err(error), opened, session); }
-                    let result = io::stdout().lock().write_all(&output).map(|()| ExitAction::Success);
+                    let result = output.write_to(&mut io::stdout().lock()).map(|()| ExitAction::Success);
                     return finish_opened(result, opened, session);
                 }
                 Ok(pager::OneScreen::Overflows) => break,

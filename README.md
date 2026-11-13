@@ -42,6 +42,8 @@ An exact-viewport final line gets bounded source lookahead so its EOF prompt is 
 
 `-X`/`--no-init` preserves the primary screen, places a short file below the current cursor and clears its prompt on exit. `--no-keypad` independently suppresses application keypad and cursor modes. Both settings accept LESS defaults and CLI resets. Nondefault modes during suspend/resume, resizing, help and complex file transitions still need differential coverage.
 
+`-F` exits after displaying a single file that fits on one screen. With `-R`, long runs of SGR color sequences and single-row ASCII text use bounded memory; long color input with startup commands and other long layout forms remain unfinished.
+
 Initial display reads bounded line prefixes from disk-backed source storage. An open pipe waits for initial data or EOF before painting its first view; keyboard and signal handling remain active. Streamed input and large line indexes use owned anonymous spill files. Source bytes are retained intact. Whole-line search, wrapped navigation and exact malformed-byte display remain unfinished.
 
 PTY pipe fixtures accept `LZ_PARITY_PRODUCER_DELAY_MS` from 0 through 1000 to delay the owned producer’s first write. The delayed-startup regression compares the first screen against the oracle without changing readiness or output limits.

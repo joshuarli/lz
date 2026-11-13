@@ -1,4 +1,4 @@
-use std::io::{self, Write};
+use std::io::{self, Seek, Write};
 use std::collections::{HashMap, VecDeque};
 
 use crate::ansi::{ControlDisplay, strip_ansi, truncate_to_width, visible_width};
@@ -199,7 +199,43 @@ impl DisplayLine {
 }
 
 /// The result of probing whether a source fits in a terminal viewport.
-pub enum OneScreen { Fits(Vec<u8>), Overflows, Waiting }
+pub enum OneScreen { Fits(OneScreenOutput), Overflows, Waiting }
+
+enum OneScreenStorage { Memory(Vec<u8>), File(std::fs::File) }
+
+/// Output retained by a successful one-screen probe.
+pub struct OneScreenOutput { storage: OneScreenStorage }
+
+impl OneScreenOutput {
+    fn new() -> Self { Self { storage: OneScreenStorage::Memory(vec![b'\r']) } }
+
+    fn append(&mut self, bytes: &[u8]) -> io::Result<()> {
+        match &mut self.storage {
+            OneScreenStorage::Memory(output) => { output.extend_from_slice(bytes); Ok(()) }
+            OneScreenStorage::File(output) => output.write_all(bytes),
+        }
+    }
+
+    fn append_file(&mut self, mut input: std::fs::File) -> io::Result<()> {
+        if let OneScreenStorage::Memory(bytes) = &mut self.storage {
+            let mut output = crate::storage::anonymous_file()?;
+            output.write_all(bytes)?;
+            self.storage = OneScreenStorage::File(output);
+        }
+        input.rewind()?;
+        let OneScreenStorage::File(output) = &mut self.storage else { unreachable!() };
+        io::copy(&mut input, output)?;
+        Ok(())
+    }
+
+    /// Write the retained screen bytes without materializing a spilled line in memory.
+    pub fn write_to(mut self, output: &mut impl Write) -> io::Result<()> {
+        match &mut self.storage {
+            OneScreenStorage::Memory(bytes) => output.write_all(bytes),
+            OneScreenStorage::File(input) => { input.rewind()?; io::copy(input, output)?; Ok(()) }
+        }
+    }
+}
 
 /// Display settings used while probing a source before acquiring the alternate screen.
 pub struct OneScreenOptions {
@@ -220,11 +256,53 @@ fn number_gutter(line: usize, width: usize, enabled: bool) -> String {
     format!("{:>7} ", line + 1).chars().take(width).collect()
 }
 
+enum SgrScan { Text, Escape, Sequence }
+enum StreamedLine { Fits(std::fs::File, bool), Unsupported, Waiting }
+
+fn stream_color_line(buffer: &mut LineBuffer, line: usize, width: usize) -> io::Result<StreamedLine> {
+    let mut file = crate::storage::anonymous_file()?;
+    let mut offset = 0u64;
+    let mut columns = 0usize;
+    let mut sgr = false;
+    let mut state = SgrScan::Text;
+    loop {
+        if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return Ok(StreamedLine::Waiting); }
+        if terminal::interrupt_pending() { return Ok(StreamedLine::Unsupported); }
+        let Some(chunk) = buffer.byte_chunk(line, offset, 64 * 1024)? else {
+            if let Some(error) = buffer.take_error() { return Err(error); }
+            return Ok(StreamedLine::Waiting);
+        };
+        for &byte in &chunk.bytes {
+            state = match state {
+                SgrScan::Text if byte == 0x1b => SgrScan::Escape,
+                SgrScan::Text if (0x20..=0x7e).contains(&byte) => {
+                    columns += 1;
+                    if columns > width { return Ok(StreamedLine::Unsupported); }
+                    SgrScan::Text
+                }
+                SgrScan::Escape if byte == b'[' => SgrScan::Sequence,
+                SgrScan::Sequence if byte == b'm' => { sgr = true; SgrScan::Text }
+                SgrScan::Sequence if b"0123456789:;[?!\"'#%()*+ ".contains(&byte) => SgrScan::Sequence,
+                _ => return Ok(StreamedLine::Unsupported),
+            };
+        }
+        file.write_all(&chunk.bytes)?;
+        offset += chunk.bytes.len() as u64;
+        if chunk.complete {
+            return Ok(if matches!(state, SgrScan::Text) { StreamedLine::Fits(file, sgr) } else { StreamedLine::Unsupported });
+        }
+        if chunk.bytes.is_empty() {
+            if let Some(error) = buffer.take_error() { return Err(error); }
+            return Ok(StreamedLine::Waiting);
+        }
+    }
+}
+
 /// Read bounded display prefixes and retain the rendered output when the source fits.
 pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Result<OneScreen> {
     let width = usize::from(options.width).max(1);
     let height = usize::from(options.height).max(1);
-    let mut output = vec![b'\r'];
+    let mut output = OneScreenOutput::new();
     let mut rows = 0;
     for index in 0..height {
         let gutter = number_gutter(index, width, options.line_numbers);
@@ -239,20 +317,38 @@ pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Res
         let Some(fragment) = fragment else {
             if let Some(error) = buffer.take_error() { return Err(error); }
             if !buffer.is_finished() { return Ok(OneScreen::Waiting); }
-            output.extend_from_slice(b"\r\x1b[K");
+            output.append(b"\r\x1b[K")?;
             return Ok(OneScreen::Fits(output));
         };
         if options.chop && fragment.columns() > content_width { return Ok(OneScreen::Overflows); }
         let line_rows = if options.chop { 1 } else { fragment.columns().div_ceil(content_width).max(1) };
         if rows.saturating_add(line_rows) >= height { return Ok(OneScreen::Overflows); }
         if !fragment.complete() {
+            if options.controls == ControlDisplay::Color && fragment.columns() <= content_width {
+                match stream_color_line(buffer, index, content_width)? {
+                    StreamedLine::Fits(file, sgr) => {
+                        let mut number = Vec::new();
+                        Pager::write_number_gutter(&mut number, &gutter);
+                        output.append(&number)?;
+                        output.append_file(file)?;
+                        if sgr { output.append(b"\x1b[m")?; }
+                        output.append(b"\r\n")?;
+                        rows += 1;
+                        continue;
+                    }
+                    StreamedLine::Waiting => return Ok(OneScreen::Waiting),
+                    StreamedLine::Unsupported => {}
+                }
+            }
             return Ok(if buffer.state() == crate::buffer::SourceState::Waiting { OneScreen::Waiting } else { OneScreen::Overflows });
         }
         for row in 0..line_rows {
-            Pager::write_number_gutter(&mut output, &gutter);
-            output.extend_from_slice(&fragment.display(row * content_width, width.saturating_sub(gutter.len())));
-            if row + 1 < line_rows && fragment.fills_row(row * content_width, content_width) { output.extend_from_slice(b" \x08"); }
-            else { output.extend_from_slice(b"\r\n"); }
+            let mut number = Vec::new();
+            Pager::write_number_gutter(&mut number, &gutter);
+            output.append(&number)?;
+            output.append(&fragment.display(row * content_width, width.saturating_sub(gutter.len())))?;
+            if row + 1 < line_rows && fragment.fills_row(row * content_width, content_width) { output.append(b" \x08")?; }
+            else { output.append(b"\r\n")?; }
         }
         rows += line_rows;
     }
@@ -1675,5 +1771,25 @@ impl Pager {
         if self.filename_prompt { return name.unwrap_or_else(|| ":".to_owned()); }
 
         ":".to_owned()
+    }
+}
+
+#[cfg(test)]
+mod one_screen_tests {
+    use super::*;
+
+    #[test]
+    fn long_color_line_spills_without_materializing_its_output() {
+        let mut input = tempfile::NamedTempFile::new().unwrap();
+        let block = b"\x1b[0m".repeat(16_384);
+        for _ in 0..32 { input.write_all(&block).unwrap(); }
+        input.write_all(b"x\n").unwrap();
+        let mut buffer = LineBuffer::from_file(std::fs::File::open(input.path()).unwrap());
+        let options = OneScreenOptions { width:80, height:24, charset:Charset::Ascii, controls:ControlDisplay::Color, chop:false, line_numbers:false };
+        let OneScreen::Fits(output) = one_screen(&mut buffer, options).unwrap() else { panic!("color line should fit"); };
+        assert!(matches!(&output.storage, OneScreenStorage::File(_)));
+        let mut written = tempfile::NamedTempFile::new().unwrap();
+        output.write_to(&mut written).unwrap();
+        assert_eq!(written.as_file().metadata().unwrap().len(), (block.len() * 32 + 11) as u64);
     }
 }
