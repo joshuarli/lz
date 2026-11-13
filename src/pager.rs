@@ -147,7 +147,7 @@ impl OptionCommand {
 }
 
 #[derive(Clone, PartialEq)]
-enum OptionName { Typing(String), Raw, Color, LineNumbers, DisplayLineNumbers, Chop, ChopUpper }
+enum OptionName { Typing(String), Raw, Color, LineNumbers, DisplayLineNumbers, Chop, ChopUpper, UseColor, UseColorUpper }
 
 #[derive(Clone, Copy)]
 enum HelpPrefix { Colon(std::num::NonZeroUsize), Quit }
@@ -713,6 +713,8 @@ pub struct Config {
     pub startup_commands: Vec<Vec<u8>>,
     pub charset: Charset,
     pub controls: ControlDisplay,
+    /// Select UI colors; prompt and notice colors are implemented.
+    pub use_color: bool,
     pub chop: bool,
     pub line_numbers: LineNumberMode,
     pub line_number_width: LineNumberWidth,
@@ -766,6 +768,7 @@ pub struct Pager {
     term_height: u16,
     charset: Charset,
     controls: ControlDisplay,
+    use_color: bool,
     status_msg: Option<String>,
     filename: Option<String>,
     filename_prompt: bool,
@@ -841,6 +844,7 @@ impl Pager {
             term_height: h,
             charset: config.charset,
             controls: config.controls,
+            use_color: config.use_color,
             status_msg: None,
             filename,
             filename_prompt: true,
@@ -882,6 +886,9 @@ impl Pager {
 
     /// Return the control-display mode to carry to the next file.
     pub fn control_display(&self) -> ControlDisplay { self.controls }
+
+    /// Return the selected pager UI color mode.
+    pub fn use_color(&self) -> bool { self.use_color }
 
     /// Return the selected line-number option state.
     pub fn line_numbers(&self) -> LineNumberMode { self.line_numbers }
@@ -1201,6 +1208,22 @@ impl Pager {
         }
     }
 
+    fn apply_use_color_option(&mut self, command: OptionCommand) {
+        self.use_color = match command {
+            OptionCommand::Toggle | OptionCommand::ToggleQuietly => !self.use_color,
+            OptionCommand::Reset | OptionCommand::ResetQuietly => false,
+            OptionCommand::Set | OptionCommand::SetQuietly => true,
+            OptionCommand::Query => self.use_color,
+        };
+        let repaint = self.squished;
+        if repaint { self.position_initialized(); }
+        let message = if self.use_color { "Use color" } else { "Don't use color" };
+        if !matches!(command, OptionCommand::ToggleQuietly | OptionCommand::ResetQuietly | OptionCommand::SetQuietly) {
+            self.status_msg = Some(format!("{message}  (press RETURN)"));
+            self.mode = Mode::OptionNotice { repaint };
+        }
+    }
+
     fn handle_key(&mut self, key: Key) -> bool {
         match self.mode.clone() {
             Mode::Normal => self.handle_normal_key(key),
@@ -1232,13 +1255,14 @@ impl Pager {
                     (OptionName::LineNumbers, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_line_number_option(command, 'n'); }
                     (OptionName::DisplayLineNumbers, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_line_number_option(command, 'N'); }
                     (OptionName::Chop | OptionName::ChopUpper, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_chop_option(command); }
+                    (OptionName::UseColor | OptionName::UseColorUpper, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_use_color_option(command); }
                     (OptionName::Typing(name), Key::Enter | Key::Char('=')) => {
                         let repaint = self.squished;
                         if repaint { self.position_initialized(); }
                         self.status_msg = Some(format!("There is no --{name} option  (press RETURN)"));
                         self.mode = Mode::OptionNotice { repaint };
                     }
-                    (_, Key::Escape) | (OptionName::Raw | OptionName::Color | OptionName::LineNumbers | OptionName::DisplayLineNumbers | OptionName::Chop | OptionName::ChopUpper, Key::Backspace) => self.mode = Mode::Normal,
+                    (_, Key::Escape) | (OptionName::Raw | OptionName::Color | OptionName::LineNumbers | OptionName::DisplayLineNumbers | OptionName::Chop | OptionName::ChopUpper | OptionName::UseColor | OptionName::UseColorUpper, Key::Backspace) => self.mode = Mode::Normal,
                     (OptionName::Typing(mut name), Key::Backspace) => {
                         if name.is_empty() { self.mode = Mode::Normal; }
                         else { name.pop(); self.mode = Mode::OptionLong(command, OptionName::Typing(name)); }
@@ -1256,6 +1280,10 @@ impl Pager {
                             }
                             Ok(option) if option.canonical_name() == "chop-long-lines" => {
                                 let completed = if name.as_bytes()[0].is_ascii_uppercase() { OptionName::ChopUpper } else { OptionName::Chop };
+                                self.mode = Mode::OptionLong(command, completed);
+                            }
+                            Ok(option) if option.canonical_name() == "use-color" => {
+                                let completed = if name.as_bytes()[0].is_ascii_uppercase() { OptionName::UseColorUpper } else { OptionName::UseColor };
                                 self.mode = Mode::OptionLong(command, completed);
                             }
                             result => {
@@ -2370,7 +2398,7 @@ impl Pager {
     fn render_status(&self, buf: &mut Frame, w: usize) {
         buf.position(self.term_height.saturating_sub(1) as usize);
         let base_status = self.build_status();
-        let emphasized = self.mode == Mode::Follow || (self.mode == Mode::Help && self.help_prefix.is_none()) || (self.mode != Mode::Help && self.filename_prompt && (self.filename.is_some() || self.files.count > 1)) || base_status.starts_with("(END)") || self.status_msg.is_some();
+        let emphasized = self.mode == Mode::Follow || (self.mode == Mode::Help && self.help_prefix.is_none()) || (self.mode != Mode::Help && self.filename_prompt && (self.filename.is_some() || self.files.count > 1)) || base_status.starts_with("(END)") || self.status_msg.is_some() || (self.use_color && self.mode == Mode::Normal);
         let prefix = if self.mode == Mode::Normal && self.filter.is_some() && self.status_msg.is_none() { "& " } else { "" };
         let status = format!("{prefix}{base_status}");
         let mut suffix_width = 0;
@@ -2384,7 +2412,9 @@ impl Pager {
         let mut emphasis_started = false;
         for (offset, character) in status[start..].char_indices() {
             if emphasized && !emphasis_started && start + offset >= prefix.len() {
-                buf.extend_from_slice(b"\x1b[7m");
+                if self.use_color {
+                    buf.extend_from_slice(if self.status_msg.is_some() { b"\x1b[30;103m" } else { b"\x1b[30;106m" });
+                } else { buf.extend_from_slice(b"\x1b[7m"); }
                 emphasis_started = true;
             }
             let width = unicode_width::UnicodeWidthChar::width(character).unwrap_or(0);
@@ -2402,7 +2432,7 @@ impl Pager {
         if let Mode::OptionPrefix(command) = self.mode { return match command { OptionCommand::Toggle => "-", OptionCommand::ToggleQuietly => "-(P)", OptionCommand::Reset => "-+", OptionCommand::ResetQuietly => "-(P)+", OptionCommand::Set => "-!", OptionCommand::SetQuietly => "-(P)!", OptionCommand::Query => "_" }.into(); }
         if let Mode::OptionLong(command, ref name) = self.mode {
             let prefix = match command { OptionCommand::Toggle => "--", OptionCommand::ToggleQuietly => "--(P)", OptionCommand::Reset => "--+", OptionCommand::ResetQuietly => "--(P)+", OptionCommand::Set => "--!", OptionCommand::SetQuietly => "--(P)!", OptionCommand::Query => "__" };
-            let name = match name { OptionName::Typing(name) => name.as_str(), OptionName::Raw => "raw-control-chars", OptionName::Color => "RAW-CONTROL-CHARS", OptionName::LineNumbers => "line-numbers", OptionName::DisplayLineNumbers => "LINE-NUMBERS", OptionName::Chop => "chop-long-lines", OptionName::ChopUpper => "CHOP-LONG-LINES" };
+            let name = match name { OptionName::Typing(name) => name.as_str(), OptionName::Raw => "raw-control-chars", OptionName::Color => "RAW-CONTROL-CHARS", OptionName::LineNumbers => "line-numbers", OptionName::DisplayLineNumbers => "LINE-NUMBERS", OptionName::Chop => "chop-long-lines", OptionName::ChopUpper => "CHOP-LONG-LINES", OptionName::UseColor => "use-color", OptionName::UseColorUpper => "USE-COLOR" };
             return format!("{prefix}{name}");
         }
         if matches!(self.mode, Mode::FileCommand(_)) { return " :".into(); }

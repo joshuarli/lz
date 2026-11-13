@@ -335,7 +335,7 @@ fn run() -> Result<ExitAction, String> {
         let mut startup_commands = std::mem::take(&mut args.startup_commands);
         if let Some(command) = &args.every_file_command { startup_commands.push(command.clone()); }
         let alternate = opened.alternate.take();
-        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, line_number_width: args.line_number_width, tab_stops: args.tab_stops.clone(), show_eof_markers: args.show_eof_markers, search_case: args.search_case, search_start: args.search_start, search_session, jump_target: args.jump_target }, opened.name, history);
+        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, use_color: args.use_color, chop: args.chop, line_numbers: args.line_numbers, line_number_width: args.line_number_width, tab_stops: args.tab_stops.clone(), show_eof_markers: args.show_eof_markers, search_case: args.search_case, search_start: args.search_start, search_session, jump_target: args.jump_target }, opened.name, history);
         let result = if showing_help { pager.run_help(session.keys_mut(), help_files) }
             else if std::mem::take(&mut startup_one_screen) { pager.run_one_screen_startup(session.keys_mut()) }
             else { pager.run(session.keys_mut()) };
@@ -347,6 +347,7 @@ fn run() -> Result<ExitAction, String> {
         display_anchor = pager.display_anchor();
         scroll_defaults = pager.scroll_defaults();
         args.control_display = pager.control_display();
+        args.use_color = pager.use_color();
         args.line_numbers = pager.line_numbers();
         args.chop = pager.chop();
         search_session = pager.take_search_session();

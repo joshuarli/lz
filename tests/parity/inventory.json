@@ -1843,10 +1843,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["invocation-toggle-raw-long-name","invocation-toggle-color-long-name","invocation-unknown-long-interactive","invocation-query-raw-long-name","invocation-set-color-long-name","invocation-reset-color-long-name","invocation-quiet-color-long-name","invocation-long-option-edit","invocation-long-option-erase-completed","invocation-long-option-equals","invocation-line-numbers-long-name","invocation-line-numbers-long-lower","invocation-line-numbers-long-query","invocation-chop-long-name"],
+      "cases": ["invocation-toggle-raw-long-name","invocation-toggle-color-long-name","invocation-unknown-long-interactive","invocation-query-raw-long-name","invocation-set-color-long-name","invocation-reset-color-long-name","invocation-quiet-color-long-name","invocation-long-option-edit","invocation-long-option-erase-completed","invocation-long-option-equals","invocation-line-numbers-long-name","invocation-line-numbers-long-lower","invocation-line-numbers-long-query","invocation-chop-long-name", "upstream-chinese1-use-color"],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Raw, color, line-number and chopping long names complete unique prefixes in the named cases; raw and color support query, set, reset and quiet forms; unknown names display a notice. Other option names and editing interactions beyond the named cases remain open."
+      "cause": "Raw, color, line-number, chopping and use-color long names complete unique prefixes in the named cases; raw and color support query, set, reset and quiet forms; unknown names display a notice. Other option names and editing interactions beyond the named cases remain open."
     },
     {
       "id": "man-0410",
@@ -4998,10 +4998,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["upstream-chinese1-use-color", "invocation-use-color-startup", "sessions-use-color-next-file", "invocation-use-color-disable", "invocation-use-color-query-reset"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "The tested startup and interactive use-color settings color prompts and notices and persist across files. Search highlights, other color classes and custom colors remain open."
     },
     {
       "id": "man-1542",
@@ -8373,9 +8373,9 @@
       "file": "lesstest/lt/chinese1.lt",
       "sha256": "d81a2c4d23f16ab28169e62f7be6dbf54090a1d0ea332f7ba7f9453b0afae1d7",
       "instrumented": "pass",
-      "cases": ["upstream-chinese1-scroll", "upstream-chinese1-force-boundary", "upstream-chinese1-missing-search"],
+      "cases": ["upstream-chinese1-scroll", "upstream-chinese1-force-boundary", "upstream-chinese1-missing-search", "upstream-chinese1-use-color"],
       "disposition": "partial translation",
-      "cause": "The original fixture, first six scrolling steps and subsequent missing search are covered with a generic terminal. Remaining keys and original custom termcap checkpoints are untranslated."
+      "cause": "The original fixture, first six scrolling steps, subsequent missing search and use-color command are covered with a generic terminal. Remaining keys and original custom termcap checkpoints are untranslated."
     },
     {
       "id": "colorbars",
