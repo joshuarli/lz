@@ -58,6 +58,10 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12c:** generated navigation varies line numbering, chopping and color mode through CLI options or `LESS`, with fixtures narrower than both geometries. Fifty seeds pass: 18 use CLI options, 25 use `LESS`, and seven use neither. Broader configuration and boundary cases remain open.
 
+**S12d planned:** add UTF-8 text and an isolated malformed byte beyond the binary sample to generated fixtures, retaining bounded line geometry and known navigation targets. Own `tests/parity/fuzz.rs`; S12c and existing byte layout are prerequisites. Acceptance: `make parity-selftest` and `make parity-fuzz SEED=0 CASES=50`.
+
+**S06j:** combining marks attached to a character at the right clipping edge remain visible. The layout regression, differential case and generating seed pass; the differential case also passes in a Linux arm64 container.
+
 **S07ai:** terminal size changes reset the `man-0069` and `man-0082` half-page default to half the new height. Three cases cover growth, shrinkage and width-only resize after a count on macOS and in a Linux arm64 container. Existing window and horizontal-shift resize cases pass.
 
 The following work remains local and actionable: complete the nonparked S04–S11 behaviors and interactions, upstream scenario translations, bounded fuzzing and holdouts, parity CI checks, final performance and size gates, cleanup, and independent review. The inventory retains behavior-specific causes and cases. The S06 shared renderer still needs bounded handling for other escapes and multirow lines. POSIX search, cancellation, headers, helper and pipe transitions, history concurrency, and lifecycle hardening remain incomplete.

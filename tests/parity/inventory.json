@@ -3908,11 +3908,12 @@
         "rendering-long-sgr-combining-split",
         "rendering-long-sgr-combining-leading",
         "rendering-long-osc8-bel",
-        "rendering-long-osc8-split-st"
+        "rendering-long-osc8-split-st",
+        "rendering-combining-at-right-edge"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "SGR indexed/RGB colors and represented style, malformed UTF-8, unsupported CSI removal, controls, overstrikes, wrapping and line resets pass under -R. The byte layout restores source SGR after notation and overstrikes. Long single-row ASCII and UTF-8 SGR cases pass on macOS and in a Linux arm64 container, including combining marks, split characters and a 16 MiB ASCII line. ASCII OSC 8 hyperlinks pass the named cases on both platforms. Other OSC 8 forms, other zero-width sequences, multirow long lines, search highlighting, cancellation and further geometry remain open."
+      "cause": "SGR indexed/RGB colors and represented style, malformed UTF-8, unsupported CSI removal, controls, overstrikes, wrapping and line resets pass under -R. Combining marks remain attached at the right clipping edge in the named case. The byte layout restores source SGR after notation and overstrikes. Long single-row ASCII and UTF-8 SGR cases pass on macOS and in a Linux arm64 container, including combining marks, split characters and a 16 MiB ASCII line. ASCII OSC 8 hyperlinks pass the named cases on both platforms. Other OSC 8 forms, other zero-width sequences, multirow long lines, search highlighting, cancellation and further geometry remain open."
     },
     {
       "id": "man-1163",

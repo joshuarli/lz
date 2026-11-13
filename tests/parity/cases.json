@@ -591495,5 +591495,13 @@
   "fixture": {"numbered": {"count": 80, "needle_lines": []}}, "args": ["input"], "env": {}, "size": [80, 24], "locale": "C",
   "events": [{"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[53,48,103]}, {"type":"checkpoint","ready":"000050","row":0}, {"type":"resize","columns":40,"rows":12}, {"type":"checkpoint","ready":":","row":11}, {"type":"send","bytes":[52,48,103]}, {"type":"checkpoint","ready":"000040","row":0}, {"type":"send","bytes":[117]}, {"type":"checkpoint","ready":"000034","row":0}, {"type":"send","bytes":[113]}],
   "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "rendering-combining-at-right-edge",
+  "family": "rendering", "admitted": true, "source": "pty",
+  "fixture": {"repeat": [120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,120,101,204,129,10], "count": 2, "suffix": []},
+  "args": ["-S", "input"], "env": {}, "size": [40, 12], "locale": "C.UTF-8",
+  "events": [{"type":"checkpoint","ready":"input (END)","row":11}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {}
 }
 ]

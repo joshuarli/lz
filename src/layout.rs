@@ -157,7 +157,7 @@ impl DisplayPrefix {
                 continue;
             }
             if glyph.columns.end <= start && !glyph.columns.is_empty() { continue; }
-            if glyph.columns.start >= end { break; }
+            if glyph.columns.start >= end && !(glyph.columns.is_empty() && glyph.columns.start == end && end > start) { break; }
             let notation = matches!(glyph.representation, Representation::Notation);
             let next_attributes = (notation, glyph.bold, glyph.underline);
             if attributes != next_attributes {
@@ -227,5 +227,13 @@ mod tests {
         assert_eq!(layout.display(0, 8), "x".as_bytes());
         let layout = DisplayPrefix::new(vec![b'x', 0xe2, 0x82], Charset::Utf8, true, None, ControlDisplay::Standard, &TabStops::default());
         assert_eq!(layout.display(0, 16), "x\x1b[7m<E2><82>\x1b[m".as_bytes());
+    }
+
+    #[test]
+    fn combining_mark_at_right_edge_stays_with_visible_base() {
+        let layout = DisplayPrefix::new("xe\u{301}\u{327}z".as_bytes().to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard, &TabStops::default());
+        assert_eq!(layout.display(0, 2), "xe\u{301}\u{327}".as_bytes());
+        assert_eq!(layout.display(1, 1), "e\u{301}\u{327}".as_bytes());
+        assert_eq!(layout.display(0, 0), b"");
     }
 }
