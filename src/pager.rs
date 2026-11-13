@@ -697,10 +697,10 @@ impl FileStatus {
 }
 
 /// Search pattern and direction retained between files in one session.
-pub struct SearchSession { search: Option<Search>, direction: SearchDir, highlight: bool }
+pub struct SearchSession { search: Option<Search>, direction: SearchDir, highlight: bool, nonmatch: bool }
 
 impl Default for SearchSession {
-    fn default() -> Self { Self { search: None, direction: SearchDir::Forward, highlight: true } }
+    fn default() -> Self { Self { search: None, direction: SearchDir::Forward, highlight: true, nonmatch: false } }
 }
 
 /// Selected line-number option state; not all counting behavior is implemented.
@@ -766,6 +766,8 @@ pub struct Pager {
     search: Option<Search>,
     search_inherited: bool,
     search_highlight: bool,
+    search_nonmatch: bool,
+    search_input_nonmatch: bool,
     search_case: CaseSensitivity,
     search_start: SearchStart,
     jump_target: JumpTarget,
@@ -842,6 +844,8 @@ impl Pager {
             search: config.search_session.search,
             search_inherited,
             search_highlight: config.search_session.highlight,
+            search_nonmatch: config.search_session.nonmatch,
+            search_input_nonmatch: false,
             search_case: config.search_case,
             search_start: config.search_start,
             jump_target: config.jump_target,
@@ -915,7 +919,7 @@ impl Pager {
     pub fn chop(&self) -> bool { !self.wrap }
 
     /// Transfer the active search to the next file in the session.
-    pub fn take_search_session(&mut self) -> SearchSession { SearchSession { search:self.search.take(), direction:self.search_dir, highlight:self.search_highlight } }
+    pub fn take_search_session(&mut self) -> SearchSession { SearchSession { search:self.search.take(), direction:self.search_dir, highlight:self.search_highlight, nonmatch:self.search_nonmatch } }
 
     /// Transfer startup input that remains after a file switch to the next pager.
     pub fn take_startup_commands(&mut self) -> Vec<Vec<u8>> { self.startup_commands.drain(..).collect() }
@@ -1535,12 +1539,14 @@ impl Pager {
                 self.search_dir = SearchDir::Forward;
                 self.mode = Mode::SearchInput;
                 self.search_input.clear();
+                self.search_input_nonmatch = false;
                 self.history.reset_cursor();
             }
             Key::Char('?') => {
                 self.search_dir = SearchDir::Backward;
                 self.mode = Mode::SearchInput;
                 self.search_input.clear();
+                self.search_input_nonmatch = false;
                 self.history.reset_cursor();
             }
             Key::Char('n') => self.search_same_dir(),
@@ -1742,6 +1748,7 @@ impl Pager {
         match key {
             Key::Escape => self.mode = Mode::Normal,
             Key::Ctrl('c') => { self.history.push(&self.search_input.content); self.mode = Mode::Normal; self.bell_requested = true; }
+            Key::Ctrl('n') | Key::Char('!') if self.search_input.content.is_empty() => { self.search_input_nonmatch = !self.search_input_nonmatch; }
             Key::Enter => {
                 let pattern = self.search_input.content.clone();
                 self.mode = Mode::Normal;
@@ -1750,6 +1757,7 @@ impl Pager {
                 match Search::new(&pattern, self.search_case) {
                     Ok(s) => {
                         self.search = Some(s);
+                        self.search_nonmatch = self.search_input_nonmatch;
                         self.search_inherited = false;
                         self.current_match_line = None;
                         self.search_same_dir();
@@ -1834,10 +1842,11 @@ impl Pager {
         } };
         let found = if self.filter.is_some() {
             let count = self.filtered_lines.len();
-            let mut matches = |index: &usize| self.buffer.get_line(self.filtered_lines[*index]).is_some_and(|line| search.is_match(line));
+            let mut matches = |index: &usize| self.buffer.get_line(self.filtered_lines[*index]).is_some_and(|line| search.is_match(line) != self.search_nonmatch);
             if forward { (from.min(count)..count).find(&mut matches) }
             else { (0..from.min(count)).rev().find(&mut matches) }
-        } else { search.find_next_line(&mut self.buffer, from, forward) };
+        } else if self.search_nonmatch { search.find_next_nonmatching_line(&mut self.buffer, from, forward) }
+        else { search.find_next_line(&mut self.buffer, from, forward) };
         match found {
             Some(line) => {
                 self.position_initialized();
@@ -2360,7 +2369,8 @@ impl Pager {
             && search.is_match(display)
         {
             let stripped = strip_ansi(display);
-            let matches: Vec<_> = search.find_matches_stripped(&stripped).into_iter().filter(|(start, end)| start < end).collect();
+            let mut matches: Vec<_> = search.find_matches_stripped(&stripped).into_iter().filter(|(start, end)| start < end).collect();
+            if self.search_nonmatch { matches.truncate(1); }
             if !matches.is_empty() {
                 let colored = self.use_color;
                 let mut source_colors = crate::ansi::SgrColors::default();
@@ -2507,7 +2517,8 @@ impl Pager {
             } else {
                 '?'
             };
-            return format!("{}{}", ch, self.search_input.content);
+            let modifier = if self.search_input_nonmatch { "Non-match " } else { "" };
+            return format!("{modifier}{}{}", ch, self.search_input.content);
         }
 
         if self.mode == Mode::FilterInput {

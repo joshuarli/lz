@@ -287,6 +287,23 @@ impl Search {
         }
     }
 
+    pub(crate) fn find_next_nonmatching_line(&self, buffer: &mut LineBuffer, from_line: usize, forward: bool) -> Option<usize> {
+        if forward {
+            let mut line = from_line;
+            loop {
+                if !self.is_match(buffer.get_line(line)?) { return Some(line); }
+                line = line.checked_add(1)?;
+            }
+        } else {
+            let mut line = from_line;
+            while let Some(previous) = line.checked_sub(1) {
+                if !self.is_match(buffer.get_line(previous)?) { return Some(previous); }
+                line = previous;
+            }
+            None
+        }
+    }
+
     /// Find next matching line from `from_line`, searching forward.
     /// Reads more lines from buffer as needed.
     pub fn find_next_line(

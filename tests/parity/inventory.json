@@ -8467,9 +8467,9 @@
       "file": "lesstest/lt/seq200.lt",
       "sha256": "b0c1c45cf8d8003eed4bba16923d9f5787a08cc97ae55f1770aeda2287372001",
       "instrumented": "pass",
-      "cases": ["upstream-seq-search", "upstream-seq-filter-search", "upstream-seq-filter-search-backward"],
+      "cases": ["upstream-seq-search", "upstream-seq-filter-search", "upstream-seq-filter-search-backward", "upstream-seq-modifier-cancel"],
       "disposition": "partial translation",
-      "cause": "The initial search, filter, repeated forward searches and filter clearing pass in generic-terminal checkpoints; an additional backward repeat is covered. Later commands and custom termcap checkpoints remain untranslated."
+      "cause": "The search, filter, repeats, modifier cancellation and remaining repeats pass in generic-terminal checkpoints; an additional backward repeat is covered. Original custom termcap checkpoints remain untranslated."
     },
     {
       "id": "subsearch",
