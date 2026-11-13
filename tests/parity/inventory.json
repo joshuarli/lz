@@ -4414,10 +4414,18 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-no-vbell-boundary",
+        "invocation-no-vbell-general",
+        "invocation-no-vbell-silent",
+        "invocation-no-vbell-reset",
+        "invocation-no-vbell-binary-interrupt",
+        "invocation-no-vbell-startup",
+        "invocation-no-vbell-env-reset"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Startup suppression, reset and named prompts pass on macOS arm64; interactive option toggling and other terminal capabilities remain open"
     },
     {
       "id": "man-1455",

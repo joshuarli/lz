@@ -115,15 +115,23 @@ pub(crate) fn request_eof_bell(at: std::time::SystemTime) -> bool { EOF_BELL.req
 
 /// Select audible or visual feedback for boundary and other errors.
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
-pub enum BellPolicy { #[default] Audible, QuietBoundary, Visual }
+pub enum BellPolicy { #[default] Audible, QuietBoundary, Visual, QuietBoundarySilent, Silent }
 
 /// Distinguish boundary feedback from other errors.
 #[derive(Clone, Copy)]
 pub enum BellKind { Boundary, General }
 
 impl BellPolicy {
+    pub fn without_visual(self) -> Self {
+        match self { Self::QuietBoundary => Self::QuietBoundarySilent, Self::Visual => Self::Silent, other => other }
+    }
+
     pub fn is_visual(self, kind: BellKind) -> bool {
         self == Self::Visual || (self == Self::QuietBoundary && matches!(kind, BellKind::Boundary))
+    }
+
+    pub fn is_audible(self, kind: BellKind) -> bool {
+        self == Self::Audible || (matches!(self, Self::QuietBoundary | Self::QuietBoundarySilent) && matches!(kind, BellKind::General))
     }
 
     pub fn write_to(self, output: &mut impl io::Write, kind: BellKind) -> io::Result<()> {
@@ -135,7 +143,7 @@ impl BellPolicy {
                 std::thread::sleep(std::time::Duration::from_millis(10));
             }
             output.write_all(b"\x1b[?5l")
-        } else { output.write_all(b"\x07") }
+        } else if self.is_audible(kind) { output.write_all(b"\x07") } else { Ok(()) }
     }
 }
 

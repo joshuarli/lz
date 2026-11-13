@@ -1251,8 +1251,8 @@ impl Pager {
 
         let boundary_bell = std::mem::take(&mut self.boundary_bell_requested);
         let general_bell = std::mem::take(&mut self.bell_requested);
-        if boundary_bell && !self.bell_policy.is_visual(terminal::BellKind::Boundary) { buf.push(7); }
-        if general_bell && !self.bell_policy.is_visual(terminal::BellKind::General) { buf.push(7); }
+        if boundary_bell && self.bell_policy.is_audible(terminal::BellKind::Boundary) { buf.push(7); }
+        if general_bell && self.bell_policy.is_audible(terminal::BellKind::General) { buf.push(7); }
         buf.extend_from_slice(b"\x1b[?25l");
         if matches!(self.mode, Mode::CommandError(_)) {
             if !self.content_painted { for row in 0..ch { buf.position(row); terminal::clear_line(&mut buf); } }

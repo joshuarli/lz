@@ -477003,5 +477003,429 @@
     ],
     "files": {},
     "trace_check": "captured"
+  },
+  {
+    "id": "invocation-no-vbell-boundary",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "--no-vbell",
+      "-q",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "original body",
+        "row": 22
+      },
+      {
+        "type": "send",
+        "bytes": [
+          107
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-no-vbell-general",
+    "family": "navigation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "-q",
+      "--no-vbell",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "original body",
+        "row": 22
+      },
+      {
+        "type": "send",
+        "bytes": [
+          64
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-no-vbell-silent",
+    "family": "navigation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "--no-vbell",
+      "-Q",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "original body",
+        "row": 22
+      },
+      {
+        "type": "send",
+        "bytes": [
+          64
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-no-vbell-reset",
+    "family": "navigation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "--no-vbell",
+      "-Q",
+      "--+no-vbell",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "original body",
+        "row": 22
+      },
+      {
+        "type": "send",
+        "bytes": [
+          64
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-no-vbell-binary-interrupt",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
+    "args": [
+      "--no-vbell",
+      "-Q",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "See it anyway?",
+        "row": null
+      },
+      {
+        "type": "signal",
+        "number": 2
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-no-vbell-startup",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "--no-vbell",
+      "-F",
+      "-Q",
+      "+@",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
+  },
+  {
+    "id": "invocation-no-vbell-env-reset",
+    "family": "navigation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "--+no-vbell",
+      "input"
+    ],
+    "env": {
+      "LESS": "--no-vbell -Q"
+    },
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "original body",
+        "row": 22
+      },
+      {
+        "type": "send",
+        "bytes": [
+          64
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "(END)",
+        "row": 23
+      },
+      {
+        "type": "send",
+        "bytes": [
+          113
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
   }
 ]

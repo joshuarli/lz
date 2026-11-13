@@ -179,7 +179,7 @@ fn scan_number(bytes: &[u8]) -> NumberScan {
 }
 
 #[derive(Default)]
-struct Scanner { args: Args, pending: Option<&'static OptionSpec> }
+struct Scanner { args: Args, pending: Option<&'static OptionSpec>, no_vbell: bool }
 
 impl Scanner {
     fn apply_flag(&mut self, option: &OptionSpec, upper: bool, reset: bool) {
@@ -190,6 +190,7 @@ impl Scanner {
             "no-lessopen" => self.args.use_lessopen = reset,
             "quit-if-one-screen" => self.args.quit_if_one_screen = !reset,
             "quiet" => self.args.bell_policy = if reset { Default::default() } else if upper { lz::terminal::BellPolicy::Visual } else { lz::terminal::BellPolicy::QuietBoundary },
+            "no-vbell" => self.no_vbell = !reset,
             "quit-at-eof" => self.args.eof_policy = if reset { Default::default() } else if upper { lz::pager::EofPolicy::AtEof } else { lz::pager::EofPolicy::AfterEof },
             "quit-on-intr" => self.args.interrupt_policy = if reset { Default::default() } else { lz::pager::InterruptPolicy::Quit },
             "no-init" => self.args.terminal.screen = if reset { Default::default() } else { lz::terminal::ScreenMode::Preserve },
@@ -306,6 +307,7 @@ pub(super) fn parse(arguments: Vec<OsString>, defaults: Option<OsString>) -> Arg
         scanner.args.diagnostics.push(Diagnostic::MissingValue(description(option)));
         scanner.args.action = Action::Stop;
     }
+    if scanner.no_vbell { scanner.args.bell_policy = scanner.args.bell_policy.without_visual(); }
     scanner.args.stdin_explicit = scanner.args.filenames.iter().any(|name| name.as_bytes() == b"-");
     if scanner.args.filenames.is_empty() { scanner.args.filenames.push(OsString::from_vec(b"-".to_vec())); }
     scanner.args
