@@ -263,7 +263,23 @@ impl MarkName {
 }
 
 #[derive(Clone, Copy, PartialEq)]
-enum NumericPrefix { Empty, Value(usize), Overflow }
+enum NumericPrefix { Empty, Value { value: usize, leading_zeroes: usize }, Overflow }
+
+impl NumericPrefix {
+    fn push(self, character: char) -> Self {
+        let (value, leading_zeroes) = match self {
+            Self::Empty => (0, 0),
+            Self::Value { value, leading_zeroes } => (value, leading_zeroes),
+            Self::Overflow => return Self::Overflow,
+        };
+        if value == 0 && character == '0' {
+            return Self::Value { value, leading_zeroes: leading_zeroes.saturating_add(1) };
+        }
+        value.checked_mul(10).and_then(|value| value.checked_add(character as usize - '0' as usize))
+            .filter(|value| *value <= i64::MAX as usize)
+            .map_or(Self::Overflow, |value| Self::Value { value, leading_zeroes })
+    }
+}
 
 #[derive(PartialEq, Eq)]
 enum StartupRun { AllCommands, UntilOneScreen }
@@ -1389,15 +1405,12 @@ impl Pager {
         self.filename_prompt = false;
         self.status_msg = None;
         if let Key::Char(character @ '0'..='9') = key {
-            let previous = match self.numeric_prefix { NumericPrefix::Empty => Some(0), NumericPrefix::Value(value) => Some(value), NumericPrefix::Overflow => None };
-            let value = previous.and_then(|value| value.checked_mul(10)).and_then(|value| value.checked_add(character as usize - '0' as usize))
-                .filter(|value| *value <= i64::MAX as usize);
-            self.numeric_prefix = value.map_or(NumericPrefix::Overflow, NumericPrefix::Value);
+            self.numeric_prefix = self.numeric_prefix.push(character);
             return false;
         }
         let count = match std::mem::replace(&mut self.numeric_prefix, NumericPrefix::Empty) {
             NumericPrefix::Empty => None,
-            NumericPrefix::Value(value) => (value != 0).then_some(value),
+            NumericPrefix::Value { value, .. } => (value != 0).then_some(value),
             NumericPrefix::Overflow => {
                 self.command_error("Integer is too big".into(), ErrorAction::Retry(key));
                 return false;
@@ -1578,14 +1591,12 @@ impl Pager {
             return;
         }
         if let Key::Char(character @ '0'..='9') = key {
-            let previous = match self.numeric_prefix { NumericPrefix::Empty => Some(0), NumericPrefix::Value(value) => Some(value), NumericPrefix::Overflow => None };
-            self.numeric_prefix = previous.and_then(|value| value.checked_mul(10)).and_then(|value| value.checked_add(character as usize - '0' as usize))
-                .filter(|value| *value <= i64::MAX as usize).map_or(NumericPrefix::Overflow, NumericPrefix::Value);
+            self.numeric_prefix = self.numeric_prefix.push(character);
             return;
         }
         let count = match std::mem::replace(&mut self.numeric_prefix, NumericPrefix::Empty) {
-            NumericPrefix::Empty | NumericPrefix::Value(0) => None,
-            NumericPrefix::Value(value) => Some(value),
+            NumericPrefix::Empty | NumericPrefix::Value { value: 0, .. } => None,
+            NumericPrefix::Value { value, .. } => Some(value),
             NumericPrefix::Overflow => { self.bell_requested = true; return; }
         };
         let last = self.help_rows.saturating_sub(self.content_height());
@@ -2462,7 +2473,10 @@ impl Pager {
     }
 
     fn build_status(&self) -> String {
-        if self.mode == Mode::Normal && let NumericPrefix::Value(value) = self.numeric_prefix && value > 0 { return format!(":{value}"); }
+        if self.mode == Mode::Normal && let NumericPrefix::Value { value, leading_zeroes } = self.numeric_prefix {
+            let zeroes = "0".repeat(leading_zeroes.min(usize::from(self.term_width)));
+            return if value == 0 { format!(":{zeroes}") } else { format!(":{zeroes}{value}") };
+        }
         if self.mode == Mode::QuitPrefix { return " Z".into(); }
         if let Mode::OptionPrefix(command) = self.mode { return match command { OptionCommand::Toggle => "-", OptionCommand::ToggleQuietly => "-(P)", OptionCommand::Reset => "-+", OptionCommand::ResetQuietly => "-(P)+", OptionCommand::Set => "-!", OptionCommand::SetQuietly => "-(P)!", OptionCommand::Query => "_" }.into(); }
         if let Mode::OptionLong(command, ref name) = self.mode {
