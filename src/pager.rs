@@ -13,13 +13,13 @@ use crate::tabs::TabStops;
 
 const FOLLOW_INTERRUPT: char = 'x';
 
-/// Retains the display origin across file switches in one terminal session.
+/// Retains the display origin and position-table capacity across file switches.
 #[derive(Clone, Copy)]
-pub struct DisplayAnchor { row: Option<usize> }
+pub struct DisplayAnchor { row: Option<usize>, position_capacity: u16 }
 
 impl DisplayAnchor {
     pub fn new(screen: terminal::ScreenMode) -> Self {
-        Self { row: (screen == terminal::ScreenMode::Preserve).then_some(0) }
+        Self { row: (screen == terminal::ScreenMode::Preserve).then_some(0), position_capacity: 0 }
     }
 }
 
@@ -735,6 +735,7 @@ pub struct Pager {
     display_anchor: DisplayAnchor,
     buffer: LineBuffer,
     top_line: usize,
+    initial_position: Option<SavedPosition>,
     marks: HashMap<MarkName, MarkPosition>,
     left_col: usize,
     wrap: bool,
@@ -795,6 +796,8 @@ impl Pager {
         history: SearchHistory,
     ) -> Self {
         let (w, h) = terminal::get_terminal_size();
+        let mut display_anchor = config.display_anchor;
+        display_anchor.position_capacity = display_anchor.position_capacity.max(h);
         let search_inherited = config.search_session.search.is_some();
         Pager {
             interrupt_policy: config.interrupt_policy,
@@ -804,9 +807,10 @@ impl Pager {
             startup_echo: match config.initial_display { InitialDisplay::StartupFileSwitch(switch) => Some(switch.command), _ => None },
             paint_before_commands: matches!(config.initial_display, InitialDisplay::StartupFileSwitch(StartupFileSwitch { continuation: CommandContinuation::NextCommand, .. })) && !config.startup_commands.is_empty(),
             scroll_defaults: config.scroll_defaults,
-            display_anchor: config.display_anchor,
+            display_anchor,
             buffer,
             top_line: match config.initial_display { InitialDisplay::FileSwitch(Some(position)) => position.line, _ => 0 },
+            initial_position: match config.initial_display { InitialDisplay::FileSwitch(position) => position, _ => None },
             marks: HashMap::new(),
             left_col: 0,
             wrap: !config.chop,
@@ -999,6 +1003,7 @@ impl Pager {
                 self.filename_prompt = false;
                 let (w, h) = terminal::get_terminal_size();
                 if (w, h) != (self.term_width, self.term_height) { self.scroll_defaults.resize(h); }
+                self.resize_position_table(h);
                 self.term_width = w;
                 self.term_height = h;
                 redraw = true;
@@ -1008,6 +1013,7 @@ impl Pager {
                 self.filename_prompt = false;
                 let (w, h) = terminal::get_terminal_size();
                 if (w, h) != (self.term_width, self.term_height) { self.scroll_defaults.resize(h); }
+                self.resize_position_table(h);
                 self.term_width = w;
                 self.term_height = h;
                 self.leading_rows = 0;
@@ -1183,6 +1189,15 @@ impl Pager {
         if !matches!(command, OptionCommand::ToggleQuietly | OptionCommand::ResetQuietly | OptionCommand::SetQuietly) {
             self.status_msg = Some(format!("{message}  (press RETURN)"));
             self.mode = Mode::OptionNotice { repaint };
+        }
+    }
+
+    fn resize_position_table(&mut self, height: u16) {
+        let grew = height > self.display_anchor.position_capacity;
+        self.display_anchor.position_capacity = self.display_anchor.position_capacity.max(height);
+        if grew && self.content_painted && self.top_line == 0 && self.leading_rows == 0 && self.filter.is_none()
+            && let Some(initial) = self.initial_position {
+            self.top_line = initial.line;
         }
     }
 

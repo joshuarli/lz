@@ -8116,11 +8116,18 @@
         "lifecycle-suspend-keyboard-repeat",
         "integrations-secure-stop-keyboard-allow",
         "integrations-secure-stop-keyboard-denied",
-        "lifecycle-quit-keyboard"
+        "lifecycle-quit-keyboard",
+        "sessions-resize-after-file-return",
+        "sessions-resize-from-top-no-file-switch",
+        "sessions-resize-return-initial-top",
+        "sessions-resize-return-nonzero-top",
+        "sessions-resize-capacity-retained",
+        "sessions-resize-capacity-after-growth",
+        "sessions-resize-capacity-across-files"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Named scenarios cover TERM cleanup, default/configured interruption, ignored SIGQUIT, keyboard quit characters, external/keyboard suspension, all screen/keypad combinations, repeated/scrolled navigation and unsolicited SIGCONT without termios leaks. Secure stop denial and explicit allowances apply before primary or interactive prompts. Primary/pending prompt suspension, resize interactions, custom signal characters, inherited dispositions and long operations remain open."
+      "cause": "Named scenarios cover TERM cleanup, default/configured interruption, ignored SIGQUIT, keyboard quit characters, external/keyboard suspension, all screen/keypad combinations, repeated/scrolled navigation and unsolicited SIGCONT without termios leaks. Secure stop denial and explicit allowances apply before primary or interactive prompts. Named resize cases also cover restoration after returning to a file and position-table growth. Primary/pending prompt suspension, other resize interactions, custom signal characters, inherited dispositions and long operations remain open."
     },
     {
       "id": "input-boundaries",
