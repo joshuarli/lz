@@ -3933,7 +3933,8 @@
         "search-highlight-malformed-utf8",
         "search-highlight-color-notation",
         "search-highlight-sgr-inside-match",
-        "search-highlight-existing-inverse"
+        "search-highlight-existing-inverse",
+        "upstream-colorbars-scroll"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
@@ -8394,9 +8395,9 @@
       "file": "lesstest/lt/colorbars.lt",
       "sha256": "31955351b939e145948079a5a040a5590f061b01b9361698209381a7d57ff132",
       "instrumented": "pass",
-      "cases": [],
-      "disposition": "pending translation",
-      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+      "cases": ["upstream-colorbars-scroll"],
+      "disposition": "partial translation",
+      "cause": "The original fixture and first four scrolling steps are covered with generic-terminal checkpoints. Remaining commands and custom termcap checkpoints are untranslated."
     },
     {
       "id": "github216",
