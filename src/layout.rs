@@ -145,6 +145,28 @@ impl DisplayPrefix {
         self.glyphs.iter().any(|glyph| glyph.columns.start < end && glyph.columns.end >= end)
     }
 
+    pub(crate) fn source(&self) -> &[u8] { &self.bytes }
+
+    pub(crate) fn search_text<'a>(&self, visible: &'a str, start: usize) -> std::borrow::Cow<'a, str> {
+        if !self.bytes.contains(&b'\x08') { return std::borrow::Cow::Borrowed(visible); }
+        let mut targets = self.glyphs.iter().filter_map(|glyph| {
+            if glyph.columns.start < start || glyph.source.len() != 1 || !self.bytes[glyph.source.start].is_ascii()
+                || self.bytes.get(glyph.source.end..glyph.source.end.saturating_add(2)) != Some(b"\x08_") { None }
+            else { Some(glyph.columns.start - start) }
+        }).peekable();
+        let mut bytes: Option<Vec<u8>> = None;
+        let mut column = 0;
+        for (offset, character) in visible.char_indices() {
+            while targets.peek().is_some_and(|target| *target < column) { targets.next(); }
+            if targets.peek() == Some(&column) && character.is_ascii() {
+                bytes.get_or_insert_with(|| visible.as_bytes().to_vec())[offset] = b'_';
+                targets.next();
+            }
+            column += UnicodeWidthChar::width(character).unwrap_or(0);
+        }
+        bytes.map_or(std::borrow::Cow::Borrowed(visible), |bytes| std::borrow::Cow::Owned(String::from_utf8(bytes).unwrap()))
+    }
+
     pub(crate) fn display(&self, start: usize, width: usize, notation_style: NotationStyle) -> Vec<u8> {
         let end = start.saturating_add(width);
         let mut output = Vec::new();

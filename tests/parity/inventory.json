@@ -8449,9 +8449,9 @@
       "file": "lesstest/lt/proc-special.lt",
       "sha256": "1ecbcd1572e8905dac74f6f3776be082ae016aafb228cfead7e49156a23a7eb4",
       "instrumented": "pass",
-      "cases": [],
-      "disposition": "pending translation",
-      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+      "cases": ["upstream-proc-special-search", "search-overstrike-underline", "search-overstrike-replacement", "search-overstrike-trailing", "search-overstrike-source-offset"],
+      "disposition": "partial translation",
+      "cause": "The original fixture and first search pass with generic-terminal checkpoints, alongside focused ASCII overstrike cases. Later processing options, non-ASCII mapping and custom termcap remain open."
     },
     {
       "id": "search-hist",

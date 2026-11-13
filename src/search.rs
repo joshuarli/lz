@@ -266,6 +266,20 @@ impl Search {
     }
 
     pub(crate) fn is_match_raw(&self, text: &str) -> bool {
+        let normalized;
+        let text = if text.contains('\x08') {
+            let mut output = Vec::with_capacity(text.chars().count());
+            let mut position = 0;
+            for character in text.chars() {
+                if character == '\x08' && position > 0 { position -= 1; }
+                else {
+                    if position == output.len() { output.push(character); } else { output[position] = character; }
+                    position += 1;
+                }
+            }
+            normalized = output.into_iter().collect::<String>();
+            normalized.as_str()
+        } else { text };
         match &self.matcher {
             Matcher::Literal(bmh) => bmh.is_match(text.as_bytes()),
             Matcher::Regex(regex) => regex.is_match(text),

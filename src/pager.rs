@@ -296,6 +296,18 @@ impl DisplayLine {
         Self::Mapped(prefix) => prefix.fills_row(start, width),
         Self::Raw { .. } => self.columns() >= start.saturating_add(width),
     } }
+    fn search_text<'a>(&self, visible: &'a str, start: usize) -> std::borrow::Cow<'a, str> {
+        match self { Self::Mapped(prefix) => prefix.search_text(visible, start), Self::Raw { .. } => std::borrow::Cow::Borrowed(visible) }
+    }
+    fn matches_search(&self, search: &Search, controls: ControlDisplay) -> bool {
+        let bytes = match self {
+            Self::Mapped(prefix) => prefix.source(),
+            Self::Raw { fragment, .. } => fragment.text.as_bytes(),
+        };
+        if !bytes.iter().any(|byte| *byte < 32 || *byte == 127) { return true; }
+        let text = String::from_utf8_lossy(bytes);
+        if controls == ControlDisplay::Standard { search.is_match_raw(&text) } else { search.is_match(&text) }
+    }
     fn display(&self, start: usize, width: usize, notation_style: NotationStyle) -> Vec<u8> { match self {
         Self::Mapped(prefix) => prefix.display(start, width, notation_style),
         Self::Raw { fragment, tabs } => crate::ansi::truncate_raw(&fragment.text, start, width, tabs).into_bytes(),
@@ -1939,6 +1951,7 @@ impl Pager {
                 }
             }
             None => {
+                if self.squished { self.position_initialized(); }
                 self.command_error("Pattern not found".to_string(), ErrorAction::Dismiss);
                 if let Mode::CommandError(error) = &mut self.mode { error.repaint = true; }
             }
@@ -2375,7 +2388,7 @@ impl Pager {
                     let line_width = fragment.columns();
                     let chopped = (!fragment.complete() || line_width > self.left_col.saturating_add(content_width)) && content_width > 0;
                     let display = fragment.display(self.left_col, content_width.saturating_sub(usize::from(chopped)), NotationStyle::for_ui_color(self.use_color));
-                    self.write_line_with_search(buf, &display);
+                    self.write_line_with_search(buf, &display, &fragment, self.left_col);
                     if chopped { buf.extend_from_slice(if self.use_color { b"\x1b[30;46m>\x1b[m" } else { b"\x1b[7m>\x1b[m" }); }
                     if row + 1 == ch && fragment.complete() { self.probe_after_complete_line(line_idx)?; }
                 }
@@ -2420,7 +2433,7 @@ impl Pager {
                         let gutter = self.number_gutter(actual, w);
                         Self::write_number_gutter(buf, &gutter, self.use_color);
                         let display = fragment.display(wrap_row * content_width, w.saturating_sub(gutter.len()), NotationStyle::for_ui_color(self.use_color));
-                        self.write_line_with_search(buf, &display);
+                        self.write_line_with_search(buf, &display, &fragment, wrap_row * content_width);
                         buf.wrapped_row(screen_row);
                         screen_row += 1;
                         if (wrap_row + 1 == rows_needed && fragment.complete()) || !fragment.fills_row(wrap_row * content_width, content_width) {
@@ -2447,14 +2460,15 @@ impl Pager {
         Ok(())
     }
 
-    fn write_line_with_search(&self, buf: &mut Vec<u8>, display: &[u8]) {
+    fn write_line_with_search(&self, buf: &mut Vec<u8>, display: &[u8], source: &DisplayLine, start: usize) {
         let Ok(display) = std::str::from_utf8(display) else { buf.extend_from_slice(display); return; };
         if (self.search_highlight || self.incremental_preview.is_some())
             && let Some(search) = self.incremental_preview.as_ref().or(self.search.as_ref())
-            && search.is_match(display)
+            && source.matches_search(search, self.controls)
         {
             let stripped = strip_ansi(display);
-            let mut matches: Vec<_> = search.find_matches_stripped(&stripped).into_iter().filter(|(start, end)| start < end).collect();
+            let searchable = source.search_text(&stripped, start);
+            let mut matches: Vec<_> = search.find_matches_stripped(&searchable).into_iter().filter(|(start, end)| start < end).collect();
             if self.search_nonmatch { matches.truncate(1); }
             if !matches.is_empty() {
                 let colored = self.use_color;
