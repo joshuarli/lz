@@ -98,6 +98,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S04bb accepted:** `man-0404` long raw/color names support query, set, reset and quiet commands. Four new cases and three neighboring display cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed. Other long options and input editing remain open.
 
+**S04bc accepted:** `man-0404` supports the tested editing and `=` termination of interactive long display option names. Three new cases passed on macOS arm64 and Linux arm64 Docker; the neighboring query case passed in both environments and all-target Clippy passed on macOS. Other long names and editing interactions remain open.
+
 The subsequent macOS arm64 invocation check passed all 332 admitted cases after the option-prefix changes.
 
 **S08p:** `Esc-u` after a search with no matches reports the reference no-previous-pattern prompt. The case passes on macOS and in a Linux arm64 container; cross-file prepared regions are parked separately.

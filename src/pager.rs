@@ -1152,9 +1152,9 @@ impl Pager {
                     return false;
                 }
                 match (name, key) {
-                    (OptionName::Raw, Key::Enter) => { self.mode = Mode::Normal; self.apply_control_option(command, 'r'); }
-                    (OptionName::Color, Key::Enter) => { self.mode = Mode::Normal; self.apply_control_option(command, 'R'); }
-                    (OptionName::Typing(name), Key::Enter) => {
+                    (OptionName::Raw, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_control_option(command, 'r'); }
+                    (OptionName::Color, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_control_option(command, 'R'); }
+                    (OptionName::Typing(name), Key::Enter | Key::Char('=')) => {
                         let repaint = self.squished;
                         if repaint { self.position_initialized(); }
                         self.status_msg = Some(format!("There is no --{name} option  (press RETURN)"));
