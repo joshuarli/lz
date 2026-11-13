@@ -576,6 +576,10 @@ pub enum InterruptPolicy { #[default] Continue, Quit }
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub enum EofPolicy { #[default] Manual, AfterEof, AtEof }
 
+/// Select how much of the last search's matches are highlighted on screen.
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+pub enum HiliteSearch { #[default] All, Match, None }
+
 /// A file index validated against the configured command-line file list.
 #[derive(Clone, Copy)]
 pub struct FileVisit { index: usize, startup_command: Option<StartupFileSwitch> }
@@ -799,6 +803,8 @@ pub struct Config {
     pub tab_stops: TabStops,
     pub show_eof_markers: bool,
     pub search_case: CaseSensitivity,
+    /// Select which found matches are highlighted.
+    pub hilite_search: HiliteSearch,
     /// Character interpretation used for regular expressions.
     pub regex_locale: RegexLocale,
     pub search_start: SearchStart,
@@ -828,6 +834,7 @@ pub struct Pager {
     search: Option<Search>,
     search_inherited: bool,
     search_highlight: bool,
+    hilite_search: HiliteSearch,
     search_nonmatch: bool,
     search_input_nonmatch: bool,
     search_input_keep_position: bool,
@@ -920,6 +927,7 @@ impl Pager {
             search: config.search_session.search,
             search_inherited,
             search_highlight: config.search_session.highlight,
+            hilite_search: config.hilite_search,
             search_nonmatch: config.search_session.nonmatch,
             search_input_nonmatch: false,
             search_input_keep_position: false,
@@ -2631,11 +2639,11 @@ impl Pager {
                     let fixed = self.header.columns.min(available);
                     if fixed > 0 {
                         let prefix = fragment.display(0, fixed, NotationStyle::for_ui_color(self.use_color));
-                        self.write_line_with_search(buf, &prefix, &fragment, 0);
+                        self.write_line_with_search(buf, &prefix, &fragment, 0, line_idx);
                     }
                     let start = self.left_col.saturating_add(fixed);
                     let display = fragment.display(start, available.saturating_sub(fixed), NotationStyle::for_ui_color(self.use_color));
-                    self.write_line_with_search(buf, &display, &fragment, start);
+                    self.write_line_with_search(buf, &display, &fragment, start, line_idx);
                     if chopped { buf.extend_from_slice(if self.use_color { b"\x1b[30;46m>\x1b[m" } else { b"\x1b[7m>\x1b[m" }); }
                     if underline_header { buf.extend_from_slice(b"\x1b[24m"); }
                     if row + 1 == ch && fragment.complete() { self.probe_after_complete_line(line_idx)?; }
@@ -2681,7 +2689,7 @@ impl Pager {
                         let gutter = self.number_gutter(actual, w);
                         Self::write_number_gutter(buf, &gutter, self.use_color);
                         let display = fragment.display(wrap_row * content_width, w.saturating_sub(gutter.len()), NotationStyle::for_ui_color(self.use_color));
-                        self.write_line_with_search(buf, &display, &fragment, wrap_row * content_width);
+                        self.write_line_with_search(buf, &display, &fragment, wrap_row * content_width, actual);
                         buf.wrapped_row(screen_row);
                         screen_row += 1;
                         if (wrap_row + 1 == rows_needed && fragment.complete()) || !fragment.fills_row(wrap_row * content_width, content_width) {
@@ -2741,9 +2749,15 @@ impl Pager {
         first.map(|first| (first, last))
     }
 
-    fn write_line_with_search(&self, buf: &mut Vec<u8>, display: &[u8], source: &DisplayLine, start: usize) {
+    fn write_line_with_search(&self, buf: &mut Vec<u8>, display: &[u8], source: &DisplayLine, start: usize, line_idx: usize) {
         let Ok(display) = std::str::from_utf8(display) else { buf.extend_from_slice(display); return; };
+        let hilite_allowed = match self.hilite_search {
+            HiliteSearch::All => true,
+            HiliteSearch::Match => self.current_match_line == Some(line_idx),
+            HiliteSearch::None => false,
+        };
         if (self.search_highlight || self.incremental_preview.is_some())
+            && hilite_allowed
             && let Some(search) = self.incremental_preview.as_ref().or(self.search.as_ref())
             && source.matches_search(search, self.controls)
         {

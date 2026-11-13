@@ -3277,10 +3277,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-hilite-search"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "-g highlights only matches on the line the search landed on; named case passes on macOS arm64; interactive toggle and boundaries remain open"
     },
     {
       "id": "man-0879",
@@ -3296,10 +3296,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-hilite-search-off"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "-G suppresses all search highlighting; named case passes on macOS arm64; interactive toggle and boundaries remain open"
     },
     {
       "id": "man-0881",
