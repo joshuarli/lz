@@ -29,7 +29,9 @@ Startup `-t` selects a numeric ctags address from `tags`; `-T` chooses another t
 
 Oversized numeric prefixes show a dismissible error. Enter resumes the pending command without losing the rest of a startup command.
 
-An exact-viewport final line gets bounded source lookahead so its EOF prompt is shown. Empty files keep an interactive EOF view. Initial short-file content appears at the bottom, with unused rows blank. An explicit startup position uses a full paint.
+An exact-viewport final line gets bounded source lookahead so its EOF prompt is shown. Empty files keep an interactive EOF view. Initial short-file content appears at the bottom of the alternate screen, with unused rows blank. An explicit startup position uses a full paint.
+
+`-X`/`--no-init` preserves the primary screen, places a short file below the current cursor and clears its prompt on exit. `--no-keypad` independently suppresses application keypad and cursor modes. Both settings accept LESS defaults and CLI resets. Nondefault modes during suspend/resume, resizing, help and complex file transitions still need differential coverage.
 
 Initial display reads bounded line prefixes from disk-backed source storage. Streamed input and large line indexes use owned anonymous spill files. Source bytes are retained intact. Whole-line search, wrapped navigation and exact malformed-byte display remain unfinished.
 

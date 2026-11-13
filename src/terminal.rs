@@ -47,6 +47,7 @@ pub static TERMINATION_SIGNAL: AtomicI32 = AtomicI32::new(0);
 /// The fd we set raw mode on (the /dev/tty fd).
 static ALT_SCREEN: AtomicBool = AtomicBool::new(false);
 static APPLICATION_MODES: AtomicBool = AtomicBool::new(false);
+static INTERACTIVE_ACTIVE: AtomicBool = AtomicBool::new(false);
 static TTY_FD: AtomicI32 = AtomicI32::new(-1);
 
 #[cfg(target_os = "macos")]
@@ -262,10 +263,13 @@ fn restore_acquired_terminal() -> io::Result<()> {
         }
     }
     let mut stdout = io::stdout().lock();
+    let interactive = INTERACTIVE_ACTIVE.swap(false, Ordering::SeqCst);
+    let alternate = ALT_SCREEN.swap(false, Ordering::SeqCst);
+    if interactive && !alternate && let Err(error) = stdout.write_all(b"\r\x1b[K") { failure.get_or_insert(error); }
     if APPLICATION_MODES.swap(false, Ordering::SeqCst)
         && let Err(error) = stdout.write_all(b"\x1b[?1l\x1b>") { failure.get_or_insert(error); }
-    if ALT_SCREEN.swap(false, Ordering::SeqCst)
-        && let Err(error) = stdout.write_all(b"\x1b[?1049l\x1b[?25h") { failure.get_or_insert(error); }
+    if alternate && let Err(error) = stdout.write_all(b"\x1b[?1049l") { failure.get_or_insert(error); }
+    if interactive && let Err(error) = stdout.write_all(b"\x1b[?25h") { failure.get_or_insert(error); }
     if let Err(error) = stdout.flush() { failure.get_or_insert(error); }
     match failure { Some(error) => Err(error), None => Ok(()) }
 }
@@ -280,8 +284,20 @@ pub struct Session {
     previous_handlers: Vec<(i32, usize)>,
 }
 
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+pub enum ScreenMode { #[default] Alternate, Preserve }
+
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+pub enum KeypadMode { #[default] Application, Normal }
+
+#[derive(Clone, Copy, Default)]
+pub struct InteractiveOptions {
+    pub screen: ScreenMode,
+    pub keypad: KeypadMode,
+}
+
 #[derive(Clone, Copy)]
-pub enum Screen { Primary, Alternate }
+pub enum Screen { Primary, Interactive(InteractiveOptions) }
 
 impl Session {
     pub fn start(screen: Screen) -> io::Result<Self> {
@@ -291,16 +307,18 @@ impl Session {
         let mut session = Self { keys, previous_handlers: Vec::new() };
         session.previous_handlers = install_signal_handlers()?;
         enable_raw_mode(session.keys.fd())?;
-        if matches!(screen, Screen::Alternate) { session.enter_alternate_screen()?; }
+        if let Screen::Interactive(options) = screen { session.enter_interactive(options)?; }
         Ok(session)
     }
 
-    pub fn enter_alternate_screen(&mut self) -> io::Result<()> {
-        if ALT_SCREEN.load(Ordering::SeqCst) { return Err(io::Error::new(io::ErrorKind::AlreadyExists, "alternate screen already acquired")); }
+    pub fn enter_interactive(&mut self, options: InteractiveOptions) -> io::Result<()> {
+        if INTERACTIVE_ACTIVE.swap(true, Ordering::SeqCst) { return Err(io::Error::new(io::ErrorKind::AlreadyExists, "interactive display already acquired")); }
         let mut stdout = io::stdout().lock();
-        enter_alt_screen(&mut stdout)?;
-        APPLICATION_MODES.store(true, Ordering::SeqCst);
-        stdout.write_all(b"\x1b[?1h\x1b=")?;
+        if options.screen == ScreenMode::Alternate { enter_alt_screen(&mut stdout)?; }
+        if options.keypad == KeypadMode::Application {
+            APPLICATION_MODES.store(true, Ordering::SeqCst);
+            stdout.write_all(b"\x1b[?1h\x1b=")?;
+        }
         stdout.flush()
     }
 

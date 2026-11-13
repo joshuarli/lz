@@ -321,14 +321,14 @@ pub fn probe(args: &[std::ffi::OsString]) -> Result<()> {
         Some(std::hint::black_box(bytes))
     } else { None };
     let primary = args.first().is_some_and(|arg| arg == "primary");
-    let mut session = lz::terminal::Session::start(if primary { lz::terminal::Screen::Primary } else { lz::terminal::Screen::Alternate })?;
+    let mut session = lz::terminal::Session::start(if primary { lz::terminal::Screen::Primary } else { lz::terminal::Screen::Interactive(Default::default()) })?;
     print!("probe");
     io::stdout().flush()?;
     if args.first().is_some_and(|arg| arg == "queued") {
         let mut command = [0];
         tty.read_exact(&mut command)?;
         session.finish()?;
-        let session = lz::terminal::Session::start(lz::terminal::Screen::Alternate)?;
+        let session = lz::terminal::Session::start(lz::terminal::Screen::Interactive(Default::default()))?;
         let mut queued = [0; 9];
         tty.read_exact(&mut queued)?;
         session.finish()?;
@@ -337,8 +337,8 @@ pub fn probe(args: &[std::ffi::OsString]) -> Result<()> {
     }
     wait_probe_input(session.keys_mut())?;
     if primary && lz::terminal::TERMINATION_SIGNAL.load(Ordering::SeqCst) == 0 {
-        session.enter_alternate_screen()?;
-        if !session.enter_alternate_screen().is_err_and(|error| error.kind() == io::ErrorKind::AlreadyExists) {
+        session.enter_interactive(Default::default())?;
+        if !session.enter_interactive(Default::default()).is_err_and(|error| error.kind() == io::ErrorKind::AlreadyExists) {
             return Err("a session acquired the alternate screen twice".into());
         }
         print!("alternate");

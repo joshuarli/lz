@@ -3729,10 +3729,18 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-no-init-scroll",
+        "invocation-no-init-short",
+        "invocation-no-init-environment-term",
+        "invocation-no-init-reset",
+        "invocation-no-init-binary",
+        "invocation-no-init-no-keypad",
+        "invocation-no-init-color-wrap"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Primary-screen short, wrapped and binary startup, scrolling, TERM and option resets pass on macOS arm64; resize, suspend/resume and complex transitions remain untested"
     },
     {
       "id": "man-1257",
@@ -4052,10 +4060,14 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-no-keypad",
+        "invocation-no-init-no-keypad",
+        "invocation-no-keypad-reset"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Independent keypad policy and reset pass on macOS arm64; other terminals and suspend/resume remain untested"
     },
     {
       "id": "man-1438",

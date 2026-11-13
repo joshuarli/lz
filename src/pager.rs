@@ -12,6 +12,49 @@ use crate::terminal;
 
 const FOLLOW_INTERRUPT: char = 'x';
 
+/// Retains the display origin across file switches in one terminal session.
+#[derive(Clone, Copy)]
+pub struct DisplayAnchor { row: Option<usize> }
+
+impl DisplayAnchor {
+    pub fn new(screen: terminal::ScreenMode) -> Self {
+        Self { row: (screen == terminal::ScreenMode::Preserve).then_some(0) }
+    }
+}
+
+struct Frame {
+    bytes: Vec<u8>,
+    relative_row: Option<usize>,
+    padding: usize,
+}
+
+impl std::ops::Deref for Frame {
+    type Target = Vec<u8>;
+    fn deref(&self) -> &Self::Target { &self.bytes }
+}
+
+impl std::ops::DerefMut for Frame {
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.bytes }
+}
+
+impl Frame {
+    fn position(&mut self, row: usize) {
+        if let Some(previous) = self.relative_row {
+            let row = row.saturating_sub(self.padding);
+            self.bytes.push(b'\r');
+            if previous > row { let _ = write!(self.bytes, "\x1b[{}A", previous - row); }
+            for _ in previous..row { self.bytes.extend_from_slice(b"\r\n"); }
+            self.relative_row = Some(row);
+        } else {
+            terminal::move_cursor(&mut self.bytes, row as u16, 0);
+        }
+    }
+
+    fn wrapped_row(&mut self, row: usize) {
+        if self.relative_row.is_some() { self.relative_row = Some(row.saturating_sub(self.padding)); }
+    }
+}
+
 #[derive(PartialEq, Clone)]
 enum Mode {
     Normal,
@@ -173,6 +216,7 @@ impl FileStatus {
 }
 
 pub struct Config {
+    pub display_anchor: DisplayAnchor,
     pub files: FileStatus,
     pub initial_display: InitialDisplay,
     pub startup_commands: Vec<Vec<u8>>,
@@ -184,6 +228,7 @@ pub struct Config {
 }
 
 pub struct Pager {
+    display_anchor: DisplayAnchor,
     buffer: LineBuffer,
     top_line: usize,
     marks: HashMap<MarkName, usize>,
@@ -226,6 +271,7 @@ impl Pager {
     ) -> Self {
         let (w, h) = terminal::get_terminal_size();
         Pager {
+            display_anchor: config.display_anchor,
             buffer,
             top_line: match config.initial_display { InitialDisplay::FileSwitch(Some(position)) => position.line, _ => 0 },
             marks: HashMap::new(),
@@ -265,6 +311,8 @@ impl Pager {
         if !self.content_painted { return None; }
         self.display_line_idx(self.top_line).filter(|line| *line < self.buffer.len()).map(|line| SavedPosition { line })
     }
+
+    pub fn display_anchor(&self) -> DisplayAnchor { self.display_anchor }
 
     pub fn into_history(mut self) -> SearchHistory {
         if self.content_painted && !self.buffer.is_empty() { self.history.note_position(); }
@@ -835,16 +883,15 @@ impl Pager {
     // --- Rendering ---
 
     fn render(&mut self) -> io::Result<()> {
-        let mut buf: Vec<u8> = Vec::with_capacity(4096);
+        let mut buf = Frame { bytes: Vec::with_capacity(4096), relative_row: self.display_anchor.row, padding: 0 };
         let w = self.term_width as usize;
         let ch = self.content_height();
 
         if self.bell_requested { buf.push(7); self.bell_requested = false; }
         buf.extend_from_slice(b"\x1b[?25l");
-        terminal::move_cursor(&mut buf, 0, 0);
-
         if matches!(self.mode, Mode::CommandError(_)) {
-            if !self.content_painted { for row in 0..ch { terminal::move_cursor(&mut buf, row as u16, 0); terminal::clear_line(&mut buf); } }
+            if !self.content_painted { for row in 0..ch { buf.position(row); terminal::clear_line(&mut buf); } }
+            if let Some(row) = self.display_anchor.row { buf.padding = ch.saturating_sub(row); }
             self.render_status(&mut buf, w);
             buf.extend_from_slice(b"\x1b[?25h");
             let mut stdout = io::stdout().lock();
@@ -852,7 +899,8 @@ impl Pager {
             return stdout.flush();
         }
         let first_row = if self.mode == Mode::Help { 0 } else { self.initial_content_row(w, ch)? };
-        for row in 0..first_row { terminal::move_cursor(&mut buf, row as u16, 0); terminal::clear_line(&mut buf); }
+        if buf.relative_row.is_some() { buf.padding = first_row; }
+        else { for row in 0..first_row { buf.position(row); terminal::clear_line(&mut buf); } }
         if self.mode == Mode::Help {
             Self::render_help(&mut buf, w, ch);
         } else if self.wrap {
@@ -863,7 +911,8 @@ impl Pager {
 
         if let Some(error) = self.buffer.take_error() { return Err(error); }
         self.render_status(&mut buf, w);
-        self.compact_initial = false;
+        self.display_anchor.row = buf.relative_row;
+        if self.display_anchor.row.is_none() { self.compact_initial = false; }
         self.content_painted = true;
         buf.extend_from_slice(b"\x1b[?25h");
 
@@ -951,9 +1000,9 @@ impl Pager {
         Ok(())
     }
 
-    fn render_nowrap(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize, first_row: usize) -> io::Result<()> {
+    fn render_nowrap(&mut self, buf: &mut Frame, w: usize, ch: usize, first_row: usize) -> io::Result<()> {
         for row in first_row..ch {
-            terminal::move_cursor(buf, row as u16, 0);
+            buf.position(row);
             let display_idx = self.top_line.saturating_add(row - first_row);
             let actual = self.display_line_idx(display_idx);
             let fragment = match actual { Some(index) => self.display_prefix(index, self.left_col.saturating_add(w).saturating_add(1).saturating_mul(16).max(4096))?, None => None };
@@ -976,7 +1025,7 @@ impl Pager {
         Ok(())
     }
 
-    fn render_wrapped(&mut self, buf: &mut Vec<u8>, w: usize, ch: usize, first_row: usize) -> io::Result<()> {
+    fn render_wrapped(&mut self, buf: &mut Frame, w: usize, ch: usize, first_row: usize) -> io::Result<()> {
         let mut screen_row = first_row;
         let mut display_idx = self.top_line;
         while screen_row < ch {
@@ -990,23 +1039,27 @@ impl Pager {
                     let available_rows = ch - screen_row;
                     for wrap_row in 0..rows_needed {
                         if screen_row >= ch { break; }
-                        if wrap_row == 0 { terminal::move_cursor(buf, screen_row as u16, 0); }
+                        if wrap_row == 0 { buf.position(screen_row); }
                         let gutter = self.number_gutter(actual, w);
                         Self::write_number_gutter(buf, &gutter);
                         let display = fragment.display(wrap_row * content_width, w.saturating_sub(gutter.len()));
                         self.write_line_with_search(buf, &display);
+                        buf.wrapped_row(screen_row);
                         screen_row += 1;
                         if (wrap_row + 1 == rows_needed && fragment.complete()) || !fragment.fills_row(wrap_row * content_width, content_width) {
                             terminal::clear_line(buf);
-                            if wrap_row + 1 < rows_needed && screen_row < ch { terminal::move_cursor(buf, screen_row as u16, 0); }
+                            if wrap_row + 1 < rows_needed && screen_row < ch { buf.position(screen_row); }
                         }
                     }
-                    if screen_row == ch && (rows_needed > available_rows || !fragment.complete()) { buf.extend_from_slice(b" \x08"); }
+                    if screen_row == ch && (rows_needed > available_rows || !fragment.complete()) {
+                        buf.extend_from_slice(b" \x08");
+                        if fragment.fills_row((available_rows - 1) * content_width, content_width) { buf.wrapped_row(screen_row); }
+                    }
                     if screen_row == ch && rows_needed <= available_rows && fragment.complete() { self.probe_after_complete_line(actual)?; }
                     display_idx = display_idx.saturating_add(1);
                 }
                 None => {
-                    terminal::move_cursor(buf, screen_row as u16, 0);
+                    buf.position(screen_row);
                     self.write_eof_marker(buf);
                     terminal::clear_line(buf);
                     screen_row += 1;
@@ -1048,7 +1101,7 @@ impl Pager {
         buf.extend_from_slice(display.as_bytes());
     }
 
-    fn render_help(buf: &mut Vec<u8>, w: usize, ch: usize) {
+    fn render_help(buf: &mut Frame, w: usize, ch: usize) {
         const HELP: &[&str] = &[
             "",
             "  NAVIGATION",
@@ -1077,7 +1130,7 @@ impl Pager {
         ];
 
         for row in 0..ch {
-            terminal::move_cursor(buf, row as u16, 0);
+            buf.position(row);
             if let Some(line) = HELP.get(row) {
                 let truncated = if line.len() > w { &line[..w] } else { line };
                 buf.extend_from_slice(truncated.as_bytes());
@@ -1086,8 +1139,8 @@ impl Pager {
         }
     }
 
-    fn render_status(&self, buf: &mut Vec<u8>, w: usize) {
-        terminal::move_cursor(buf, self.term_height - 1, 0);
+    fn render_status(&self, buf: &mut Frame, w: usize) {
+        buf.position(self.term_height.saturating_sub(1) as usize);
         let status = self.build_status();
         let emphasized = self.mode == Mode::Follow || (self.filename_prompt && self.filename.is_some()) || status.starts_with("(END)") || self.status_msg.is_some();
         if emphasized { buf.extend_from_slice(b"\x1b[7m"); }

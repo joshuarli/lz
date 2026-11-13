@@ -191,7 +191,7 @@ fn run() -> Result<ExitAction, String> {
     let mut opened = open_input(&args.filenames[0], charset, args.control_display, args.force)
         .map_err(|error| format!("{}: {error}", args.filenames[0].to_string_lossy()))?;
     let primary = opened.binary_name.is_some() || security.has_diagnostics();
-    let screen = if primary { terminal::Screen::Primary } else { terminal::Screen::Alternate };
+    let screen = if primary { terminal::Screen::Primary } else { terminal::Screen::Interactive(args.terminal) };
     let mut session = terminal::Session::start(screen).map_err(|error| error.to_string())?;
     if let Some(name) = opened.binary_name.take() {
         match confirm_binary(&name, charset, session.keys_mut()) {
@@ -208,18 +208,20 @@ fn run() -> Result<ExitAction, String> {
             Err(error) => return finish_session(Err(error), session),
         }
     }
-    if primary && let Err(error) = session.enter_alternate_screen() { return finish_session(Err(error), session); }
+    if primary && let Err(error) = session.enter_interactive(args.terminal) { return finish_session(Err(error), session); }
     let history_file = if security.allows(security::Feature::History) { history::HistoryFile::from_environment() } else { None };
     let mut history = history_file.as_ref().map(history::HistoryFile::load).unwrap_or_default();
 
     let mut file_index = 0;
     let mut initial_display = pager::InitialDisplay::Startup;
+    let mut display_anchor = pager::DisplayAnchor::new(args.terminal.screen);
     let mut positions = vec![None; args.filenames.len()];
     let result = loop {
         let files = match pager::FileStatus::new(&args.filenames, file_index, charset) { Ok(files) => files, Err(error) => break Err(error) };
-        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, startup_commands: std::mem::take(&mut args.startup_commands), charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, opened.name, history);
+        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, startup_commands: std::mem::take(&mut args.startup_commands), charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, opened.name, history);
         let result = pager.run(session.keys_mut());
         positions[file_index] = pager.saved_position();
+        display_anchor = pager.display_anchor();
         history = pager.into_history();
         match result {
             Err(error) => break Err(error),

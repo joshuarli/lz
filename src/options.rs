@@ -112,6 +112,7 @@ impl Diagnostic {
 pub(super) enum Action { Page, Help, Version, Stop }
 
 pub(super) struct Args {
+    pub terminal: lz::terminal::InteractiveOptions,
     pub startup_commands: Vec<Vec<u8>>,
     pub tag: Option<OsString>,
     pub tags_file: Option<OsString>,
@@ -128,7 +129,7 @@ pub(super) struct Args {
 
 impl Default for Args {
     fn default() -> Self {
-        Self { startup_commands: Vec::new(), tag: None, tags_file: None, force: false, control_display: ControlDisplay::default(), chop: false, line_numbers: false, search_case: CaseSensitivity::Sensitive,
+        Self { terminal: Default::default(), startup_commands: Vec::new(), tag: None, tags_file: None, force: false, control_display: ControlDisplay::default(), chop: false, line_numbers: false, search_case: CaseSensitivity::Sensitive,
             filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
@@ -178,6 +179,8 @@ impl Scanner {
             "help" => self.args.action = Action::Help,
             "version" => if !matches!(self.args.action, Action::Help) { self.args.action = Action::Version; },
             "force" => self.args.force = !reset,
+            "no-init" => self.args.terminal.screen = if reset { Default::default() } else { lz::terminal::ScreenMode::Preserve },
+            "no-keypad" => self.args.terminal.keypad = if reset { Default::default() } else { lz::terminal::KeypadMode::Normal },
             "ignore-case" => self.args.search_case = if reset { CaseSensitivity::Sensitive } else if upper { CaseSensitivity::Insensitive } else { CaseSensitivity::Smart },
             "raw-control-chars" => self.args.control_display = if reset { ControlDisplay::default() } else if upper { ControlDisplay::Color } else { ControlDisplay::Raw },
             "chop-long-lines" => self.args.chop = !reset,
