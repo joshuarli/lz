@@ -193,7 +193,11 @@ impl DisplayLine {
 }
 
 #[derive(Clone, Copy)]
-pub enum PagerExit { Quit, VisitFile(FileVisit) }
+pub enum PagerExit { Quit, Interrupted, VisitFile(FileVisit) }
+
+/// Select default continuation or exit status 2 after an interrupt.
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+pub enum InterruptPolicy { #[default] Continue, Quit }
 
 /// A file index validated against the configured command-line file list.
 #[derive(Clone, Copy)]
@@ -278,6 +282,7 @@ impl FileStatus {
 }
 
 pub struct Config {
+    pub interrupt_policy: InterruptPolicy,
     pub scroll_defaults: ScrollDefaults,
     pub display_anchor: DisplayAnchor,
     pub files: FileStatus,
@@ -291,6 +296,7 @@ pub struct Config {
 }
 
 pub struct Pager {
+    interrupt_policy: InterruptPolicy,
     startup_echo: Option<FileCommand>,
     paint_before_commands: bool,
     scroll_defaults: ScrollDefaults,
@@ -337,6 +343,7 @@ impl Pager {
     ) -> Self {
         let (w, h) = terminal::get_terminal_size();
         Pager {
+            interrupt_policy: config.interrupt_policy,
             startup_echo: match config.initial_display { InitialDisplay::StartupFileSwitch(switch) => Some(switch.command), _ => None },
             paint_before_commands: matches!(config.initial_display, InitialDisplay::StartupFileSwitch(StartupFileSwitch { continuation: CommandContinuation::NextCommand, .. })) && !config.startup_commands.is_empty(),
             scroll_defaults: config.scroll_defaults,
@@ -444,19 +451,19 @@ impl Pager {
             self.render()?;
             self.command_context = CommandContext::Interactive;
         }
-        if self.run_startup_commands(keys)? { return Ok(self.exit); }
+        if self.run_startup_commands(keys)? { return self.finish_run(); }
 
         let mut redraw = true;
         loop {
             if self.command_context != CommandContext::Interactive && !matches!(self.mode, Mode::CommandError(_)) {
-                if self.run_startup_commands(keys)? { return Ok(self.exit); }
+                if self.run_startup_commands(keys)? { return self.finish_run(); }
                 redraw = true;
             }
             if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 {
-                return Ok(self.exit);
+                return self.finish_run();
             }
             if terminal::take_interrupt() {
-                if self.interrupt(keys) { return Ok(self.exit); }
+                if self.interrupt(keys) { return self.finish_run(); }
                 redraw = true;
             }
             if terminal::TSTP_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst) {
@@ -499,12 +506,31 @@ impl Pager {
             redraw = true;
             let quit_requested = if key == Key::Ctrl('c') { self.interrupt(keys) } else { self.handle_key(key) };
             if quit_requested {
-                return Ok(self.exit);
+                return self.finish_run();
             }
         }
     }
 
+    fn finish_run(&mut self) -> io::Result<PagerExit> {
+        if matches!(self.exit, PagerExit::Interrupted) && std::mem::take(&mut self.bell_requested) {
+            let mut output = io::stdout().lock();
+            output.write_all(&[7])?;
+            output.flush()?;
+        }
+        Ok(self.exit)
+    }
+
     fn interrupt(&mut self, keys: &mut KeyReader) -> bool {
+        if self.interrupt_policy == InterruptPolicy::Quit {
+            match self.mode {
+                Mode::SearchInput => self.handle_search_input_key(Key::Ctrl('c')),
+                Mode::FilterInput => self.handle_filter_input_key(Key::Ctrl('c')),
+                _ => {},
+            }
+            self.bell_requested = true;
+            self.exit = PagerExit::Interrupted;
+            return true;
+        }
         if self.filter.is_some() {
             let line = self.display_line_idx(self.top_line).unwrap_or(0);
             self.clear_filter();
@@ -755,6 +781,10 @@ impl Pager {
     }
 
     fn handle_follow_key(&mut self, key: Key) -> bool {
+        if key == Key::Ctrl(FOLLOW_INTERRUPT) && self.interrupt_policy == InterruptPolicy::Quit {
+            self.exit = PagerExit::Interrupted;
+            return true;
+        }
         if matches!(key, Key::Ctrl(character) if character == 'c' || character == FOLLOW_INTERRUPT) {
             self.mode = Mode::Normal;
             if key == Key::Ctrl('c') { self.bell_requested = true; }
@@ -847,7 +877,11 @@ impl Pager {
 
     fn handle_filter_input_key(&mut self, key: Key) {
         match key {
-            Key::Escape | Key::Ctrl('c') => {
+            Key::Escape => {
+                self.mode = Mode::Normal;
+            }
+            Key::Ctrl('c') => {
+                self.history.push(&self.filter_input.content);
                 self.mode = Mode::Normal;
             }
             Key::Enter => {

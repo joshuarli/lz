@@ -29,6 +29,7 @@ OPTIONS:
     -zN, --window=N  Set the scrolling window (negative: screen-relative)
     -X, --no-init   Preserve the primary screen
     --no-keypad     Keep normal cursor and keypad modes
+    -K, --quit-on-intr  Exit with status 2 on interrupt
     -r, --raw   Raw mode (show ANSI escapes literally)
     -?, --help  Show this help
     -V, --version  Show version
@@ -50,9 +51,11 @@ FILE:
     );
 }
 
-enum ExitAction { Success, FileError, Terminated, Hangup }
+enum ExitAction { Success, FileError, Interrupted, Terminated, Hangup }
 
 enum BinaryAnswer { Open, Refuse, Quit }
+
+enum DiagnosticAnswer { Continue, Interrupted, Terminated }
 
 fn read_prompt_key(keys: &mut lz::input::KeyReader) -> io::Result<Option<lz::input::Key>> {
     loop {
@@ -69,15 +72,16 @@ fn read_prompt_key(keys: &mut lz::input::KeyReader) -> io::Result<Option<lz::inp
     }
 }
 
-fn acknowledge_diagnostics(keys: &mut lz::input::KeyReader) -> io::Result<bool> {
+fn acknowledge_diagnostics(keys: &mut lz::input::KeyReader) -> io::Result<DiagnosticAnswer> {
     let mut output = io::stderr().lock();
     output.write_all(b"Press RETURN to continue ")?;
     output.flush()?;
-    let Some(key) = read_prompt_key(keys)? else { return Ok(false); };
+    let Some(key) = read_prompt_key(keys)? else { return Ok(DiagnosticAnswer::Terminated); };
+    let answer = if key == lz::input::Key::Ctrl('c') { DiagnosticAnswer::Interrupted } else { DiagnosticAnswer::Continue };
     if !key.is_prompt_acknowledgement() { keys.unread_key(key)?; }
     output.write_all(b"\r\n")?;
     output.flush()?;
-    Ok(true)
+    Ok(answer)
 }
 
 fn confirm_binary(name: &std::ffi::OsStr, charset: Charset, keys: &mut lz::input::KeyReader) -> io::Result<BinaryAnswer> {
@@ -217,7 +221,11 @@ fn run() -> Result<ExitAction, String> {
 
     if security.has_diagnostics() {
         match acknowledge_diagnostics(session.keys_mut()) {
-            Ok(true) => {}, Ok(false) => return finish_session(Ok(ExitAction::Success), session),
+            Ok(DiagnosticAnswer::Continue) => {},
+            Ok(DiagnosticAnswer::Interrupted) => {
+                if args.interrupt_policy == pager::InterruptPolicy::Quit { return finish_session(Ok(ExitAction::Interrupted), session); }
+            }
+            Ok(DiagnosticAnswer::Terminated) => return finish_session(Ok(ExitAction::Success), session),
             Err(error) => return finish_session(Err(error), session),
         }
     }
@@ -242,7 +250,7 @@ fn run() -> Result<ExitAction, String> {
         let files = match pager::FileStatus::new(&args.filenames, file_index, charset) { Ok(files) => files, Err(error) => break Err(error) };
         let mut startup_commands = std::mem::take(&mut args.startup_commands);
         if let Some(command) = &args.every_file_command { startup_commands.push(command.clone()); }
-        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, opened.name, history);
+        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, opened.name, history);
         let result = pager.run(session.keys_mut());
         positions[file_index] = pager.saved_position();
         display_anchor = pager.display_anchor();
@@ -252,6 +260,7 @@ fn run() -> Result<ExitAction, String> {
         let visit = match result {
             Err(error) => break Err(error),
             Ok(pager::PagerExit::Quit) => break Ok(ExitAction::Success),
+            Ok(pager::PagerExit::Interrupted) => break Ok(ExitAction::Interrupted),
             Ok(pager::PagerExit::VisitFile(visit)) => visit,
         };
         file_index = visit.index();
@@ -290,6 +299,7 @@ fn main() {
     match run() {
         Ok(ExitAction::Success) => process::exit(0),
         Ok(ExitAction::FileError) => process::exit(1),
+        Ok(ExitAction::Interrupted) => process::exit(2),
         Ok(ExitAction::Terminated) => process::exit(15),
         Ok(ExitAction::Hangup) => {
             unsafe extern "C" { fn signal(number: i32, handler: usize) -> usize; fn raise(number: i32) -> i32; }

@@ -1352,11 +1352,12 @@
         "linux-musl"
       ],
       "cases": [
-        "lifecycle-int-filter"
+        "lifecycle-int-filter",
+        "lifecycle-int-filter-history"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Filter input displays the reference &/ prompt and cancels on SIGINT. Filter execution, modifiers, positions and interactions remain unverified"
+      "cause": "Filter input displays the reference &/ prompt and cancels on SIGINT. Filter execution, modifiers, positions and interactions remain unverified Pending interrupted filter input is retained in explicit history."
     },
     {
       "id": "man-0335",
@@ -3319,10 +3320,26 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-quit-on-int-signal",
+        "invocation-quit-on-int-long",
+        "invocation-quit-on-int-environment",
+        "invocation-quit-on-int-keyboard",
+        "invocation-quit-on-int-preserve",
+        "invocation-quit-on-int-reset",
+        "invocation-quit-on-int-follow",
+        "invocation-quit-on-int-follow-x",
+        "invocation-quit-on-int-binary",
+        "invocation-quit-on-int-diagnostic",
+        "invocation-quit-on-int-prefix",
+        "invocation-quit-on-int-search",
+        "invocation-quit-on-int-filter",
+        "invocation-quit-on-int-follow-signal",
+        "invocation-quit-on-int-filter-history"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Configured interruption exits 2 for real SIGINT and Ctrl-C, including follow, pending prompts and preserved/no-keypad screens. Ctrl-X follow exit is silent. LESS defaults, CLI resets, binary refusal, diagnostics and pending search/filter history match. Long operations, custom interrupt characters and other platforms remain unproved"
     },
     {
       "id": "man-1020",
@@ -7534,11 +7551,12 @@
         "lifecycle-int-follow",
         "lifecycle-int-binary",
         "lifecycle-int-diagnostic",
-        "lifecycle-int-preserve"
+        "lifecycle-int-preserve",
+        "lifecycle-int-filter-history"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "TERM cleanup and default SIGINT continuation pass in normal/search/filter/follow/prefix modes, binary/diagnostic prompts and preserved-screen/no-keypad sessions. Keyboard Ctrl-C rings and continues in normal mode. Quit-on-interrupt policy, suspend/resume, other signals, inherited dispositions and long operations remain open"
+      "cause": "TERM cleanup and default SIGINT continuation pass in normal/search/filter/follow/prefix modes, binary/diagnostic prompts and preserved-screen/no-keypad sessions. Keyboard Ctrl-C rings and continues in normal mode. Quit-on-interrupt policy, suspend/resume, other signals, inherited dispositions and long operations remain open Pending interrupted filter input is retained in explicit history."
     },
     {
       "id": "input-boundaries",
