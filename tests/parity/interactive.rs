@@ -198,7 +198,7 @@ fn execute_recorded_with_manifest(binary: &Path, case: &Case, manifest: &Path) -
 
 fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Value> {
     let environment = if case.locale == "C" { TestEnv::hermetic_ascii()? } else { TestEnv::hermetic_utf8(&case.locale)? };
-    let mut environment = environment.env("LESSHISTFILE", "-");
+    let mut environment = environment.env("LESSHISTFILE", "-").env("LESSECHO", super::oracle().with_file_name("lessecho"));
     for (key, value) in &case.env { environment = environment.env(key, value); }
     let world = environment.paths().root().to_owned();
     super::write_fixture(&world.join(std::ffi::OsString::from_vec(case.fixture_name.clone())), &case.fixture)?;

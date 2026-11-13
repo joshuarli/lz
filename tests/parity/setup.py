@@ -38,6 +38,9 @@ def verify():
             raise RuntimeError('wrong reference instrumentation')
         if digest(binary) != metadata[kind + '_sha256']:
             raise RuntimeError('reference executable changed')
+        helper = BASE / kind / 'lessecho'
+        if run([str(helper), '--version'], capture_output=True).stdout.strip() != b'1.15':
+            raise RuntimeError('wrong reference lessecho version')
     return metadata
 
 if __name__ == '__main__':
