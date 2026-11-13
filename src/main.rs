@@ -209,8 +209,10 @@ fn run() -> Result<ExitAction, String> {
     let charset = Charset::resolve(explicit_charset.as_deref(), locale.as_deref()).map_err(|error| error.to_string())?;
     let suspension = if security.allows(security::Feature::Stop) { terminal::SuspendPolicy::Allow } else { terminal::SuspendPolicy::Ignore };
     let mut session = terminal::Session::start(terminal::Screen::Primary, suspension).map_err(|error| error.to_string())?;
-    let preprocessor = if args.use_lessopen && security.allows(security::Feature::Lessopen) { preprocessor::Template::from_environment().map_err(|error| error.to_string())? } else { None };
-    let mut opened = open_input(&args.filenames[0], charset, args.control_display, args.force, preprocessor.as_ref(), &mut session)
+    let preprocessing = if args.use_lessopen && security.allows(security::Feature::Lessopen) { preprocessor::Template::from_environment() } else { Ok(None) };
+    if let Err(diagnostic) = &preprocessing { write!(io::stderr().lock(), "{diagnostic}\r\n").map_err(|error| error.to_string())?; }
+    let preprocessor = preprocessing.as_ref().ok().and_then(Option::as_ref);
+    let mut opened = open_input(&args.filenames[0], charset, args.control_display, args.force, preprocessor, &mut session)
         .map_err(|error| format!("{}: {error}", args.filenames[0].to_string_lossy()))?;
     if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return finish_session(Ok(ExitAction::Success), session); }
     if let Some(name) = opened.binary_name.take() {
@@ -222,7 +224,7 @@ fn run() -> Result<ExitAction, String> {
         }
     }
 
-    if security.has_diagnostics() {
+    if security.has_diagnostics() || preprocessing.is_err() {
         match acknowledge_diagnostics(session.keys_mut()) {
             Ok(DiagnosticAnswer::Continue) => {},
             Ok(DiagnosticAnswer::Interrupted) => {
@@ -267,7 +269,7 @@ fn run() -> Result<ExitAction, String> {
             Ok(pager::PagerExit::VisitFile(visit)) => visit,
         };
         file_index = visit.index();
-        opened = match open_input(&args.filenames[file_index], charset, args.control_display, args.force, preprocessor.as_ref(), &mut session) {
+        opened = match open_input(&args.filenames[file_index], charset, args.control_display, args.force, preprocessor, &mut session) {
             Ok(input) => input, Err(error) => break Err(error),
         };
         if let Some(name) = opened.binary_name.take() {

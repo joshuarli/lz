@@ -5,8 +5,17 @@ use std::process::Command;
 
 pub(super) struct Template { bytes: Vec<u8> }
 
+#[derive(Debug)]
+pub(super) struct InvalidTemplate;
+impl std::fmt::Display for InvalidTemplate {
+    fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        output.write_str("LESSOPEN ignored: must contain exactly one %s")
+    }
+}
+impl std::error::Error for InvalidTemplate {}
+
 impl Template {
-    pub fn from_environment() -> io::Result<Option<Self>> {
+    pub fn from_environment() -> Result<Option<Self>, InvalidTemplate> {
         let Some(value) = std::env::var_os("LESSOPEN") else { return Ok(None); };
         let mut bytes = value.as_bytes();
         if bytes.is_empty() || bytes[0] == b'|' { return Ok(None); }
@@ -19,12 +28,12 @@ impl Template {
                 match bytes.get(cursor) {
                     Some(b's') => placeholders += 1,
                     Some(b'%') => {},
-                    _ => return Err(io::Error::new(io::ErrorKind::InvalidInput, "LESSOPEN ignored: must contain exactly one %s")),
+                    _ => return Err(InvalidTemplate),
                 }
             }
             cursor += 1;
         }
-        if placeholders != 1 { return Err(io::Error::new(io::ErrorKind::InvalidInput, "LESSOPEN ignored: must contain exactly one %s")); }
+        if placeholders != 1 { return Err(InvalidTemplate); }
         Ok(Some(Self { bytes:bytes.to_vec() }))
     }
 

@@ -5104,11 +5104,23 @@
         "integrations-lessopen-percent",
         "integrations-lessopen-eof",
         "integrations-lessopen-tty",
-        "integrations-lessopen-term"
+        "integrations-lessopen-term",
+        "integrations-lessopen-invalid",
+        "integrations-lessopen-invalid-duplicate",
+        "integrations-lessopen-invalid-specifier",
+        "integrations-lessopen-invalid-trailing",
+        "integrations-lessopen-invalid-literal",
+        "integrations-lessopen-invalid-quit",
+        "integrations-lessopen-invalid-int",
+        "integrations-lessopen-invalid-int-policy",
+        "integrations-lessopen-invalid-term",
+        "integrations-lessopen-invalid-disabled",
+        "integrations-lessopen-invalid-secure",
+        "integrations-lessopen-invalid-combined"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "File-return preprocessors substitute one quoted filename, preserve literal percent escapes, read the first stdout line through LF/EOF, ignore nonzero exit after data, and fall back on empty output. Inert helpers prove hostile filename bytes, secure denial/allowance, -L/long/reset effects, foreground tty input and TERM cleanup. Live pipes, LESSCLOSE, custom shell/metachar settings, invalid-template diagnostics, interrupted/stopped helpers and further file transitions remain open."
+      "cause": "File-return preprocessors substitute one quoted filename, preserve literal percent escapes, read the first stdout line through LF/EOF, ignore nonzero exit after data, and fall back on empty output. Inert helpers prove hostile filename bytes, secure denial/allowance, -L/long/reset effects, foreground tty input and TERM cleanup. Live pipes, LESSCLOSE, custom shell/metachar settings, interrupted/stopped helpers and further file transitions remain open. Initial file-return template diagnostics preserve exact text, one acknowledgment, non-Return quit, ordinary/configured interruption and TERM. Disabled or denied preprocessing suppresses validation. Combined secure/template diagnostics share acknowledgment. Stdin-prefix applicability and repeated interactive diagnostics remain open."
     },
     {
       "id": "man-1869",
@@ -7046,11 +7058,23 @@
         "integrations-lessopen-percent",
         "integrations-lessopen-eof",
         "integrations-lessopen-tty",
-        "integrations-lessopen-term"
+        "integrations-lessopen-term",
+        "integrations-lessopen-invalid",
+        "integrations-lessopen-invalid-duplicate",
+        "integrations-lessopen-invalid-specifier",
+        "integrations-lessopen-invalid-trailing",
+        "integrations-lessopen-invalid-literal",
+        "integrations-lessopen-invalid-quit",
+        "integrations-lessopen-invalid-int",
+        "integrations-lessopen-invalid-int-policy",
+        "integrations-lessopen-invalid-term",
+        "integrations-lessopen-invalid-disabled",
+        "integrations-lessopen-invalid-secure",
+        "integrations-lessopen-invalid-combined"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "File-return preprocessors substitute one quoted filename, preserve literal percent escapes, read the first stdout line through LF/EOF, ignore nonzero exit after data, and fall back on empty output. Inert helpers prove hostile filename bytes, secure denial/allowance, -L/long/reset effects, foreground tty input and TERM cleanup. Live pipes, LESSCLOSE, custom shell/metachar settings, invalid-template diagnostics, interrupted/stopped helpers and further file transitions remain open."
+      "cause": "File-return preprocessors substitute one quoted filename, preserve literal percent escapes, read the first stdout line through LF/EOF, ignore nonzero exit after data, and fall back on empty output. Inert helpers prove hostile filename bytes, secure denial/allowance, -L/long/reset effects, foreground tty input and TERM cleanup. Live pipes, LESSCLOSE, custom shell/metachar settings, interrupted/stopped helpers and further file transitions remain open. Initial file-return template diagnostics preserve exact text, one acknowledgment, non-Return quit, ordinary/configured interruption and TERM. Disabled or denied preprocessing suppresses validation. Combined secure/template diagnostics share acknowledgment. Stdin-prefix applicability and repeated interactive diagnostics remain open."
     },
     {
       "id": "man-2426",
