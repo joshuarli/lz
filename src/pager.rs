@@ -2235,7 +2235,7 @@ impl Pager {
                     let chopped = (!fragment.complete() || line_width > self.left_col.saturating_add(content_width)) && content_width > 0;
                     let display = fragment.display(self.left_col, content_width.saturating_sub(usize::from(chopped)));
                     self.write_line_with_search(buf, &display);
-                    if chopped { buf.extend_from_slice(b"\x1b[7m>\x1b[m"); }
+                    if chopped { buf.extend_from_slice(if self.use_color { b"\x1b[30;46m>\x1b[m" } else { b"\x1b[7m>\x1b[m" }); }
                     if row + 1 == ch && fragment.complete() { self.probe_after_complete_line(line_idx)?; }
                 }
                 None => self.write_eof_marker(buf),
