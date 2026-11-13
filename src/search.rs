@@ -124,7 +124,7 @@ fn translate_posix_escapes(pattern: &str) -> String {
     while index < bytes.len() {
         let byte = bytes[index];
         if !in_class && byte == b'\\' && let Some(&next) = bytes.get(index + 1) {
-            let literal = next.is_ascii_digit() || (cfg!(target_os = "macos") && next.is_ascii_alphabetic());
+            let literal = next.is_ascii_digit() || (cfg!(target_os = "macos") && (next.is_ascii_alphabetic() || matches!(next, b'<' | b'>')));
             if !literal { output.push(byte); }
             output.push(next);
             index += 2;
@@ -345,6 +345,19 @@ mod tests {
         let search = Search::new(r"(a)\1", CaseSensitivity::Sensitive).unwrap();
         assert!(search.is_match("a1"));
         assert!(!search.is_match("aa"));
+    }
+
+    #[test]
+    fn escaped_angles_use_platform_regex_semantics() {
+        let left = Search::new(r"\<", CaseSensitivity::Sensitive).unwrap();
+        let right = Search::new(r"\>", CaseSensitivity::Sensitive).unwrap();
+        if cfg!(target_os = "macos") {
+            assert_eq!(left.find_matches_stripped("<>a"), vec![(0, 1)]);
+            assert_eq!(right.find_matches_stripped("<>a"), vec![(1, 2)]);
+        } else if cfg!(target_os = "linux") {
+            assert_eq!(left.find_matches_stripped("<>a"), vec![(2, 2)]);
+            assert_eq!(right.find_matches_stripped("<>a"), vec![(3, 3)]);
+        }
     }
 
     #[test]

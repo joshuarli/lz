@@ -977,7 +977,9 @@
         "search-posix-bracket-tilde",
         "search-posix-bracket-ampersand-range",
         "search-posix-bracket-negated-ampersand",
-        "search-posix-bracket-tilde-class"
+        "search-posix-bracket-tilde-class",
+        "search-posix-escaped-left-angle",
+        "search-posix-escaped-right-angle"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",

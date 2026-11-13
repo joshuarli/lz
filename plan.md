@@ -30,6 +30,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S08e:** five macOS cases cover literal ampersands and tildes in bracket expressions, including ranges, negation and named classes. Local macOS and musl libc probes agree. Linux pager integration remains unverified.
 
+**S08f:** two macOS cases cover escaped angle brackets. Local libc probes show literal brackets on macOS and word boundaries on musl. Linux pager integration remains unverified.
+
 The following work remains local and actionable: complete the nonparked S04–S11 behaviors and interactions, upstream scenario translations, bounded fuzzing and holdouts, parity CI checks, final performance and size gates, cleanup, and independent review. The inventory retains behavior-specific causes and cases. The S06 shared renderer still needs bounded long-line startup, Unicode, OSC, and multirow handling. POSIX search, cancellation, headers, helper and pipe transitions, history concurrency, and lifecycle hardening remain incomplete.
 
 Parked conditions are:
