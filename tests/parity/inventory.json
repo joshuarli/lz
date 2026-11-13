@@ -1062,10 +1062,16 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "search-default-backward-visible",
+        "search-default-backward-initial",
+        "search-default-backward-wrapped",
+        "search-default-backward-reverse-repeat",
+        "search-default-backward-startup"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named initial, repeated, wrapped and startup backward searches pass; modifiers, filtered views and other source types remain open"
     },
     {
       "id": "man-0265",
@@ -2174,7 +2180,8 @@
         "search-skip-screen-wrapped",
         "search-skip-screen-startup",
         "search-skip-screen-reverse-repeat",
-        "search-skip-screen-cli-override"
+        "search-skip-screen-cli-override",
+        "search-skip-screen-backward-startup"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
@@ -2198,7 +2205,8 @@
         "search-skip-target-forward",
         "search-skip-target-long",
         "search-skip-target-startup",
-        "search-skip-target-cli-override"
+        "search-skip-target-cli-override",
+        "search-skip-target-backward-startup"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",

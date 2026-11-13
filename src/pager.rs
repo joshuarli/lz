@@ -1179,13 +1179,17 @@ impl Pager {
             Some(s) => s,
             None => return,
         };
-        let from = match (self.search_start, forward) {
+        let from = if !forward && !self.content_painted && self.last_visible_line.is_none() && self.current_match_line.is_none() {
+            self.buffer.read_all();
+            self.buffer.len()
+        } else { match (self.search_start, forward) {
             (SearchStart::AfterScreen, true) => self.last_visible_line.map_or(self.top_line, |line| line.saturating_add(1)),
             (SearchStart::AfterScreen | SearchStart::AfterTarget, false) => self.top_line,
             (SearchStart::AfterTarget, true) if self.content_painted => self.top_line.saturating_add(1),
+            (SearchStart::Default, false) if self.current_match_line.is_none() => self.last_visible_line.map_or(self.top_line, |line| line.saturating_add(1)),
             (_, true) => self.current_match_line.map_or(self.top_line, |line| line.saturating_add(1)),
             (_, false) => self.current_match_line.unwrap_or(self.top_line),
-        };
+        } };
         match search.find_next_line(&mut self.buffer, from, forward) {
             Some(line) => {
                 self.position_initialized();

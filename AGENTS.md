@@ -183,6 +183,7 @@ Search over file content with a fast literal path.
 - Case policy is explicit: sensitive by default, smart case with `-i`, and insensitive with `-I`. `Search::new(pattern, CaseSensitivity)` receives the resolved policy. The literal folding path is ASCII-only; Unicode folding parity is unproved.
 - Searches on ANSI-stripped text (delegates to `ansi.rs`) so that color codes in the input do not interfere with pattern matching.
 - Returns match byte ranges on the stripped text; `pager.rs` uses these to inject inverse highlighting escapes when rendering.
+- New backward searches start at the last rendered line, or at EOF for an unpainted startup search. Repeats use the last matched line. Cancellation during long startup scans remains open.
 - Integrates with `buffer.rs` to scan forward/backward through lines for `n`/`N` navigation.
 
 Key types: `Search` struct, `Matcher` enum (`Literal`, `Regex`), `BMH` struct.
