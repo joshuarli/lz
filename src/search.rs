@@ -124,6 +124,11 @@ fn translate_posix_escapes(pattern: &str) -> String {
     while index < bytes.len() {
         let byte = bytes[index];
         if !in_class && byte == b'\\' && let Some(&next) = bytes.get(index + 1) {
+            if cfg!(target_os = "linux") && next == b'b' {
+                output.extend_from_slice(br"(?:\A|\b|\z)");
+                index += 2;
+                continue;
+            }
             let literal = next.is_ascii_digit() || (cfg!(target_os = "macos") && (next.is_ascii_alphabetic() || matches!(next, b'<' | b'>')));
             if !literal { output.push(byte); }
             output.push(next);
@@ -345,6 +350,16 @@ mod tests {
         let search = Search::new(r"(a)\1", CaseSensitivity::Sensitive).unwrap();
         assert!(search.is_match("a1"));
         assert!(!search.is_match("aa"));
+    }
+
+    #[test]
+    fn escaped_boundary_matches_platform_line_edges() {
+        let search = Search::new(r"\b", CaseSensitivity::Sensitive).unwrap();
+        if cfg!(target_os = "macos") {
+            assert!(search.find_matches_stripped("!!!").is_empty());
+        } else if cfg!(target_os = "linux") {
+            assert_eq!(search.find_matches_stripped("!!!"), vec![(0, 0), (3, 3)]);
+        }
     }
 
     #[test]

@@ -979,11 +979,13 @@
         "search-posix-bracket-negated-ampersand",
         "search-posix-bracket-tilde-class",
         "search-posix-escaped-left-angle",
-        "search-posix-escaped-right-angle"
+        "search-posix-escaped-right-angle",
+        "search-posix-boundary-after-punctuation",
+        "search-posix-boundary-before-punctuation"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Literal search, named leftmost-longest alternatives, escaped alphanumerics and bracket literals pass on macOS arm64. Musl libc differs for escaped letters; Linux end-to-end proof, other bracket forms, full dialect, diagnostics, Unicode, modifiers, colors and layout interactions remain open"
+      "cause": "Literal search, named leftmost-longest alternatives, escaped alphanumerics and bracket literals pass on macOS arm64 and in a Linux arm64 container. Musl differs for escaped letters and word boundaries; native Linux, other bracket forms, full dialect, diagnostics, Unicode, modifiers, colors and layout interactions remain open"
     },
     {
       "id": "man-0220",

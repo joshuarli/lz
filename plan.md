@@ -24,13 +24,15 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S04aq:** after leaving CLI help for the first file, `:p` reports no previous file in both the reference and lz. The corrected case covers acknowledgment and return to the file.
 
-**S08c:** eight C-locale cases cover escaped alphanumerics, escaped backslashes and surrounding bracket expressions on macOS. The musl libc probe treats escaped letters differently and escaped digits as literals. The implementation keeps musl letter handling and normalizes digits. Linux end-to-end verification remains open. S08d covers named bracket-expression backslash cases.
+**S08c:** eight C-locale cases cover escaped alphanumerics, escaped backslashes and surrounding bracket expressions on macOS. The musl libc probe treats escaped letters differently and escaped digits as literals. The implementation keeps musl letter handling and normalizes digits. The named cases also pass in a Linux arm64 container. S08d covers named bracket-expression backslash cases.
 
-**S08d:** six macOS cases cover literal backslashes inside bracket expressions, including ranges, closing brackets and named classes. Local macOS and musl libc probes agree on these forms. Linux pager integration remains unverified.
+**S08d:** six macOS cases cover literal backslashes inside bracket expressions, including ranges, closing brackets and named classes. Local macOS and musl libc probes agree on these forms. The named cases also pass in a Linux arm64 container.
 
-**S08e:** five macOS cases cover literal ampersands and tildes in bracket expressions, including ranges, negation and named classes. Local macOS and musl libc probes agree. Linux pager integration remains unverified.
+**S08e:** five macOS cases cover literal ampersands and tildes in bracket expressions, including ranges, negation and named classes. Local macOS and musl libc probes agree. The named cases also pass in a Linux arm64 container.
 
-**S08f:** two macOS cases cover escaped angle brackets. Local libc probes show literal brackets on macOS and word boundaries on musl. Linux pager integration remains unverified.
+**S08f:** two macOS cases cover escaped angle brackets. Local libc probes show literal brackets on macOS and word boundaries on musl. The named cases also pass in a Linux arm64 container.
+
+**S08g:** musl `\b` matches at line edges even beside non-word characters. Three cases pass on macOS and in a Linux arm64 container after preserving that behavior. The negative boundary and other regex dialect forms remain open.
 
 The following work remains local and actionable: complete the nonparked S04–S11 behaviors and interactions, upstream scenario translations, bounded fuzzing and holdouts, parity CI checks, final performance and size gates, cleanup, and independent review. The inventory retains behavior-specific causes and cases. The S06 shared renderer still needs bounded long-line startup, Unicode, OSC, and multirow handling. POSIX search, cancellation, headers, helper and pipe transitions, history concurrency, and lifecycle hardening remain incomplete.
 
