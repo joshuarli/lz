@@ -150,6 +150,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12av accepted:** interactive differential cases use the pinned reference build's `lessecho` helper unless overridden; setup checks its version and fails when it is absent. Missing-file examine cases and all 51 admitted session cases passed on macOS arm64 and Linux arm64 Docker. The test environment contract changed.
 
+**S12az accepted:** generator version 14 adds missing-search acknowledgment alongside invalid commands within the existing 30-percent boundary weight. Generator controls and seeds 0–49 pass on macOS arm64 and Linux arm64 Docker; the macOS run included 56 missing-search actions. All-target Clippy passed on macOS. Remaining boundary classes and holdouts stay open.
+
 **S12ay accepted (partial translation):** the original `subsearch` prefix through its non-match and wrap prompt modifiers passes on macOS arm64 and Linux arm64 Docker. Later EOF-ignore, searches and custom termcap remain open.
 
 **S08at accepted (partial):** Ctrl-W toggles wrap-around search; the tested forward, backward, repeat, missing-pattern acknowledgment and post-file-switch cases pass on macOS arm64 and Linux arm64 Docker. All 123 previously admitted search cases and all-target Clippy passed on macOS. `SearchSession` retains the setting. Cross-file search, incremental previews, filtered and other modifier combinations and live streams remain open.
