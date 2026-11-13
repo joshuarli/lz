@@ -345,6 +345,16 @@ pub fn selftest() -> Result<()> {
     pipe_case.events = vec![Event::Checkpoint { ready:"probe".into(), row:None }, Event::Signal { number:15 }];
     let pipe = execute(&candidate, &pipe_case)?;
     if pipe["exit"] != format!("{:?}", ExitStatus::Signal(15)) { return Err("supervisor failed to forward explicit termination".into()); }
+    pipe_case.env.insert("LZ_PARITY_PRODUCER_CLOSE".into(), "1".into());
+    pipe_case.args[1] = "exit".into();
+    pipe_case.events = vec![Event::Checkpoint { ready:"probe".into(), row:None }, Event::Send { bytes:b"q".to_vec() }];
+    let closed = execute(&candidate, &pipe_case)?;
+    let bytes: Vec<u8> = serde_json::from_value(closed["files"]["supervisor-state"]["bytes"].clone())?;
+    let state: Value = serde_json::from_slice(&bytes)?;
+    if state["producer_held_open"] != false || state["producer_reaped"] != true || closed["exit"] != format!("{:?}", ExitStatus::Code(7)) {
+        return Err("supervisor failed to reap a producer that closed its pipe".into());
+    }
+    pipe_case.env.remove("LZ_PARITY_PRODUCER_CLOSE");
     println!("supervisor argv/env/stdin/foreground, code 7, signal 15 and explicit TERM controls pass");
     pipe_case.args[1] = "job".into();
     pipe_case.events = vec![Event::Checkpoint { ready:"probe".into(), row:None }, Event::Suspend {}, Event::Suspend {}, Event::Send { bytes:b"\n".to_vec() }];

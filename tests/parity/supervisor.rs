@@ -88,6 +88,7 @@ impl Drop for GroupChild {
 
 impl GroupChild {
     fn stop_and_reap(&mut self) -> io::Result<()> {
+        if self.child.try_wait()?.is_some() { self.reaped = true; return Ok(()); }
         group_signal(self.child.id(), 15)?;
         let deadline = Instant::now() + Duration::from_millis(500);
         while Instant::now() < deadline {
@@ -208,6 +209,7 @@ pub fn producer(path: &Path) -> Result<()> {
         std::thread::sleep(Duration::from_millis(delay));
     }
     io::copy(&mut File::open(path)?, &mut io::stdout().lock())?;
+    if std::env::var_os("LZ_PARITY_PRODUCER_CLOSE").is_some() { return Ok(()); }
     loop { std::thread::park(); }
 }
 
