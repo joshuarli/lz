@@ -3012,11 +3012,13 @@
         "invocation-quit-one-screen-pipe-eof",
         "invocation-quit-one-screen-pipe-delayed",
         "invocation-quit-one-screen-pipe-empty",
-        "invocation-quit-one-screen-pipe-long"
+        "invocation-quit-one-screen-pipe-long",
+        "invocation-quit-one-screen-command",
+        "invocation-quit-one-screen-command-quit"
       ],
       "implementation": "partial",
-      "evidence": "compatible in the named tested scenarios",
-      "cause": "Initial single-file -F covers size boundaries, wrapping, chopping, line numbers, controls, color, -X, resets and immediate or delayed pipe EOF. Startup commands, interruption and extremely long low-width input remain open."
+      "evidence": "partially compatible",
+      "cause": "Initial single-file -F covers size boundaries, wrapping, chopping, line numbers, controls, color, -X, resets and immediate or delayed pipe EOF. Startup commands, interruption and extremely long low-width input remain open. The +g startup command remains incompatible; +q is covered."
     },
     {
       "id": "man-0870",
