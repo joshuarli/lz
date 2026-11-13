@@ -6,6 +6,8 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 
+const GENERATOR_VERSION: u32 = 2;
+
 struct Random(u64);
 impl Random {
     fn choose(&mut self, upper: usize) -> usize {
@@ -31,7 +33,7 @@ fn generate(seed: u64) -> Case {
     let mut marks = [None; 2];
     let mut events = vec![checkpoint(top)];
     for _ in 0..8 {
-        let action = random.choose(8);
+        let action = random.choose(9);
         let count = 1 + random.choose(4);
         let (bytes, target) = match action {
             0 if top + count <= last => {
@@ -52,6 +54,10 @@ fn generate(seed: u64) -> Case {
                 let name = b'a' + slot as u8;
                 if let Some(line) = marks[slot].filter(|line| *line != top) { (vec![b'\'', name], line) }
                 else { marks[slot] = Some(top); (vec![b'm', name], top) }
+            }
+            8 if top < last => {
+                let target = top + 1 + random.choose(last - top);
+                (format!("/{target:06} seed\n").into_bytes(), target)
             }
             _ => {
                 let mut target = 1 + random.choose(last);
@@ -142,7 +148,7 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
     let meta = metadata(candidate)?;
     let directory = stdio::world()?.keep();
     fs::write(directory.join("metadata.json"), serde_json::to_vec_pretty(&meta)?)?;
-    fs::write(directory.join("request.json"), serde_json::to_vec_pretty(&json!({"seed":seed,"requested":count,"oracle_only":oracle_only}))?)?;
+    fs::write(directory.join("request.json"), serde_json::to_vec_pretty(&json!({"seed":seed,"generator_version":GENERATOR_VERSION,"requested":count,"oracle_only":oracle_only}))?)?;
     let cases: Vec<_> = (0..count).map(|offset| generate(seed + offset as u64)).collect();
     let mut summaries = Vec::new();
     let mut failed = false;
@@ -184,10 +190,10 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
         std::io::stdout().flush()?;
     }
     fs::write(directory.join("summary.json"), serde_json::to_vec_pretty(&json!({
-        "metadata":meta,"seed":seed,"requested":count,"executed":summaries.len(),"oracle_only":oracle_only,"results":summaries,
-        "grammar":"ASCII logical-line movement and ordinary in-file marks; eight actions; 40x12 or 80x24",
+        "metadata":meta,"seed":seed,"generator_version":GENERATOR_VERSION,"requested":count,"executed":summaries.len(),"oracle_only":oracle_only,"results":summaries,
+        "grammar":"ASCII logical-line movement, ordinary in-file marks and forward literal searches; eight actions; 40x12 or 80x24",
         "limits":{"case_seconds":10,"trace_bytes":64*1024*1024,"pty_rss_bytes":u64::from(super::resources::RssLimit::default()),"pty_spill_bytes":u64::from(super::spill::Limit::default()),"actions":8,"workers":4,"reduction_attempts":8},
-        "open_limits":["stdio/helper/producer RSS enforcement","stdio/helper/producer spill accounting","adversarial/Unicode/stream/resize/helper grammar"]
+        "open_limits":["stdio/helper/producer RSS enforcement","stdio/helper/producer spill accounting","CLI/config/byte-text/file-transition/resize/signal grammar","boundary weighting","search variants and adversarial/Unicode/stream/helper grammar"]
     }))?)?;
     fs::write(stdio::root().join(".work/parity-fuzz-latest"), directory.as_os_str().as_encoded_bytes())?;
     fs::write(stdio::root().join(if oracle_only { ".work/parity-fuzz-oracle" } else { ".work/parity-fuzz-current" }), directory.as_os_str().as_encoded_bytes())?;
