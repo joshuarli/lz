@@ -388,6 +388,7 @@ pub struct Pager {
     squished: bool,
     startup_bottom: bool,
     follow_one_screen: bool,
+    follow_screen_overflowed: bool,
     bottom_gap: usize,
     startup_commands: VecDeque<Vec<u8>>,
     numeric_prefix: NumericPrefix,
@@ -439,6 +440,7 @@ impl Pager {
             squished: false,
             startup_bottom: false,
             follow_one_screen: false,
+            follow_screen_overflowed: false,
             bottom_gap: 0,
             startup_commands: config.startup_commands.into(),
             numeric_prefix: NumericPrefix::Empty,
@@ -449,6 +451,9 @@ impl Pager {
             bell_requested: false,
         }
     }
+
+    /// Whether one-screen follow grew beyond the viewport before it was interrupted.
+    pub fn follow_screen_overflowed(&self) -> bool { self.follow_screen_overflowed }
 
     /// Whether the initial short-file display has not yet been repositioned.
     pub fn is_squished(&self) -> bool { self.squished }
@@ -609,7 +614,11 @@ impl Pager {
         if !self.follow_one_screen || self.mode != Mode::Normal { return Ok(false); }
         self.follow_one_screen = false;
         let options = OneScreenOptions { width:self.term_width, height:self.term_height, charset:self.charset, controls:self.controls, chop:!self.wrap, line_numbers:self.line_numbers };
-        if !matches!(one_screen(&mut self.buffer, options)?, OneScreen::Fits(_)) { return Ok(false); }
+        match one_screen(&mut self.buffer, options)? {
+            OneScreen::Fits(_) => {},
+            OneScreen::Overflows => { self.follow_screen_overflowed = true; return Ok(false); },
+            OneScreen::Waiting => return Ok(false),
+        }
         self.startup_bottom = true;
         self.bottom_gap = 1;
         self.render_frame(false)?;

@@ -360,6 +360,9 @@ fn run() -> Result<ExitAction, String> {
         let alternate = opened.alternate.take();
         let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, opened.name, history);
         let result = if std::mem::take(&mut startup_one_screen) { pager.run_one_screen_startup(session.keys_mut()) } else { pager.run(session.keys_mut()) };
+        let result = if pager.follow_screen_overflowed() && args.terminal.screen == terminal::ScreenMode::Alternate {
+            with_cleanup(result, session.defer_deinitialization(args.terminal))
+        } else { result };
         positions[file_index] = pager.saved_position();
         let squished = pager.is_squished();
         display_anchor = pager.display_anchor();

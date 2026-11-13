@@ -329,6 +329,7 @@ pub fn restore_terminal() {
 pub struct Session {
     keys: crate::input::KeyReader,
     previous_handlers: Vec<(i32, usize)>,
+    deferred_deinitialization: Option<InteractiveOptions>,
 }
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
@@ -360,7 +361,7 @@ impl Session {
         SUSPENDED_APPLICATION_MODES.store(false, Ordering::SeqCst);
         TSTP_FLAG.store(false, Ordering::SeqCst);
         CONT_FLAG.store(false, Ordering::SeqCst);
-        let mut session = Self { keys, previous_handlers: Vec::new() };
+        let mut session = Self { keys, previous_handlers: Vec::new(), deferred_deinitialization: None };
         session.previous_handlers = install_signal_handlers(suspension)?;
         enable_raw_mode(session.keys.fd())?;
         if let Screen::Interactive(options) = screen { session.enter_interactive(options)?; }
@@ -390,7 +391,32 @@ impl Session {
         crate::helper::close_output(command, self.keys.fd())
     }
 
-    pub fn finish(self) -> io::Result<()> { restore_acquired_terminal() }
+    /// Deinitialize display modes on finish after a one-screen session grows beyond the viewport.
+    pub fn defer_deinitialization(&mut self, options: InteractiveOptions) -> io::Result<()> {
+        if INTERACTIVE_ACTIVE.load(Ordering::SeqCst) || self.deferred_deinitialization.is_some() {
+            return Err(io::Error::new(io::ErrorKind::AlreadyExists, "terminal display already acquired or deferred"));
+        }
+        self.deferred_deinitialization = Some(options);
+        Ok(())
+    }
+
+    pub fn finish(self) -> io::Result<()> {
+        let restored = restore_acquired_terminal();
+        let deinitialized = if let Some(options) = self.deferred_deinitialization {
+            let mut output = io::stdout().lock();
+            (|| {
+                output.write_all(b"\r\x1b[K")?;
+                if options.keypad == KeypadMode::Application { output.write_all(b"\x1b[?1l\x1b>")?; }
+                if options.screen == ScreenMode::Alternate { output.write_all(b"\x1b[?1049l")?; }
+                output.flush()
+            })()
+        } else { Ok(()) };
+        match (restored, deinitialized) {
+            (Ok(()), Ok(())) => Ok(()),
+            (Err(error), Ok(())) | (Ok(()), Err(error)) => Err(error),
+            (Err(error), Err(cleanup)) => Err(io::Error::other(format!("{error}; deferred terminal deinitialization: {cleanup}"))),
+        }
+    }
 }
 
 impl Drop for Session {
