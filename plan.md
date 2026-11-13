@@ -6,7 +6,7 @@ The owner authorized unattended local execution. Keep one writer, commit verifie
 
 The latest macOS arm64 integration check passed all 785 admitted cases across four shards, 157 Rust tests, and Clippy. The previous complete candidate and baseline report covered 664 cases before later slices. It recorded two strict mismatches, one filesystem limitation, and no harness errors; the long-color startup mismatch has since been fixed in S06f. [Coverage](tests/parity/coverage.md) and the [inventory](tests/parity/inventory.json) distinguish named-case results from complete features. Refresh all four candidate and baseline shards before generating a new report.
 
-The 50-seed fuzz smoke passes with ASCII navigation, marks, forward literal search, resize interactions and selected CLI/`LESS` display options. The generator does not yet meet the S12 grammar requirement.
+The 50-seed fuzz smoke passes with navigation, marks, forward literal search, resize interactions, selected CLI/`LESS` display options and bounded ASCII, UTF-8 and malformed-byte fixtures. The generator does not yet meet the S12 grammar requirement.
 
 Recent accepted slices cover help entry and navigation, CLI help, horizontal movement, fixed and fractional shifts, and repaint. The latest focused checks pass. Public `HorizontalShift` values validate configuration before entering `ScrollDefaults`. Full help search, version text, shift interactive toggles, cross-file movement, and wrapped-row positioning remain open.
 
@@ -58,7 +58,7 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12c:** generated navigation varies line numbering, chopping and color mode through CLI options or `LESS`, with fixtures narrower than both geometries. Fifty seeds pass: 18 use CLI options, 25 use `LESS`, and seven use neither. Broader configuration and boundary cases remain open.
 
-**S12d planned:** add UTF-8 text and an isolated malformed byte beyond the binary sample to generated fixtures, retaining bounded line geometry and known navigation targets. Own `tests/parity/fuzz.rs`; S12c and existing byte layout are prerequisites. Acceptance: `make parity-selftest` and `make parity-fuzz SEED=0 CASES=50`.
+**S12d:** generated fixtures include UTF-8 text and isolated malformed bytes beyond the binary sample. Fifty seeds pass: 16 ASCII, 34 UTF-8, including 14 with a malformed byte. The first run exposed S06j. Other byte patterns and event boundary weighting remain open.
 
 **S06j:** combining marks attached to a character at the right clipping edge remain visible. The layout regression, differential case and generating seed pass; the differential case also passes in a Linux arm64 container.
 
