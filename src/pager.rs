@@ -44,11 +44,11 @@ impl std::ops::DerefMut for Frame {
 }
 
 impl Frame {
-    fn append_color_line(&mut self, buffer: &mut LineBuffer, line: usize, width: usize, before: impl FnOnce(&mut Self)) -> io::Result<Option<bool>> {
+    fn append_color_line(&mut self, buffer: &mut LineBuffer, line: usize, width: usize, charset: Charset, before: impl FnOnce(&mut Self)) -> io::Result<Option<bool>> {
         if self.spill.is_none() { self.spill = Some(crate::storage::anonymous_file()?); }
         let spill = self.spill.as_mut().unwrap();
         let offset = spill.seek(SeekFrom::End(0))?;
-        match scan_color_line(buffer, line, width, spill)? {
+        match scan_color_line(buffer, line, width, charset, spill)? {
             ColorLine::Fits(sgr) => {
                 let end = spill.stream_position()?;
                 before(self);
@@ -328,11 +328,12 @@ fn number_gutter(line: usize, width: usize, enabled: bool, minimum: LineNumberWi
     format!("{:>columns$} ", line + 1, columns = minimum.columns()).chars().take(width).collect()
 }
 
-enum SgrScan { Text, Escape, Sequence }
+enum SgrScan { Text, Escape, Sequence, Utf8 { bytes: [u8; 4], len: usize, width: usize } }
 enum ColorLine { Fits(bool), Unsupported, Waiting }
 enum StreamedLine { Fits(std::fs::File, bool), Unsupported, Waiting }
 
-fn scan_color_line(buffer: &mut LineBuffer, line: usize, width: usize, output: &mut impl Write) -> io::Result<ColorLine> {
+fn scan_color_line(buffer: &mut LineBuffer, line: usize, width: usize, charset: Charset, output: &mut impl Write) -> io::Result<ColorLine> {
+    use unicode_width::UnicodeWidthChar;
     let mut offset = 0u64;
     let mut columns = 0usize;
     let mut sgr = false;
@@ -352,6 +353,23 @@ fn scan_color_line(buffer: &mut LineBuffer, line: usize, width: usize, output: &
                     if columns > width { return Ok(ColorLine::Unsupported); }
                     SgrScan::Text
                 }
+                SgrScan::Text if charset == Charset::Utf8 && matches!(byte, 0xc2..=0xf4) => {
+                    let width = match byte { 0xc2..=0xdf => 2, 0xe0..=0xef => 3, _ => 4 };
+                    SgrScan::Utf8 { bytes: [byte, 0, 0, 0], len: 1, width }
+                }
+                SgrScan::Utf8 { mut bytes, len, width: expected } if (0x80..=0xbf).contains(&byte) => {
+                    bytes[len] = byte;
+                    if len + 1 < expected { SgrScan::Utf8 { bytes, len: len + 1, width: expected } }
+                    else {
+                        let Ok(text) = std::str::from_utf8(&bytes[..expected]) else { return Ok(ColorLine::Unsupported); };
+                        let character = text.chars().next().unwrap();
+                        if character.is_control() || charset.binary_character(character) { return Ok(ColorLine::Unsupported); }
+                        let Some(character_width) = character.width().filter(|width| *width > 0) else { return Ok(ColorLine::Unsupported); };
+                        columns += character_width;
+                        if columns > width { return Ok(ColorLine::Unsupported); }
+                        SgrScan::Text
+                    }
+                }
                 SgrScan::Escape if byte == b'[' => SgrScan::Sequence,
                 SgrScan::Sequence if byte == b'm' => { sgr = true; SgrScan::Text }
                 SgrScan::Sequence if b"0123456789:;[?!\"'#%()*+ ".contains(&byte) => SgrScan::Sequence,
@@ -370,9 +388,9 @@ fn scan_color_line(buffer: &mut LineBuffer, line: usize, width: usize, output: &
     }
 }
 
-fn stream_color_line(buffer: &mut LineBuffer, line: usize, width: usize) -> io::Result<StreamedLine> {
+fn stream_color_line(buffer: &mut LineBuffer, line: usize, width: usize, charset: Charset) -> io::Result<StreamedLine> {
     let mut file = crate::storage::anonymous_file()?;
-    match scan_color_line(buffer, line, width, &mut file)? {
+    match scan_color_line(buffer, line, width, charset, &mut file)? {
         ColorLine::Fits(sgr) => Ok(StreamedLine::Fits(file, sgr)),
         ColorLine::Unsupported => Ok(StreamedLine::Unsupported),
         ColorLine::Waiting => Ok(StreamedLine::Waiting),
@@ -406,7 +424,7 @@ pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Res
         if rows.saturating_add(line_rows) >= height { return Ok(OneScreen::Overflows); }
         if !fragment.complete() {
             if options.controls == ControlDisplay::Color && fragment.columns() <= content_width {
-                match stream_color_line(buffer, index, content_width)? {
+                match stream_color_line(buffer, index, content_width, options.charset)? {
                     StreamedLine::Fits(file, sgr) => {
                         let mut number = Vec::new();
                         Pager::write_number_gutter(&mut number, &gutter);
@@ -1833,7 +1851,7 @@ impl Pager {
 
     fn visible_color_line_fits(&mut self, line: usize, width: usize, fragment: &DisplayLine) -> io::Result<bool> {
         if !self.can_stream_visible_color_line(line, width, fragment) { return Ok(false); }
-        Ok(matches!(scan_color_line(&mut self.buffer, line, width, &mut io::sink())?, ColorLine::Fits(_)))
+        Ok(matches!(scan_color_line(&mut self.buffer, line, width, self.charset, &mut io::sink())?, ColorLine::Fits(_)))
     }
 
     fn wrapped_prefix_rows(&self, fragment: &DisplayLine, actual: usize, width: usize, available: usize) -> usize {
@@ -1910,7 +1928,7 @@ impl Pager {
                     Self::write_number_gutter(buf, &gutter);
                     let content_width = w.saturating_sub(gutter.len());
                     if self.can_stream_visible_color_line(line_idx, content_width, &fragment)
-                        && let Some(sgr) = buf.append_color_line(&mut self.buffer, line_idx, content_width, |_| {})? {
+                        && let Some(sgr) = buf.append_color_line(&mut self.buffer, line_idx, content_width, self.charset, |_| {})? {
                         if sgr { buf.extend_from_slice(b"\x1b[m"); }
                         if row + 1 == ch { self.probe_after_complete_line(line_idx)?; }
                         terminal::clear_line(buf);
@@ -1943,7 +1961,7 @@ impl Pager {
                     let content_width = w.saturating_sub(gutter_width).max(1);
                     let gutter = self.number_gutter(actual, w);
                     if self.can_stream_visible_color_line(actual, content_width, &fragment)
-                        && let Some(sgr) = buf.append_color_line(&mut self.buffer, actual, content_width, |frame| {
+                        && let Some(sgr) = buf.append_color_line(&mut self.buffer, actual, content_width, self.charset, |frame| {
                             frame.position(screen_row);
                             Self::write_number_gutter(frame, &gutter);
                         })? {
@@ -2153,6 +2171,20 @@ mod one_screen_tests {
     use super::*;
 
     #[test]
+    fn streamed_color_lines_respect_charset_width_and_utf8_validity() {
+        let mut input = tempfile::NamedTempFile::new().unwrap();
+        input.write_all("\u{1b}[31mé界🦀\n".as_bytes()).unwrap();
+        input.write_all(b"\x1b[31m\xe7\x95\n\x1b[31m\xe0\x80\x80\n").unwrap();
+        let mut buffer = LineBuffer::from_file(std::fs::File::open(input.path()).unwrap());
+        assert!(matches!(scan_color_line(&mut buffer, 0, 5, Charset::Utf8, &mut io::sink()).unwrap(), ColorLine::Fits(true)));
+        assert!(matches!(scan_color_line(&mut buffer, 0, 4, Charset::Utf8, &mut io::sink()).unwrap(), ColorLine::Unsupported));
+        assert!(matches!(scan_color_line(&mut buffer, 0, 5, Charset::Ascii, &mut io::sink()).unwrap(), ColorLine::Unsupported));
+        for line in 1..=2 {
+            assert!(matches!(scan_color_line(&mut buffer, line, 80, Charset::Utf8, &mut io::sink()).unwrap(), ColorLine::Unsupported));
+        }
+    }
+
+    #[test]
     fn frame_spills_preserve_output_order_and_report_write_errors() {
         let mut input = tempfile::NamedTempFile::new().unwrap();
         input.write_all(b"\x1b[31mone\n").unwrap();
@@ -2161,10 +2193,10 @@ mod one_screen_tests {
         let mut buffer = LineBuffer::from_file(std::fs::File::open(input.path()).unwrap());
         let mut frame = Frame { bytes:Vec::new(), parts:Vec::new(), spill:None, relative_row:None, padding:0, retain_initial_column:false };
         frame.extend_from_slice(b"before");
-        assert_eq!(frame.append_color_line(&mut buffer, 0, 3, |_| {}).unwrap(), Some(true));
+        assert_eq!(frame.append_color_line(&mut buffer, 0, 3, Charset::Ascii, |_| {}).unwrap(), Some(true));
         frame.extend_from_slice(b" between");
-        assert_eq!(frame.append_color_line(&mut buffer, 1, 2, |_| panic!("unsupported line inserted")).unwrap(), None);
-        assert_eq!(frame.append_color_line(&mut buffer, 2, 3, |_| {}).unwrap(), Some(true));
+        assert_eq!(frame.append_color_line(&mut buffer, 1, 2, Charset::Ascii, |_| panic!("unsupported line inserted")).unwrap(), None);
+        assert_eq!(frame.append_color_line(&mut buffer, 2, 3, Charset::Ascii, |_| {}).unwrap(), Some(true));
         frame.extend_from_slice(b" after");
         let mut output = Vec::new();
         frame.write_to(&mut output).unwrap();

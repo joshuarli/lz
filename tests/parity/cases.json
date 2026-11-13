@@ -591389,5 +591389,28 @@
     116
   ],
   "files": {}
+},
+{
+  "id": "rendering-long-sgr-utf8-interactive",
+  "family": "rendering", "admitted": true, "source": "pty",
+  "fixture": {"repeat": [27, 91, 48, 109], "count": 10000, "suffix": [195, 169, 231, 149, 140, 240, 159, 166, 128, 10, 115, 101, 99, 111, 110, 100, 10]},
+  "args": ["-R", "input"], "env": {}, "size": [80, 24], "locale": "C.UTF-8",
+  "events": [{"type": "checkpoint", "ready": "second", "row": null}, {"type": "send", "bytes": [113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "rendering-long-sgr-utf8-split",
+  "family": "rendering", "admitted": true, "source": "pty",
+  "fixture": {"repeat": [27, 91, 48, 109], "count": 16383, "suffix": [97, 98, 99, 231, 149, 140, 10, 110, 101, 120, 116, 10]},
+  "args": ["-R", "input"], "env": {}, "size": [5, 24], "locale": "C.UTF-8",
+  "events": [{"type": "checkpoint", "ready": "next", "row": null}, {"type": "send", "bytes": [113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "rendering-long-sgr-utf8-one-screen",
+  "family": "rendering", "admitted": true, "source": "pty",
+  "fixture": {"repeat": [27, 91, 48, 109], "count": 10000, "suffix": [231, 149, 140, 10]},
+  "args": ["-F", "-R", "input"], "env": {}, "size": [80, 24], "locale": "C.UTF-8",
+  "events": [], "fixture_name": [105, 110, 112, 117, 116], "files": {}
 }
 ]
