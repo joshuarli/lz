@@ -105,6 +105,7 @@ enum Event {
     Checkpoint { ready: String, row: Option<usize> },
     Resize { columns: u16, rows: u16 },
     Signal { number: i32 },
+    Suspend {},
     Append { bytes: Vec<u8> },
 }
 

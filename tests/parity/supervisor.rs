@@ -51,14 +51,6 @@ fn signal_darwin_members(group: i32, number: i32) -> io::Result<()> {
 const JOB_SIGNALS: [i32; 4] = [18, 19, 21, 22];
 #[cfg(target_os = "linux")]
 const JOB_SIGNALS: [i32; 4] = [20, 18, 21, 22];
-#[cfg(target_os = "macos")]
-const STOP: i32 = 17;
-#[cfg(target_os = "linux")]
-const STOP: i32 = 19;
-#[cfg(target_os = "macos")]
-const CONTINUED: i32 = 16;
-#[cfg(target_os = "linux")]
-const CONTINUED: i32 = 8;
 
 static SIGNALS: AtomicU32 = AtomicU32::new(0);
 
@@ -148,6 +140,24 @@ fn same_termios(a: &lz::terminal::Termios, b: &lz::terminal::Termios) -> bool {
     { equal }
 }
 
+fn terminal_record(state: &lz::terminal::Termios) -> serde_json::Value {
+    let value = json!({"flags":[state.c_iflag,state.c_oflag,state.c_cflag,state.c_lflag],
+        "characters":state.c_cc.to_vec(),"speeds":[state.c_ispeed,state.c_ospeed]});
+    #[cfg(target_os = "linux")]
+    { let mut value = value; value["line_discipline"] = json!(state.c_line); value }
+    #[cfg(target_os = "macos")]
+    { value }
+}
+
+fn record_job(manifest: &Path, stops: usize, continues: usize, fd: i32, baseline: &lz::terminal::Termios) -> Result<()> {
+    let current = termios(fd)?;
+    let temporary = manifest.with_extension("job-new");
+    fs::write(&temporary, serde_json::to_vec(&json!({"stops":stops,"continues":continues,
+        "kernel_restored":same_termios(baseline, &current),"kernel":terminal_record(&current)}))?)?;
+    fs::rename(temporary, manifest.with_extension("job"))?;
+    Ok(())
+}
+
 pub fn producer(path: &Path) -> Result<()> {
     fs::write("producer-state", b"holding-open")?;
     if let Some(delay) = std::env::var_os("LZ_PARITY_PRODUCER_DELAY_MS") {
@@ -223,16 +233,18 @@ pub fn run(binary: &Path, fixture: Option<&Path>, manifest: &Path, args: &[std::
         // SAFETY: rusage is a writable platform record; wait4 writes it only for this owned direct child.
         let mut usage: libc::rusage = unsafe { std::mem::zeroed() };
         // SAFETY: pager remains owned until reaped, and status/rusage are writable for the nonblocking observation.
-        let result = unsafe { libc::wait4(pager.child.id() as i32, &mut status, 1 | 2 | CONTINUED, &mut usage) };
+        let result = unsafe { libc::wait4(pager.child.id() as i32, &mut status, libc::WNOHANG | libc::WUNTRACED | libc::WCONTINUED, &mut usage) };
         if result < 0 {
             let error = io::Error::last_os_error();
             if error.kind() != io::ErrorKind::Interrupted { return Err(error.into()); }
         } else if result > 0 {
-            if status == 0xffff { continues += 1; }
-            else if status & 0xff == 0x7f {
+            if libc::WIFCONTINUED(status) {
+                continues += 1;
+                record_job(manifest, stops, continues, fd, &baseline)?;
+            }
+            else if libc::WIFSTOPPED(status) {
                 stops += 1;
-                // SAFETY: SIGSTOP deliberately mirrors the owned pager's stopped state; the harness can resume the supervisor group.
-                if unsafe { raise(STOP) } != 0 { return Err(io::Error::last_os_error().into()); }
+                record_job(manifest, stops, continues, fd, &baseline)?;
             } else {
                 pager.reaped = true;
                 resources.finish(super::resources::reaped_peak(&usage)?);
@@ -251,18 +263,10 @@ pub fn run(binary: &Path, fixture: Option<&Path>, manifest: &Path, args: &[std::
     } else { false };
     let after = termios(fd)?;
     let restored = same_termios(&baseline, &after);
-    let record = |state: &lz::terminal::Termios| {
-        let value = json!({"flags":[state.c_iflag,state.c_oflag,state.c_cflag,state.c_lflag],
-            "characters":state.c_cc.to_vec(),"speeds":[state.c_ispeed,state.c_ospeed]});
-        #[cfg(target_os = "linux")]
-        { let mut value = value; value["line_discipline"] = json!(state.c_line); value }
-        #[cfg(target_os = "macos")]
-        { value }
-    };
     let state_path = if producer.is_some() { PathBuf::from("supervisor-state") } else { manifest.with_extension("state") };
     fs::write(state_path, serde_json::to_vec(&json!({"foreground":foreground,"producer_held_open":producer_held_open,
         "producer_reaped": producer.as_ref().is_some_and(|producer| producer.reaped),"pager_reaped":pager.reaped,"kernel_restored":restored,
-        "kernel_before":record(&baseline),"kernel_after":record(&after),
+        "kernel_before":terminal_record(&baseline),"kernel_after":terminal_record(&after),
         "code":status.code(),"signal":status.signal(),"stops":stops,"continues":continues}))?)?;
     // SAFETY: the supervisor owns the controlling tty, ignores SIGTTOU, and retakes its own process group after the pager has exited.
     if unsafe { tcsetpgrp(fd, getpgrp()) } < 0 { return Err(io::Error::last_os_error().into()); }
@@ -298,6 +302,14 @@ pub fn probe(args: &[std::ffi::OsString]) -> Result<()> {
         "environment":std::env::var_os("SUPERVISOR_PROBE").map(|value| value.as_bytes().to_vec()),"foreground":foreground,
         "core_dump_limits":super::resources::core_dump_limits()?});
     fs::write("pipe-probe", serde_json::to_vec(&observation)?)?;
+    if args.first().is_some_and(|arg| arg == "job") {
+        disposition(libc::SIGTSTP, 0)?;
+        print!("probe");
+        io::stdout().flush()?;
+        let mut byte = [0];
+        tty.read_exact(&mut byte)?;
+        std::process::exit(7);
+    }
     if args.first().is_some_and(|arg| arg == "hang") {
         disposition(15, 1)?;
         print!("probe");

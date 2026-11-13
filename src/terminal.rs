@@ -55,6 +55,8 @@ pub fn take_interrupt() -> bool { INTERRUPT_FLAG.swap(false, Ordering::SeqCst) }
 static ALT_SCREEN: AtomicBool = AtomicBool::new(false);
 static APPLICATION_MODES: AtomicBool = AtomicBool::new(false);
 static INTERACTIVE_ACTIVE: AtomicBool = AtomicBool::new(false);
+static SUSPENDED_ALT_SCREEN: AtomicBool = AtomicBool::new(false);
+static SUSPENDED_APPLICATION_MODES: AtomicBool = AtomicBool::new(false);
 static EOF_BELL: BellRate = BellRate(AtomicU64::new(0));
 static TTY_FD: AtomicI32 = AtomicI32::new(-1);
 
@@ -130,7 +132,7 @@ extern "C" fn handle_interrupt(_sig: i32) {
 fn install_signal_handlers() -> io::Result<Vec<(i32, usize)>> {
     let mut previous = Vec::new();
     for (number, handler) in [(SIGWINCH, handle_winch as *const () as usize), (SIGTSTP, handle_tstp as *const () as usize), (SIGCONT, handle_cont as *const () as usize), (SIGTERM, handle_term as *const () as usize), (SIGHUP, handle_term as *const () as usize), (SIGINT, handle_interrupt as *const () as usize), (SIGQUIT, SIG_IGN)] {
-        // SAFETY: each handler has C ABI and only updates a lock-free atomic flag.
+        // SAFETY: entries are C handlers which only update atomic flags, or the platform SIG_IGN sentinel.
         let saved = unsafe { signal(number, handler) };
         if saved == usize::MAX {
             let error = io::Error::last_os_error();
@@ -243,30 +245,41 @@ pub fn get_terminal_size() -> (u16, u16) {
     }
 }
 
-pub fn handle_suspend() {
-    if let Err(error) = disable_raw_mode() { eprintln!("lz: terminal restoration: {error}"); }
-    let mut stdout = io::stdout();
-    let _ = leave_alt_screen(&mut stdout);
-    let _ = show_cursor(&mut stdout);
+pub fn handle_suspend() -> io::Result<()> {
+    disable_raw_mode()?;
+    let mut stdout = io::stdout().lock();
+    stdout.write_all(b"\r\x1b[K")?;
+    let alternate = ALT_SCREEN.load(Ordering::SeqCst);
+    let application = APPLICATION_MODES.swap(false, Ordering::SeqCst);
+    SUSPENDED_ALT_SCREEN.store(alternate, Ordering::SeqCst);
+    SUSPENDED_APPLICATION_MODES.store(application, Ordering::SeqCst);
+    if application { stdout.write_all(b"\x1b[?1l\x1b>")?; }
+    if alternate { leave_alt_screen(&mut stdout)?; }
+    show_cursor(&mut stdout)?;
 
     unsafe {
-        signal(SIGTSTP, SIG_DFL);
-        raise(SIGSTOP);
+        if signal(SIGTSTP, SIG_DFL) == usize::MAX || raise(SIGSTOP) != 0 { return Err(io::Error::last_os_error()); }
     }
+    Ok(())
 }
 
-pub fn handle_resume() {
+pub fn handle_resume() -> io::Result<()> {
     let fd = TTY_FD.load(Ordering::SeqCst);
     if fd >= 0 {
-        let _ = enable_raw_mode(fd);
+        enable_raw_mode(fd)?;
     }
-    let mut stdout = io::stdout();
-    let _ = enter_alt_screen(&mut stdout);
-    let _ = hide_cursor(&mut stdout);
+    let mut stdout = io::stdout().lock();
+    if SUSPENDED_ALT_SCREEN.swap(false, Ordering::SeqCst) { enter_alt_screen(&mut stdout)?; }
+    if SUSPENDED_APPLICATION_MODES.swap(false, Ordering::SeqCst) {
+        APPLICATION_MODES.store(true, Ordering::SeqCst);
+        stdout.write_all(b"\x1b[?1h\x1b=")?;
+    }
+    stdout.flush()?;
 
     unsafe {
-        signal(SIGTSTP, handle_tstp as *const () as usize);
+        if signal(SIGTSTP, handle_tstp as *const () as usize) == usize::MAX { return Err(io::Error::last_os_error()); }
     }
+    Ok(())
 }
 
 fn restore_acquired_terminal() -> io::Result<()> {

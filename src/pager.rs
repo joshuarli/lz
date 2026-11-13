@@ -467,10 +467,11 @@ impl Pager {
                 redraw = true;
             }
             if terminal::TSTP_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst) {
-                terminal::handle_suspend();
+                terminal::handle_suspend()?;
             }
             if terminal::CONT_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst) {
-                terminal::handle_resume();
+                terminal::handle_resume()?;
+                self.filename_prompt = false;
                 let (w, h) = terminal::get_terminal_size();
                 self.term_width = w;
                 self.term_height = h;

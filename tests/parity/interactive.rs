@@ -19,12 +19,13 @@ impl std::fmt::Display for KernelViolation {
 impl std::error::Error for KernelViolation {}
 
 #[derive(Debug)]
-pub(super) enum CheckpointTimeout { Readiness { artifact_dir: std::path::PathBuf }, Quiescence { artifact_dir: std::path::PathBuf } }
+pub(super) enum CheckpointTimeout { Readiness { artifact_dir: std::path::PathBuf }, Quiescence { artifact_dir: std::path::PathBuf }, JobControl { phase: &'static str, artifact_dir: std::path::PathBuf } }
 impl std::fmt::Display for CheckpointTimeout {
     fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let (operation, directory) = match self {
             Self::Readiness { artifact_dir } => ("checkpoint readiness", artifact_dir),
             Self::Quiescence { artifact_dir } => ("checkpoint output quiescence", artifact_dir),
+            Self::JobControl { phase, artifact_dir } => (*phase, artifact_dir),
         };
         write!(output, "{operation} timed out; retained evidence: {}", directory.display())
     }
@@ -70,6 +71,23 @@ fn wait_checkpoint(terminal: &mut PtyTest, id: &str, deadline: Instant, ready: &
         return Err(Box::new(CheckpointTimeout::Quiescence { artifact_dir:retain_checkpoint(terminal, id)? }));
     }
     Ok(())
+}
+
+fn wait_job(terminal: &mut PtyTest, id: &str, manifest: &Path, count: usize, resumed: bool, deadline: Instant) -> Result<Value> {
+    loop {
+        match fs::read(manifest.with_extension("job")) {
+            Ok(bytes) => {
+                let state: Value = serde_json::from_slice(&bytes)?;
+                if state["stops"] == count && state["continues"] == count - usize::from(!resumed) { return Ok(state); }
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error.into()),
+        }
+        if Instant::now() >= deadline {
+            return Err(Box::new(CheckpointTimeout::JobControl { phase:if resumed { "kernel continue acknowledgment" } else { "kernel stop acknowledgment" }, artifact_dir:retain_checkpoint(terminal, id)? }));
+        }
+        terminal.wait_for_output(Deadline::from_instant(deadline.min(Instant::now() + Duration::from_millis(20))))?;
+    }
 }
 
 fn screen(snapshot: &ScreenSnapshot) -> Value {
@@ -163,6 +181,7 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
     let total = Instant::now() + Duration::from_secs(10);
     let checkpoint_deadline = || Deadline::from_instant(total.min(Instant::now() + Duration::from_secs(3)));
     let mut checkpoints = Vec::new();
+    let mut suspensions = 0;
     for event in &case.events {
         match event {
             Event::Send { bytes } => {
@@ -182,6 +201,17 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
             }
             Event::Resize { columns, rows } => terminal.resize(Size::new(*columns, *rows)?)?,
             Event::Signal { number } => terminal.signal(*number)?,
+            Event::Suspend {} => {
+                suspensions += 1;
+                terminal.signal(libc::SIGTSTP)?;
+                let state = wait_job(&mut terminal, &case.id, manifest, suspensions, false, total.min(Instant::now() + Duration::from_secs(3)))?;
+                if !terminal.wait_for_quiescence(checkpoint_deadline(), Duration::from_millis(20))? {
+                    return Err(Box::new(CheckpointTimeout::Quiescence { artifact_dir:retain_checkpoint(&terminal, &case.id)? }));
+                }
+                checkpoints.push(json!({"suspended":state,"screen":screen(&terminal.screen())}));
+                terminal.signal(libc::SIGCONT)?;
+                wait_job(&mut terminal, &case.id, manifest, suspensions, true, total.min(Instant::now() + Duration::from_secs(3)))?;
+            }
             Event::Append { bytes } => {
                 OpenOptions::new().append(true).open(world.join(std::ffi::OsString::from_vec(case.fixture_name.clone())))?.write_all(bytes)?;
             }
@@ -312,6 +342,15 @@ pub fn selftest() -> Result<()> {
     let pipe = execute(&candidate, &pipe_case)?;
     if pipe["exit"] != format!("{:?}", ExitStatus::Signal(15)) { return Err("supervisor failed to forward explicit termination".into()); }
     println!("supervisor argv/env/stdin/foreground, code 7, signal 15 and explicit TERM controls pass");
+    pipe_case.args[1] = "job".into();
+    pipe_case.events = vec![Event::Checkpoint { ready:"probe".into(), row:None }, Event::Suspend {}, Event::Suspend {}, Event::Send { bytes:b"\n".to_vec() }];
+    let job = execute(&candidate, &pipe_case)?;
+    if job["exit"] != format!("{:?}", ExitStatus::Code(7)) || job["checkpoints"][1]["suspended"]["stops"] != 1
+        || job["checkpoints"][2]["suspended"]["stops"] != 2 || job["checkpoints"][2]["suspended"]["continues"] != 1
+        || job["checkpoints"][2]["suspended"]["kernel_restored"] != true {
+        return Err("supervisor did not record two actual kernel stops and the intervening continue".into());
+    }
+    println!("owned foreground child stops and continues twice with portable kernel wait status and pre-resume termios records");
     pipe_case.args[1] = "primary".into();
     pipe_case.events = vec![Event::Checkpoint { ready:"probe".into(), row:None }, Event::Send { bytes: b"n".to_vec() },
         Event::Checkpoint { ready:"alternate".into(), row:None }, Event::Send { bytes: b"q".to_vec() }];

@@ -7558,11 +7558,17 @@
         "lifecycle-quit-on-int-policy",
         "lifecycle-quit-binary",
         "lifecycle-quit-search",
-        "lifecycle-quit-navigation"
+        "lifecycle-quit-navigation",
+        "lifecycle-suspend-default",
+        "lifecycle-suspend-preserve",
+        "lifecycle-suspend-no-keypad",
+        "lifecycle-suspend-preserve-no-keypad",
+        "lifecycle-suspend-repeat",
+        "lifecycle-suspend-scrolled"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "TERM cleanup, default SIGINT continuation and configured interruption pass in named scenarios. SIGQUIT is ignored in normal and pending search input, binary prompts, preserved/no-keypad sessions and under quit-on-interrupt policy; navigation continues beyond the supervisor escalation interval. Suspend/resume, inherited dispositions, custom control characters and long operations remain open."
+      "cause": "TERM cleanup, default SIGINT continuation and configured interruption pass in named scenarios. SIGQUIT is ignored in normal and pending search input, binary prompts, preserved/no-keypad sessions and under quit-on-interrupt policy; navigation continues beyond the supervisor escalation interval. External suspension restores kernel and represented modes, retains screen/keypad options and resumes navigation in six named scenarios. Keyboard suspension, secure stop policy, inherited dispositions and prompt/resize interactions remain open."
     },
     {
       "id": "input-boundaries",
