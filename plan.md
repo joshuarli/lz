@@ -6,7 +6,7 @@ The owner authorized unattended local execution. Keep one writer, commit verifie
 
 The latest macOS arm64 integration check passed all 785 admitted cases across four shards, 157 Rust tests, and Clippy. The previous complete candidate and baseline report covered 664 cases before later slices. It recorded two strict mismatches, one filesystem limitation, and no harness errors; the long-color startup mismatch has since been fixed in S06f. [Coverage](tests/parity/coverage.md) and the [inventory](tests/parity/inventory.json) distinguish named-case results from complete features. Refresh all four candidate and baseline shards before generating a new report.
 
-The first 150 fuzz seeds pass with navigation, invalid commands, marks, forward literal search, resize and next-file interactions, quit or SIGTERM, selected CLI/`LESS` display options and bounded ASCII, UTF-8 and malformed-byte fixtures. The generator does not yet meet the S12 grammar requirement.
+Fuzz seeds 0–999 pass on macOS arm64 with generator version 9: navigation, invalid commands, marks, forward literal search, resize and next-file interactions, quit or SIGTERM, selected CLI/`LESS` display options and bounded ASCII, UTF-8 and malformed-byte fixtures. The geometry invariant was added after seeds 50–149 without changing generation. The generator does not yet meet the S12 grammar requirement.
 
 Recent accepted slices cover help entry and navigation, CLI help, horizontal movement, fixed and fractional shifts, and repaint. The latest focused checks pass. Public `HorizontalShift` values validate configuration before entering `ScrollDefaults`. Full help search, version text, shift interactive toggles, cross-file movement, and wrapped-row positioning remain open.
 
