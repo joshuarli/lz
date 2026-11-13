@@ -532,6 +532,13 @@ mod tests {
         assert_eq!(result, "cde");
     }
 
+    #[test]
+    fn raw_large_tab_is_clipped_to_the_viewport() {
+        let tabs = crate::tabs::TabStops::parse(b"1000000000").unwrap();
+        assert_eq!(raw_width("a\tb", &tabs), 1_000_000_001);
+        assert_eq!(truncate_raw("a\tb", 0, 8, &tabs), "a       ");
+    }
+
     // --- is_sgr helpers ---
 
     #[test]
