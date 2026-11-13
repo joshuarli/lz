@@ -8422,9 +8422,9 @@
       "file": "lesstest/lt/github329.lt",
       "sha256": "0ad82fedb3404fd731fdfffd2fa28116f588e0aae1377c3be3ea8277f574edc0",
       "instrumented": "pass",
-      "cases": ["upstream-github329-toggle-color", "upstream-github329-search-control"],
+      "cases": ["upstream-github329-toggle-color", "upstream-github329-search-control", "upstream-github329-after-control-search"],
       "disposition": "partial translation",
-      "cause": "The original OSC 8 fixture, two -R toggles and keep-position search are exercised with a generic terminal. Later option commands and per-key/custom termcap checkpoints remain untranslated."
+      "cause": "The original OSC 8 fixture and complete command sequence pass at generic-terminal checkpoints after semantic interactions. Original per-key and custom termcap checkpoints remain untranslated."
     },
     {
       "id": "hdr-unicode",
