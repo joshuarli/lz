@@ -165,6 +165,9 @@ enum ErrorAction { Retry(Key), Dismiss }
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct MarkName(u8);
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+struct MarkPosition { line: usize, leading_rows: usize }
+
 impl MarkName {
     fn new(character: char) -> Option<Self> {
         (character.is_ascii_alphabetic() || matches!(character, '\'' | '#')).then_some(Self(character as u8))
@@ -377,7 +380,7 @@ pub struct Pager {
     display_anchor: DisplayAnchor,
     buffer: LineBuffer,
     top_line: usize,
-    marks: HashMap<MarkName, usize>,
+    marks: HashMap<MarkName, MarkPosition>,
     left_col: usize,
     wrap: bool,
     line_numbers: bool,
@@ -844,7 +847,7 @@ impl Pager {
                 else { self.scroll_down(amount); }
             }
             Key::Char('g' | '<') | Key::Home => {
-                let previous = self.top_line;
+                let previous = self.mark_position();
                 let previous_leading = self.leading_rows;
                 self.position_initialized();
                 let target = count.unwrap_or(1).saturating_sub(1);
@@ -856,7 +859,7 @@ impl Pager {
             }
             Key::Char('G' | '>') | Key::End => {
                 let bottom_aligned = count.is_none();
-                let previous = self.top_line;
+                let previous = self.mark_position();
                 self.position_initialized();
                 self.bottom_aligned = bottom_aligned;
                 if let Some(count) = count { self.top_line = count.saturating_sub(1); self.buffer.get_line(self.top_line); }
@@ -913,11 +916,13 @@ impl Pager {
         self.mode = Mode::CommandError(CommandError { action, context: self.command_context, remainder: Vec::new() });
     }
 
-    fn remember_jump_from(&mut self, previous_line: usize) {
+    fn mark_position(&self) -> MarkPosition { MarkPosition { line:self.top_line, leading_rows:self.leading_rows } }
+
+    fn remember_jump_from(&mut self, previous: MarkPosition) {
         let height = self.content_height();
         // less 668 can scroll backward by exactly one screen without replacing the last mark.
-        let large = self.top_line >= previous_line.saturating_add(height) || previous_line > self.top_line.saturating_add(height);
-        if self.content_painted && previous_line < self.buffer.len() && large { self.marks.insert(MarkName(b'\''), previous_line); }
+        let large = self.top_line >= previous.line.saturating_add(height) || previous.line > self.top_line.saturating_add(height);
+        if self.content_painted && previous.line < self.buffer.len() && large { self.marks.insert(MarkName(b'\''), previous); }
     }
 
     fn handle_mark_key(&mut self, key: Key) {
@@ -932,8 +937,8 @@ impl Pager {
         };
         if !setting {
             match character {
-                '^' => { let previous = self.top_line; self.top_line = 0; self.remember_jump_from(previous); return; }
-                '$' => { let previous = self.top_line; self.buffer.read_all(); self.scroll_to_bottom(); self.remember_jump_from(previous); return; }
+                '^' => { let previous = self.mark_position(); self.top_line = 0; self.remember_jump_from(previous); return; }
+                '$' => { let previous = self.mark_position(); self.buffer.read_all(); self.scroll_to_bottom(); self.remember_jump_from(previous); return; }
                 '.' => return,
                 _ => {}
             }
@@ -947,7 +952,7 @@ impl Pager {
         };
         if setting {
             if self.content_painted && self.top_line < self.buffer.len() {
-                self.marks.insert(name, self.top_line);
+                self.marks.insert(name, self.mark_position());
                 if self.command_context == CommandContext::Interactive {
                     self.squished = false;
                     self.compact_initial = false;
@@ -955,14 +960,14 @@ impl Pager {
             }
             else { self.bell_requested = true; }
         }
-        else if let Some(line) = self.marks.get(&name).copied().or_else(|| (character == '\'').then_some(0)) {
-            let previous = self.top_line;
-            let previous_leading = self.leading_rows;
+        else if let Some(position) = self.marks.get(&name).copied().or_else(|| (character == '\'').then_some(MarkPosition { line:0, leading_rows:0 })) {
+            let previous = self.mark_position();
             self.position_initialized();
-            if self.content_painted && previous == line && previous_leading == 0 {
+            if self.content_painted && previous == position {
                 self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
             }
-            self.top_line = line;
+            self.top_line = position.line;
+            self.leading_rows = if position.leading_rows < self.content_height() { position.leading_rows } else { 0 };
             self.remember_jump_from(previous);
         } else { self.command_error("Mark not set".into(), ErrorAction::Dismiss); }
     }
