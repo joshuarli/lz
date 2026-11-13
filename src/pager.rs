@@ -647,10 +647,10 @@ impl FileStatus {
 }
 
 /// Search pattern and direction retained between files in one session.
-pub struct SearchSession { search: Option<Search>, direction: SearchDir }
+pub struct SearchSession { search: Option<Search>, direction: SearchDir, highlight: bool }
 
 impl Default for SearchSession {
-    fn default() -> Self { Self { search: None, direction: SearchDir::Forward } }
+    fn default() -> Self { Self { search: None, direction: SearchDir::Forward, highlight: true } }
 }
 
 pub struct Config {
@@ -695,6 +695,7 @@ pub struct Pager {
     show_eof_markers: bool,
     search: Option<Search>,
     search_inherited: bool,
+    search_highlight: bool,
     search_case: CaseSensitivity,
     search_start: SearchStart,
     jump_target: JumpTarget,
@@ -766,6 +767,7 @@ impl Pager {
             show_eof_markers: config.show_eof_markers,
             search: config.search_session.search,
             search_inherited,
+            search_highlight: config.search_session.highlight,
             search_case: config.search_case,
             search_start: config.search_start,
             jump_target: config.jump_target,
@@ -826,7 +828,7 @@ impl Pager {
     pub fn scroll_defaults(&self) -> ScrollDefaults { self.scroll_defaults }
 
     /// Transfer the active search to the next file in the session.
-    pub fn take_search_session(&mut self) -> SearchSession { SearchSession { search:self.search.take(), direction:self.search_dir } }
+    pub fn take_search_session(&mut self) -> SearchSession { SearchSession { search:self.search.take(), direction:self.search_dir, highlight:self.search_highlight } }
 
     /// Transfer startup input that remains after a file switch to the next pager.
     pub fn take_startup_commands(&mut self) -> Vec<Vec<u8>> { self.startup_commands.drain(..).collect() }
@@ -1231,6 +1233,7 @@ impl Pager {
                 self.remember_jump_from(previous);
             }
             Key::HorizontalStart => { self.position_initialized(); self.left_col = 0; }
+            Key::ToggleSearchHighlight => self.search_highlight = !self.search_highlight,
             Key::Right | Key::Left => {
                 self.position_initialized();
                 if let Some(amount) = count.and_then(std::num::NonZeroUsize::new) { self.scroll_defaults.horizontal = Some(amount); }
@@ -1511,6 +1514,7 @@ impl Pager {
     }
 
     fn do_search(&mut self, forward: bool) {
+        self.search_highlight = true;
         let search = match self.search.take() {
             Some(s) => s,
             None => return,
@@ -1523,8 +1527,8 @@ impl Pager {
             (SearchStart::AfterScreen, false) => self.top_line,
             (SearchStart::AfterTarget, false) => self.target_line(),
             (SearchStart::AfterTarget, true) if self.content_painted => self.target_line().saturating_add(1),
-            (SearchStart::Default, true) if self.current_match_line.is_some() && !matches!(self.jump_target.0, JumpRow::Default) => self.target_line().saturating_add(1),
-            (SearchStart::Default, false) if self.current_match_line.is_some() && !matches!(self.jump_target.0, JumpRow::Default) => self.target_line(),
+            (SearchStart::Default, true) if self.current_match_line.is_some() => self.target_line().saturating_add(1),
+            (SearchStart::Default, false) if self.current_match_line.is_some() => self.target_line(),
             (SearchStart::Default, false) if self.current_match_line.is_none() && self.search_inherited => self.top_line,
             (SearchStart::Default, false) if self.current_match_line.is_none() => self.last_visible_line.map_or(self.top_line, |line| line.saturating_add(1)),
             (_, true) => self.current_match_line.map_or(self.top_line, |line| line.saturating_add(1)),
@@ -2038,7 +2042,7 @@ impl Pager {
 
     fn write_line_with_search(&self, buf: &mut Vec<u8>, display: &[u8]) {
         let Ok(display) = std::str::from_utf8(display) else { buf.extend_from_slice(display); return; };
-        if let Some(ref search) = self.search
+        if self.search_highlight && let Some(ref search) = self.search
             && search.is_match(display)
         {
             let stripped = strip_ansi(display);

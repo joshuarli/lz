@@ -591556,5 +591556,44 @@
   "fixture": [97,108,112,104,97,10,27,91,55,109,110,101,101,100,108,101,32,97,102,116,101,114,27,91,109,10,97,108,112,104,97,10,97,108,112,104,97,10,97,108,112,104,97,10,97,108,112,104,97,10,97,108,112,104,97,10,97,108,112,104,97,10,97,108,112,104,97,10,97,108,112,104,97,10,97,108,112,104,97,10,97,108,112,104,97,10,97,108,112,104,97,10,97,108,112,104,97,10], "args": ["-R", "input"], "env": {}, "size": [40, 8], "locale": "C.UTF-8",
   "events": [{"type":"checkpoint","ready":"alpha","row":0}, {"type":"send","bytes":[47,110,101,101,100,108,101,10]}, {"type":"checkpoint","ready":"needle","row":0}, {"type":"send","bytes":[113]}],
   "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "search-highlight-toggle",
+  "family": "search", "admitted": true, "source": "pty",
+  "fixture": {"numbered":{"count":40,"needle_lines":[8,9,10,11,20,32]}},
+  "args": ["input"], "env": {}, "size": [40, 8], "locale": "C",
+  "events": [{"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[47,110,101,101,100,108,101,10]}, {"type":"checkpoint","ready":"000008","row":0}, {"type":"send","bytes":[27,117,106]}, {"type":"checkpoint","ready":"000009","row":0}, {"type":"send","bytes":[27,117,106]}, {"type":"checkpoint","ready":"000010","row":0}, {"type":"send","bytes":[27,117,106]}, {"type":"checkpoint","ready":"000011","row":0}, {"type":"send","bytes":[110]}, {"type":"checkpoint","ready":"000020","row":0}, {"type":"send","bytes":[27,117,47,110,101,101,100,108,101,10,106]}, {"type":"checkpoint","ready":"000021","row":0}, {"type":"send","bytes":[107]}, {"type":"checkpoint","ready":"000020","row":0}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "upstream-github265-color-search-toggle",
+  "family": "search", "admitted": true, "source": "pty",
+  "fixture": [87,104,121,32,27,91,48,49,59,51,49,109,27,91,75,104,101,108,108,111,27,91,109,27,91,75,32,116,104,101,114,101,10], "args": ["-R", "input"], "env": {}, "size": [109, 49], "locale": "C.UTF-8",
+  "events": [{"type":"checkpoint","ready":"input (END)","row":48}, {"type":"send","bytes":[47,121,32,104,101]}, {"type":"checkpoint","ready":"/y he","row":48}, {"type":"send","bytes":[10]}, {"type":"checkpoint","ready":"(END)","row":48}, {"type":"send","bytes":[47,108,108,111,32,116,104]}, {"type":"checkpoint","ready":"/llo th","row":48}, {"type":"send","bytes":[10]}, {"type":"checkpoint","ready":"(END)","row":48}, {"type":"send","bytes":[27,117,47]}, {"type":"checkpoint","ready":"/","row":48}, {"type":"send","bytes":[3]}, {"type":"checkpoint","ready":"(END)","row":48}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "search-repeat-after-forward-movement",
+  "family": "search", "admitted": true, "source": "pty",
+  "fixture": {"numbered":{"count":40,"needle_lines":[8,9,10,11,17,20]}},
+  "args": ["input"], "env": {}, "size": [40, 8], "locale": "C",
+  "events": [{"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[47,110,101,101,100,108,101,10]}, {"type":"checkpoint","ready":"000008","row":0}, {"type":"send","bytes":[51,106]}, {"type":"checkpoint","ready":"000011","row":0}, {"type":"send","bytes":[110]}, {"type":"checkpoint","ready":"000017","row":0}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "search-repeat-after-backward-movement",
+  "family": "search", "admitted": true, "source": "pty",
+  "fixture": {"numbered":{"count":40,"needle_lines":[8,9,10,11,17,20]}},
+  "args": ["input"], "env": {}, "size": [40, 8], "locale": "C",
+  "events": [{"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[51,48,103]}, {"type":"checkpoint","ready":"000030","row":0}, {"type":"send","bytes":[63,110,101,101,100,108,101,10]}, {"type":"checkpoint","ready":"000020","row":0}, {"type":"send","bytes":[53,107]}, {"type":"checkpoint","ready":"000015","row":0}, {"type":"send","bytes":[110]}, {"type":"checkpoint","ready":"000011","row":0}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {}
+},
+{
+  "id": "sessions-search-highlight-toggle-next-file",
+  "family": "sessions", "admitted": true, "source": "pty",
+  "fixture": {"repeat":[97,108,112,104,97,10,110,101,101,100,108,101,10],"count":7,"suffix":[]},
+  "args": ["input", "second"], "env": {}, "size": [40, 8], "locale": "C",
+  "events": [{"type":"checkpoint","ready":"alpha","row":0}, {"type":"send","bytes":[47,110,101,101,100,108,101,10]}, {"type":"checkpoint","ready":"needle","row":0}, {"type":"send","bytes":[27,117,58,110]}, {"type":"checkpoint","ready":"alpha","row":0}, {"type":"send","bytes":[110]}, {"type":"checkpoint","ready":"needle","row":0}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {"second": [97,108,112,104,97,10,110,101,101,100,108,101,10,97,108,112,104,97,10,110,101,101,100,108,101,10,97,108,112,104,97,10,110,101,101,100,108,101,10,97,108,112,104,97,10,110,101,101,100,108,101,10,97,108,112,104,97,10,110,101,101,100,108,101,10,97,108,112,104,97,10,110,101,101,100,108,101,10,97,108,112,104,97,10,110,101,101,100,108,101,10]}
 }
 ]

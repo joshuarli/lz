@@ -12,6 +12,7 @@ pub enum Key {
     Left,
     Right,
     HorizontalStart,
+    ToggleSearchHighlight,
     PageUp,
     PageDown,
     Home,
@@ -196,6 +197,7 @@ impl KeyReader {
             Some(b')') => Ok(Key::Right),
             Some(b'(') => Ok(Key::Left),
             Some(b'{') => Ok(Key::HorizontalStart),
+            Some(b'u') => Ok(Key::ToggleSearchHighlight),
             Some(_) => Ok(Key::Escape),
         }
     }

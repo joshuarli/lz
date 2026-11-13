@@ -4,9 +4,9 @@
 
 The owner authorized unattended local execution. Keep one writer, commit verified slices, and do not push. Preserve the pinned toolchain and do not run formatters. Baseline: `2ae5660`. Git history records accepted slices.
 
-The latest macOS arm64 integration check passed all 785 admitted cases across four shards, 157 Rust tests, and Clippy. The previous complete candidate and baseline report covered 664 cases before later slices. It recorded two strict mismatches, one filesystem limitation, and no harness errors; the long-color startup mismatch has since been fixed in S06f. [Coverage](tests/parity/coverage.md) and the [inventory](tests/parity/inventory.json) distinguish named-case results from complete features. Refresh all four candidate and baseline shards before generating a new report.
+The latest macOS arm64 integration check passed all 785 admitted cases across four shards, 157 Rust tests, and Clippy before subsequent slices. The previous complete candidate and baseline report covered 664 cases before later slices. It recorded two strict mismatches, one filesystem limitation, and no harness errors; the long-color startup mismatch has since been fixed in S06f. [Coverage](tests/parity/coverage.md) and the [inventory](tests/parity/inventory.json) distinguish named-case results from complete features. Refresh all four candidate and baseline shards before generating a new report.
 
-Fuzz seeds 0–999 pass on macOS arm64 with generator version 9: navigation, invalid commands, marks, forward literal search, resize and next-file interactions, quit or SIGTERM, selected CLI/`LESS` display options and bounded ASCII, UTF-8 and malformed-byte fixtures. The geometry invariant was added after seeds 50–149 without changing generation. The generator does not yet meet the S12 grammar requirement.
+Fuzz seeds 0–999 passed on macOS arm64 with generator version 9 before S08l–S08m; seeds 0–49 also pass afterward. The grammar covers navigation, invalid commands, marks, forward literal search, resize and next-file interactions, quit or SIGTERM, selected CLI/`LESS` display options and bounded ASCII, UTF-8 and malformed-byte fixtures. The geometry invariant was added after seeds 50–149 without changing generation. The generator does not yet meet the S12 grammar requirement.
 
 Recent accepted slices cover help entry and navigation, CLI help, horizontal movement, fixed and fractional shifts, and repaint. The latest focused checks pass. Public `HorizontalShift` values validate configuration before entering `ScrollDefaults`. Full help search, version text, shift interactive toggles, cross-file movement, and wrapped-row positioning remain open.
 
@@ -69,6 +69,10 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 **S12h:** generated failures reduce events, arguments and inline fixture bytes under separate attempt budgets, retaining the mismatch category and oracle completion. Harness controls include a real PTY fault that depends on a required argument and byte. Other fixture recipes, auxiliary files and environment reduction remain open.
 
 **S12i:** generated malformed-byte lines fit the numbered 40-column view. Seed 142, the first 150 seeds, and a 1,000-seed geometry invariant pass. The earlier oracle timeout came from an unintended wrapped line, not a product mismatch.
+
+**S08l:** `Esc-u` toggles search highlighting, preserving the setting across file switches until a new or repeated search restores it. The named cases pass on macOS and in a Linux arm64 container. The upstream `github265` fixture and color-spanning searches have a partial generic-terminal translation; its per-key/custom termcap checkpoints remain open. `Key::ToggleSearchHighlight` is public. Other search modes and `-G` interactions remain open.
+
+**S08m:** forward and backward repeat searches start from the current position after manual movement in the named cases on macOS and in a Linux arm64 container. All 72 admitted macOS search cases and 50 fuzz seeds pass. Wrapped and filtered positions remain open.
 
 **S09j:** the active search and its direction survive next-file switches; the match position remains file-local. Forward highlighting and repeat, backward repeat and the generating seed pass on macOS; the named cases also pass in a Linux arm64 container. Public `SearchSession` carries this state through `Config` and `Pager::take_search_session`. Other search and file-transition interactions remain open.
 

@@ -1364,10 +1364,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["sessions-search-next-file-highlight-repeat", "sessions-search-next-file-backward-repeat"],
+      "cases": ["sessions-search-next-file-highlight-repeat", "sessions-search-next-file-backward-repeat", "search-repeat-after-forward-movement", "search-repeat-after-backward-movement"],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Forward and backward repeats preserve the active search across a next-file switch in the named cases. Other repeat and file-transition interactions remain open."
+      "cause": "Forward and backward repeats preserve the active search across a next-file switch and resume from the current position after manual movement in the named cases. Other repeat and file-transition interactions remain open."
     },
     {
       "id": "man-0302",
@@ -1440,10 +1440,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-highlight-toggle", "upstream-github265-color-search-toggle", "sessions-search-highlight-toggle-next-file"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Esc-u toggles highlighting, carries the state across next-file switches and is reset by a subsequent search in the named cases. Other search modes and -G interactions remain open."
     },
     {
       "id": "man-0318",
@@ -8390,9 +8390,9 @@
       "file": "lesstest/lt/github265.lt",
       "sha256": "e2630f8448edac31de364a75eb6583d3b6e84aa4ef03529a75ffb50a0621a97e",
       "instrumented": "pass",
-      "cases": [],
-      "disposition": "pending translation",
-      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+      "cases": ["upstream-github265-color-search-toggle"],
+      "disposition": "partial translation",
+      "cause": "The fixture, two color-spanning searches and Esc-u are exercised with a generic terminal. The original per-key and custom termcap checkpoints remain untranslated."
     },
     {
       "id": "github329",
