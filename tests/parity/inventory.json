@@ -2243,11 +2243,12 @@
         "invocation-help-no-next-file",
         "invocation-help-next-file-out-of-range",
         "invocation-help-no-next-file-replay",
-        "invocation-help-no-next-file-interrupt"
+        "invocation-help-no-next-file-interrupt",
+        "invocation-help-previous"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Redirected and terminal help cases pass, including startup end, navigation, screen options and piped input; backward file transitions, tags and remaining help interactions remain open"
+      "cause": "Redirected and terminal help cases pass, including startup end, navigation, screen options and piped input; further file transitions, tags and remaining help interactions remain open"
     },
     {
       "id": "man-0635",
