@@ -110,6 +110,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S04bh accepted:** `man-0393` and `man-0404` interactive chopping support the tested query, set, reset, quiet and long-name commands. Two new cases and neighboring toggle and long-name cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Other interactions remain open.
 
+**S04bi integration:** all 354 admitted invocation cases passed on macOS arm64 after S04az–bh option and configuration changes. This does not cover the full parity inventory or other platforms.
+
 The subsequent macOS arm64 invocation check passed all 332 admitted cases after the option-prefix changes.
 
 **S08p:** `Esc-u` after a search with no matches reports the reference no-previous-pattern prompt. The case passes on macOS and in a Linux arm64 container; cross-file prepared regions are parked separately.
