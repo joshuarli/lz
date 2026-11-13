@@ -257,11 +257,13 @@
       "cases": [
         "navigation-half-page-default",
         "navigation-half-page-persistent",
-        "navigation-scroll-defaults-across-files"
+        "navigation-scroll-defaults-across-files",
+        "navigation-half-page-resize-grow",
+        "navigation-half-page-resize-width"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Numeric d/u defaults persist across directions, aliases and file visits on macOS arm64; wrapped and resized geometry remain untested"
+      "cause": "Numeric d/u defaults persist across directions, aliases and file visits. Resizing resets the half-page default in the named cases on macOS and in a Linux arm64 container; wrapped geometry and further interactions remain open."
     },
     {
       "id": "man-0073",
@@ -348,11 +350,12 @@
       "cases": [
         "navigation-half-page-default",
         "navigation-half-page-persistent",
-        "navigation-scroll-defaults-across-files"
+        "navigation-scroll-defaults-across-files",
+        "navigation-half-page-resize-shrink"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Numeric d/u defaults persist across directions, aliases and file visits on macOS arm64; wrapped and resized geometry remain untested"
+      "cause": "Numeric d/u defaults persist across directions, aliases and file visits. Resizing resets the half-page default in the named case on macOS and in a Linux arm64 container; wrapped geometry and further interactions remain open."
     },
     {
       "id": "man-0086",

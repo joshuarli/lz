@@ -54,6 +54,10 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12a:** generated navigation now includes forward literal searches, and each run records its generator version. Harness controls and 50 seeds pass, with 49 searches across the generated cases. This independent grammar extension does not require unrelated S04–S11 behaviors to finish; the remaining event families and boundary weighting remain open.
 
+**S12b planned:** add bounded resize-and-jump interactions to the generated navigation grammar, keeping geometry-dependent movement preconditions current. Own `tests/parity/fuzz.rs`; S12a and the existing resize runner are prerequisites. This generated interaction is independent of unfinished option and helper behaviors. Acceptance: `make parity-selftest` and `make parity-fuzz SEED=0 CASES=50`.
+
+**S07ai:** terminal size changes reset the `man-0069` and `man-0082` half-page default to half the new height. Three cases cover growth, shrinkage and width-only resize after a count on macOS and in a Linux arm64 container. Existing window and horizontal-shift resize cases pass.
+
 The following work remains local and actionable: complete the nonparked S04–S11 behaviors and interactions, upstream scenario translations, bounded fuzzing and holdouts, parity CI checks, final performance and size gates, cleanup, and independent review. The inventory retains behavior-specific causes and cases. The S06 shared renderer still needs bounded handling for other escapes and multirow lines. POSIX search, cancellation, headers, helper and pipe transitions, history concurrency, and lifecycle hardening remain incomplete.
 
 Parked conditions are:

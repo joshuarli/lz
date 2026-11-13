@@ -614,7 +614,10 @@ impl ScrollDefaults {
         self.horizontal.map(std::num::NonZeroUsize::get).or(fraction).unwrap_or_else(|| (usize::from(width) / 2).max(1))
     }
 
-    fn resize(&mut self) { if self.horizontal_fraction.is_some() { self.horizontal = None; } }
+    fn resize(&mut self, height: u16) {
+        self.half_page = std::num::NonZeroUsize::new(usize::from(height).div_ceil(2).max(1)).unwrap();
+        if self.horizontal_fraction.is_some() { self.horizontal = None; }
+    }
 
     /// Positive settings select rows; nonpositive settings subtract from the current terminal height.
     pub fn set_window(&mut self, setting: i32) {
@@ -921,18 +924,18 @@ impl Pager {
                 && terminal::handle_resume()? == terminal::ResumeOutcome::Restored {
                 self.filename_prompt = false;
                 let (w, h) = terminal::get_terminal_size();
+                if (w, h) != (self.term_width, self.term_height) { self.scroll_defaults.resize(h); }
                 self.term_width = w;
                 self.term_height = h;
-                self.scroll_defaults.resize();
                 redraw = true;
                 continue;
             }
             if terminal::WINCH_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst) {
                 self.filename_prompt = false;
                 let (w, h) = terminal::get_terminal_size();
+                if (w, h) != (self.term_width, self.term_height) { self.scroll_defaults.resize(h); }
                 self.term_width = w;
                 self.term_height = h;
-                self.scroll_defaults.resize();
                 self.leading_rows = 0;
                 redraw = true;
                 continue;
