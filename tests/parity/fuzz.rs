@@ -140,7 +140,7 @@ fn signature(result: &Value) -> Option<(String, String)> {
 }
 
 #[derive(Clone, Copy)]
-enum ReductionPart { Events, Arguments, FixtureBytes, Environment, AuxiliaryFiles, AuxiliaryBytes, RepeatCount, RepeatUnit, RepeatSuffix }
+enum ReductionPart { Events, Arguments, FixtureBytes, Environment, AuxiliaryFiles, AuxiliaryBytes, RepeatCount, RepeatUnit, RepeatSuffix, NumberedLines, NumberedMarkers }
 
 impl ReductionPart {
     fn len(self, case: &Case) -> usize {
@@ -154,6 +154,8 @@ impl ReductionPart {
             Self::RepeatCount => match &case.fixture { Fixture::Repeated(recipe) => recipe.count as usize, _ => 0 },
             Self::RepeatUnit => match &case.fixture { Fixture::Repeated(recipe) => recipe.repeat.len(), _ => 0 },
             Self::RepeatSuffix => match &case.fixture { Fixture::Repeated(recipe) => recipe.suffix.len(), _ => 0 },
+            Self::NumberedLines => match &case.fixture { Fixture::Numbered(recipe) => recipe.line_count(), _ => 0 },
+            Self::NumberedMarkers => match &case.fixture { Fixture::Numbered(recipe) => recipe.marker_count(), _ => 0 },
         }
     }
 
@@ -185,6 +187,8 @@ impl ReductionPart {
             Self::RepeatCount => if let Fixture::Repeated(recipe) = &mut case.fixture { recipe.count -= range.len() as u64; },
             Self::RepeatUnit => if let Fixture::Repeated(recipe) = &mut case.fixture { recipe.repeat.drain(range); },
             Self::RepeatSuffix => if let Fixture::Repeated(recipe) = &mut case.fixture { recipe.suffix.drain(range); },
+            Self::NumberedLines => if let Fixture::Numbered(recipe) = &mut case.fixture { recipe.remove_lines(range.len()); },
+            Self::NumberedMarkers => if let Fixture::Numbered(recipe) = &mut case.fixture { recipe.remove_markers(range); },
         }
     }
 }
@@ -288,13 +292,15 @@ pub(super) fn run(args: &[String], reference: &Path, candidate: &Path) -> Result
                     let (auxiliary_bytes, observation, auxiliary_byte_attempts) = reduce_part(&auxiliary, &observation, ReductionPart::AuxiliaryBytes, |case| observe_case(reference, candidate, case));
                     let (repeat_count, observation, repeat_attempts) = reduce_part(&auxiliary_bytes, &observation, ReductionPart::RepeatCount, |case| observe_case(reference, candidate, case));
                     let (repeat_unit, observation, unit_attempts) = reduce_part(&repeat_count, &observation, ReductionPart::RepeatUnit, |case| observe_case(reference, candidate, case));
-                    let (minimized, observation, suffix_attempts) = reduce_part(&repeat_unit, &observation, ReductionPart::RepeatSuffix, |case| observe_case(reference, candidate, case));
+                    let (repeat_suffix, observation, suffix_attempts) = reduce_part(&repeat_unit, &observation, ReductionPart::RepeatSuffix, |case| observe_case(reference, candidate, case));
+                    let (numbered_lines, observation, line_attempts) = reduce_part(&repeat_suffix, &observation, ReductionPart::NumberedLines, |case| observe_case(reference, candidate, case));
+                    let (minimized, observation, marker_attempts) = reduce_part(&numbered_lines, &observation, ReductionPart::NumberedMarkers, |case| observe_case(reference, candidate, case));
                     fs::write(directory.join("minimized-case.json"), serde_json::to_vec_pretty(&minimized)?)?;
                     save(&directory.join("minimized-observation.json.gz"), &observation)?;
-                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":true,"attempts":{"events":event_attempts,"arguments":argument_attempts,"fixture":fixture_attempts,"environment":environment_attempts,"auxiliary_files":auxiliary_attempts,"auxiliary_bytes":auxiliary_byte_attempts,"repeat_count":repeat_attempts,"repeat_unit":unit_attempts,"repeat_suffix":suffix_attempts},"original_repeat_unit_bytes":ReductionPart::RepeatUnit.len(case),"minimized_repeat_unit_bytes":ReductionPart::RepeatUnit.len(&minimized),"original_repeat_suffix_bytes":ReductionPart::RepeatSuffix.len(case),"minimized_repeat_suffix_bytes":ReductionPart::RepeatSuffix.len(&minimized),"original_repetitions":ReductionPart::RepeatCount.len(case),"minimized_repetitions":ReductionPart::RepeatCount.len(&minimized),"original_auxiliary_bytes":ReductionPart::AuxiliaryBytes.len(case),"minimized_auxiliary_bytes":ReductionPart::AuxiliaryBytes.len(&minimized),"original_auxiliary_files":case.files.len(),"minimized_auxiliary_files":minimized.files.len(),"original_environment":case.env.len(),"minimized_environment":minimized.env.len(),"original_events":case.events.len(),"minimized_events":minimized.events.len(),"original_arguments":case.args.len(),"minimized_arguments":minimized.args.len(),"original_fixture_bytes":ReductionPart::FixtureBytes.len(case),"minimized_fixture_bytes":ReductionPart::FixtureBytes.len(&minimized)}))?)?;
+                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":true,"attempts":{"events":event_attempts,"arguments":argument_attempts,"fixture":fixture_attempts,"environment":environment_attempts,"auxiliary_files":auxiliary_attempts,"auxiliary_bytes":auxiliary_byte_attempts,"repeat_count":repeat_attempts,"repeat_unit":unit_attempts,"repeat_suffix":suffix_attempts,"numbered_lines":line_attempts,"numbered_markers":marker_attempts},"original_numbered_lines":ReductionPart::NumberedLines.len(case),"minimized_numbered_lines":ReductionPart::NumberedLines.len(&minimized),"original_numbered_markers":ReductionPart::NumberedMarkers.len(case),"minimized_numbered_markers":ReductionPart::NumberedMarkers.len(&minimized),"original_repeat_unit_bytes":ReductionPart::RepeatUnit.len(case),"minimized_repeat_unit_bytes":ReductionPart::RepeatUnit.len(&minimized),"original_repeat_suffix_bytes":ReductionPart::RepeatSuffix.len(case),"minimized_repeat_suffix_bytes":ReductionPart::RepeatSuffix.len(&minimized),"original_repetitions":ReductionPart::RepeatCount.len(case),"minimized_repetitions":ReductionPart::RepeatCount.len(&minimized),"original_auxiliary_bytes":ReductionPart::AuxiliaryBytes.len(case),"minimized_auxiliary_bytes":ReductionPart::AuxiliaryBytes.len(&minimized),"original_auxiliary_files":case.files.len(),"minimized_auxiliary_files":minimized.files.len(),"original_environment":case.env.len(),"minimized_environment":minimized.env.len(),"original_events":case.events.len(),"minimized_events":minimized.events.len(),"original_arguments":case.args.len(),"minimized_arguments":minimized.args.len(),"original_fixture_bytes":ReductionPart::FixtureBytes.len(case),"minimized_fixture_bytes":ReductionPart::FixtureBytes.len(&minimized)}))?)?;
                 } else {
                     save(&directory.join("reproduction-observation.json.gz"), &reproduced)?;
-                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":false,"attempts":{"events":0,"arguments":0,"fixture":0,"environment":0,"auxiliary_files":0,"auxiliary_bytes":0,"repeat_count":0,"repeat_unit":0,"repeat_suffix":0},"reason":"failure signature changed or belongs to the oracle; original failure remains strict"}))?)?;
+                    fs::write(directory.join("reduction.json"), serde_json::to_vec_pretty(&json!({"reproduced":false,"attempts":{"events":0,"arguments":0,"fixture":0,"environment":0,"auxiliary_files":0,"auxiliary_bytes":0,"repeat_count":0,"repeat_unit":0,"repeat_suffix":0,"numbered_lines":0,"numbered_markers":0},"reason":"failure signature changed or belongs to the oracle; original failure remains strict"}))?)?;
                 }
             }
             break;
@@ -420,12 +426,27 @@ pub(super) fn selftest() -> Result<()> {
         || signature(&recipe_result) != signature(&recipe_original) || signature(&observe_recipe(&recipe_reduced)) != signature(&recipe_original) {
         return Err("repeat reduction lost required repetitions, unit, suffix or mismatch category".into());
     }
+    let mut numbered_case = input_case.clone();
+    numbered_case.fixture = serde_json::from_value(json!({"numbered":{"count":8,"needle_lines":[2,3,6]}}))?;
+    let numbered_fault = control.path().join("numbered-fault");
+    fs::write(&numbered_fault, format!("#!/bin/sh\nfault=none\nwhile IFS= read -r line; do case \"$line\" in 'needle 000003 '*) fault=attribute;; esac; done < input\nexec '{quoted}' --fixture \"$fault\"\n"))?;
+    fs::set_permissions(&numbered_fault, fs::Permissions::from_mode(0o700))?;
+    let observe_numbered = |candidate: &Case| observe_case(&good, &numbered_fault, candidate);
+    let numbered_original = observe_numbered(&numbered_case);
+    if signature(&numbered_original).is_none() { return Err("numbered control did not produce an attribute mismatch".into()); }
+    let (lines, numbered_result, _) = reduce_part(&numbered_case, &numbered_original, ReductionPart::NumberedLines, observe_numbered);
+    let (numbered_reduced, numbered_result, _) = reduce_part(&lines, &numbered_result, ReductionPart::NumberedMarkers, observe_numbered);
+    if ReductionPart::NumberedLines.len(&numbered_reduced) >= ReductionPart::NumberedLines.len(&numbered_case)
+        || ReductionPart::NumberedMarkers.len(&numbered_reduced) >= ReductionPart::NumberedMarkers.len(&numbered_case)
+        || signature(&numbered_result) != signature(&numbered_original) || signature(&observe_numbered(&numbered_reduced)) != signature(&numbered_original) {
+        return Err("numbered reduction lost a required line, marker or mismatch category".into());
+    }
     let path = control.path().join("observation.json.gz");
     save(&path, &result)?;
     let decoded = Command::new("gzip").arg("-dc").arg(path).output()?;
     if !decoded.status.success() || serde_json::from_slice::<Value>(&decoded.stdout)? != result {
         return Err("compressed observations do not roundtrip".into());
     }
-    println!("deterministic generated cases distinguish seeds; attribute mismatch shrinks from {} to {} events in {attempts} attempts; input reduction retains required repetitions, primary and auxiliary bytes, arguments, environment and file; compressed observations roundtrip", case.events.len(), reduced.events.len());
+    println!("deterministic generated cases distinguish seeds; attribute mismatch shrinks from {} to {} events in {attempts} attempts; input reduction retains required numbered markers, repetitions, bytes, arguments, environment and file; compressed observations roundtrip", case.events.len(), reduced.events.len());
     Ok(())
 }

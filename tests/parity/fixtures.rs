@@ -25,6 +25,16 @@ pub(super) struct Numbered { numbered: NumberedLines }
 #[serde(deny_unknown_fields)]
 struct NumberedLines { count: u32, needle_lines: Vec<u32> }
 
+impl Numbered {
+    pub fn line_count(&self) -> usize { self.numbered.count as usize }
+    pub fn marker_count(&self) -> usize { self.numbered.needle_lines.len() }
+    pub fn remove_lines(&mut self, count: usize) {
+        self.numbered.count -= count as u32;
+        self.numbered.needle_lines.retain(|line| *line <= self.numbered.count);
+    }
+    pub fn remove_markers(&mut self, range: std::ops::Range<usize>) { self.numbered.needle_lines.drain(range); }
+}
+
 impl From<Vec<u8>> for Fixture { fn from(bytes: Vec<u8>) -> Self { Self::Bytes(bytes) } }
 
 impl Fixture {
