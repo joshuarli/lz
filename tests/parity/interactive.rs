@@ -47,6 +47,27 @@ impl std::error::Error for ClosedInput {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> { Some(&self.cause) }
 }
 
+#[derive(Clone, Copy)]
+enum BellScan { Ground, Escape, Csi, Osc, OscEscape, String, StringEscape }
+
+fn audible_bells(bytes: &[u8]) -> usize {
+    let mut state = BellScan::Ground;
+    let mut bells = 0;
+    for &byte in bytes {
+        state = match state {
+            BellScan::Ground => match byte { 7 => { bells += 1; BellScan::Ground }, 27 => BellScan::Escape, _ => BellScan::Ground },
+            BellScan::Escape => match byte { b']' => BellScan::Osc, b'[' => BellScan::Csi, b'P' | b'^' | b'_' => BellScan::String,
+                7 => { bells += 1; BellScan::Escape }, 27 => BellScan::Escape, 0x20..=0x2f => BellScan::Escape, _ => BellScan::Ground },
+            BellScan::Csi => match byte { 7 => { bells += 1; BellScan::Csi }, 27 => BellScan::Escape, 0x40..=0x7e => BellScan::Ground, _ => BellScan::Csi },
+            BellScan::Osc => match byte { 7 => BellScan::Ground, 27 => BellScan::OscEscape, _ => BellScan::Osc },
+            BellScan::OscEscape => match byte { b'\\' | 7 => BellScan::Ground, 27 => BellScan::OscEscape, _ => BellScan::Osc },
+            BellScan::String => if byte == 27 { BellScan::StringEscape } else { BellScan::String },
+            BellScan::StringEscape => match byte { b'\\' => BellScan::Ground, 27 => BellScan::StringEscape, _ => BellScan::String },
+        };
+    }
+    bells
+}
+
 fn retain_checkpoint(terminal: &PtyTest, id: &str) -> Result<std::path::PathBuf> {
     let directory = super::stdio::world()?.keep();
     fs::write(directory.join("input.bin"), terminal.raw_input())?;
@@ -197,7 +218,7 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
             Event::Checkpoint { ready, row } => {
                 let deadline = total.min(Instant::now() + Duration::from_secs(3));
                 wait_checkpoint(&mut terminal, &case.id, deadline, ready, *row)?;
-                checkpoints.push(json!({"screen": screen(&terminal.screen()), "files": files(&world)?, "bells": terminal.raw_output().iter().filter(|b| **b == 7).count()}));
+                checkpoints.push(json!({"screen": screen(&terminal.screen()), "files": files(&world)?, "bells": audible_bells(terminal.raw_output())}));
             }
             Event::Resize { columns, rows } => terminal.resize(Size::new(*columns, *rows)?)?,
             Event::Signal { number } => terminal.signal(*number)?,
@@ -243,8 +264,9 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
     cleanup.disarm();
     let finished = terminal.finish(Deadline::from_instant(total.min(Instant::now() + Duration::from_secs(1))))?;
     if status != finished { return Err("harness-error: wait and finish exit status differ".into()); }
+    let final_bells = audible_bells(&output);
     Ok(json!({"checkpoints": checkpoints, "exit": format!("{status:?}"), "final_screen": final_screen,
-        "files": effects, "raw_input": input, "raw_output": output, "restored": true, "kernel_terminal":kernel}))
+        "final_bells": final_bells, "files": effects, "raw_input": input, "raw_output": output, "restored": true, "kernel_terminal":kernel}))
 }
 
 pub fn fixture(fault: &str) -> Result<()> {
@@ -274,6 +296,8 @@ pub fn fixture(fault: &str) -> Result<()> {
     let mut byte = [0];
     while std::io::stdin().read(&mut byte)? != 0 { if byte[0] == b'\n' { break; } }
     if fault == "exit" { std::process::exit(7); }
+    if fault == "bell-after" { stdout.write_all(b"\x07")?; stdout.flush()?; }
+    if fault == "osc-after" { stdout.write_all(b"\x1b]8;;https://example.test\x07\x1b]8;;\x07")?; stdout.flush()?; }
     Ok(())
 }
 
@@ -438,7 +462,9 @@ pub fn selftest() -> Result<()> {
         return Err("plain-text trace check missed a known screen-clearing control".into());
     }
     println!("plain-text trace check rejects an otherwise successful fixture with hidden controls");
-    for (fault, observation) in [("output", "text"), ("attribute", "attributes"), ("cursor", "cursor"), ("exit", "exit"), ("effect", "files"), ("file-mode", "mode")] {
+    case.args[1] = "osc-after".into();
+    if comparable(&expected) != comparable(&execute(&candidate, &case)?) { return Err("OSC terminators were counted as audible bells".into()); }
+    for (fault, observation) in [("output", "text"), ("attribute", "attributes"), ("cursor", "cursor"), ("exit", "exit"), ("effect", "files"), ("file-mode", "mode"), ("bell-after", "final_bells")] {
         case.args[1] = fault.into();
         let actual = execute(&candidate, &case)?;
         let difference = first_difference(&comparable(&expected), &comparable(&actual), "observation").ok_or("mutation was missed")?;
@@ -473,7 +499,7 @@ pub fn selftest() -> Result<()> {
         return Err("candidate did not restore its terminal and preserve HUP signal death".into());
     }
     println!("candidate HUP safety: represented modes restored, signal death preserved; oracle leak remains a parked divergence");
-    let report = json!({"candidate_hangup_safety": hangup, "candidate_large_navigation_safety":large_navigation, "primary_transition":primary_transition, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location", "pipe-argv-env-foreground", "pipe-code-signal", "pipe-timeout-reap", "queued-input-retention", "plain-text-hidden-control", "parallel-order-timeout-drain", "file-mode"], "oracle_a": a, "oracle_b": b});
+    let report = json!({"candidate_hangup_safety": hangup, "candidate_large_navigation_safety":large_navigation, "primary_transition":primary_transition, "runner_executable": super::digest(&[candidate])?, "metadata": super::metadata(Path::new(env!("CARGO_BIN_EXE_lz")))?, "faults_detected": ["output", "attribute", "cursor", "exit", "effect", "timeout", "stderr", "large-effect-suffix", "fixture-bounds", "identity-location", "pipe-argv-env-foreground", "pipe-code-signal", "pipe-timeout-reap", "queued-input-retention", "plain-text-hidden-control", "parallel-order-timeout-drain", "file-mode", "final-bell", "osc-bell-terminator"], "oracle_a": a, "oracle_b": b});
     let path = super::stdio::world()?.keep().join("selftest.json");
     fs::write(&path, serde_json::to_vec_pretty(&report)?)?;
     println!("oracle independent-world startup/quit/lifecycle self-comparison passes; {}", path.display());

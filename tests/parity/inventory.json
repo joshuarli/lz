@@ -84,7 +84,10 @@
         "navigation-invalid-dollar",
         "navigation-invalid-tilde",
         "navigation-invalid-backslash",
-        "navigation-invalid-count"
+        "navigation-invalid-count",
+        "invocation-one-screen-invalid-command",
+        "invocation-one-screen-invalid-command-silent",
+        "invocation-one-screen-invalid-repeat"
       ],
       "implementation": "unassessed",
       "evidence": "not tested",
