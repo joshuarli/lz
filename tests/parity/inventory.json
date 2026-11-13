@@ -8407,9 +8407,9 @@
       "file": "lesstest/lt/colorbars.lt",
       "sha256": "31955351b939e145948079a5a040a5590f061b01b9361698209381a7d57ff132",
       "instrumented": "pass",
-      "cases": ["upstream-colorbars-scroll", "upstream-colorbars-page", "upstream-colorbars-info", "upstream-colorbars-chop", "upstream-colorbars-horizontal"],
+      "cases": ["upstream-colorbars-scroll", "upstream-colorbars-page", "upstream-colorbars-info", "upstream-colorbars-chop", "upstream-colorbars-horizontal", "upstream-colorbars-right-cycle"],
       "disposition": "partial translation",
-      "cause": "The original fixture and first four line-scroll steps, subsequent page, EOF file-information notice, chop toggle and first counted right arrow are covered with generic-terminal checkpoints. Remaining commands and custom termcap checkpoints are untranslated."
+      "cause": "The original fixture, initial movements, file-information notice, chop toggle and counted and single-column right-arrow cycles pass generic-terminal checkpoints. Later searches, option changes and original custom termcap remain untranslated."
     },
     {
       "id": "github216",

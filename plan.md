@@ -150,6 +150,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12av accepted:** interactive differential cases use the pinned reference build's `lessecho` helper unless overridden; setup checks its version and fails when it is absent. Missing-file examine cases and all 51 admitted session cases passed on macOS arm64 and Linux arm64 Docker. The test environment contract changed.
 
+**S12bd accepted (partial translation):** the original `colorbars` sequence through its counted and single-column right-arrow cycles passes generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Later searches, option changes, per-key checks and original custom termcap remain open.
+
 **S12bc accepted:** generator version 16 passed fixed seeds 0–999 on macOS arm64 and Linux arm64 Docker. Commit-seeded and held-out campaigns remain open; native Linux remains unproven.
 
 **S04au accepted (partial):** startup `--PROC-BACKSPACE` displays backspaces as controls in the tested regular, color, one-screen, wide and combining views; lowercase restores overstrike processing. Ten focused cases passed on macOS arm64 and Linux arm64 Docker. The 76 previously admitted rendering cases, five layout tests and all-target Clippy passed on macOS. `BackspaceDisplay` changes the public pager and one-screen configuration. Interactive toggles, `-u`/`-U`, search conversion and mixed overrides remain open; exact Linux en_US.UTF-8 remains untested.
