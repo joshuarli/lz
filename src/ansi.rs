@@ -99,11 +99,36 @@ fn escape_seq_len(bytes: &[u8], pos: usize) -> usize {
     }
 }
 
-fn string_escape_seq_len(line: &str, position: usize) -> usize {
+pub(crate) fn string_escape_seq_len(line: &str, position: usize) -> usize {
     let length = escape_seq_len(line.as_bytes(), position);
     let mut end = position + length;
     while !line.is_char_boundary(end) { end += 1; }
     end - position
+}
+
+pub(crate) fn sgr_inverse(sequence: &[u8], mut inverse: bool) -> bool {
+    let Some(parameters) = sequence.strip_prefix(b"\x1b[").and_then(|bytes| bytes.strip_suffix(b"m")) else { return inverse; };
+    if !parameters.iter().all(|byte| byte.is_ascii_digit() || matches!(byte, b';' | b':')) { return inverse; }
+    let number = |bytes: &[u8]| -> Option<u32> {
+        if bytes.is_empty() { Some(0) } else { std::str::from_utf8(bytes).ok()?.parse().ok() }
+    };
+    let mut fields = parameters.split(|byte| *byte == b';');
+    while let Some(field) = fields.next() {
+        let mut parts = field.split(|byte| *byte == b':');
+        let Some(code) = parts.next().and_then(number) else { continue; };
+        match code {
+            0 => inverse = false,
+            7 => inverse = true,
+            27 => inverse = false,
+            38 | 48 | 58 if !field.contains(&b':') => match fields.next().and_then(number) {
+                Some(2) => { for _ in 0..3 { fields.next(); } }
+                Some(5) => { fields.next(); }
+                _ => {}
+            },
+            _ => {}
+        }
+    }
+    inverse
 }
 
 /// Strip all ANSI escape sequences from a line, returning visible text only.
@@ -322,6 +347,17 @@ fn is_sgr_reset(seq: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn inverse_state_ignores_color_components_and_follows_resets() {
+        assert!(sgr_inverse(b"\x1b[7m", false));
+        assert!(!sgr_inverse(b"\x1b[27m", true));
+        assert!(!sgr_inverse(b"\x1b[m", true));
+        assert!(!sgr_inverse(b"\x1b[38;2;7;27;0m", false));
+        assert!(sgr_inverse(b"\x1b[48;5;27m", true));
+        assert!(sgr_inverse(b"\x1b[38:2::7:27:0;7m", false));
+        assert!(!sgr_inverse(b"\x1b[38;2;7;27;0;27m", true));
+    }
 
     // --- strip_ansi ---
 

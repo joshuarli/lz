@@ -2041,27 +2041,39 @@ impl Pager {
         if let Some(ref search) = self.search
             && search.is_match(display)
         {
-            {
-                let stripped = strip_ansi(display);
-                let matches = search.find_matches_stripped(&stripped);
-                if !matches.is_empty() {
-                    let mut result = String::with_capacity(stripped.len() + matches.len() * 16);
-                    let mut last_end = 0;
-                    for (start, end) in &matches {
-                        if *start > last_end {
-                            result.push_str(&stripped[last_end..*start]);
-                        }
-                        result.push_str("\x1b[7m");
-                        result.push_str(&stripped[*start..*end]);
-                        result.push_str("\x1b[m");
-                        last_end = *end;
+            let stripped = strip_ansi(display);
+            let matches: Vec<_> = search.find_matches_stripped(&stripped).into_iter().filter(|(start, end)| start < end).collect();
+            if !matches.is_empty() {
+                let mut source = 0;
+                let mut visible = 0;
+                let mut next_match = 0;
+                let mut highlighted = false;
+                let mut inverse = false;
+                while source < display.len() {
+                    if highlighted && visible == matches[next_match].1 {
+                        if !inverse { buf.extend_from_slice(b"\x1b[27m"); }
+                        highlighted = false;
+                        next_match += 1;
                     }
-                    if last_end < stripped.len() {
-                        result.push_str(&stripped[last_end..]);
+                    if !highlighted && matches.get(next_match).is_some_and(|(start, _)| *start == visible) {
+                        buf.extend_from_slice(b"\x1b[7m");
+                        highlighted = true;
                     }
-                    buf.extend_from_slice(result.as_bytes());
-                    return;
+                    let escape = if display.as_bytes()[source] == 0x1b { crate::ansi::string_escape_seq_len(display, source) } else { 0 };
+                    if escape > 0 {
+                        let sequence = &display.as_bytes()[source..source + escape];
+                        inverse = crate::ansi::sgr_inverse(sequence, inverse);
+                        buf.extend_from_slice(sequence);
+                        if highlighted && sequence.starts_with(b"\x1b[") && sequence.ends_with(b"m") { buf.extend_from_slice(b"\x1b[7m"); }
+                        source += escape;
+                    } else {
+                        buf.push(display.as_bytes()[source]);
+                        source += 1;
+                        visible += 1;
+                    }
                 }
+                if highlighted && !inverse { buf.extend_from_slice(b"\x1b[27m"); }
+                return;
             }
         }
         buf.extend_from_slice(display.as_bytes());

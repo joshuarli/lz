@@ -992,7 +992,11 @@
         "search-posix-escaped-right-angle",
         "search-posix-boundary-after-punctuation",
         "search-posix-boundary-before-punctuation",
-        "search-missing-acknowledgment"
+        "search-missing-acknowledgment",
+        "search-highlight-malformed-utf8",
+        "search-highlight-color-notation",
+        "search-highlight-sgr-inside-match",
+        "search-highlight-existing-inverse"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
@@ -3912,7 +3916,11 @@
         "rendering-long-sgr-combining-leading",
         "rendering-long-osc8-bel",
         "rendering-long-osc8-split-st",
-        "rendering-combining-at-right-edge"
+        "rendering-combining-at-right-edge",
+        "search-highlight-malformed-utf8",
+        "search-highlight-color-notation",
+        "search-highlight-sgr-inside-match",
+        "search-highlight-existing-inverse"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
