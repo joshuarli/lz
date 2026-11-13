@@ -165,7 +165,10 @@ impl LineEditor {
 enum CommandContext { StartupUnpositioned, StartupPositioned, StartupAborted, Interactive }
 
 #[derive(Clone, PartialEq)]
-struct CommandError { action: ErrorAction, context: CommandContext, remainder: Vec<u8> }
+struct CommandError { action: ErrorAction, context: CommandContext, remainder: Vec<u8>, destination: ErrorDestination }
+
+#[derive(Clone, PartialEq)]
+enum ErrorDestination { Normal, Help }
 
 #[derive(Clone, PartialEq)]
 enum ErrorAction { Retry(Key), Dismiss }
@@ -916,7 +919,7 @@ impl Pager {
         self.command_context = CommandContext::Interactive;
         self.bell_requested = true;
         if matches!(self.mode, Mode::SetMark | Mode::JumpMark | Mode::FileCommand(_) | Mode::CommandError(_)) {
-            self.mode = Mode::Normal;
+            self.mode = if matches!(&self.mode, Mode::CommandError(error) if error.destination == ErrorDestination::Help) { Mode::Help } else { Mode::Normal };
             self.status_msg = None;
             self.filename_prompt = false;
             false
@@ -975,11 +978,11 @@ impl Pager {
             }
             Mode::Help => {
                 self.handle_help_key(key);
-                self.standalone_help.is_some() && self.mode != Mode::Help
+                self.standalone_help.is_some() && self.mode == Mode::Normal
             }
             Mode::Follow => self.handle_follow_key(key),
             Mode::CommandError(error) => {
-                self.mode = Mode::Normal;
+                self.mode = if error.destination == ErrorDestination::Help { Mode::Help } else { Mode::Normal };
                 self.command_context = error.context;
                 self.status_msg = None;
                 if let ErrorAction::Retry(command) = error.action && self.handle_normal_key(command) { return true; }
@@ -1113,17 +1116,22 @@ impl Pager {
 
     fn command_error(&mut self, message: String, action: ErrorAction) {
         self.status_msg = Some(format!("{message}  (press RETURN)"));
-        self.mode = Mode::CommandError(CommandError { action, context: self.command_context, remainder: Vec::new() });
+        self.mode = Mode::CommandError(CommandError { action, context: self.command_context, remainder: Vec::new(), destination: ErrorDestination::Normal });
     }
 
     fn handle_help_key(&mut self, key: Key) {
         if let Some(prefix) = self.help_prefix.take() {
             if matches!((prefix, &key), (HelpPrefix::Colon(_), Key::Char('q' | 'Q')) | (HelpPrefix::Quit, Key::Char('Z'))) {
                 self.leave_help();
-            } else if let (HelpPrefix::Colon(count), Key::Char('n'), Some(HelpFiles::Registered)) = (prefix, &key, self.standalone_help)
-                && count.get() <= self.files.count {
-                self.exit = PagerExit::VisitFile(FileVisit { index:count.get() - 1, startup_command:None });
-                self.mode = Mode::Normal;
+            } else if let (HelpPrefix::Colon(count), Key::Char('n'), Some(files)) = (prefix, &key, self.standalone_help) {
+                if files == HelpFiles::Registered && count.get() <= self.files.count {
+                    self.exit = PagerExit::VisitFile(FileVisit { index:count.get() - 1, startup_command:None });
+                    self.mode = Mode::Normal;
+                } else {
+                    let ordinal = if count.get() > 1 { "(N-th) " } else { "" };
+                    self.command_error(format!("No {ordinal}next file"), ErrorAction::Dismiss);
+                    if let Mode::CommandError(error) = &mut self.mode { error.destination = ErrorDestination::Help; }
+                }
             } else if key != Key::Ctrl('c') { self.bell_requested = true; }
             return;
         }

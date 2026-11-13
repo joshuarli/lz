@@ -580710,5 +580710,236 @@
     ]
   },
   "trace_check": "captured"
+},
+{
+  "id": "invocation-help-no-next-file",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        58,
+        110
+      ]
+    },
+    {
+      "type": "checkpoint",
+      "ready": "No next file",
+      "row": 23
+    },
+    {
+      "type": "send",
+      "bytes": [
+        10
+      ]
+    },
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-next-file-out-of-range",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "--help",
+    "input"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        50,
+        58,
+        110
+      ]
+    },
+    {
+      "type": "checkpoint",
+      "ready": "No (N-th) next file",
+      "row": 23
+    },
+    {
+      "type": "send",
+      "bytes": [
+        10
+      ]
+    },
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-no-next-file-replay",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        58,
+        110
+      ]
+    },
+    {
+      "type": "checkpoint",
+      "ready": "No next file",
+      "row": 23
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
+},
+{
+  "id": "invocation-help-no-next-file-interrupt",
+  "family": "invocation",
+  "admitted": true,
+  "source": "pty",
+  "fixture": [],
+  "args": [
+    "--help"
+  ],
+  "env": {},
+  "size": [
+    80,
+    24
+  ],
+  "locale": "C",
+  "events": [
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        58,
+        110
+      ]
+    },
+    {
+      "type": "checkpoint",
+      "ready": "No next file",
+      "row": 23
+    },
+    {
+      "type": "send",
+      "bytes": [
+        3
+      ]
+    },
+    {
+      "type": "checkpoint",
+      "ready": "SUMMARY OF LESS COMMANDS",
+      "row": 1
+    },
+    {
+      "type": "send",
+      "bytes": [
+        113
+      ]
+    }
+  ],
+  "fixture_name": [
+    105,
+    110,
+    112,
+    117,
+    116
+  ],
+  "files": {}
 }
 ]

@@ -2239,11 +2239,15 @@
         "invocation-help-next-stdin",
         "invocation-help-next-file-numbered",
         "invocation-help-next-file-count",
-        "invocation-help-next-file-preprocessed"
+        "invocation-help-next-file-preprocessed",
+        "invocation-help-no-next-file",
+        "invocation-help-next-file-out-of-range",
+        "invocation-help-no-next-file-replay",
+        "invocation-help-no-next-file-interrupt"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Redirected and terminal help cases pass, including startup end, navigation, screen options and piped input; backward file transitions, out-of-range counts, tags and remaining help interactions remain open"
+      "cause": "Redirected and terminal help cases pass, including startup end, navigation, screen options and piped input; backward file transitions, tags and remaining help interactions remain open"
     },
     {
       "id": "man-0635",
