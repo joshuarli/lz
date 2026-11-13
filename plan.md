@@ -42,6 +42,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S04at:** `-j` positions line jumps and searches on fixed or fractional screen rows. Twenty-three cases cover repeats, movement, diagnostics, resize and precedence on macOS. A focused subset passes in a Linux arm64 container. The observed startup behavior clamps negative rows to the top. Wrapped and filtered positions, headers, percentage jumps and interactive changes remain open. `JumpTarget` is part of the public pager configuration. Initial resize also clears the filename prompt.
 
+**S02h:** 19 duplicate numbered fixtures use a bounded additive recipe. Both original fixture byte sequences were compared before replacement. All 19 cases, harness self-tests and Clippy passed. Existing inline and repeated recipes remain supported.
+
 The following work remains local and actionable: complete the nonparked S04–S11 behaviors and interactions, upstream scenario translations, bounded fuzzing and holdouts, parity CI checks, final performance and size gates, cleanup, and independent review. The inventory retains behavior-specific causes and cases. The S06 shared renderer still needs bounded long-line startup, Unicode, OSC, and multirow handling. POSIX search, cancellation, headers, helper and pipe transitions, history concurrency, and lifecycle hardening remain incomplete.
 
 Parked conditions are:

@@ -7,7 +7,7 @@ const GENERATED_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
-pub(super) enum Fixture { Bytes(Vec<u8>), Repeated(Repeat) }
+pub(super) enum Fixture { Bytes(Vec<u8>), Repeated(Repeat), Numbered(Numbered) }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -17,6 +17,14 @@ pub(super) struct Repeat {
     pub suffix: Vec<u8>,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct Numbered { numbered: NumberedLines }
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct NumberedLines { count: u32, needle_lines: Vec<u32> }
+
 impl From<Vec<u8>> for Fixture { fn from(bytes: Vec<u8>) -> Self { Self::Bytes(bytes) } }
 
 impl Fixture {
@@ -24,6 +32,13 @@ impl Fixture {
         let invalid = |message| io::Error::new(io::ErrorKind::InvalidInput, message);
         match self {
             Self::Bytes(bytes) => if bytes.len() > INLINE_BYTES { return Err(invalid("large inline fixture requires a streaming recipe")); },
+            Self::Numbered(recipe) => {
+                if recipe.numbered.count > 999_999
+                    || recipe.numbered.needle_lines.iter().any(|line| *line == 0 || *line > recipe.numbered.count)
+                    || recipe.numbered.needle_lines.windows(2).any(|pair| pair[0] >= pair[1]) {
+                    return Err(invalid("invalid numbered fixture"));
+                }
+            }
             Self::Repeated(recipe) => {
                 if recipe.repeat.len() > BLOCK_BYTES || recipe.suffix.len() > INLINE_BYTES || (recipe.count != 0 && recipe.repeat.is_empty()) {
                     return Err(invalid("invalid or oversized repeat unit/suffix"));
@@ -39,6 +54,14 @@ impl Fixture {
         self.validate()?;
         match self {
             Self::Bytes(bytes) => output.write_all(bytes),
+            Self::Numbered(recipe) => {
+                let mut needle_lines = recipe.numbered.needle_lines.iter().peekable();
+                for line in 1..=recipe.numbered.count {
+                    if needle_lines.peek() == Some(&&line) { output.write_all(b"needle ")?; needle_lines.next(); }
+                    writeln!(output, "{line:06} mark row")?;
+                }
+                Ok(())
+            }
             Self::Repeated(recipe) => {
                 if recipe.count > 0 {
                     let repetitions = BLOCK_BYTES / recipe.repeat.len();
@@ -65,6 +88,16 @@ pub(super) fn selftest() -> super::Result<()> {
     if empty.validate().is_ok() || oversized.validate().is_ok() { return Err("invalid repeat resource bounds accepted".into()); }
     if serde_json::from_value::<Fixture>(serde_json::json!({"repeat":[1],"count":1,"suffix":[],"unknown":true})).is_ok() {
         return Err("unknown fixture recipe field accepted".into());
+    }
+    let numbered = Fixture::Numbered(Numbered { numbered:NumberedLines { count:3, needle_lines:vec![2] } });
+    let mut output = Vec::new();
+    numbered.write_to(&mut output)?;
+    if output != b"000001 mark row\nneedle 000002 mark row\n000003 mark row\n" { return Err("numbered fixture bytes differ".into()); }
+    for needle_lines in [vec![0], vec![4], vec![2, 2], vec![3, 2]] {
+        if Fixture::Numbered(Numbered { numbered:NumberedLines { count:3, needle_lines } }).validate().is_ok() { return Err("invalid numbered fixture accepted".into()); }
+    }
+    if serde_json::from_value::<Fixture>(serde_json::json!({"numbered":{"count":3,"needle_lines":[],"unknown":true}})).is_ok() {
+        return Err("unknown numbered fixture field accepted".into());
     }
     println!("streamed fixture bytes match across block boundaries; empty/oversized recipes rejected");
     Ok(())
