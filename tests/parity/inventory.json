@@ -8373,9 +8373,9 @@
       "file": "lesstest/lt/chinese1.lt",
       "sha256": "d81a2c4d23f16ab28169e62f7be6dbf54090a1d0ea332f7ba7f9453b0afae1d7",
       "instrumented": "pass",
-      "cases": ["upstream-chinese1-scroll", "upstream-chinese1-force-boundary"],
+      "cases": ["upstream-chinese1-scroll", "upstream-chinese1-force-boundary", "upstream-chinese1-missing-search"],
       "disposition": "partial translation",
-      "cause": "The original fixture and first six scrolling steps are covered with a generic terminal. Remaining keys and original custom termcap checkpoints are untranslated."
+      "cause": "The original fixture, first six scrolling steps and subsequent missing search are covered with a generic terminal. Remaining keys and original custom termcap checkpoints are untranslated."
     },
     {
       "id": "colorbars",
