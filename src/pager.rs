@@ -208,6 +208,10 @@ pub struct OneScreenOptions {
     pub line_numbers: bool,
 }
 
+fn is_unbound_ascii(character: char) -> bool {
+    matches!(character, '"' | '$' | '*' | ',' | ';' | '@' | 'A' | 'B' | 'C' | 'D' | 'I' | 'L' | 'O' | 'S' | 'U' | 'W' | 'X' | '\\' | '^' | '`' | 'a' | 'c' | 'i' | 'l' | 'o' | 'x' | '~')
+}
+
 fn number_gutter(line: usize, width: usize, enabled: bool) -> String {
     if !enabled { return String::new(); }
     format!("{:>7} ", line + 1).chars().take(width).collect()
@@ -407,6 +411,7 @@ pub struct Pager {
     command_context: CommandContext,
     bell_requested: bool,
     boundary_bell_requested: bool,
+    early_bells: usize,
 }
 
 impl Pager {
@@ -463,6 +468,7 @@ impl Pager {
             command_context: CommandContext::StartupUnpositioned,
             bell_requested: false,
             boundary_bell_requested: false,
+            early_bells: 0,
         }
     }
 
@@ -543,6 +549,7 @@ impl Pager {
     /// Execute startup commands before deciding whether a one-screen source can exit.
     pub fn run_one_screen_startup(&mut self, keys: &mut KeyReader) -> io::Result<PagerExit> {
         if self.run_startup_commands(keys, StartupRun::UntilOneScreen)? { return self.finish_run(); }
+        self.flush_early_bell()?;
         if self.mode == Mode::Normal && self.top_line == 0 && self.filter.is_none() {
             self.render_frame(false)?;
             return self.finish_run();
@@ -595,6 +602,8 @@ impl Pager {
                 continue;
             }
 
+            self.flush_early_bell()?;
+            if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return self.finish_run(); }
             if self.buffer.refresh_waiting() { redraw = true; }
             if let Some(error) = self.buffer.take_error() { return Err(error); }
             if redraw {
@@ -649,7 +658,21 @@ impl Pager {
         Ok(true)
     }
 
+    fn flush_early_bell(&mut self) -> io::Result<()> {
+        let count = std::mem::take(&mut self.early_bells);
+        if count > 0 {
+            let mut output = io::stdout().lock();
+            for _ in 0..count {
+                self.bell_policy.write_to(&mut output, terminal::BellKind::General)?;
+                if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { break; }
+            }
+            output.flush()?;
+        }
+        Ok(())
+    }
+
     fn finish_run(&mut self) -> io::Result<PagerExit> {
+        self.flush_early_bell()?;
         if matches!(self.exit, PagerExit::Interrupted) && std::mem::take(&mut self.bell_requested) {
             let mut output = io::stdout().lock();
             self.bell_policy.write_to(&mut output, terminal::BellKind::General)?;
@@ -872,6 +895,7 @@ impl Pager {
             Key::Char('h') => {
                 self.mode = Mode::Help;
             }
+            Key::Char(character) if is_unbound_ascii(character) => self.early_bells = self.early_bells.saturating_add(1),
             _ => {}
         }
         false

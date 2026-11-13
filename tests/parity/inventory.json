@@ -77,7 +77,15 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
+      "cases": [
+        "navigation-invalid-at",
+        "navigation-invalid-comma",
+        "navigation-invalid-uppercase",
+        "navigation-invalid-dollar",
+        "navigation-invalid-tilde",
+        "navigation-invalid-backslash",
+        "navigation-invalid-count"
+      ],
       "implementation": "unassessed",
       "evidence": "not tested",
       "cause": "No distinguishing differential scenario yet"
@@ -3612,8 +3620,8 @@
         "invocation-quiet-invalid"
       ],
       "implementation": "partial",
-      "evidence": "partially compatible",
-      "cause": "Named cases cover xterm visual or audible feedback for boundaries, prompts and interrupts. Unknown-command feedback differs, and other terminal capabilities remain open."
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named cases cover xterm visual or audible feedback for boundaries, invalid commands, prompts and interrupts. Other terminal capabilities remain open."
     },
     {
       "id": "man-1109",
@@ -3643,8 +3651,8 @@
         "invocation-silent-invalid"
       ],
       "implementation": "partial",
-      "evidence": "partially compatible",
-      "cause": "Named cases cover xterm visual or audible feedback for boundaries, prompts and interrupts. Unknown-command feedback differs, and other terminal capabilities remain open."
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named cases cover xterm visual or audible feedback for boundaries, invalid commands, prompts and interrupts. Other terminal capabilities remain open."
     },
     {
       "id": "man-1114",
