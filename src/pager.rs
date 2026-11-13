@@ -632,7 +632,9 @@ impl Pager {
             let key = if self.mode == Mode::Follow {
                 let new_lines = self.buffer.poll_new_lines();
                 if new_lines > 0 {
+                    self.leading_rows = 0;
                     self.scroll_to_bottom();
+                    self.bottom_aligned = true;
                     redraw = true;
                 }
                 match keys.read_key_timeout(100)? {

@@ -483361,5 +483361,77 @@
     ],
     "files": {},
     "trace_check": "captured"
+  },
+  {
+    "id": "invocation-quit-one-screen-follow-small-growth",
+    "family": "invocation",
+    "admitted": true,
+    "source": "pty",
+    "fixture": [
+      111,
+      114,
+      105,
+      103,
+      105,
+      110,
+      97,
+      108,
+      32,
+      98,
+      111,
+      100,
+      121,
+      10
+    ],
+    "args": [
+      "-F",
+      "+F",
+      "input"
+    ],
+    "env": {},
+    "size": [
+      80,
+      24
+    ],
+    "locale": "C",
+    "events": [
+      {
+        "type": "checkpoint",
+        "ready": "Waiting for data",
+        "row": 23
+      },
+      {
+        "type": "append",
+        "bytes": [
+          108,
+          105,
+          110,
+          101,
+          32,
+          49,
+          10
+        ]
+      },
+      {
+        "type": "checkpoint",
+        "ready": "line 1",
+        "row": 22
+      },
+      {
+        "type": "send",
+        "bytes": [
+          24
+        ]
+      }
+    ],
+    "fixture_name": [
+      105,
+      110,
+      112,
+      117,
+      116
+    ],
+    "files": {},
+    "trace_check": "captured"
   }
 ]
