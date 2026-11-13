@@ -147,7 +147,7 @@ impl OptionCommand {
 }
 
 #[derive(Clone, PartialEq)]
-enum OptionName { Typing(String), Raw, Color, LineNumbers, DisplayLineNumbers, Chop, ChopUpper, UseColor, UseColorUpper }
+enum OptionName { Typing(String), Raw, Color, LineNumbers, DisplayLineNumbers, Chop, ChopUpper, UseColor, UseColorUpper, IncrementalSearch, IncrementalSearchUpper }
 
 #[derive(Clone, Copy)]
 enum HelpPrefix { Colon(std::num::NonZeroUsize), Quit }
@@ -733,6 +733,8 @@ pub struct Config {
     pub controls: ControlDisplay,
     /// Select UI colors; prompt, notice and tested search colors are implemented.
     pub use_color: bool,
+    /// Enable incremental search while editing a search pattern.
+    pub incremental_search: bool,
     pub chop: bool,
     pub line_numbers: LineNumberMode,
     pub line_number_width: LineNumberWidth,
@@ -768,6 +770,8 @@ pub struct Pager {
     search_highlight: bool,
     search_nonmatch: bool,
     search_input_nonmatch: bool,
+    incremental_search: bool,
+    incremental_preview: Option<Search>,
     search_case: CaseSensitivity,
     search_start: SearchStart,
     jump_target: JumpTarget,
@@ -847,6 +851,8 @@ impl Pager {
             search_highlight: config.search_session.highlight,
             search_nonmatch: config.search_session.nonmatch,
             search_input_nonmatch: false,
+            incremental_search: config.incremental_search,
+            incremental_preview: None,
             search_case: config.search_case,
             search_start: config.search_start,
             jump_target: config.jump_target,
@@ -913,6 +919,8 @@ impl Pager {
 
     /// Return the selected pager UI color mode.
     pub fn use_color(&self) -> bool { self.use_color }
+    /// Return whether interactive incremental search is enabled.
+    pub fn incremental_search(&self) -> bool { self.incremental_search }
 
     /// Return the selected line-number option state.
     pub fn line_numbers(&self) -> LineNumberMode { self.line_numbers }
@@ -1248,6 +1256,22 @@ impl Pager {
         }
     }
 
+    fn apply_incremental_search_option(&mut self, command: OptionCommand) {
+        self.incremental_search = match command {
+            OptionCommand::Toggle | OptionCommand::ToggleQuietly => !self.incremental_search,
+            OptionCommand::Reset | OptionCommand::ResetQuietly => false,
+            OptionCommand::Set | OptionCommand::SetQuietly => true,
+            OptionCommand::Query => self.incremental_search,
+        };
+        let repaint = self.squished;
+        if repaint { self.position_initialized(); }
+        let message = if self.incremental_search { "Incremental search is on" } else { "Incremental search is off" };
+        if !matches!(command, OptionCommand::ToggleQuietly | OptionCommand::ResetQuietly | OptionCommand::SetQuietly) {
+            self.status_msg = Some(format!("{message}  (press RETURN)"));
+            self.mode = Mode::OptionNotice { repaint };
+        }
+    }
+
     fn show_file_info(&mut self) {
         if self.filter.is_none() && self.files.count == 1
             && let (Some(name), Some(last)) = (&self.filename, self.last_visible_line)
@@ -1301,13 +1325,14 @@ impl Pager {
                     (OptionName::DisplayLineNumbers, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_line_number_option(command, 'N'); }
                     (OptionName::Chop | OptionName::ChopUpper, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_chop_option(command); }
                     (OptionName::UseColor | OptionName::UseColorUpper, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_use_color_option(command); }
+                    (OptionName::IncrementalSearch | OptionName::IncrementalSearchUpper, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_incremental_search_option(command); }
                     (OptionName::Typing(name), Key::Enter | Key::Char('=')) => {
                         let repaint = self.squished;
                         if repaint { self.position_initialized(); }
                         self.status_msg = Some(format!("There is no --{name} option  (press RETURN)"));
                         self.mode = Mode::OptionNotice { repaint };
                     }
-                    (_, Key::Escape) | (OptionName::Raw | OptionName::Color | OptionName::LineNumbers | OptionName::DisplayLineNumbers | OptionName::Chop | OptionName::ChopUpper | OptionName::UseColor | OptionName::UseColorUpper, Key::Backspace) => self.mode = Mode::Normal,
+                    (_, Key::Escape) | (OptionName::Raw | OptionName::Color | OptionName::LineNumbers | OptionName::DisplayLineNumbers | OptionName::Chop | OptionName::ChopUpper | OptionName::UseColor | OptionName::UseColorUpper | OptionName::IncrementalSearch | OptionName::IncrementalSearchUpper, Key::Backspace) => self.mode = Mode::Normal,
                     (OptionName::Typing(mut name), Key::Backspace) => {
                         if name.is_empty() { self.mode = Mode::Normal; }
                         else { name.pop(); self.mode = Mode::OptionLong(command, OptionName::Typing(name)); }
@@ -1325,6 +1350,10 @@ impl Pager {
                             }
                             Ok(option) if option.canonical_name() == "chop-long-lines" => {
                                 let completed = if name.as_bytes()[0].is_ascii_uppercase() { OptionName::ChopUpper } else { OptionName::Chop };
+                                self.mode = Mode::OptionLong(command, completed);
+                            }
+                            Ok(option) if option.canonical_name() == "incsearch" => {
+                                let completed = if name.as_bytes()[0].is_ascii_uppercase() { OptionName::IncrementalSearchUpper } else { OptionName::IncrementalSearch };
                                 self.mode = Mode::OptionLong(command, completed);
                             }
                             Ok(option) if option.canonical_name() == "use-color" => {
@@ -1546,6 +1575,7 @@ impl Pager {
                 self.mode = Mode::SearchInput;
                 self.search_input.clear();
                 self.search_input_nonmatch = false;
+                self.incremental_preview = None;
                 self.history.reset_cursor();
             }
             Key::Char('?') => {
@@ -1553,6 +1583,7 @@ impl Pager {
                 self.mode = Mode::SearchInput;
                 self.search_input.clear();
                 self.search_input_nonmatch = false;
+                self.incremental_preview = None;
                 self.history.reset_cursor();
             }
             Key::Char('n') => self.search_same_dir(),
@@ -1752,6 +1783,7 @@ impl Pager {
     }
 
     fn handle_search_input_key(&mut self, key: Key) {
+        let before = self.incremental_search.then(|| self.search_input.content.clone());
         match key {
             Key::Escape => self.mode = Mode::Normal,
             Key::Ctrl('c') => { self.history.push(&self.search_input.content); self.mode = Mode::Normal; self.bell_requested = true; }
@@ -1760,7 +1792,15 @@ impl Pager {
                 let pattern = self.search_input.content.clone();
                 self.mode = Mode::Normal;
                 self.history.push(&pattern);
-                if pattern.is_empty() { return; }
+                if pattern.is_empty() { self.incremental_preview = None; return; }
+                if let Some(search) = self.incremental_preview.take() {
+                    self.search = Some(search);
+                    self.search_nonmatch = self.search_input_nonmatch;
+                    self.search_inherited = false;
+                    self.search_highlight = true;
+                    self.current_match_line = Some(self.target_line());
+                    return;
+                }
                 match Search::new(&pattern, self.search_case) {
                     Ok(s) => {
                         self.search = Some(s);
@@ -1801,6 +1841,30 @@ impl Pager {
             Key::Char(ch) => self.search_input.insert(ch),
             _ => {}
         }
+        if self.mode == Mode::SearchInput && before.as_deref().is_some_and(|before| before != self.search_input.content) {
+            self.update_incremental_search();
+        } else if self.mode != Mode::SearchInput {
+            self.incremental_preview = None;
+        }
+    }
+
+    fn update_incremental_search(&mut self) {
+        let Ok(search) = Search::new(&self.search_input.content, self.search_case) else {
+            self.incremental_preview = None;
+            return;
+        };
+        let target = self.target_line();
+        let forward = self.search_dir == SearchDir::Forward;
+        let from = if forward { target } else { target.saturating_add(1) };
+        let found = if self.search_input_nonmatch { search.find_next_nonmatching_line(&mut self.buffer, from, forward) }
+            else { search.find_next_line(&mut self.buffer, from, forward) };
+        if let Some(line) = found {
+            self.position_initialized();
+            let row = self.jump_target.row(self.term_height);
+            self.top_line = line.saturating_sub(row);
+            self.leading_rows = row.saturating_sub(line);
+            self.incremental_preview = Some(search);
+        } else { self.incremental_preview = None; }
     }
 
     fn search_same_dir(&mut self) {
@@ -2373,7 +2437,8 @@ impl Pager {
 
     fn write_line_with_search(&self, buf: &mut Vec<u8>, display: &[u8]) {
         let Ok(display) = std::str::from_utf8(display) else { buf.extend_from_slice(display); return; };
-        if self.search_highlight && let Some(ref search) = self.search
+        if (self.search_highlight || self.incremental_preview.is_some())
+            && let Some(search) = self.incremental_preview.as_ref().or(self.search.as_ref())
             && search.is_match(display)
         {
             let stripped = strip_ansi(display);
@@ -2513,7 +2578,7 @@ impl Pager {
         if let Mode::OptionPrefix(command) = self.mode { return match command { OptionCommand::Toggle => "-", OptionCommand::ToggleQuietly => "-(P)", OptionCommand::Reset => "-+", OptionCommand::ResetQuietly => "-(P)+", OptionCommand::Set => "-!", OptionCommand::SetQuietly => "-(P)!", OptionCommand::Query => "_" }.into(); }
         if let Mode::OptionLong(command, ref name) = self.mode {
             let prefix = match command { OptionCommand::Toggle => "--", OptionCommand::ToggleQuietly => "--(P)", OptionCommand::Reset => "--+", OptionCommand::ResetQuietly => "--(P)+", OptionCommand::Set => "--!", OptionCommand::SetQuietly => "--(P)!", OptionCommand::Query => "__" };
-            let name = match name { OptionName::Typing(name) => name.as_str(), OptionName::Raw => "raw-control-chars", OptionName::Color => "RAW-CONTROL-CHARS", OptionName::LineNumbers => "line-numbers", OptionName::DisplayLineNumbers => "LINE-NUMBERS", OptionName::Chop => "chop-long-lines", OptionName::ChopUpper => "CHOP-LONG-LINES", OptionName::UseColor => "use-color", OptionName::UseColorUpper => "USE-COLOR" };
+            let name = match name { OptionName::Typing(name) => name.as_str(), OptionName::Raw => "raw-control-chars", OptionName::Color => "RAW-CONTROL-CHARS", OptionName::LineNumbers => "line-numbers", OptionName::DisplayLineNumbers => "LINE-NUMBERS", OptionName::Chop => "chop-long-lines", OptionName::ChopUpper => "CHOP-LONG-LINES", OptionName::UseColor => "use-color", OptionName::UseColorUpper => "USE-COLOR", OptionName::IncrementalSearch => "incsearch", OptionName::IncrementalSearchUpper => "INCSEARCH" };
             return format!("{prefix}{name}");
         }
         if matches!(self.mode, Mode::FileCommand(_)) { return " :".into(); }

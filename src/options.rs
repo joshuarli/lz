@@ -57,6 +57,7 @@ pub(super) struct Args {
     pub bell_policy: lz::terminal::BellPolicy,
     pub control_display: ControlDisplay,
     pub use_color: bool,
+    pub incremental_search: bool,
     pub chop: bool,
     pub line_numbers: lz::pager::LineNumberMode,
     pub line_number_width: lz::pager::LineNumberWidth,
@@ -76,7 +77,7 @@ pub(super) struct Args {
 
 impl Default for Args {
     fn default() -> Self {
-        Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, eof_policy: Default::default(), bell_policy: Default::default(), control_display: ControlDisplay::default(), use_color: false, chop: false, line_numbers: Default::default(), show_eof_markers: true, window: None, horizontal_shift: None, search_case: CaseSensitivity::Sensitive,
+        Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, eof_policy: Default::default(), bell_policy: Default::default(), control_display: ControlDisplay::default(), use_color: false, incremental_search: false, chop: false, line_numbers: Default::default(), show_eof_markers: true, window: None, horizontal_shift: None, search_case: CaseSensitivity::Sensitive,
             line_number_width: Default::default(), search_start: SearchStart::default(), jump_target: Default::default(), history_duplicates: Default::default(), tab_stops: Default::default(), filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
@@ -128,6 +129,7 @@ impl Scanner {
             "no-histdups" => self.args.history_duplicates = if reset { lz::history::DuplicatePolicy::Allow } else { lz::history::DuplicatePolicy::MoveToEnd },
             "raw-control-chars" => self.args.control_display = if reset { ControlDisplay::default() } else if upper { ControlDisplay::Color } else { ControlDisplay::Raw },
             "use-color" => self.args.use_color = !reset,
+            "incsearch" => self.args.incremental_search = !reset,
             "chop-long-lines" => self.args.chop = !reset,
             "line-numbers" => self.args.line_numbers = if reset { lz::pager::LineNumberMode::Enabled } else if upper { lz::pager::LineNumberMode::Displayed } else { lz::pager::LineNumberMode::Off },
             "tilde" => self.args.show_eof_markers = reset,
