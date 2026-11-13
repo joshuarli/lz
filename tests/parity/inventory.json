@@ -5091,10 +5091,24 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "integrations-lessopen-file",
+        "integrations-lessopen-empty",
+        "integrations-lessopen-nonzero",
+        "integrations-lessopen-secure-denied",
+        "integrations-lessopen-secure-allow",
+        "integrations-lessopen-short-disabled",
+        "integrations-lessopen-long-disabled",
+        "integrations-lessopen-cli-reset",
+        "integrations-lessopen-quoted-argument",
+        "integrations-lessopen-percent",
+        "integrations-lessopen-eof",
+        "integrations-lessopen-tty",
+        "integrations-lessopen-term"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "File-return preprocessors substitute one quoted filename, preserve literal percent escapes, read the first stdout line through LF/EOF, ignore nonzero exit after data, and fall back on empty output. Inert helpers prove hostile filename bytes, secure denial/allowance, -L/long/reset effects, foreground tty input and TERM cleanup. Live pipes, LESSCLOSE, custom shell/metachar settings, invalid-template diagnostics, interrupted/stopped helpers and further file transitions remain open."
     },
     {
       "id": "man-1869",
@@ -7019,10 +7033,24 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "integrations-lessopen-file",
+        "integrations-lessopen-empty",
+        "integrations-lessopen-nonzero",
+        "integrations-lessopen-secure-denied",
+        "integrations-lessopen-secure-allow",
+        "integrations-lessopen-short-disabled",
+        "integrations-lessopen-long-disabled",
+        "integrations-lessopen-cli-reset",
+        "integrations-lessopen-quoted-argument",
+        "integrations-lessopen-percent",
+        "integrations-lessopen-eof",
+        "integrations-lessopen-tty",
+        "integrations-lessopen-term"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "File-return preprocessors substitute one quoted filename, preserve literal percent escapes, read the first stdout line through LF/EOF, ignore nonzero exit after data, and fall back on empty output. Inert helpers prove hostile filename bytes, secure denial/allowance, -L/long/reset effects, foreground tty input and TERM cleanup. Live pipes, LESSCLOSE, custom shell/metachar settings, invalid-template diagnostics, interrupted/stopped helpers and further file transitions remain open."
     },
     {
       "id": "man-2426",
@@ -7052,11 +7080,13 @@
         "integrations-secure-stop-prefix",
         "integrations-secure-stop-empty",
         "integrations-secure-stop-keyboard-allow",
-        "integrations-secure-stop-keyboard-denied"
+        "integrations-secure-stop-keyboard-denied",
+        "integrations-lessopen-secure-denied",
+        "integrations-lessopen-secure-allow"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "The shared 12-feature parser preserves prefixes, spacing, case sensitivity and exact invalid/ambiguous diagnostics. History and external/keyboard stop effects obey the resolved permission mask, including nonempty 0 and explicit allowances. Primary diagnostic acknowledgment and binary transitions have named cases. Other feature effects and interactions remain open."
+      "cause": "The shared 12-feature parser preserves prefixes, spacing, case sensitivity and exact invalid/ambiguous diagnostics. History and external/keyboard stop effects obey the resolved permission mask, including nonempty 0 and explicit allowances. Primary diagnostic acknowledgment and binary transitions have named cases. Other feature effects and interactions remain open. The lessopen permission also gates actual file-return helper execution."
     },
     {
       "id": "man-2429",
@@ -7094,11 +7124,13 @@
         "integrations-secure-stop-prefix",
         "integrations-secure-stop-empty",
         "integrations-secure-stop-keyboard-allow",
-        "integrations-secure-stop-keyboard-denied"
+        "integrations-secure-stop-keyboard-denied",
+        "integrations-lessopen-secure-denied",
+        "integrations-lessopen-secure-allow"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "The shared 12-feature parser preserves prefixes, spacing, case sensitivity and exact invalid/ambiguous diagnostics. History and external/keyboard stop effects obey the resolved permission mask, including nonempty 0 and explicit allowances. Primary diagnostic acknowledgment and binary transitions have named cases. Other feature effects and interactions remain open."
+      "cause": "The shared 12-feature parser preserves prefixes, spacing, case sensitivity and exact invalid/ambiguous diagnostics. History and external/keyboard stop effects obey the resolved permission mask, including nonempty 0 and explicit allowances. Primary diagnostic acknowledgment and binary transitions have named cases. Other feature effects and interactions remain open. The lessopen permission also gates actual file-return helper execution."
     },
     {
       "id": "man-2432",

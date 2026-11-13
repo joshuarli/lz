@@ -119,6 +119,7 @@ pub(super) struct Args {
     pub tag: Option<OsString>,
     pub tags_file: Option<OsString>,
     pub force: bool,
+    pub use_lessopen: bool,
     pub control_display: ControlDisplay,
     pub chop: bool,
     pub line_numbers: bool,
@@ -132,7 +133,7 @@ pub(super) struct Args {
 
 impl Default for Args {
     fn default() -> Self {
-        Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, control_display: ControlDisplay::default(), chop: false, line_numbers: false, window: None, search_case: CaseSensitivity::Sensitive,
+        Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, control_display: ControlDisplay::default(), chop: false, line_numbers: false, window: None, search_case: CaseSensitivity::Sensitive,
             filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
@@ -183,6 +184,7 @@ impl Scanner {
             "help" => self.args.action = Action::Help,
             "version" => if !matches!(self.args.action, Action::Help) { self.args.action = Action::Version; },
             "force" => self.args.force = !reset,
+            "no-lessopen" => self.args.use_lessopen = reset,
             "quit-on-intr" => self.args.interrupt_policy = if reset { Default::default() } else { lz::pager::InterruptPolicy::Quit },
             "no-init" => self.args.terminal.screen = if reset { Default::default() } else { lz::terminal::ScreenMode::Preserve },
             "no-keypad" => self.args.terminal.keypad = if reset { Default::default() } else { lz::terminal::KeypadMode::Normal },

@@ -1,6 +1,7 @@
 mod options;
 mod security;
 mod tags;
+mod preprocessor;
 
 use lz::{buffer, history, pager, terminal};
 use lz::charset::Charset;
@@ -114,11 +115,12 @@ fn finish_session(result: io::Result<ExitAction>, session: terminal::Session) ->
 
 struct OpenedInput { buffer: buffer::LineBuffer, name: Option<String>, binary_name: Option<OsString> }
 
-fn open_input(filename: &std::ffi::OsStr, charset: Charset, controls: ControlDisplay, force: bool) -> io::Result<OpenedInput> {
+fn open_input(filename: &std::ffi::OsStr, charset: Charset, controls: ControlDisplay, force: bool, preprocessor: Option<&preprocessor::Template>, session: &mut terminal::Session) -> io::Result<OpenedInput> {
     if filename == "-" {
         return Ok(OpenedInput { buffer: buffer::LineBuffer::from_stdin(io::stdin())?, name: None, binary_name: None });
     }
-    let file = File::open(filename)?;
+    let replacement = preprocessor.map(|template| template.run(filename, session)).transpose()?.flatten();
+    let file = File::open(replacement.as_deref().unwrap_or(filename))?;
     let binary_name = if !force && buffer::LineBuffer::check_binary(&file, charset, controls)? { Some(filename.to_owned()) } else { None };
     let mut name = Vec::new();
     charset.write_filename(filename.as_bytes(), &mut name)?;
@@ -205,12 +207,12 @@ fn run() -> Result<ExitAction, String> {
     let locale = ["LC_ALL", "LC_CTYPE", "LANG"].into_iter().map(text_setting).collect::<Result<Vec<_>, _>>()?
         .into_iter().flatten().find(|value| !value.is_empty());
     let charset = Charset::resolve(explicit_charset.as_deref(), locale.as_deref()).map_err(|error| error.to_string())?;
-    let mut opened = open_input(&args.filenames[0], charset, args.control_display, args.force)
-        .map_err(|error| format!("{}: {error}", args.filenames[0].to_string_lossy()))?;
-    let primary = opened.binary_name.is_some() || security.has_diagnostics();
-    let screen = if primary { terminal::Screen::Primary } else { terminal::Screen::Interactive(args.terminal) };
     let suspension = if security.allows(security::Feature::Stop) { terminal::SuspendPolicy::Allow } else { terminal::SuspendPolicy::Ignore };
-    let mut session = terminal::Session::start(screen, suspension).map_err(|error| error.to_string())?;
+    let mut session = terminal::Session::start(terminal::Screen::Primary, suspension).map_err(|error| error.to_string())?;
+    let preprocessor = if args.use_lessopen && security.allows(security::Feature::Lessopen) { preprocessor::Template::from_environment().map_err(|error| error.to_string())? } else { None };
+    let mut opened = open_input(&args.filenames[0], charset, args.control_display, args.force, preprocessor.as_ref(), &mut session)
+        .map_err(|error| format!("{}: {error}", args.filenames[0].to_string_lossy()))?;
+    if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return finish_session(Ok(ExitAction::Success), session); }
     if let Some(name) = opened.binary_name.take() {
         match confirm_binary(&name, charset, session.keys_mut()) {
             Ok(BinaryAnswer::Refuse) => return finish_session(Ok(ExitAction::FileError), session),
@@ -230,7 +232,7 @@ fn run() -> Result<ExitAction, String> {
             Err(error) => return finish_session(Err(error), session),
         }
     }
-    if primary && let Err(error) = session.enter_interactive(args.terminal) { return finish_session(Err(error), session); }
+    if let Err(error) = session.enter_interactive(args.terminal) { return finish_session(Err(error), session); }
     if let Some(address) = tag_address {
         match address.locate(&mut opened.buffer) {
             Ok(line) => args.startup_commands.insert(0, format!("{line}g").into_bytes()),
@@ -265,7 +267,7 @@ fn run() -> Result<ExitAction, String> {
             Ok(pager::PagerExit::VisitFile(visit)) => visit,
         };
         file_index = visit.index();
-        opened = match open_input(&args.filenames[file_index], charset, args.control_display, args.force) {
+        opened = match open_input(&args.filenames[file_index], charset, args.control_display, args.force, preprocessor.as_ref(), &mut session) {
             Ok(input) => input, Err(error) => break Err(error),
         };
         if let Some(name) = opened.binary_name.take() {

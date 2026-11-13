@@ -165,7 +165,6 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
         if let Some(parent) = path.parent() { fs::create_dir_all(parent)?; }
         fs::write(path, bytes)?;
     }
-    let _cleanup = super::supervisor::Cleanup::new(manifest.to_owned());
     let command = if case.source == "pty-pipe" {
         CommandSpec::new(std::env::current_exe()?).arg("--pipe-supervisor").arg(binary)
             .arg(std::ffi::OsString::from_vec(case.fixture_name.clone())).arg(manifest).arg(u64::from(case.pty_rss_limit).to_string()).arg(u64::from(case.pty_spill_limit).to_string())
@@ -177,6 +176,7 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
     let scenario = Scenario::new(&case.id)?.command(command)
         .size(Size::new(case.size[0], case.size[1])?).environment(environment).trace_limit(64 * 1024 * 1024);
     let mut terminal = PtyTest::spawn(scenario)?;
+    let mut cleanup = super::supervisor::Cleanup::new(manifest.to_owned());
     let baseline = terminal.terminal_baseline();
     let total = Instant::now() + Duration::from_secs(10);
     let checkpoint_deadline = || Deadline::from_instant(total.min(Instant::now() + Duration::from_secs(3)));
@@ -238,9 +238,11 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
             return Err(super::TraceViolation("plain-text trace contains a terminal control").into());
         }
     }
+    super::supervisor::assert_cleanup(manifest, if case.source == "pty-pipe" { 2 } else { 1 })?;
+    super::supervisor::assert_session_empty(manifest)?;
+    cleanup.disarm();
     let finished = terminal.finish(Deadline::from_instant(total.min(Instant::now() + Duration::from_secs(1))))?;
     if status != finished { return Err("harness-error: wait and finish exit status differ".into()); }
-    super::supervisor::assert_cleanup(manifest, if case.source == "pty-pipe" { 2 } else { 1 })?;
     Ok(json!({"checkpoints": checkpoints, "exit": format!("{status:?}"), "final_screen": final_screen,
         "files": effects, "raw_input": input, "raw_output": output, "restored": true, "kernel_terminal":kernel}))
 }
@@ -383,6 +385,21 @@ pub fn selftest() -> Result<()> {
     super::supervisor::assert_cleanup(&manifest, 2)?;
     if start.elapsed() > Duration::from_secs(5) { return Err("supervisor cancellation exceeded checkpoint plus escalation bound".into()); }
     println!("pipe supervisor preserves raw argv, env, foreground group, stdin and exit/signal status; open producer and ignored-TERM child are reaped on cancellation");
+    pipe_case.args[1] = "new-group".into();
+    pipe_case.events = vec![Event::Checkpoint { ready:"probe".into(), row:None }, Event::Send { bytes:b"q".to_vec() }];
+    let pid_path = supervisor_root.join("orphan-pid");
+    pipe_case.env.insert("LZ_ORPHAN_PROBE_PID".into(), pid_path.to_string_lossy().into_owned());
+    let leak = execute(&candidate, &pipe_case);
+    if !leak.is_err_and(|error| error.is::<super::supervisor::SessionLeak>()) { return Err("independent helper group escaped the lifecycle comparator".into()); }
+    let pid: i32 = fs::read_to_string(pid_path)?.parse()?;
+    let deadline = Instant::now() + Duration::from_secs(1);
+    loop {
+        // SAFETY: signal zero only queries the fixture child identified in the owned record.
+        if unsafe { libc::kill(pid, 0) } != 0 && std::io::Error::last_os_error().raw_os_error() == Some(libc::ESRCH) { break; }
+        if Instant::now() >= deadline { return Err("session cleanup left the independent helper child alive".into()); }
+        std::thread::sleep(Duration::from_millis(2));
+    }
+    println!("session-wide lifecycle checks reject a leaked independent group and cleanup kills it before releasing the owned session identity");
     let mut invalid = serde_json::to_value(&case)?;
     invalid.as_object_mut().unwrap().insert("typo".into(), json!(true));
     if serde_json::from_value::<Case>(invalid).is_ok() { return Err("unknown scenario field accepted".into()); }

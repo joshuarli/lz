@@ -230,10 +230,10 @@ fn comparable(observation: &Value) -> Value {
 }
 
 fn execution_error(case: &Case, error: &(dyn std::error::Error + 'static), side: &str) -> Value {
-    let oracle_leak = side == "oracle" && (error.is::<interactive::KernelViolation>() || error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::SnapshotMismatch { path, .. } if path == Path::new("terminal-baseline"))));
+    let oracle_leak = side == "oracle" && (error.is::<interactive::KernelViolation>() || error.is::<supervisor::SessionLeak>() || error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::SnapshotMismatch { path, .. } if path == Path::new("terminal-baseline"))));
     json!({"case":case,"outcome":if error.is::<NeedsEnvironment>() { "needs-environment" } else if oracle_leak { "mismatch" } else { "harness-error" },
         "side":side,"error":error.to_string(),"error_detail":format!("{error:#?}"),
-        "difference":if oracle_leak { Some("oracle does not restore represented terminal modes; preserve as explicit divergence, never reproduce the leak") } else { None }})
+        "difference":if oracle_leak { Some(if error.is::<supervisor::SessionLeak>() { "oracle leaves an owned descendant running; preserve as explicit divergence, never reproduce the leak" } else { "oracle does not restore represented terminal modes; preserve as explicit divergence, never reproduce the leak" }) } else { None }})
 }
 
 fn observe_case(reference: &Path, candidate: &Path, case: &Case) -> Value {
@@ -243,7 +243,7 @@ fn observe_case(reference: &Path, candidate: &Path, case: &Case) -> Value {
     };
     let actual = match execute(candidate, case) {
         Ok(actual) => actual,
-        Err(error) if error.is::<TraceViolation>() || error.is::<interactive::CheckpointTimeout>() || error.is::<interactive::ClosedInput>() || error.is::<resources::Violation>() || error.is::<interactive::KernelViolation>() || error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. } | ptytest::PtyTestError::SnapshotMismatch { .. })) => {
+        Err(error) if error.is::<supervisor::SessionLeak>() || error.is::<TraceViolation>() || error.is::<interactive::CheckpointTimeout>() || error.is::<interactive::ClosedInput>() || error.is::<resources::Violation>() || error.is::<interactive::KernelViolation>() || error.downcast_ref::<ptytest::PtyTestError>().is_some_and(|error| matches!(error, ptytest::PtyTestError::Timeout { .. } | ptytest::PtyTestError::SnapshotMismatch { .. })) => {
             return json!({"case":case,"outcome":"mismatch","expected":expected.observation,"resources":{"oracle":expected.resources},
                 "actual_error":error.to_string(),"actual_error_detail":format!("{error:#?}"),
                 "difference":"candidate failed a readiness, lifecycle, trace or resource assertion after the oracle completed"});
@@ -338,6 +338,7 @@ fn run(args: &[String]) -> Result<()> {
 fn main() -> Result<()> {
     resources::disable_core_dumps()?;
     let raw_args: Vec<_> = std::env::args_os().skip(1).collect();
+    if raw_args.first().is_some_and(|arg| arg == "--session-orphan") { loop { std::thread::park(); } }
     if raw_args.first().is_some_and(|arg| arg == "--pipe-supervisor") {
         if raw_args.len() < 6 { return Err("missing supervisor arguments".into()); }
         let limit = raw_args[4].to_str().ok_or("non-UTF-8 RSS limit")?.parse::<u64>()?.try_into()?;

@@ -51,6 +51,8 @@ static INTERRUPT_FLAG: AtomicBool = AtomicBool::new(false);
 /// Consume a pending SIGINT from the active terminal session.
 pub fn take_interrupt() -> bool { INTERRUPT_FLAG.swap(false, Ordering::SeqCst) }
 
+pub(crate) fn interrupt_pending() -> bool { INTERRUPT_FLAG.load(Ordering::SeqCst) }
+
 /// The fd we set raw mode on (the /dev/tty fd).
 static ALT_SCREEN: AtomicBool = AtomicBool::new(false);
 static APPLICATION_MODES: AtomicBool = AtomicBool::new(false);
@@ -377,6 +379,11 @@ impl Session {
     }
 
     pub fn keys_mut(&mut self) -> &mut crate::input::KeyReader { &mut self.keys }
+
+    /// Run a foreground helper, read its first output line, and reclaim the tty after reaping it.
+    pub fn read_helper_line(&mut self, command: std::process::Command) -> io::Result<Vec<u8>> {
+        crate::helper::read_line(command, self.keys.fd())
+    }
 
     pub fn finish(self) -> io::Result<()> { restore_acquired_terminal() }
 }

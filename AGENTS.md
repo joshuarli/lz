@@ -31,6 +31,8 @@ src/
   readiness.rs  Platform descriptor readiness
   input.rs      Key reading and escape sequence parsing
   terminal.rs   Raw termios, alt screen, signals, output helpers
+  helper.rs     Owned helper process group and foreground tty lease
+  preprocessor.rs File-return LESSOPEN configuration and shell substitution
   ansi.rs       ANSI stripping, visible width, color-preserving truncation
   search.rs     Regex/BMH search with smart-case
   history.rs    Persistent search history (Up/Down in search prompt)
@@ -93,7 +95,7 @@ Key types: none (thin glue layer).
 
 `Session::start(Screen, SuspendPolicy)` owns the `KeyReader` tty and acquired modes. Use `keys_mut` for
 input and `finish` to observe restoration errors; Drop also unwinds partial setup.
-Raw-mode helpers and signal installation are private. `TERMINATION_SIGNAL`
+Session begins on the primary screen before input opening. read_helper_line runs a standard Command under an owned foreground process group, reads its first stdout line and reaps it before returning the tty. The private helper module owns cancellation and partial-start cleanup; restoration errors preserve the primary failure. File-return LESSOPEN uses this path under the shared secure permission and -L policy. Live pipes, postprocessors and remaining helper controls are open. Raw-mode helpers and signal installation are private. `TERMINATION_SIGNAL`
 replaces the old boolean TERM flag and preserves the first TERM/HUP request.
 TERM exits 15 after cleanup, matching the pinned oracle. HUP restores represented
 modes and re-raises HUP; this is an explicit safety divergence from the oracle's

@@ -4,6 +4,7 @@ pub mod charset;
 mod layout;
 mod storage;
 mod readiness;
+mod helper;
 pub mod history;
 pub mod input;
 pub mod pager;

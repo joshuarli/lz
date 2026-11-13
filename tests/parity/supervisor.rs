@@ -13,6 +13,7 @@ unsafe extern "C" {
     fn signal(number: i32, handler: usize) -> usize;
     fn kill(pid: i32, number: i32) -> i32;
     fn getpgrp() -> i32;
+    fn getsid(pid: i32) -> i32;
     fn tcsetpgrp(fd: i32, group: i32) -> i32;
     fn tcgetpgrp(fd: i32) -> i32;
     fn raise(number: i32) -> i32;
@@ -100,15 +101,56 @@ impl GroupChild {
     }
 }
 
-pub(super) struct Cleanup { manifest: PathBuf }
-impl Cleanup { pub fn new(manifest: PathBuf) -> Self { Self { manifest } } }
+pub(super) struct Cleanup { manifest: PathBuf, active: bool }
+impl Cleanup {
+    pub fn new(manifest: PathBuf) -> Self { Self { manifest, active:true } }
+    pub fn disarm(&mut self) { self.active = false; }
+}
 impl Drop for Cleanup {
     fn drop(&mut self) {
+        if !self.active { return; }
+        if let Ok(session) = owned_session(&self.manifest)
+            && let Ok(members) = session_members(session) {
+            for pid in members {
+                // SAFETY: the owned unreaped session leader reserves this session identity until PtyTest drops after this guard.
+                unsafe { kill(pid, 9); }
+            }
+        }
         if let Ok(bytes) = fs::read(&self.manifest)
             && let Ok(groups) = serde_json::from_slice::<Vec<u32>>(&bytes) {
             for pid in groups { let _ = group_signal(pid, 9); }
         }
     }
+}
+
+fn owned_session(manifest: &Path) -> Result<i32> {
+    let session: i32 = fs::read_to_string(manifest.with_extension("session"))?.parse()?;
+    if session <= 0 { return Err("invalid owned PTY session identity".into()); }
+    // SAFETY: siginfo is writable; WNOWAIT proves that this process still owns the unreaped supervisor without consuming its status.
+    let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
+    if unsafe { libc::waitid(libc::P_PID, session as u32, &mut info, libc::WEXITED | libc::WNOHANG | libc::WNOWAIT) } < 0 {
+        return Err(io::Error::last_os_error().into());
+    }
+    Ok(session)
+}
+
+fn session_members(session: i32) -> io::Result<Vec<i32>> {
+    #[cfg(target_os = "macos")]
+    let pids = {
+        let mut pids = vec![0i32; 131072];
+        // SAFETY: pids owns the initialized pid_t array; libproc retains no buffer pointer.
+        let count = unsafe { proc_listallpids(pids.as_mut_ptr().cast(), (pids.len() * std::mem::size_of::<i32>()) as i32) };
+        if count < 0 { return Err(io::Error::last_os_error()); }
+        if count as usize >= pids.len() { return Err(io::Error::other("process table exceeded bounded session enumeration")); }
+        pids.truncate(count as usize);
+        pids
+    };
+    #[cfg(target_os = "linux")]
+    let pids = fs::read_dir("/proc")?.map(|entry| entry.map(|entry| entry.file_name().to_string_lossy().parse::<i32>().ok())).collect::<io::Result<Vec<_>>>()?.into_iter().flatten().collect::<Vec<_>>();
+    Ok(pids.into_iter().filter(|pid| *pid > 0 && *pid != session).filter(|pid| {
+        // SAFETY: querying session membership has no effects; disappeared processes simply fail the query.
+        (unsafe { getsid(*pid) }) == session
+    }).collect())
 }
 
 fn record_groups(path: &Path, groups: &[u32]) -> Result<()> {
@@ -170,6 +212,7 @@ pub fn producer(path: &Path) -> Result<()> {
 }
 
 pub fn run(binary: &Path, fixture: Option<&Path>, manifest: &Path, args: &[std::ffi::OsString], limit: super::resources::RssLimit, spill_limit: super::spill::Limit) -> Result<()> {
+    fs::write(manifest.with_extension("session"), std::process::id().to_string())?;
     let forwarded = [1, 2, 3, 15, 28, JOB_SIGNALS[0], JOB_SIGNALS[1]];
     for number in forwarded { disposition(number, remember as *const () as usize)?; }
     for number in &JOB_SIGNALS[2..] { disposition(*number, 1)?; }
@@ -302,6 +345,12 @@ pub fn probe(args: &[std::ffi::OsString]) -> Result<()> {
         "environment":std::env::var_os("SUPERVISOR_PROBE").map(|value| value.as_bytes().to_vec()),"foreground":foreground,
         "core_dump_limits":super::resources::core_dump_limits()?});
     fs::write("pipe-probe", serde_json::to_vec(&observation)?)?;
+    if args.first().is_some_and(|arg| arg == "new-group") {
+        let child = Command::new(std::env::current_exe()?).arg("--session-orphan").process_group(0)
+            .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).spawn()?;
+        fs::write(std::env::var_os("LZ_ORPHAN_PROBE_PID").ok_or("missing owned orphan probe record")?, child.id().to_string())?;
+        drop(child);
+    }
     if args.first().is_some_and(|arg| arg == "job") {
         disposition(libc::SIGTSTP, 0)?;
         print!("probe");
@@ -370,6 +419,21 @@ pub fn probe(args: &[std::ffi::OsString]) -> Result<()> {
         unsafe { raise(15); }
     }
     if args.first().is_some_and(|arg| arg == "exit") { std::process::exit(7); }
+    Ok(())
+}
+
+#[derive(Debug)]
+pub(super) struct SessionLeak(Vec<i32>);
+impl std::fmt::Display for SessionLeak {
+    fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(output, "owned PTY session retained descendants outside the reaped groups: {:?}", self.0)
+    }
+}
+impl std::error::Error for SessionLeak {}
+
+pub fn assert_session_empty(manifest: &Path) -> Result<()> {
+    let members = session_members(owned_session(manifest)?)?;
+    if !members.is_empty() { return Err(Box::new(SessionLeak(members))); }
     Ok(())
 }
 
