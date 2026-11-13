@@ -8497,9 +8497,9 @@
       "file": "lesstest/lt/table-50x200.lt",
       "sha256": "9d2567d2d606af42f2b4d5a02ab9a6463e1cde43a1b7f614f8d026fd8216cef5",
       "instrumented": "pass",
-      "cases": [],
-      "disposition": "pending translation",
-      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+      "cases": ["upstream-table-chop"],
+      "disposition": "partial translation",
+      "cause": "The original fixture and chop toggle pass generic-terminal checkpoints. Header configuration, later commands and original custom termcap remain untranslated."
     },
     {
       "id": "utf8-2.txt",
