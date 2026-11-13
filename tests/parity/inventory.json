@@ -2991,10 +2991,24 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-quit-one-screen",
+        "invocation-quit-one-screen-23",
+        "invocation-quit-one-screen-24",
+        "invocation-quit-one-screen-wrap",
+        "invocation-quit-one-screen-no-init",
+        "invocation-quit-one-screen-chop",
+        "invocation-quit-one-screen-empty",
+        "invocation-quit-one-screen-no-newline",
+        "invocation-quit-one-screen-multiple",
+        "invocation-quit-one-screen-reset",
+        "invocation-quit-one-screen-exact-width",
+        "invocation-quit-one-screen-control",
+        "invocation-quit-one-screen-color"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Initial single-file -F covers size boundaries, wrapping, chopping, controls, color, -X and resets. Startup commands, line numbers, stream EOF and interruption, and extremely long low-width input remain open."
     },
     {
       "id": "man-0870",

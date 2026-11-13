@@ -192,6 +192,54 @@ impl DisplayLine {
     } }
 }
 
+/// The result of probing whether a source fits in a terminal viewport.
+pub enum OneScreen { Fits(Vec<u8>), Overflows, Waiting }
+
+/// Display settings used while probing a source before acquiring the alternate screen.
+pub struct OneScreenOptions {
+    pub width: u16,
+    pub height: u16,
+    pub charset: Charset,
+    pub controls: ControlDisplay,
+    pub chop: bool,
+}
+
+/// Read bounded display prefixes and retain the rendered output when the source fits.
+pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Result<OneScreen> {
+    let width = usize::from(options.width).max(1);
+    let height = usize::from(options.height).max(1);
+    let mut output = vec![b'\r'];
+    let mut rows = 0;
+    for index in 0..height {
+        let limit = width.saturating_mul(height - rows).saturating_add(1).saturating_mul(16).max(4096);
+        let fragment = if options.controls == ControlDisplay::Raw {
+            buffer.line_prefix(index, limit)?.map(DisplayLine::Raw)
+        } else {
+            let wrap = (!options.chop).then(|| std::num::NonZeroUsize::new(width).unwrap());
+            buffer.byte_prefix(index, limit)?.map(|fragment| DisplayLine::Mapped(DisplayPrefix::new(fragment.bytes, options.charset, fragment.complete, wrap, options.controls)))
+        };
+        let Some(fragment) = fragment else {
+            if let Some(error) = buffer.take_error() { return Err(error); }
+            if !buffer.is_finished() { return Ok(OneScreen::Waiting); }
+            output.extend_from_slice(b"\r\x1b[K");
+            return Ok(OneScreen::Fits(output));
+        };
+        if options.chop && fragment.columns() > width { return Ok(OneScreen::Overflows); }
+        let line_rows = if options.chop { 1 } else { fragment.columns().div_ceil(width).max(1) };
+        if rows.saturating_add(line_rows) >= height { return Ok(OneScreen::Overflows); }
+        if !fragment.complete() {
+            return Ok(if buffer.state() == crate::buffer::SourceState::Waiting { OneScreen::Waiting } else { OneScreen::Overflows });
+        }
+        for row in 0..line_rows {
+            output.extend_from_slice(&fragment.display(row * width, width));
+            if row + 1 < line_rows && fragment.fills_row(row * width, width) { output.extend_from_slice(b" \x08"); }
+            else { output.extend_from_slice(b"\r\n"); }
+        }
+        rows += line_rows;
+    }
+    Ok(OneScreen::Overflows)
+}
+
 #[derive(Clone, Copy)]
 pub enum PagerExit { Quit, Interrupted, VisitFile(FileVisit) }
 

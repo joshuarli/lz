@@ -300,6 +300,29 @@ fn run() -> Result<ExitAction, String> {
             Err(error) => return finish_opened(Err(error), opened, session),
         }
     }
+    if args.quit_if_one_screen && args.filenames.len() == 1 && args.startup_commands.is_empty()
+        && args.every_file_command.is_none() && !args.line_numbers && tag_address.is_none() {
+        loop {
+            let (width, height) = terminal::get_terminal_size();
+            let options = pager::OneScreenOptions { width, height, charset, controls:args.control_display, chop:args.chop };
+            match pager::one_screen(&mut opened.buffer, options) {
+                Ok(pager::OneScreen::Fits(output)) => {
+                    if args.terminal.screen == terminal::ScreenMode::Preserve
+                        && let Err(error) = session.enter_interactive(args.terminal) { return finish_opened(Err(error), opened, session); }
+                    let result = io::stdout().lock().write_all(&output).map(|()| ExitAction::Success);
+                    return finish_opened(result, opened, session);
+                }
+                Ok(pager::OneScreen::Overflows) => break,
+                Ok(pager::OneScreen::Waiting) => {
+                    if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return finish_opened(Ok(ExitAction::Success), opened, session); }
+                    if terminal::take_interrupt() && args.interrupt_policy == pager::InterruptPolicy::Quit { return finish_opened(Ok(ExitAction::Interrupted), opened, session); }
+                    std::thread::sleep(std::time::Duration::from_millis(10));
+                    opened.buffer.read_more(1);
+                }
+                Err(error) => return finish_opened(Err(error), opened, session),
+            }
+        }
+    }
     if let Err(error) = session.enter_interactive(args.terminal) { return finish_opened(Err(error), opened, session); }
     if let Some(address) = tag_address {
         match address.locate(&mut opened.buffer) {
