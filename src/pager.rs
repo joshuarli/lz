@@ -202,6 +202,12 @@ pub struct OneScreenOptions {
     pub charset: Charset,
     pub controls: ControlDisplay,
     pub chop: bool,
+    pub line_numbers: bool,
+}
+
+fn number_gutter(line: usize, width: usize, enabled: bool) -> String {
+    if !enabled { return String::new(); }
+    format!("{:>7} ", line + 1).chars().take(width).collect()
 }
 
 /// Read bounded display prefixes and retain the rendered output when the source fits.
@@ -211,11 +217,13 @@ pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Res
     let mut output = vec![b'\r'];
     let mut rows = 0;
     for index in 0..height {
+        let gutter = number_gutter(index, width, options.line_numbers);
+        let content_width = width.saturating_sub(gutter.len()).max(1);
         let limit = width.saturating_mul(height - rows).saturating_add(1).saturating_mul(16).max(4096);
         let fragment = if options.controls == ControlDisplay::Raw {
             buffer.line_prefix(index, limit)?.map(DisplayLine::Raw)
         } else {
-            let wrap = (!options.chop).then(|| std::num::NonZeroUsize::new(width).unwrap());
+            let wrap = (!options.chop).then(|| std::num::NonZeroUsize::new(content_width).unwrap());
             buffer.byte_prefix(index, limit)?.map(|fragment| DisplayLine::Mapped(DisplayPrefix::new(fragment.bytes, options.charset, fragment.complete, wrap, options.controls)))
         };
         let Some(fragment) = fragment else {
@@ -224,15 +232,16 @@ pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Res
             output.extend_from_slice(b"\r\x1b[K");
             return Ok(OneScreen::Fits(output));
         };
-        if options.chop && fragment.columns() > width { return Ok(OneScreen::Overflows); }
-        let line_rows = if options.chop { 1 } else { fragment.columns().div_ceil(width).max(1) };
+        if options.chop && fragment.columns() > content_width { return Ok(OneScreen::Overflows); }
+        let line_rows = if options.chop { 1 } else { fragment.columns().div_ceil(content_width).max(1) };
         if rows.saturating_add(line_rows) >= height { return Ok(OneScreen::Overflows); }
         if !fragment.complete() {
             return Ok(if buffer.state() == crate::buffer::SourceState::Waiting { OneScreen::Waiting } else { OneScreen::Overflows });
         }
         for row in 0..line_rows {
-            output.extend_from_slice(&fragment.display(row * width, width));
-            if row + 1 < line_rows && fragment.fills_row(row * width, width) { output.extend_from_slice(b" \x08"); }
+            Pager::write_number_gutter(&mut output, &gutter);
+            output.extend_from_slice(&fragment.display(row * content_width, width.saturating_sub(gutter.len())));
+            if row + 1 < line_rows && fragment.fills_row(row * content_width, content_width) { output.extend_from_slice(b" \x08"); }
             else { output.extend_from_slice(b"\r\n"); }
         }
         rows += line_rows;
@@ -1192,9 +1201,7 @@ impl Pager {
     }
 
     fn number_gutter(&self, line: usize, width: usize) -> String {
-        if !self.line_numbers { return String::new(); }
-        let gutter = format!("{:>7} ", line + 1);
-        gutter.chars().take(width).collect()
+        number_gutter(line, width, self.line_numbers)
     }
 
     fn write_number_gutter(buf: &mut Vec<u8>, gutter: &str) {

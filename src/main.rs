@@ -301,10 +301,10 @@ fn run() -> Result<ExitAction, String> {
         }
     }
     if args.quit_if_one_screen && args.filenames.len() == 1 && args.startup_commands.is_empty()
-        && args.every_file_command.is_none() && !args.line_numbers && tag_address.is_none() {
+        && args.every_file_command.is_none() && tag_address.is_none() {
         loop {
             let (width, height) = terminal::get_terminal_size();
-            let options = pager::OneScreenOptions { width, height, charset, controls:args.control_display, chop:args.chop };
+            let options = pager::OneScreenOptions { width, height, charset, controls:args.control_display, chop:args.chop, line_numbers:args.line_numbers };
             match pager::one_screen(&mut opened.buffer, options) {
                 Ok(pager::OneScreen::Fits(output)) => {
                     if args.terminal.screen == terminal::ScreenMode::Preserve

@@ -3004,11 +3004,15 @@
         "invocation-quit-one-screen-reset",
         "invocation-quit-one-screen-exact-width",
         "invocation-quit-one-screen-control",
-        "invocation-quit-one-screen-color"
+        "invocation-quit-one-screen-color",
+        "invocation-quit-one-screen-numbers",
+        "invocation-quit-one-screen-numbers-wrap",
+        "invocation-quit-one-screen-numbers-23",
+        "invocation-quit-one-screen-numbers-chop"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Initial single-file -F covers size boundaries, wrapping, chopping, controls, color, -X and resets. Startup commands, line numbers, stream EOF and interruption, and extremely long low-width input remain open."
+      "cause": "Initial single-file -F covers size boundaries, wrapping, chopping, line numbers, controls, color, -X and resets. Startup commands, stream EOF and interruption, and extremely long low-width input remain open."
     },
     {
       "id": "man-0870",
