@@ -1441,10 +1441,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["search-highlight-toggle", "upstream-github265-color-search-toggle", "sessions-search-highlight-toggle-next-file", "search-toggle-without-pattern"],
+      "cases": ["search-highlight-toggle", "upstream-github265-color-search-toggle", "sessions-search-highlight-toggle-next-file", "search-toggle-without-pattern", "search-toggle-after-no-match", "sessions-search-toggle-match-below", "sessions-search-toggle-match-near-boundary"],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Esc-u toggles highlighting, carries the state across next-file switches and is reset by a subsequent search in the named cases. Other search modes and -G interactions remain open."
+      "cause": "Esc-u toggles highlighting, carries the state across next-file switches and is reset by a subsequent search in the named cases. An empty or distant prepared-match region after a file switch mismatches; other search modes and -G interactions remain open."
     },
     {
       "id": "man-0318",

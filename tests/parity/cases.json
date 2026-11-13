@@ -591645,7 +591645,7 @@
 },
 {
   "id": "search-toggle-after-no-match",
-  "family": "search", "admitted": false, "source": "pty",
+  "family": "search", "admitted": true, "source": "pty",
   "fixture": {"numbered":{"count":40,"needle_lines":[]}},
   "args": ["input"], "env": {}, "size": [80, 8], "locale": "C",
   "events": [{"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[47,109,105,115,115,105,110,103,10]}, {"type":"checkpoint","ready":"Pattern not found","row":7}, {"type":"send","bytes":[13]}, {"type":"checkpoint","ready":":","row":7}, {"type":"send","bytes":[27,117]}, {"type":"checkpoint","ready":"No previous regular expression","row":7}, {"type":"send","bytes":[113]}],
@@ -591687,6 +591687,14 @@
   "fixture": {"numbered":{"count":40,"needle_lines":[8]}},
   "args": ["input","second"], "env": {}, "size": [80, 8], "locale": "C",
   "events": [{"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[47,110,101,101,100,108,101,10]}, {"type":"checkpoint","ready":"000008","row":0}, {"type":"send","bytes":[58,110]}, {"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[27,117]}, {"type":"checkpoint","ready":"No previous regular expression","row":7}, {"type":"send","bytes":[113]}],
-  "fixture_name": [105, 110, 112, 117, 116], "files": {"second":{"numbered":{"count":1000,"needle_lines":[900]}}}
+  "fixture_name": [105, 110, 112, 117, 116], "files": {"second":{"numbered":{"count":1000,"needle_lines":[449]}}}
+},
+{
+  "id": "sessions-search-toggle-match-near-boundary",
+  "family": "sessions", "admitted": true, "source": "pty",
+  "fixture": {"numbered":{"count":40,"needle_lines":[8]}},
+  "args": ["input","second"], "env": {}, "size": [80, 8], "locale": "C",
+  "events": [{"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[47,110,101,101,100,108,101,10]}, {"type":"checkpoint","ready":"000008","row":0}, {"type":"send","bytes":[58,110]}, {"type":"checkpoint","ready":"000001","row":0}, {"type":"send","bytes":[27,117,47]}, {"type":"checkpoint","ready":"/","row":7}, {"type":"send","bytes":[3]}, {"type":"checkpoint","ready":":","row":7}, {"type":"send","bytes":[113]}],
+  "fixture_name": [105, 110, 112, 117, 116], "files": {"second":{"numbered":{"count":1000,"needle_lines":[448]}}}
 }
 ]

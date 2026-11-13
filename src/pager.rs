@@ -1234,7 +1234,7 @@ impl Pager {
             }
             Key::HorizontalStart => { self.position_initialized(); self.left_col = 0; }
             Key::ToggleSearchHighlight => {
-                if self.search.is_some() { self.search_highlight = !self.search_highlight; }
+                if self.search.is_some() && (self.current_match_line.is_some() || self.search_inherited) { self.search_highlight = !self.search_highlight; }
                 else { self.command_error("No previous regular expression".to_string(), ErrorAction::Dismiss); }
             }
             Key::ClearSearchHighlight => {

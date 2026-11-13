@@ -82,11 +82,11 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12j:** the original `github216` fixture and four color-spanning searches pass on macOS and in a Linux arm64 container through a generic terminal, including its edited search prompt. Its option prompt, horizontal navigation and original per-key/custom termcap checkpoints remain untranslated.
 
-**S08p planned:** check `man-0310` `Esc-u` after a search with no matches. Own `src/pager.rs` and the named parity case; S08j and S08o prompts are prerequisites. Acceptance: `make parity-test CASE=search-toggle-after-no-match`.
+**S08p:** `Esc-u` after a search with no matches reports the reference no-previous-pattern prompt. The case passes on macOS and in a Linux arm64 container; cross-file prepared regions are parked separately.
 
 **S02i:** auxiliary files accept the same bounded fixture recipes as the primary fixture; existing inline-byte files retain their prior behavior. PTY and redirected numbered-file cases pass on macOS and in a Linux arm64 container, and harness controls pass. The parity-case schema has an additive auxiliary-file form.
 
-**S08q planned:** match `man-0310` highlight preparation across file switches, including empty, nearby and far-away matches. The reference accepts a nearby off-screen match and rejects a far-away one; visible-only and whole-file scans are both incorrect. Own `src/pager.rs`, its byte-layout dependencies and named cases; S08p and bounded source access are prerequisites. Acceptance: the three `sessions-search-toggle-*` cases.
+**S08q:** the reference prepares a bounded match region after a file switch. Nearby off-screen matches pass the named cases; empty and distant regions remain strict mismatches. See the parked condition below.
 
 **S09j:** the active search and its direction survive next-file switches; the match position remains file-local. Forward highlighting and repeat, backward repeat and the generating seed pass on macOS; the named cases also pass in a Linux arm64 container. Public `SearchSession` carries this state through `Config` and `Pager::take_search_session`. Other search and file-transition interactions remain open.
 
@@ -102,6 +102,7 @@ The following work remains local and actionable: complete the nonparked S04–S1
 
 Parked conditions are:
 
+- `parity/s08q-highlight-region`: `sessions-search-toggle-no-match-next-file` and `sessions-search-toggle-match-far-below` mismatch on macOS and in a Linux arm64 container. On the numbered fixture the reference accepts a match at line 448 and rejects one at line 449. Visible-only and whole-file scans are both wrong. Retry with position-aware prepared-region tracking that follows the reference's changing line-buffer size and remains bounded and interruptible.
 - `parity/s08h-nonboundary` at `425b399`: `search-posix-non-boundary-edge` mismatches on Linux musl. Retry with a position-aware matcher that preserves anchors, alternatives, and leftmost-longest selection. Padding breaks anchors; rejecting the first invalid alternative can hide a valid one.
 - `parity/S04c-hup`: retain the approved lz cleanup divergence. The pinned oracle leaks terminal state. Do not mark the strict mismatch compatible.
 - `parity/s11l-suspend` at `eec9e03`: instrument reference job-control transitions before retrying the helper suspension case.
