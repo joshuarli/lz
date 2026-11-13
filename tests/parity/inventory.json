@@ -997,7 +997,8 @@
         "search-highlight-color-notation",
         "search-highlight-sgr-inside-match",
         "search-highlight-existing-inverse",
-        "upstream-github216-color-searches"
+        "upstream-github216-color-searches",
+        "upstream-chinese1-unicode-search"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
@@ -8373,9 +8374,9 @@
       "file": "lesstest/lt/chinese1.lt",
       "sha256": "d81a2c4d23f16ab28169e62f7be6dbf54090a1d0ea332f7ba7f9453b0afae1d7",
       "instrumented": "pass",
-      "cases": ["upstream-chinese1-scroll", "upstream-chinese1-force-boundary"],
+      "cases": ["upstream-chinese1-scroll", "upstream-chinese1-force-boundary", "upstream-chinese1-unicode-search"],
       "disposition": "partial translation",
-      "cause": "The original fixture and first six scrolling steps are covered with a generic terminal. The following Unicode search, option command and remaining keys are untranslated. Remaining keys and original custom termcap checkpoints are untranslated."
+      "cause": "The original fixture, first six scrolling steps and subsequent Unicode search are covered with a generic terminal. The following option command, remaining keys and custom termcap checkpoints are untranslated. Remaining keys and original custom termcap checkpoints are untranslated."
     },
     {
       "id": "colorbars",
