@@ -300,13 +300,17 @@ fn run() -> Result<ExitAction, String> {
             Err(error) => return finish_opened(Err(error), opened, session),
         }
     }
-    if args.quit_if_one_screen && args.filenames.len() == 1 && args.startup_commands.is_empty()
-        && args.every_file_command.is_none() && tag_address.is_none() {
+    let mut startup_one_screen = false;
+    if args.quit_if_one_screen && args.filenames.len() == 1 && tag_address.is_none() {
         loop {
             let (width, height) = terminal::get_terminal_size();
             let options = pager::OneScreenOptions { width, height, charset, controls:args.control_display, chop:args.chop, line_numbers:args.line_numbers };
             match pager::one_screen(&mut opened.buffer, options) {
                 Ok(pager::OneScreen::Fits(output)) => {
+                    if !args.startup_commands.is_empty() || args.every_file_command.is_some() {
+                        startup_one_screen = true;
+                        break;
+                    }
                     if args.terminal.screen == terminal::ScreenMode::Preserve
                         && let Err(error) = session.enter_interactive(args.terminal) { return finish_opened(Err(error), opened, session); }
                     let result = io::stdout().lock().write_all(&output).map(|()| ExitAction::Success);
@@ -331,7 +335,8 @@ fn run() -> Result<ExitAction, String> {
             }
         }
     }
-    if let Err(error) = session.enter_interactive(args.terminal) { return finish_opened(Err(error), opened, session); }
+    if (!startup_one_screen || args.terminal.screen == terminal::ScreenMode::Preserve)
+        && let Err(error) = session.enter_interactive(args.terminal) { return finish_opened(Err(error), opened, session); }
     if let Some(address) = tag_address {
         match address.locate(&mut opened.buffer) {
             Ok(line) => args.startup_commands.insert(0, format!("{line}g").into_bytes()),
@@ -344,7 +349,7 @@ fn run() -> Result<ExitAction, String> {
 
     let mut file_index = 0;
     let mut initial_display = pager::InitialDisplay::Startup;
-    let mut display_anchor = pager::DisplayAnchor::new(args.terminal.screen);
+    let mut display_anchor = pager::DisplayAnchor::new(if startup_one_screen { terminal::ScreenMode::Preserve } else { args.terminal.screen });
     let mut scroll_defaults = pager::ScrollDefaults::new(terminal::get_terminal_size().1);
     if let Some(window) = args.window { scroll_defaults.set_window(window); }
     let mut positions = vec![None; args.filenames.len()];
@@ -354,7 +359,7 @@ fn run() -> Result<ExitAction, String> {
         if let Some(command) = &args.every_file_command { startup_commands.push(command.clone()); }
         let alternate = opened.alternate.take();
         let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, opened.name, history);
-        let result = pager.run(session.keys_mut());
+        let result = if std::mem::take(&mut startup_one_screen) { pager.run_one_screen_startup(session.keys_mut()) } else { pager.run(session.keys_mut()) };
         positions[file_index] = pager.saved_position();
         let squished = pager.is_squished();
         display_anchor = pager.display_anchor();

@@ -174,6 +174,9 @@ impl MarkName {
 #[derive(Clone, Copy, PartialEq)]
 enum NumericPrefix { Empty, Value(usize), Overflow }
 
+#[derive(PartialEq, Eq)]
+enum StartupRun { AllCommands, UntilOneScreen }
+
 enum DisplayLine { Mapped(DisplayPrefix), Raw(LineFragment) }
 
 impl DisplayLine {
@@ -383,6 +386,7 @@ pub struct Pager {
     filename_prompt: bool,
     compact_initial: bool,
     squished: bool,
+    startup_bottom: bool,
     startup_commands: VecDeque<Vec<u8>>,
     numeric_prefix: NumericPrefix,
     content_painted: bool,
@@ -431,6 +435,7 @@ impl Pager {
             filename_prompt: true,
             compact_initial: config.initial_display == InitialDisplay::Startup && config.startup_commands.is_empty(),
             squished: false,
+            startup_bottom: false,
             startup_commands: config.startup_commands.into(),
             numeric_prefix: NumericPrefix::Empty,
             content_painted: false,
@@ -470,7 +475,7 @@ impl Pager {
         }
     }
 
-    fn run_startup_commands(&mut self, keys: &mut KeyReader) -> io::Result<bool> {
+    fn run_startup_commands(&mut self, keys: &mut KeyReader, policy: StartupRun) -> io::Result<bool> {
         while let Some(command) = self.startup_commands.pop_front() {
             keys.set_command_input(command);
             while keys.has_command_input() {
@@ -497,6 +502,10 @@ impl Pager {
             if matches!(self.mode, Mode::SearchInput | Mode::FilterInput) { self.handle_key(Key::Enter); }
             else if self.numeric_prefix != NumericPrefix::Empty { self.handle_normal_key(Key::Char('g')); }
             if matches!(self.mode, Mode::CommandError(_)) { return Ok(false); }
+            if policy == StartupRun::UntilOneScreen && self.mode == Mode::Normal && self.top_line == 0 && self.filter.is_none() {
+                self.startup_commands.clear();
+                break;
+            }
             if !self.startup_commands.is_empty() {
                 self.filename_prompt = !self.content_painted;
                 self.render()?;
@@ -508,17 +517,27 @@ impl Pager {
         Ok(false)
     }
 
+    /// Execute startup commands before deciding whether a one-screen source can exit.
+    pub fn run_one_screen_startup(&mut self, keys: &mut KeyReader) -> io::Result<PagerExit> {
+        if self.run_startup_commands(keys, StartupRun::UntilOneScreen)? { return self.finish_run(); }
+        if self.mode == Mode::Normal && self.top_line == 0 && self.filter.is_none() {
+            self.render_frame(false)?;
+            return self.finish_run();
+        }
+        self.run(keys)
+    }
+
     pub fn run(&mut self, keys: &mut KeyReader) -> io::Result<PagerExit> {
         if std::mem::take(&mut self.paint_before_commands) {
             self.render()?;
             self.command_context = CommandContext::Interactive;
         }
-        if self.run_startup_commands(keys)? { return self.finish_run(); }
+        if self.run_startup_commands(keys, StartupRun::AllCommands)? { return self.finish_run(); }
 
         let mut redraw = true;
         loop {
             if self.command_context != CommandContext::Interactive && !matches!(self.mode, Mode::CommandError(_)) {
-                if self.run_startup_commands(keys)? { return self.finish_run(); }
+                if self.run_startup_commands(keys, StartupRun::AllCommands)? { return self.finish_run(); }
                 redraw = true;
             }
             if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 {
@@ -746,8 +765,10 @@ impl Pager {
                 self.left_col = 0;
             }
             Key::Char('G' | '>') | Key::End => {
+                let startup_bottom = self.command_context != CommandContext::Interactive && count.is_none();
                 let previous = self.top_line;
                 self.position_initialized();
+                self.startup_bottom = startup_bottom;
                 if let Some(count) = count { self.top_line = count.saturating_sub(1); self.buffer.get_line(self.top_line); }
                 else { self.buffer.read_all(); self.scroll_to_bottom(); }
                 self.remember_jump_from(previous);
@@ -845,6 +866,7 @@ impl Pager {
 
     fn position_initialized(&mut self) {
         self.squished = false;
+        self.startup_bottom = false;
         self.startup_echo = None;
         if self.command_context == CommandContext::StartupUnpositioned { self.command_context = CommandContext::StartupPositioned; }
     }
@@ -1128,7 +1150,9 @@ impl Pager {
 
     // --- Rendering ---
 
-    fn render(&mut self) -> io::Result<()> {
+    fn render(&mut self) -> io::Result<()> { self.render_frame(true) }
+
+    fn render_frame(&mut self, status: bool) -> io::Result<()> {
         if !self.content_painted && !matches!(self.mode, Mode::CommandError(_)) {
             self.buffer.byte_prefix(0, 0)?;
             if self.buffer.is_empty() && self.buffer.state() == crate::buffer::SourceState::Waiting { return Ok(()); }
@@ -1158,8 +1182,8 @@ impl Pager {
             buf.relative_row = Some(0);
             buf.retain_initial_column = true;
         }
-        if buf.relative_row.is_some() { buf.padding = first_row; }
-        else { for row in 0..first_row { buf.position(row); terminal::clear_line(&mut buf); } }
+        if buf.relative_row.is_some() && !self.startup_bottom { buf.padding = first_row; }
+        else { for row in 0..first_row { buf.position(row); if self.startup_bottom { self.write_eof_marker(&mut buf); } terminal::clear_line(&mut buf); } }
         if self.mode == Mode::Help {
             Self::render_help(&mut buf, w, ch);
         } else if self.wrap {
@@ -1169,10 +1193,12 @@ impl Pager {
         }
 
         if let Some(error) = self.buffer.take_error() { return Err(error); }
-        self.render_status(&mut buf, w);
+        if status { self.render_status(&mut buf, w); }
+        else { buf.position(ch); terminal::clear_line(&mut buf); }
         self.display_anchor.row = if primary { buf.relative_row } else { None };
         if self.display_anchor.row.is_none() { self.compact_initial = false; }
         self.content_painted = true;
+        self.startup_bottom = false;
         buf.extend_from_slice(b"\x1b[?25h");
 
         let mut stdout = io::stdout().lock();
@@ -1232,7 +1258,7 @@ impl Pager {
     }
 
     fn initial_content_row(&mut self, width: usize, height: usize) -> io::Result<usize> {
-        if !self.compact_initial && !self.squished { return Ok(0); }
+        if !self.compact_initial && !self.squished && !self.startup_bottom { return Ok(0); }
         let mut rows = 0;
         let mut index = self.top_line;
         while rows < height {
