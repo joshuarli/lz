@@ -144,6 +144,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S07ap accepted:** normal-mode numeric-prefix display preserves zero and leading zeros in the tested count. The zero sequence and ordinary counted upstream movement pass on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Overflow display and other command modes remain open.
 
+**S12an accepted (partial translation):** the original `utf8-2.txt` fixture, first fifteen scrolls and first regex search pass generic-terminal comparison in C.UTF-8 on macOS arm64 and Linux arm64 Docker. The search also passed with the upstream en_US.UTF-8 locale on macOS; that locale is unavailable in the Linux container. Later commands and custom termcap remain open. A separate C-locale regex difference remains local work.
+
 **S12am accepted (partial translation):** the original `proc-special` fixture and first search match, including tested ASCII overstrike conversion, trailing backspaces and source-to-display highlighting. Failed searches also repaint compact views as the reference does. Five new and four neighboring cases passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Non-ASCII overstrike mapping, other processing options, later upstream commands and custom termcap remain open.
 
 **S12al accepted (partial translation):** the remaining `github329` color-option and control-display transitions pass on macOS arm64 and Linux arm64 Docker, alongside the OSC search. The original command sequence now has generic-terminal checkpoints after semantic interactions; per-key and custom termcap remain open.

@@ -8494,9 +8494,9 @@
       "file": "lesstest/lt/utf8-2.txt.lt",
       "sha256": "def0b49526232eaf2a3cc544bfde56190b488cbdc82bf8c4e830cea58537d91a",
       "instrumented": "pass",
-      "cases": [],
-      "disposition": "pending translation",
-      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+      "cases": ["upstream-utf8-initial-scroll", "upstream-utf8-fifteen-scrolls", "upstream-utf8-regex-search"],
+      "disposition": "partial translation",
+      "cause": "The original Unicode fixture, first fifteen line-scroll commands and first regex search pass generic-terminal comparisons in C.UTF-8; the search also passed en_US.UTF-8 on macOS. Later commands, original custom termcap and exact Linux locale remain open."
     },
     {
       "id": "version.c",
