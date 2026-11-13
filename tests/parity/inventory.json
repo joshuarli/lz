@@ -119,11 +119,26 @@
         "navigation-help-reenter",
         "navigation-help-raw",
         "navigation-help-short-primary",
-        "navigation-help-number-width"
+        "navigation-help-number-width",
+        "navigation-help-line-scroll",
+        "navigation-help-page-scroll",
+        "navigation-help-counted-scroll",
+        "navigation-help-end",
+        "navigation-help-half-scroll",
+        "navigation-help-half-persistent",
+        "navigation-help-window-persistent",
+        "navigation-help-reenter-scrolled",
+        "navigation-help-end-top",
+        "navigation-help-narrow-scroll",
+        "navigation-help-numbered-scroll",
+        "navigation-help-end-boundary",
+        "navigation-help-window-return",
+        "navigation-help-counted-jump",
+        "navigation-help-counted-end-jump"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Named initial help and return cases pass at multiple widths, modes and line-number settings; help paging, search and other commands remain open"
+      "cause": "Named entry, scrolling, numbered, wrapped, end and return cases pass; help search, command variants and other interactions remain open"
     },
     {
       "id": "man-0057",

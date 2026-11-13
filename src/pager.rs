@@ -510,6 +510,8 @@ pub struct Pager {
     search_dir: SearchDir,
     current_match_line: Option<usize>,
     mode: Mode,
+    help_top: usize,
+    help_rows: usize,
     search_input: LineEditor,
     filter_input: LineEditor,
     filter: Option<Search>,
@@ -574,6 +576,8 @@ impl Pager {
             search_dir: SearchDir::Forward,
             current_match_line: None,
             mode: Mode::Normal,
+            help_top: 0,
+            help_rows: 0,
             search_input: LineEditor::new(),
             filter_input: LineEditor::new(),
             filter: None,
@@ -900,12 +904,7 @@ impl Pager {
                 false
             }
             Mode::Help => {
-                if let Key::Char('q' | 'Q') = key {
-                    self.mode = Mode::Normal;
-                    self.filename_prompt = true;
-                    self.squished = false;
-                    self.compact_initial = false;
-                }
+                self.handle_help_key(key);
                 false
             }
             Mode::Follow => self.handle_follow_key(key),
@@ -1033,6 +1032,7 @@ impl Pager {
                 self.scroll_to_bottom();
             }
             Key::Char('h' | 'H') => {
+                self.help_top = 0;
                 self.mode = Mode::Help;
             }
             Key::Char(character) if is_unbound_ascii(character) => self.early_bells = self.early_bells.saturating_add(1),
@@ -1044,6 +1044,54 @@ impl Pager {
     fn command_error(&mut self, message: String, action: ErrorAction) {
         self.status_msg = Some(format!("{message}  (press RETURN)"));
         self.mode = Mode::CommandError(CommandError { action, context: self.command_context, remainder: Vec::new() });
+    }
+
+    fn handle_help_key(&mut self, key: Key) {
+        if let Key::Char(character @ '0'..='9') = key {
+            let previous = match self.numeric_prefix { NumericPrefix::Empty => Some(0), NumericPrefix::Value(value) => Some(value), NumericPrefix::Overflow => None };
+            self.numeric_prefix = previous.and_then(|value| value.checked_mul(10)).and_then(|value| value.checked_add(character as usize - '0' as usize))
+                .filter(|value| *value <= i64::MAX as usize).map_or(NumericPrefix::Overflow, NumericPrefix::Value);
+            return;
+        }
+        let count = match std::mem::replace(&mut self.numeric_prefix, NumericPrefix::Empty) {
+            NumericPrefix::Empty | NumericPrefix::Value(0) => None,
+            NumericPrefix::Value(value) => Some(value),
+            NumericPrefix::Overflow => { self.bell_requested = true; return; }
+        };
+        let last = self.help_rows.saturating_sub(self.content_height());
+        let previous = self.help_top;
+        match key {
+            Key::Char('q' | 'Q') => {
+                self.mode = Mode::Normal;
+                self.filename_prompt = true;
+                self.squished = false;
+                self.compact_initial = false;
+                return;
+            }
+            Key::Char('h' | 'H') => return,
+            Key::Char('g' | '<') | Key::Home => self.help_top = count.map_or(0, |line| self.help_line_start(line.saturating_sub(1))).min(last),
+            Key::Char('G' | '>') | Key::End => self.help_top = count.map_or(last, |line| self.help_line_start(line.saturating_sub(1))).min(last),
+            Key::Char('j' | 'e') | Key::Ctrl('e' | 'n') | Key::Down | Key::Enter => self.help_top = self.help_top.saturating_add(count.unwrap_or(1)).min(last),
+            Key::Char('k' | 'y') | Key::Ctrl('y' | 'p' | 'k') | Key::Up => self.help_top = self.help_top.saturating_sub(count.unwrap_or(1)),
+            Key::Char('d' | 'u') | Key::Ctrl('d' | 'u') => {
+                if let Some(amount) = count.and_then(std::num::NonZeroUsize::new) { self.scroll_defaults.half_page = amount; }
+                let amount = self.scroll_defaults.half_page.get();
+                if matches!(key, Key::Char('d') | Key::Ctrl('d')) { self.help_top = self.help_top.saturating_add(amount).min(last); }
+                else { self.help_top = self.help_top.saturating_sub(amount); }
+            }
+            Key::Char(' ' | 'f' | 'z' | 'b' | 'w') | Key::PageDown | Key::PageUp | Key::Ctrl('f' | 'v' | 'b') => {
+                if matches!(key, Key::Char('z' | 'w')) && let Some(amount) = count.and_then(std::num::NonZeroUsize::new) {
+                    self.scroll_defaults.window = WindowSize::Fixed(amount);
+                }
+                let amount = count.unwrap_or_else(|| self.scroll_defaults.window.lines(self.term_height));
+                if matches!(key, Key::Char('b' | 'w') | Key::PageUp | Key::Ctrl('b')) { self.help_top = self.help_top.saturating_sub(amount); }
+                else { self.help_top = self.help_top.saturating_add(amount).min(last); }
+            }
+            _ => return,
+        }
+        if self.help_top == previous {
+            self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
+        }
     }
 
     fn mark_position(&self) -> MarkPosition { MarkPosition { line:self.top_line, leading_rows:self.leading_rows } }
@@ -1711,26 +1759,46 @@ impl Pager {
         buf.extend_from_slice(display.as_bytes());
     }
 
-    fn render_help(&self, buf: &mut Frame, w: usize, ch: usize) {
+    fn help_lines() -> impl Iterator<Item = &'static [u8]> {
+        let bytes = include_bytes!("less-help.txt").as_slice();
+        bytes.strip_suffix(b"\n").unwrap_or(bytes).split(|byte| *byte == b'\n')
+    }
+
+    fn help_line(&self, line_index: usize, line: &[u8], width: usize) -> (String, DisplayPrefix, usize, usize) {
+        let gutter = self.number_gutter(line_index, width);
+        let content_width = width.saturating_sub(gutter.len()).max(1);
+        let layout = DisplayPrefix::new(line.to_vec(), Charset::Ascii, true, std::num::NonZeroUsize::new(content_width), ControlDisplay::Standard, &self.tab_stops);
+        let rows = layout.columns.div_ceil(content_width).max(1);
+        (gutter, layout, content_width, rows)
+    }
+
+    fn help_line_start(&self, line: usize) -> usize {
+        let width = usize::from(self.term_width).max(1);
+        Self::help_lines().take(line).enumerate().map(|(index, bytes)| self.help_line(index, bytes, width).3).sum()
+    }
+
+    fn render_help(&mut self, buf: &mut Frame, w: usize, ch: usize) {
         let width = w.max(1);
+        self.help_rows = Self::help_lines().enumerate().map(|(index, line)| self.help_line(index, line, width).3).sum();
+        self.help_top = self.help_top.min(self.help_rows.saturating_sub(ch));
+        let mut document_row = 0;
         let mut row = 0;
-        for (line_index, line) in include_bytes!("less-help.txt").split(|byte| *byte == b'\n').enumerate() {
+        let mut continued = false;
+        for (line_index, line) in Self::help_lines().enumerate() {
             if row >= ch { break; }
-            let gutter = self.number_gutter(line_index, width);
-            let content_width = width.saturating_sub(gutter.len()).max(1);
-            let layout = DisplayPrefix::new(line.to_vec(), Charset::Ascii, true, std::num::NonZeroUsize::new(content_width), ControlDisplay::Standard, &self.tab_stops);
-            let rows = layout.columns.div_ceil(content_width).max(1);
+            let (gutter, layout, content_width, rows) = self.help_line(line_index, line, width);
             for offset in 0..rows {
+                if document_row < self.help_top { document_row += 1; continue; }
                 if row >= ch { break; }
-                if offset == 0 { buf.position(row); }
+                if row == 0 || !continued { buf.position(row); }
                 Self::write_number_gutter(buf, &gutter);
                 buf.extend_from_slice(&layout.display(offset * content_width, width.saturating_sub(gutter.len())));
                 buf.wrapped_row(row);
                 row += 1;
-                if offset + 1 == rows || !layout.fills_row(offset * content_width, content_width) {
-                    terminal::clear_line(buf);
-                    if offset + 1 < rows && row < ch { buf.position(row); }
-                }
+                document_row += 1;
+                continued = offset + 1 < rows && layout.fills_row(offset * content_width, content_width);
+                if continued && row == ch { buf.extend_from_slice(b" \x08"); buf.wrapped_row(row); }
+                if !continued { terminal::clear_line(buf); }
             }
         }
         while row < ch {
@@ -1783,7 +1851,9 @@ impl Pager {
         }
 
         if self.mode == Mode::Help {
-            return "HELP -- Press RETURN for more, or q when done".to_string();
+            return if self.help_top.saturating_add(self.content_height()) >= self.help_rows {
+                "HELP -- END -- Press g to see it again, or q when done".to_string()
+            } else { "HELP -- Press RETURN for more, or q when done".to_string() };
         }
 
         if self.mode == Mode::Follow {
