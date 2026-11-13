@@ -240,8 +240,7 @@ fn run() -> Result<ExitAction, String> {
         match result {
             Err(error) => break Err(error),
             Ok(pager::PagerExit::Quit) => break Ok(ExitAction::Success),
-            Ok(pager::PagerExit::NextFile) => file_index += 1,
-            Ok(pager::PagerExit::PreviousFile) => file_index -= 1,
+            Ok(pager::PagerExit::VisitFile(visit)) => file_index = visit.index(),
         }
         opened = match open_input(&args.filenames[file_index], charset, args.control_display, args.force) {
             Ok(input) => input, Err(error) => break Err(error),

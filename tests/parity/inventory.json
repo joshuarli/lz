@@ -1452,11 +1452,17 @@
         "sessions-control-next-name",
         "sessions-next-term",
         "sessions-remember-positions",
-        "sessions-remember-eof"
+        "sessions-remember-eof",
+        "sessions-numeric-file-traversal",
+        "sessions-next-file-count-boundary",
+        "sessions-prev-file-count-boundary",
+        "sessions-prev-file-boundary",
+        "sessions-next-file-boundary",
+        "sessions-file-boundary-dispatch-key"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "CLI next/previous switching, remembered plain-line positions including EOF, file-number/END-next prompts, safe filename notation and TERM cleanup pass under one terminal owner. Counts, boundary errors, wrapped/changed-file positions, other per-file state, binary transitions and examine remain open."
+      "cause": "Ordinary numeric next/previous traversal and zero defaults pass across a CLI file list. Boundary errors use the reference N-th wording, consume Enter and dispatch other acknowledgment keys. Missing-file skipping, tags, wrapped positions and startup command echo remain open"
     },
     {
       "id": "man-0367",
@@ -1478,11 +1484,17 @@
         "sessions-control-next-name",
         "sessions-next-term",
         "sessions-remember-positions",
-        "sessions-remember-eof"
+        "sessions-remember-eof",
+        "sessions-numeric-file-traversal",
+        "sessions-next-file-count-boundary",
+        "sessions-prev-file-count-boundary",
+        "sessions-prev-file-boundary",
+        "sessions-next-file-boundary",
+        "sessions-file-boundary-dispatch-key"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "CLI next/previous switching, remembered plain-line positions including EOF, file-number/END-next prompts, safe filename notation and TERM cleanup pass under one terminal owner. Counts, boundary errors, wrapped/changed-file positions, other per-file state, binary transitions and examine remain open."
+      "cause": "Ordinary numeric next/previous traversal and zero defaults pass across a CLI file list. Boundary errors use the reference N-th wording, consume Enter and dispatch other acknowledgment keys. Missing-file skipping, tags, wrapped positions and startup command echo remain open"
     },
     {
       "id": "man-0370",
@@ -1810,11 +1822,12 @@
         "invocation-startup-layout-0",
         "invocation-startup-layout-1",
         "invocation-startup-layout-2",
-        "invocation-startup-layout-3"
+        "invocation-startup-layout-3",
+        "sessions-startup-file-count"
       ],
       "implementation": "partial",
-      "evidence": "compatible in the named tested scenarios",
-      "cause": "Startup line, end and movement commands pass through the shared keyboard decoder before the first screen. Movement before an initial position rings one bell and discards that command. Remaining commands, every-file scope and interactions remain open."
+      "evidence": "partially compatible",
+      "cause": "Existing numeric and movement startup cases pass. The +2:n discovery retains command text before the oracle first content line; lz currently redraws that text away. Keep the strict mismatch for S04m startup-rendering work; every-file scope and other interactions remain open"
     },
     {
       "id": "man-0444",
@@ -4597,11 +4610,12 @@
         "invocation-startup-layout-0",
         "invocation-startup-layout-1",
         "invocation-startup-layout-2",
-        "invocation-startup-layout-3"
+        "invocation-startup-layout-3",
+        "sessions-startup-file-count"
       ],
       "implementation": "partial",
-      "evidence": "compatible in the named tested scenarios",
-      "cause": "Startup line, end and movement commands pass through the shared keyboard decoder before the first screen. Movement before an initial position rings one bell and discards that command. Remaining commands, every-file scope and interactions remain open."
+      "evidence": "partially compatible",
+      "cause": "Existing numeric and movement startup cases pass. The +2:n discovery retains command text before the oracle first content line; lz currently redraws that text away. Keep the strict mismatch for S04m startup-rendering work; every-file scope and other interactions remain open"
     },
     {
       "id": "man-1571",

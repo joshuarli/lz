@@ -62,7 +62,7 @@ enum Mode {
     FilterInput,
     Follow,
     Help,
-    FileCommand,
+    FileCommand(std::num::NonZeroUsize),
     SetMark,
     JumpMark,
     CommandError(CommandError),
@@ -190,7 +190,15 @@ impl DisplayLine {
 }
 
 #[derive(Clone, Copy)]
-pub enum PagerExit { Quit, NextFile, PreviousFile }
+pub enum PagerExit { Quit, VisitFile(FileVisit) }
+
+/// A file index validated against the configured command-line file list.
+#[derive(Clone, Copy)]
+pub struct FileVisit { index: usize }
+
+impl FileVisit {
+    pub fn index(self) -> usize { self.index }
+}
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum InitialDisplay { Startup, FileSwitch(Option<SavedPosition>) }
@@ -446,14 +454,21 @@ impl Pager {
         match self.mode.clone() {
             Mode::Normal => self.handle_normal_key(key),
             Mode::SetMark | Mode::JumpMark => { self.handle_mark_key(key); false }
-            Mode::FileCommand => {
+            Mode::FileCommand(count) => {
                 self.mode = Mode::Normal;
                 match key {
-                    Key::Char('n') if self.files.index + 1 < self.files.count => { self.exit = PagerExit::NextFile; return true; }
-                    Key::Char('p') if self.files.index > 0 => { self.exit = PagerExit::PreviousFile; return true; }
+                    Key::Char(direction @ ('n' | 'p')) => {
+                        let count = count.get();
+                        let target = if direction == 'n' { self.files.index.checked_add(count) } else { self.files.index.checked_sub(count) };
+                        if let Some(index) = target.filter(|index| *index < self.files.count) {
+                            self.exit = PagerExit::VisitFile(FileVisit { index });
+                            return true;
+                        }
+                        let ordinal = if count > 1 { "(N-th) " } else { "" };
+                        let direction = if direction == 'n' { "next" } else { "previous" };
+                        self.command_error(format!("No {ordinal}{direction} file"), ErrorAction::Dismiss);
+                    }
                     Key::Char('q') => return true,
-                    Key::Char('n') => self.status_msg = Some("No next file  (press RETURN)".into()),
-                    Key::Char('p') => self.status_msg = Some("No previous file  (press RETURN)".into()),
                     Key::Escape => {},
                     _ => self.bell_requested = true,
                 }
@@ -514,7 +529,7 @@ impl Pager {
         }
         match key {
             Key::Char('q') | Key::Ctrl('c') | Key::Escape => return true,
-            Key::Char(':') => self.mode = Mode::FileCommand,
+            Key::Char(':') => self.mode = Mode::FileCommand(std::num::NonZeroUsize::new(count.unwrap_or(1)).unwrap()),
             Key::Char('m') => self.mode = Mode::SetMark,
             Key::Char('\'') => self.mode = Mode::JumpMark,
 
