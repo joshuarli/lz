@@ -117,8 +117,40 @@ struct AlternateInput { original: OsString, replacement: OsString }
 
 struct OpenedInput { buffer: buffer::LineBuffer, name: Option<String>, binary_name: Option<OsString>, alternate: Option<AlternateInput> }
 
-fn close_alternate(alternate: Option<AlternateInput>, session: &mut terminal::Session) -> io::Result<()> {
-    if let Some(alternate) = alternate { preprocessor::close(&alternate.original, &alternate.replacement, session)?; }
+enum CloseContext { Switching { squished: bool, interrupt_policy: pager::InterruptPolicy }, Exiting }
+
+fn close_alternate(alternate: Option<AlternateInput>, session: &mut terminal::Session, context: CloseContext) -> io::Result<()> {
+    let Some(alternate) = alternate else { return Ok(()); };
+    if matches!(preprocessor::close(&alternate.original, &alternate.replacement, session)?, preprocessor::CloseOutcome::InvalidTemplate) {
+        const MESSAGE: &str = "LESSCLOSE ignored; must contain no more than 2 %s";
+        match context {
+            CloseContext::Exiting => eprintln!("{MESSAGE}"),
+            CloseContext::Switching { squished, interrupt_policy } => {
+                let mut frame = Vec::new();
+                let (_, height) = terminal::get_terminal_size();
+                if squished {
+                    for row in 0..height.saturating_sub(1) {
+                        terminal::move_cursor(&mut frame, row, 0);
+                        terminal::clear_line(&mut frame);
+                        frame.extend_from_slice(b"\x1b[1m~\x1b[m");
+                    }
+                }
+                terminal::move_cursor(&mut frame, height.saturating_sub(1), 0);
+                terminal::clear_line(&mut frame);
+                write!(frame, "\x1b[7m{MESSAGE}  (press RETURN)\x1b[m")?;
+                let mut output = io::stdout().lock();
+                output.write_all(&frame)?;
+                output.flush()?;
+                drop(output);
+                if let Some(key) = read_prompt_key(session.keys_mut())? {
+                    if key == lz::input::Key::Ctrl('c') && interrupt_policy == pager::InterruptPolicy::Quit {
+                        return Err(io::Error::new(io::ErrorKind::Interrupted, "postprocessor diagnostic interrupted"));
+                    }
+                    if !key.is_prompt_acknowledgement() { session.keys_mut().unread_key(key)?; }
+                }
+            }
+        }
+    }
     Ok(())
 }
 
@@ -133,7 +165,7 @@ fn with_cleanup<T>(result: io::Result<T>, cleanup: io::Result<()>) -> io::Result
 fn close_opened<T>(result: io::Result<T>, opened: OpenedInput, session: &mut terminal::Session) -> io::Result<T> {
     let OpenedInput { buffer, alternate, .. } = opened;
     drop(buffer);
-    with_cleanup(result, close_alternate(alternate, session))
+    with_cleanup(result, close_alternate(alternate, session, CloseContext::Exiting))
 }
 
 fn finish_opened(result: io::Result<ExitAction>, opened: OpenedInput, mut session: terminal::Session) -> Result<ExitAction, String> {
@@ -157,7 +189,7 @@ fn open_input(filename: &std::ffi::OsStr, charset: Charset, controls: ControlDis
     })();
     match result {
         Ok((buffer, name, binary_name)) => Ok(OpenedInput { buffer, name, binary_name, alternate }),
-        Err(error) => with_cleanup(Err(error), close_alternate(alternate, session)),
+        Err(error) => with_cleanup(Err(error), close_alternate(alternate, session, CloseContext::Exiting)),
     }
 }
 
@@ -293,19 +325,20 @@ fn run() -> Result<ExitAction, String> {
         let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, charset, controls: args.control_display, chop: args.chop, line_numbers: args.line_numbers, search_case: args.search_case }, opened.name, history);
         let result = pager.run(session.keys_mut());
         positions[file_index] = pager.saved_position();
+        let squished = pager.is_squished();
         display_anchor = pager.display_anchor();
         scroll_defaults = pager.scroll_defaults();
         args.startup_commands = pager.take_startup_commands();
         history = pager.into_history();
         let visit = match result {
-            Err(error) => break with_cleanup(Err(error), close_alternate(alternate, &mut session)),
-            Ok(pager::PagerExit::Quit) => break close_alternate(alternate, &mut session).map(|()| ExitAction::Success),
-            Ok(pager::PagerExit::Interrupted) => break close_alternate(alternate, &mut session).map(|()| ExitAction::Interrupted),
+            Err(error) => break with_cleanup(Err(error), close_alternate(alternate, &mut session, CloseContext::Exiting)),
+            Ok(pager::PagerExit::Quit) => break close_alternate(alternate, &mut session, CloseContext::Exiting).map(|()| ExitAction::Success),
+            Ok(pager::PagerExit::Interrupted) => break close_alternate(alternate, &mut session, CloseContext::Exiting).map(|()| ExitAction::Interrupted),
             Ok(pager::PagerExit::VisitFile(visit)) => visit,
         };
         file_index = visit.index();
         opened = match open_input(&args.filenames[file_index], charset, args.control_display, args.force, preprocessor, &mut session) {
-            Ok(input) => input, Err(error) => break with_cleanup(Err(error), close_alternate(alternate, &mut session)),
+            Ok(input) => input, Err(error) => break with_cleanup(Err(error), close_alternate(alternate, &mut session, CloseContext::Exiting)),
         };
         if let Some(name) = opened.binary_name.take() {
             let answer = match confirm_binary(&name, charset, session.keys_mut()) {
@@ -316,10 +349,13 @@ fn run() -> Result<ExitAction, String> {
             };
             if let Some(result) = answer {
                 let result = close_opened(result, opened, &mut session);
-                break with_cleanup(result, close_alternate(alternate, &mut session));
+                break with_cleanup(result, close_alternate(alternate, &mut session, CloseContext::Exiting));
             }
         }
-        if let Err(error) = close_alternate(alternate, &mut session) { break close_opened(Err(error), opened, &mut session); }
+        if let Err(error) = close_alternate(alternate, &mut session, CloseContext::Switching { squished, interrupt_policy:args.interrupt_policy }) {
+            let result = if error.kind() == io::ErrorKind::Interrupted && args.interrupt_policy == pager::InterruptPolicy::Quit { Ok(ExitAction::Interrupted) } else { Err(error) };
+            break close_opened(result, opened, &mut session);
+        }
         initial_display = visit.initial_display(positions[file_index]);
     };
     if let Some(file) = history_file { file.save(&mut history); }

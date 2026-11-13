@@ -88,8 +88,10 @@ fn shell_command(mut command: Vec<u8>) -> Command {
     process
 }
 
-pub(super) fn close(original: &OsStr, replacement: &OsStr, session: &mut lz::terminal::Session) -> io::Result<()> {
-    let Some(template) = std::env::var_os("LESSCLOSE") else { return Ok(()); };
+pub(super) enum CloseOutcome { Complete, InvalidTemplate }
+
+pub(super) fn close(original: &OsStr, replacement: &OsStr, session: &mut lz::terminal::Session) -> io::Result<CloseOutcome> {
+    let Some(template) = std::env::var_os("LESSCLOSE") else { return Ok(CloseOutcome::Complete); };
     let bytes = template.as_bytes();
     let arguments = [quote(original.as_bytes()), quote(replacement.as_bytes())];
     let mut command = Vec::new();
@@ -101,10 +103,11 @@ pub(super) fn close(original: &OsStr, replacement: &OsStr, session: &mut lz::ter
             match bytes.get(cursor) {
                 Some(b's') if argument < arguments.len() => { command.extend_from_slice(&arguments[argument]); argument += 1; },
                 Some(b'%') => command.push(b'%'),
-                _ => { eprintln!("LESSCLOSE ignored; must contain no more than 2 %s"); return Ok(()); },
+                _ => return Ok(CloseOutcome::InvalidTemplate),
             }
         } else { command.push(bytes[cursor]); }
         cursor += 1;
     }
-    session.run_helper_with_closed_output(shell_command(command))
+    session.run_helper_with_closed_output(shell_command(command))?;
+    Ok(CloseOutcome::Complete)
 }

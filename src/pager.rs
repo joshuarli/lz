@@ -325,6 +325,7 @@ pub struct Pager {
     filename: Option<String>,
     filename_prompt: bool,
     compact_initial: bool,
+    squished: bool,
     startup_commands: VecDeque<Vec<u8>>,
     numeric_prefix: NumericPrefix,
     content_painted: bool,
@@ -372,6 +373,7 @@ impl Pager {
             filename,
             filename_prompt: true,
             compact_initial: config.initial_display == InitialDisplay::Startup && config.startup_commands.is_empty(),
+            squished: false,
             startup_commands: config.startup_commands.into(),
             numeric_prefix: NumericPrefix::Empty,
             content_painted: false,
@@ -381,6 +383,9 @@ impl Pager {
             bell_requested: false,
         }
     }
+
+    /// Whether the initial short-file display has not yet been repositioned.
+    pub fn is_squished(&self) -> bool { self.squished }
 
     /// Retain the first displayed source line for a later visit to this file.
     pub fn saved_position(&self) -> Option<SavedPosition> {
@@ -505,7 +510,9 @@ impl Pager {
             };
 
             redraw = true;
+            let previous_top = self.top_line;
             let quit_requested = if key == Key::Ctrl('c') { self.interrupt(keys) } else { self.handle_key(key) };
+            if self.top_line != previous_top { self.squished = false; }
             if quit_requested {
                 return self.finish_run();
             }
@@ -1079,6 +1086,7 @@ impl Pager {
             return stdout.flush();
         }
         let first_row = if self.mode == Mode::Help { 0 } else { self.initial_content_row(w, ch)? };
+        if !self.content_painted { self.squished = first_row > 0; }
         let primary = self.display_anchor.row.is_some();
         if let Some(command) = self.startup_echo.take() {
             if !primary { terminal::move_cursor(&mut buf, self.term_height.saturating_sub(1), 0); }
