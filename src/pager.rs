@@ -147,7 +147,7 @@ impl OptionCommand {
 }
 
 #[derive(Clone, PartialEq)]
-enum OptionName { Typing(String), Raw, Color }
+enum OptionName { Typing(String), Raw, Color, LineNumbers, DisplayLineNumbers }
 
 #[derive(Clone, Copy)]
 enum HelpPrefix { Colon(std::num::NonZeroUsize), Quit }
@@ -1150,6 +1150,23 @@ impl Pager {
         }
     }
 
+    fn apply_line_number_option(&mut self, command: OptionCommand, choice: char) {
+        let selected = if choice == 'n' { LineNumberMode::Enabled } else { LineNumberMode::Displayed };
+        self.line_numbers = match command {
+            OptionCommand::Toggle | OptionCommand::ToggleQuietly => if self.line_numbers == selected { LineNumberMode::Off } else { selected },
+            OptionCommand::Reset | OptionCommand::ResetQuietly => LineNumberMode::Enabled,
+            OptionCommand::Set | OptionCommand::SetQuietly => if choice == 'n' { LineNumberMode::Off } else { LineNumberMode::Displayed },
+            OptionCommand::Query => self.line_numbers,
+        };
+        let repaint = self.squished;
+        if repaint { self.position_initialized(); }
+        let message = match self.line_numbers { LineNumberMode::Off => "Don't use line numbers", LineNumberMode::Enabled => "Use line numbers", LineNumberMode::Displayed => "Constantly display line numbers" };
+        if !matches!(command, OptionCommand::ToggleQuietly | OptionCommand::ResetQuietly | OptionCommand::SetQuietly) {
+            self.status_msg = Some(format!("{message}  (press RETURN)"));
+            self.mode = Mode::OptionNotice { repaint };
+        }
+    }
+
     fn handle_key(&mut self, key: Key) -> bool {
         match self.mode.clone() {
             Mode::Normal => self.handle_normal_key(key),
@@ -1164,20 +1181,7 @@ impl Pager {
                 if let Key::Char(choice @ ('r' | 'R')) = key {
                     self.apply_control_option(command, choice);
                 } else if let Key::Char(choice @ ('n' | 'N')) = key {
-                    let selected = if choice == 'n' { LineNumberMode::Enabled } else { LineNumberMode::Displayed };
-                    self.line_numbers = match command {
-                        OptionCommand::Toggle | OptionCommand::ToggleQuietly => if self.line_numbers == selected { LineNumberMode::Off } else { selected },
-                        OptionCommand::Reset | OptionCommand::ResetQuietly => LineNumberMode::Enabled,
-                        OptionCommand::Set | OptionCommand::SetQuietly => if choice == 'n' { LineNumberMode::Off } else { LineNumberMode::Displayed },
-                        OptionCommand::Query => self.line_numbers,
-                    };
-                    let repaint = self.squished;
-                    if repaint { self.position_initialized(); }
-                    let message = match self.line_numbers { LineNumberMode::Off => "Don't use line numbers", LineNumberMode::Enabled => "Use line numbers", LineNumberMode::Displayed => "Constantly display line numbers" };
-                    if !matches!(command, OptionCommand::ToggleQuietly | OptionCommand::ResetQuietly | OptionCommand::SetQuietly) {
-                        self.status_msg = Some(format!("{message}  (press RETURN)"));
-                        self.mode = Mode::OptionNotice { repaint };
-                    }
+                    self.apply_line_number_option(command, choice);
                 } else if key != Key::Escape { self.bell_requested = true; }
                 false
             }
@@ -1189,13 +1193,15 @@ impl Pager {
                 match (name, key) {
                     (OptionName::Raw, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_control_option(command, 'r'); }
                     (OptionName::Color, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_control_option(command, 'R'); }
+                    (OptionName::LineNumbers, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_line_number_option(command, 'n'); }
+                    (OptionName::DisplayLineNumbers, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_line_number_option(command, 'N'); }
                     (OptionName::Typing(name), Key::Enter | Key::Char('=')) => {
                         let repaint = self.squished;
                         if repaint { self.position_initialized(); }
                         self.status_msg = Some(format!("There is no --{name} option  (press RETURN)"));
                         self.mode = Mode::OptionNotice { repaint };
                     }
-                    (_, Key::Escape) | (OptionName::Raw | OptionName::Color, Key::Backspace) => self.mode = Mode::Normal,
+                    (_, Key::Escape) | (OptionName::Raw | OptionName::Color | OptionName::LineNumbers | OptionName::DisplayLineNumbers, Key::Backspace) => self.mode = Mode::Normal,
                     (OptionName::Typing(mut name), Key::Backspace) => {
                         if name.is_empty() { self.mode = Mode::Normal; }
                         else { name.pop(); self.mode = Mode::OptionLong(command, OptionName::Typing(name)); }
@@ -1205,6 +1211,10 @@ impl Pager {
                         match crate::option_catalog::lookup(name.as_bytes()) {
                             Ok(option) if option.canonical_name() == "raw-control-chars" => {
                                 let completed = if name.as_bytes()[0].is_ascii_uppercase() { OptionName::Color } else { OptionName::Raw };
+                                self.mode = Mode::OptionLong(command, completed);
+                            }
+                            Ok(option) if option.canonical_name() == "line-numbers" => {
+                                let completed = if name.as_bytes()[0].is_ascii_uppercase() { OptionName::DisplayLineNumbers } else { OptionName::LineNumbers };
                                 self.mode = Mode::OptionLong(command, completed);
                             }
                             result => {
@@ -2329,7 +2339,7 @@ impl Pager {
         if let Mode::OptionPrefix(command) = self.mode { return match command { OptionCommand::Toggle => "-", OptionCommand::ToggleQuietly => "-(P)", OptionCommand::Reset => "-+", OptionCommand::ResetQuietly => "-(P)+", OptionCommand::Set => "-!", OptionCommand::SetQuietly => "-(P)!", OptionCommand::Query => "_" }.into(); }
         if let Mode::OptionLong(command, ref name) = self.mode {
             let prefix = match command { OptionCommand::Toggle => "--", OptionCommand::ToggleQuietly => "--(P)", OptionCommand::Reset => "--+", OptionCommand::ResetQuietly => "--(P)+", OptionCommand::Set => "--!", OptionCommand::SetQuietly => "--(P)!", OptionCommand::Query => "__" };
-            let name = match name { OptionName::Typing(name) => name.as_str(), OptionName::Raw => "raw-control-chars", OptionName::Color => "RAW-CONTROL-CHARS" };
+            let name = match name { OptionName::Typing(name) => name.as_str(), OptionName::Raw => "raw-control-chars", OptionName::Color => "RAW-CONTROL-CHARS", OptionName::LineNumbers => "line-numbers", OptionName::DisplayLineNumbers => "LINE-NUMBERS" };
             return format!("{prefix}{name}");
         }
         if matches!(self.mode, Mode::FileCommand(_)) { return " :".into(); }

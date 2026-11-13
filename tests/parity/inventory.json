@@ -1843,10 +1843,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["invocation-toggle-raw-long-name","invocation-toggle-color-long-name","invocation-unknown-long-interactive","invocation-query-raw-long-name","invocation-set-color-long-name","invocation-reset-color-long-name","invocation-quiet-color-long-name","invocation-long-option-edit","invocation-long-option-erase-completed","invocation-long-option-equals"],
+      "cases": ["invocation-toggle-raw-long-name","invocation-toggle-color-long-name","invocation-unknown-long-interactive","invocation-query-raw-long-name","invocation-set-color-long-name","invocation-reset-color-long-name","invocation-quiet-color-long-name","invocation-long-option-edit","invocation-long-option-erase-completed","invocation-long-option-equals","invocation-line-numbers-long-name","invocation-line-numbers-long-lower","invocation-line-numbers-long-query"],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Raw and color long names complete unique prefixes for toggle, query, set, reset and quiet forms; unknown names display a notice. Other option names and editing interactions beyond the named cases remain open."
+      "cause": "Raw, color and line-number long names complete unique prefixes in the named cases; raw and color support query, set, reset and quiet forms; unknown names display a notice. Other option names and editing interactions beyond the named cases remain open."
     },
     {
       "id": "man-0410",
