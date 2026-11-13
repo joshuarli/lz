@@ -1029,6 +1029,16 @@ impl Pager {
             Key::Char('Z') => self.mode = Mode::QuitPrefix,
             Key::Char(':') => self.mode = Mode::FileCommand(std::num::NonZeroUsize::new(count.unwrap_or(1)).unwrap()),
             Key::Char('r') | Key::Ctrl('r' | 'l') => self.position_initialized(),
+            Key::Char('R') => {
+                self.position_initialized();
+                let line = self.display_line_idx(self.top_line).unwrap_or(0);
+                let past_end = self.buffer.reload_regular_file(line);
+                if self.filter.is_some() { self.rebuild_filter(); }
+                if past_end {
+                    self.top_line = 0;
+                    self.command_error("Cannot seek to that file position".into(), ErrorAction::Dismiss);
+                }
+            }
             Key::Char('m') => self.mode = Mode::SetMark,
             Key::Char('\'') => self.mode = Mode::JumpMark,
 
@@ -1909,9 +1919,10 @@ impl Pager {
 
     fn render_status(&self, buf: &mut Frame, w: usize) {
         buf.position(self.term_height.saturating_sub(1) as usize);
-        let status = self.build_status();
-        let emphasized = self.mode == Mode::Follow || (self.mode == Mode::Help && self.help_prefix.is_none()) || (self.mode != Mode::Help && self.filename_prompt && (self.filename.is_some() || self.files.count > 1)) || status.starts_with("(END)") || self.status_msg.is_some();
-        if emphasized { buf.extend_from_slice(b"\x1b[7m"); }
+        let base_status = self.build_status();
+        let emphasized = self.mode == Mode::Follow || (self.mode == Mode::Help && self.help_prefix.is_none()) || (self.mode != Mode::Help && self.filename_prompt && (self.filename.is_some() || self.files.count > 1)) || base_status.starts_with("(END)") || self.status_msg.is_some();
+        let prefix = if self.mode == Mode::Normal && self.filter.is_some() && self.status_msg.is_none() { "& " } else { "" };
+        let status = format!("{prefix}{base_status}");
         let mut suffix_width = 0;
         let mut start = status.len();
         for (index, character) in status.char_indices().rev() {
@@ -1920,7 +1931,12 @@ impl Pager {
             start = index;
         }
         let mut columns = 0;
-        for character in status[start..].chars() {
+        let mut emphasis_started = false;
+        for (offset, character) in status[start..].char_indices() {
+            if emphasized && !emphasis_started && start + offset >= prefix.len() {
+                buf.extend_from_slice(b"\x1b[7m");
+                emphasis_started = true;
+            }
             let width = unicode_width::UnicodeWidthChar::width(character).unwrap_or(0);
             if columns + width > w { break; }
             let mut bytes = [0; 4];

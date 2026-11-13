@@ -70,6 +70,25 @@ impl LineBuffer {
 
     pub fn state(&self) -> SourceState { self.state }
 
+    pub(crate) fn reload_regular_file(&mut self, line: usize) -> bool {
+        let Source::File(file) = &self.source else { return false; };
+        if self.error.is_some() { return false; }
+        let metadata = match file.metadata() {
+            Ok(metadata) => metadata,
+            Err(error) => { self.error = Some(error); self.state = SourceState::Failed; return false; }
+        };
+        if !metadata.is_file() { return false; }
+        let past_end = match self.starts.get(line) {
+            Ok(position) => position > metadata.len(),
+            Err(error) => { self.error = Some(error); self.state = SourceState::Failed; return false; }
+        };
+        self.starts = Offsets::new();
+        self.scanned = 0;
+        self.state = SourceState::Ready;
+        self.line.clear();
+        past_end
+    }
+
     pub(crate) fn refresh_waiting(&mut self) -> bool {
         self.state == SourceState::Waiting && self.scan()
     }

@@ -101,6 +101,7 @@ Backward searches start at the bottom of the displayed screen; startup backward 
 | `Esc-{` | Return to the first column |
 | `m` + letter / `'` + letter | Set / return to an in-file mark |
 | `r` / `Ctrl-R` / `Ctrl-L` | Repaint the screen |
+| `R` | Reload a regular file and repaint |
 
 Default page movement uses one content viewport; half-page movement uses half the terminal height rounded up. A numeric `d` or `u` sets the default for both directions. `z` and `w` move forward and backward by a window; a numeric prefix updates the window used by both directions and page commands. These defaults survive file switches. Zero command prefixes retain the current default. `-zN`, `--window=N` and `-N` configure the window at startup. Positive sizes stay fixed; zero uses the terminal height and negative values subtract from it, updating after resize. A nonpositive effective window keeps the position and rings a boundary bell, at most once per wall-clock second. Plain-line aliases include `e`, Ctrl-E/Ctrl-N, `y`, Ctrl-Y/Ctrl-P/Ctrl-K, `f`, Ctrl-V and `<`/`>`. Horizontal movement temporarily chops lines while shifted and restores wrapping at the left edge. Wrapped movement and custom header interactions remain unfinished.
 

@@ -111,6 +111,7 @@ enum Event {
     SuspendSignal {},
     WaitSuspended {},
     Append { bytes: Vec<u8> },
+    Rewrite { bytes: Vec<u8> },
 }
 
 fn cases() -> Result<Vec<Case>> {

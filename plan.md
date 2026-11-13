@@ -36,6 +36,10 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S04ar:** previous-file commands inside standalone help show the reference error. Three cases cover counts, acknowledgment and replay.
 
+**S07ah:** `R` reloads regular files. Six cases cover append, rewrite, truncation past the displayed position, filtered input and primary-screen mode. Changed line geometry, nonregular sources, replacement and cancellation remain open. The parity runner can rewrite its owned fixture.
+
+**S08i:** filtered normal prompts show the unstyled `& ` prefix and preserve the status attributes. End and non-end cases pass, as does filtered reload. Other modes and filter interactions remain open.
+
 The following work remains local and actionable: complete the nonparked S04–S11 behaviors and interactions, upstream scenario translations, bounded fuzzing and holdouts, parity CI checks, final performance and size gates, cleanup, and independent review. The inventory retains behavior-specific causes and cases. The S06 shared renderer still needs bounded long-line startup, Unicode, OSC, and multirow handling. POSIX search, cancellation, headers, helper and pipe transitions, history concurrency, and lifecycle hardening remain incomplete.
 
 Parked conditions are:

@@ -532,10 +532,17 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "navigation-reload-appended-file",
+        "navigation-reload-appended-primary",
+        "navigation-reload-rewritten-file",
+        "navigation-reload-appended-position",
+        "navigation-reload-truncated-position",
+        "navigation-reload-filtered-file"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named append, rewrite, truncation, position, filtered and primary-screen cases pass for regular files. Changed line geometry, nonregular sources, replacement and cancellation remain open"
     },
     {
       "id": "man-0112",
@@ -1465,11 +1472,14 @@
       ],
       "cases": [
         "lifecycle-int-filter",
-        "lifecycle-int-filter-history"
+        "lifecycle-int-filter-history",
+        "search-filter-status-end",
+        "search-filter-status-long",
+        "navigation-reload-filtered-file"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Filter input displays the reference &/ prompt and cancels on SIGINT. Filter execution, modifiers, positions and interactions remain unverified Pending interrupted filter input is retained in explicit history."
+      "cause": "Filter input displays the reference &/ prompt and cancels on SIGINT. Named filter status and reload cases pass. Modifiers, positions and other interactions remain open. Interrupted filter input is retained in explicit history."
     },
     {
       "id": "man-0335",

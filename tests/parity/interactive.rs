@@ -238,6 +238,9 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
             Event::Append { bytes } => {
                 OpenOptions::new().append(true).open(world.join(std::ffi::OsString::from_vec(case.fixture_name.clone())))?.write_all(bytes)?;
             }
+            Event::Rewrite { bytes } => {
+                OpenOptions::new().write(true).truncate(true).open(world.join(std::ffi::OsString::from_vec(case.fixture_name.clone())))?.write_all(bytes)?;
+            }
         }
     }
     let status = terminal.wait_for_exit(checkpoint_deadline())?;
