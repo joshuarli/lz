@@ -152,7 +152,7 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S08aw accepted (partial):** tested plain-line search matches, repeats and incremental previews target below fixed header rows, including a current-line anchor and an explicit target row. Six focused and two neighboring cases pass on macOS arm64 and Linux arm64 Docker; all-target Clippy passes on macOS. Filters, other header anchors and target rows, and wrapped multirow interactions remain open.
 
-**S12bm accepted (partial translation):** the original table sequence through five right arrows and eight down arrows after its first header-aware search passes generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Later movement, header columns, per-key checks and original custom termcap remain open.
+**S12bm accepted (partial translation):** the original table sequence through four right arrows and nine down arrows after its first header-aware search passes generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Later movement, header columns, per-key checks and original custom termcap remain open.
 
 **S12bl accepted (partial translation):** the original table sequence through its first search with fixed headers passes generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Later navigation, header columns, per-key checks and original custom termcap remain open.
 
