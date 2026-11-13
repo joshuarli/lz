@@ -77,6 +77,27 @@ fn retain_checkpoint(terminal: &PtyTest, id: &str) -> Result<std::path::PathBuf>
     Ok(directory)
 }
 
+fn bell_window_second() -> Result<std::time::Duration> {
+    Ok(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?)
+}
+
+fn wait_bell_window(deadline: Instant) -> Result<u64> {
+    loop {
+        let now = bell_window_second()?;
+        if now.subsec_millis() < 100 { return Ok(now.as_secs()); }
+        if Instant::now() >= deadline { return Err("bell window could not start before deadline".into()); }
+        std::thread::sleep(Duration::from_millis(5));
+    }
+}
+
+fn finish_bell_window(start: Option<u64>, now: u64) -> Result<()> {
+    match start {
+        Some(start) if start == now => Ok(()),
+        Some(_) => Err("bell window crossed a clock second".into()),
+        None => Err("bell window ended without a start".into()),
+    }
+}
+
 fn wait_checkpoint(terminal: &mut PtyTest, id: &str, deadline: Instant, ready: &str, row: Option<usize>) -> Result<()> {
     const QUIET: Duration = Duration::from_millis(20);
     loop {
@@ -203,6 +224,7 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
     let checkpoint_deadline = || Deadline::from_instant(total.min(Instant::now() + Duration::from_secs(3)));
     let mut checkpoints = Vec::new();
     let mut suspensions = 0;
+    let mut bell_window = None;
     for event in &case.events {
         match event {
             Event::Send { bytes } => {
@@ -219,6 +241,13 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
                 let deadline = total.min(Instant::now() + Duration::from_secs(3));
                 wait_checkpoint(&mut terminal, &case.id, deadline, ready, *row)?;
                 checkpoints.push(json!({"screen": screen(&terminal.screen()), "files": files(&world)?, "bells": audible_bells(terminal.raw_output())}));
+            }
+            Event::BellWindowStart {} => {
+                if bell_window.is_some() { return Err("bell window already started".into()); }
+                bell_window = Some(wait_bell_window(total)?);
+            }
+            Event::BellWindowEnd {} => {
+                finish_bell_window(bell_window.take(), bell_window_second()?.as_secs())?;
             }
             Event::Resize { columns, rows } => terminal.resize(Size::new(*columns, *rows)?)?,
             Event::Signal { number } => terminal.signal(*number)?,
@@ -243,6 +272,7 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
             }
         }
     }
+    if bell_window.is_some() { return Err("bell window was not ended".into()); }
     let status = terminal.wait_for_exit(checkpoint_deadline())?;
     let state_path = if case.source == "pty-pipe" { world.join("supervisor-state") } else { manifest.with_extension("state") };
     let state: Value = serde_json::from_slice(&fs::read(state_path)?)?;
@@ -510,6 +540,9 @@ pub fn selftest() -> Result<()> {
 }
 
 pub(super) fn checkpoint_selftest() -> Result<()> {
+    if finish_bell_window(Some(7), 7).is_err() || finish_bell_window(Some(7), 8).is_ok() || finish_bell_window(None, 7).is_ok() {
+        return Err("bell window accepted an invalid interval".into());
+    }
     let world = super::stdio::world()?;
     let quoted = std::env::current_exe()?.to_str().ok_or("non-UTF-8 checkpoint fixture path")?.replace('\'', "'\\''");
     for (name, fault) in [("quiet", "none"), ("noisy", "flood")] {
@@ -526,6 +559,17 @@ pub(super) fn checkpoint_selftest() -> Result<()> {
     };
     let quiet = world.path().join("quiet");
     let noisy = world.path().join("noisy");
+    let mut timed = case.clone();
+    timed.events = vec![Event::Checkpoint { ready:"probe".into(), row:Some(0) }, Event::BellWindowStart {}, Event::BellWindowEnd {}, Event::Send { bytes:b"q\n".to_vec() }];
+    if super::observe_case(&quiet, &quiet, &timed)["outcome"] != "pass" { return Err("valid bell window failed".into()); }
+    for (events, message) in [
+        (vec![Event::BellWindowEnd {}], "bell window ended without a start"),
+        (vec![Event::BellWindowStart {}, Event::BellWindowStart {}], "bell window already started"),
+        (vec![Event::BellWindowStart {}], "bell window was not ended"),
+    ] {
+        timed.events = events;
+        if !execute(&quiet, &timed).is_err_and(|error| error.to_string().contains(message)) { return Err(format!("bell window accepted invalid sequence: {message}").into()); }
+    }
     let result = super::observe_case(&quiet, &noisy, &case);
     if result["outcome"] != "mismatch" || !result["actual_error_detail"].as_str().is_some_and(|detail| detail.starts_with("Quiescence {")) {
         return Err(format!("continuous redraw did not retain its candidate-only quiescence failure: {} {}", result["outcome"], result["actual_error_detail"]).into());
@@ -535,6 +579,6 @@ pub(super) fn checkpoint_selftest() -> Result<()> {
         || !result["error_detail"].as_str().is_some_and(|detail| detail.starts_with("Quiescence {")) {
         return Err("oracle nonquiescence was counted as parity".into());
     }
-    println!("bounded output slices preserve 20ms raw quiescence; continuous redraw is a candidate mismatch or oracle harness error, with trace cap unchanged");
+    println!("bell windows reject invalid and crossed intervals; bounded output slices preserve 20ms raw quiescence and detect continuous redraw");
     Ok(())
 }
