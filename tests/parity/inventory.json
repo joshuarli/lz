@@ -1001,7 +1001,15 @@
         "upstream-chinese1-unicode-search",
         "upstream-chinese1-use-color",
         "search-ui-color-plain-multiple",
-        "upstream-chinese1-colored-regex"
+        "upstream-chinese1-colored-regex",
+        "search-ui-color-sgr-inside-match",
+        "search-ui-color-existing-inverse",
+        "search-ui-color-rgb-multiple",
+        "search-ui-color-indexed-background",
+        "search-ui-color-colon-parameters",
+        "search-ui-color-colon-simple",
+        "search-ui-color-colon-prior-style",
+        "search-ui-color-colon-color-space"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
@@ -5002,10 +5010,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["rendering-chinese-use-color-after-missing", "invocation-use-color-startup", "sessions-use-color-next-file", "invocation-use-color-disable", "invocation-use-color-query-reset", "upstream-chinese1-use-color", "search-ui-color-plain-multiple"],
+      "cases": ["rendering-chinese-use-color-after-missing", "invocation-use-color-startup", "sessions-use-color-next-file", "invocation-use-color-disable", "invocation-use-color-query-reset", "upstream-chinese1-use-color", "search-ui-color-plain-multiple", "search-ui-color-sgr-inside-match","search-ui-color-existing-inverse","search-ui-color-rgb-multiple","search-ui-color-indexed-background","search-ui-color-colon-parameters","search-ui-color-colon-simple","search-ui-color-colon-prior-style","search-ui-color-colon-color-space"],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "The tested startup and interactive use-color settings color prompts and notices and persist across files. Plain-text search highlights use the default color in the named cases. Styled-source overlays, other color classes and custom colors remain open."
+      "cause": "The tested startup and interactive use-color settings color prompts and notices and persist across files. Plain-text search highlights use the default color in the named cases. The named styled-source overlays restore indexed, RGB and inverse state. Other escape forms, color classes and custom colors remain open."
     },
     {
       "id": "man-1542",

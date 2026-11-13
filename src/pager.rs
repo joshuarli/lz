@@ -713,7 +713,7 @@ pub struct Config {
     pub startup_commands: Vec<Vec<u8>>,
     pub charset: Charset,
     pub controls: ControlDisplay,
-    /// Select UI colors; prompt, notice and unstyled search colors are implemented.
+    /// Select UI colors; prompt, notice and tested search colors are implemented.
     pub use_color: bool,
     pub chop: bool,
     pub line_numbers: LineNumberMode,
@@ -2311,7 +2311,8 @@ impl Pager {
             let stripped = strip_ansi(display);
             let matches: Vec<_> = search.find_matches_stripped(&stripped).into_iter().filter(|(start, end)| start < end).collect();
             if !matches.is_empty() {
-                let colored = self.use_color && !display.as_bytes().contains(&0x1b);
+                let colored = self.use_color;
+                let mut source_colors = crate::ansi::SgrColors::default();
                 let mut source = 0;
                 let mut visible = 0;
                 let mut next_match = 0;
@@ -2319,7 +2320,7 @@ impl Pager {
                 let mut inverse = false;
                 while source < display.len() {
                     if highlighted && visible == matches[next_match].1 {
-                        if colored { buf.extend_from_slice(b"\x1b[39;49m"); }
+                        if colored { source_colors.restore(buf); }
                         else if !inverse { buf.extend_from_slice(b"\x1b[27m"); }
                         highlighted = false;
                         next_match += 1;
@@ -2332,8 +2333,10 @@ impl Pager {
                     if escape > 0 {
                         let sequence = &display.as_bytes()[source..source + escape];
                         inverse = crate::ansi::sgr_inverse(sequence, inverse);
+                        let sgr = sequence.starts_with(b"\x1b[") && sequence.ends_with(b"m");
+                        if colored && sgr { source_colors.apply(sequence); }
                         buf.extend_from_slice(sequence);
-                        if highlighted && sequence.starts_with(b"\x1b[") && sequence.ends_with(b"m") { buf.extend_from_slice(b"\x1b[7m"); }
+                        if highlighted && sgr { buf.extend_from_slice(if colored { b"\x1b[30;102m" } else { b"\x1b[7m" }); }
                         source += escape;
                     } else {
                         buf.push(display.as_bytes()[source]);
@@ -2342,7 +2345,7 @@ impl Pager {
                     }
                 }
                 if highlighted {
-                    if colored { buf.extend_from_slice(b"\x1b[39;49m"); }
+                    if colored { source_colors.restore(buf); }
                     else if !inverse { buf.extend_from_slice(b"\x1b[27m"); }
                 }
                 return;

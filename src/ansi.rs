@@ -131,6 +131,98 @@ pub(crate) fn sgr_inverse(sequence: &[u8], mut inverse: bool) -> bool {
     inverse
 }
 
+#[derive(Clone, Copy, Default)]
+enum SgrColor { #[default] Default, Basic(u8), Indexed(u8), Rgb(u8, u8, u8) }
+
+#[derive(Clone, Copy)]
+enum SgrColorSpace { Empty, Id(u8) }
+
+#[derive(Clone, Copy, Default)]
+struct SgrChannel { base: SgrColor, rgb_with_space: Option<(SgrColorSpace, u8, u8, u8)> }
+
+impl SgrChannel {
+    fn set(&mut self, color: SgrColor) { self.base = color; self.rgb_with_space = None; }
+}
+
+#[derive(Default)]
+pub(crate) struct SgrColors { foreground: SgrChannel, background: SgrChannel }
+
+impl SgrColors {
+    pub(crate) fn apply(&mut self, sequence: &[u8]) {
+        let Some(parameters) = sequence.strip_prefix(b"\x1b[").and_then(|bytes| bytes.strip_suffix(b"m")) else { return; };
+        if !parameters.iter().all(|byte| byte.is_ascii_digit() || matches!(byte, b';' | b':')) { return; }
+        let number = |bytes: &[u8]| -> Option<u8> {
+            if bytes.is_empty() { Some(0) } else { std::str::from_utf8(bytes).ok()?.parse().ok() }
+        };
+        let mut fields = parameters.split(|byte| *byte == b';');
+        while let Some(field) = fields.next() {
+            let mut parts = field.split(|byte| *byte == b':');
+            let Some(code) = parts.next().and_then(number) else { continue; };
+            match code {
+                0 => { self.foreground.set(SgrColor::Default); self.background.set(SgrColor::Default); }
+                30..=37 | 90..=97 => self.foreground.set(SgrColor::Basic(code)),
+                40..=47 | 100..=107 => self.background.set(SgrColor::Basic(code)),
+                39 => self.foreground.set(SgrColor::Default),
+                49 => self.background.set(SgrColor::Default),
+                38 | 48 | 58 => {
+                    let mut color_space = None;
+                    let color = if field.contains(&b':') {
+                        match parts.next().and_then(number) {
+                            Some(5) => parts.next().and_then(number).map(SgrColor::Indexed),
+                            Some(2) => {
+                                let first = parts.next();
+                                let red = match parts.clone().count() {
+                                    2 => first,
+                                    3 => {
+                                        color_space = match first { Some(b"") => Some(SgrColorSpace::Empty), Some(value) => number(value).map(SgrColorSpace::Id), None => None };
+                                        if color_space.is_some() { parts.next() } else { None }
+                                    }
+                                    _ => None,
+                                };
+                                red.and_then(number).zip(parts.next().and_then(number)).zip(parts.next().and_then(number))
+                                    .map(|((red, green), blue)| SgrColor::Rgb(red, green, blue))
+                            }
+                            _ => None,
+                        }
+                    } else {
+                        match fields.next().and_then(number) {
+                            Some(5) => fields.next().and_then(number).map(SgrColor::Indexed),
+                            Some(2) => fields.next().and_then(number).zip(fields.next().and_then(number)).zip(fields.next().and_then(number))
+                                .map(|((red, green), blue)| SgrColor::Rgb(red, green, blue)),
+                            _ => None,
+                        }
+                    };
+                    let channel = match code { 38 => Some(&mut self.foreground), 48 => Some(&mut self.background), _ => None };
+                    if let (Some(channel), Some(color)) = (channel, color) {
+                        if let (Some(space), SgrColor::Rgb(red, green, blue)) = (color_space, color) { channel.rgb_with_space = Some((space, red, green, blue)); }
+                        else { channel.set(color); }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    pub(crate) fn restore(&self, output: &mut Vec<u8>) {
+        use std::io::Write;
+        output.extend_from_slice(b"\x1b[39;49m");
+        for (prefix, channel) in [(38, self.foreground), (48, self.background)] {
+            match channel.base {
+                SgrColor::Default => {}
+                SgrColor::Basic(code) => write!(output, "\x1b[{code}m").unwrap(),
+                SgrColor::Indexed(index) => write!(output, "\x1b[{prefix};5;{index}m").unwrap(),
+                SgrColor::Rgb(red, green, blue) => write!(output, "\x1b[{prefix};2;{red};{green};{blue}m").unwrap(),
+            }
+            if let Some((space, red, green, blue)) = channel.rgb_with_space {
+                match space {
+                    SgrColorSpace::Empty => write!(output, "\x1b[{prefix}:2::{red}:{green}:{blue}m").unwrap(),
+                    SgrColorSpace::Id(id) => write!(output, "\x1b[{prefix}:2:{id}:{red}:{green}:{blue}m").unwrap(),
+                }
+            }
+        }
+    }
+}
+
 /// Strip all ANSI escape sequences from a line, returning visible text only.
 pub fn strip_ansi(line: &str) -> String {
     let bytes = line.as_bytes();
