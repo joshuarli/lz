@@ -966,11 +966,17 @@
         "search-posix-escaped-digit",
         "search-posix-escaped-backslash",
         "search-posix-class-then-escape",
-        "search-posix-leading-bracket-escape"
+        "search-posix-leading-bracket-escape",
+        "search-posix-bracket-backslash",
+        "search-posix-bracket-backslash-dash",
+        "search-posix-bracket-backslash-close",
+        "search-posix-bracket-backslash-pair",
+        "search-posix-bracket-backslash-range",
+        "search-posix-bracket-backslash-class"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Literal search, named leftmost-longest alternatives and escaped alphanumerics pass on macOS arm64. Musl libc differs for escaped letters; Linux end-to-end proof, bracket escapes, full dialect, diagnostics, Unicode, modifiers, colors and layout interactions remain open"
+      "cause": "Literal search, named leftmost-longest alternatives and escaped alphanumerics pass on macOS arm64. Musl libc differs for escaped letters; Linux end-to-end proof, other bracket forms, full dialect, diagnostics, Unicode, modifiers, colors and layout interactions remain open"
     },
     {
       "id": "man-0220",

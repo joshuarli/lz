@@ -22,7 +22,9 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S04aq:** after leaving CLI help for the first file, `:p` reports no previous file in both the reference and lz. The corrected case covers acknowledgment and return to the file.
 
-**S08c:** eight C-locale cases cover escaped alphanumerics, escaped backslashes and surrounding bracket expressions on macOS. The musl libc probe treats escaped letters differently and escaped digits as literals. The implementation keeps musl letter handling and normalizes digits. Linux end-to-end verification and escapes inside bracket expressions remain open.
+**S08c:** eight C-locale cases cover escaped alphanumerics, escaped backslashes and surrounding bracket expressions on macOS. The musl libc probe treats escaped letters differently and escaped digits as literals. The implementation keeps musl letter handling and normalizes digits. Linux end-to-end verification remains open. S08d covers named bracket-expression backslash cases.
+
+**S08d:** six macOS cases cover literal backslashes inside bracket expressions, including ranges, closing brackets and named classes. Local macOS and musl libc probes agree on these forms. Linux pager integration remains unverified.
 
 The following work remains local and actionable: complete the nonparked S04–S11 behaviors and interactions, upstream scenario translations, bounded fuzzing and holdouts, parity CI checks, final performance and size gates, cleanup, and independent review. The inventory retains behavior-specific causes and cases. The S06 shared renderer still needs bounded long-line startup, Unicode, OSC, and multirow handling. POSIX search, cancellation, headers, helper and pipe transitions, history concurrency, and lifecycle hardening remain incomplete.
 

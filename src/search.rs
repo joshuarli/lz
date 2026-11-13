@@ -115,7 +115,7 @@ fn is_literal(pattern: &str) -> bool {
     })
 }
 
-fn posix_escaped_literals(pattern: &str) -> String {
+fn translate_posix_escapes(pattern: &str) -> String {
     let bytes = pattern.as_bytes();
     let mut output = Vec::with_capacity(bytes.len());
     let mut index = 0;
@@ -140,6 +140,7 @@ fn posix_escaped_literals(pattern: &str) -> String {
             class_first = false;
             continue;
         }
+        if in_class && byte == b'\\' { output.push(byte); }
         output.push(byte);
         if !in_class && byte == b'[' { in_class = true; class_first = true; }
         else if in_class {
@@ -168,7 +169,7 @@ impl RegexMatcher {
     fn new(pattern: &str, case_insensitive: bool) -> Result<Self, String> {
         let first = PikeVM::builder()
             .syntax(regex_automata::util::syntax::Config::new().case_insensitive(case_insensitive))
-            .build(&posix_escaped_literals(pattern)).map_err(|error| format!("Invalid regex: {error}"))?;
+            .build(&translate_posix_escapes(pattern)).map_err(|error| format!("Invalid regex: {error}"))?;
         let longest = PikeVM::builder().configure(PikeVM::config().match_kind(MatchKind::All))
             .build_from_nfa(first.get_nfa().clone()).map_err(|error| format!("Invalid regex: {error}"))?;
         let caches = Mutex::new(RegexCaches { first: first.create_cache(), longest: longest.create_cache() });
@@ -314,6 +315,14 @@ impl Search {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn posix_bracket_backslashes_are_literal_members() {
+        let search = Search::new(r"[\d]", CaseSensitivity::Sensitive).unwrap();
+        assert!(search.is_match(r"\"));
+        assert!(search.is_match("d"));
+        assert!(!search.is_match("1"));
+    }
 
     #[test]
     fn escaped_digits_are_literals_in_posix_search() {
