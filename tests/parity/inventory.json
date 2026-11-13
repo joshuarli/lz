@@ -4049,10 +4049,18 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "invocation-tilde-short",
+        "invocation-tilde-long",
+        "invocation-tilde-reset",
+        "invocation-tilde-env-reset",
+        "invocation-tilde-chop",
+        "invocation-tilde-startup",
+        "invocation-tilde-no-init"
+      ],
+      "implementation": "partial",
+      "evidence": "partially compatible",
+      "cause": "EOF marker suppression passes named cases; primary-screen repositioning under -X remains incompatible independently of this option"
     },
     {
       "id": "man-1295",

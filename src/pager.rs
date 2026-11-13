@@ -362,6 +362,7 @@ pub struct Config {
     pub controls: ControlDisplay,
     pub chop: bool,
     pub line_numbers: bool,
+    pub show_eof_markers: bool,
     pub search_case: CaseSensitivity,
 }
 
@@ -380,6 +381,7 @@ pub struct Pager {
     left_col: usize,
     wrap: bool,
     line_numbers: bool,
+    show_eof_markers: bool,
     search: Option<Search>,
     search_case: CaseSensitivity,
     search_dir: SearchDir,
@@ -437,6 +439,7 @@ impl Pager {
             left_col: 0,
             wrap: !config.chop,
             line_numbers: config.line_numbers,
+            show_eof_markers: config.show_eof_markers,
             search: None,
             search_case: config.search_case,
             search_dir: SearchDir::Forward,
@@ -1403,7 +1406,7 @@ impl Pager {
     }
 
     fn write_eof_marker(&self, buf: &mut Vec<u8>) {
-        if !(self.compact_initial && self.buffer.is_finished()) { buf.extend_from_slice(b"\x1b[1m~\x1b[m"); }
+        if self.show_eof_markers && !(self.compact_initial && self.buffer.is_finished()) { buf.extend_from_slice(b"\x1b[1m~\x1b[m"); }
     }
 
     fn probe_after_complete_line(&mut self, line: usize) -> io::Result<()> {
