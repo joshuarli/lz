@@ -1,6 +1,6 @@
 use std::io::{self, Read};
 use std::os::fd::AsRawFd;
-use std::os::unix::process::CommandExt;
+use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::process::{Child, Command, Stdio};
 use std::sync::atomic::Ordering;
 use std::time::Duration;
@@ -51,12 +51,12 @@ impl Drop for ForegroundChild {
 
 enum Output { FirstLine, Closed }
 
-pub(crate) fn read_line(command: Command, tty: i32) -> io::Result<Vec<u8>> {
-    run(command, tty, Output::FirstLine)
+pub(crate) fn read_line(command: crate::terminal::ShellHelper, tty: i32) -> io::Result<Vec<u8>> {
+    run(command.into_command(), tty, Output::FirstLine)
 }
 
-pub(crate) fn close_output(command: Command, tty: i32) -> io::Result<()> {
-    run(command, tty, Output::Closed).map(|_| ())
+pub(crate) fn close_output(command: crate::terminal::ShellHelper, tty: i32) -> io::Result<()> {
+    run(command.into_command(), tty, Output::Closed).map(|_| ())
 }
 
 fn run(mut command: Command, tty: i32, output_mode: Output) -> io::Result<Vec<u8>> {
@@ -109,7 +109,11 @@ fn run(mut command: Command, tty: i32, output_mode: Output) -> io::Result<Vec<u8
         }
         drop(output);
         loop {
-            if let Some(_status) = child.child.try_wait()? { child.reaped = true; break; }
+            if let Some(status) = child.child.try_wait()? {
+                child.reaped = true;
+                if status.code() == Some(crate::terminal::HELPER_INTERRUPT_STATUS) || status.signal() == Some(SIGINT) { crate::terminal::note_interrupt(); }
+                break;
+            }
             forward_interrupt(&child, &mut interrupt_forwarded)?;
             if cancelled() { return Err(io::Error::new(io::ErrorKind::Interrupted, "helper interrupted")); }
             std::thread::sleep(Duration::from_millis(10));

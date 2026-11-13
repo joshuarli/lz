@@ -52,6 +52,7 @@ static INTERRUPT_FLAG: AtomicBool = AtomicBool::new(false);
 pub fn take_interrupt() -> bool { INTERRUPT_FLAG.swap(false, Ordering::SeqCst) }
 
 pub(crate) fn interrupt_pending() -> bool { INTERRUPT_FLAG.load(Ordering::SeqCst) }
+pub(crate) fn note_interrupt() { INTERRUPT_FLAG.store(true, Ordering::SeqCst); }
 
 /// The fd we set raw mode on (the /dev/tty fd).
 static ALT_SCREEN: AtomicBool = AtomicBool::new(false);
@@ -325,6 +326,21 @@ pub fn restore_terminal() {
     if let Err(error) = restore_acquired_terminal() { eprintln!("lz: terminal restoration: {error}"); }
 }
 
+pub(crate) const HELPER_INTERRUPT_STATUS: i32 = 222;
+
+/// A shell command whose interrupt outcome is reported to its terminal owner.
+pub struct ShellHelper { command: std::ffi::OsString }
+
+impl ShellHelper {
+    pub fn new(command: std::ffi::OsString) -> Self { Self { command } }
+    pub(crate) fn into_command(self) -> std::process::Command {
+        let mut process = std::process::Command::new("/bin/sh");
+        process.arg("-c").arg(format!("trap 'exit {HELPER_INTERRUPT_STATUS}' INT; \"$@\"; exit 0"))
+            .arg("lz-helper").arg("/bin/sh").arg("-c").arg(self.command);
+        process
+    }
+}
+
 /// Owns keyboard input and restores every acquired terminal mode before closing the tty.
 pub struct Session {
     keys: crate::input::KeyReader,
@@ -382,12 +398,12 @@ impl Session {
     pub fn keys_mut(&mut self) -> &mut crate::input::KeyReader { &mut self.keys }
 
     /// Run a foreground helper, read its first output line, and reclaim the tty after reaping it.
-    pub fn read_helper_line(&mut self, command: std::process::Command) -> io::Result<Vec<u8>> {
+    pub fn read_helper_line(&mut self, command: ShellHelper) -> io::Result<Vec<u8>> {
         crate::helper::read_line(command, self.keys.fd())
     }
 
     /// Run a foreground helper with its output pipe closed and wait for it.
-    pub fn run_helper_with_closed_output(&mut self, command: std::process::Command) -> io::Result<()> {
+    pub fn run_helper_with_closed_output(&mut self, command: ShellHelper) -> io::Result<()> {
         crate::helper::close_output(command, self.keys.fd())
     }
 

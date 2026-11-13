@@ -1,7 +1,6 @@
 use std::ffi::{OsStr, OsString};
 use std::io;
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
-use std::process::Command;
 
 #[derive(Clone, Copy, Debug)]
 enum InputScope { Files, FilesAndStdin }
@@ -79,13 +78,11 @@ fn quote(bytes: &[u8]) -> Vec<u8> {
     quoted
 }
 
-fn shell_command(mut command: Vec<u8>) -> Command {
+fn shell_command(mut command: Vec<u8>) -> lz::terminal::ShellHelper {
     if let Some(shell) = std::env::var_os("SHELL").filter(|shell| !shell.is_empty()) {
         command = [shell.as_bytes(), b" -c ", &quote(&command)].concat();
     }
-    let mut process = Command::new("/bin/sh");
-    process.arg("-c").arg(OsString::from_vec(command));
-    process
+    lz::terminal::ShellHelper::new(OsString::from_vec(command))
 }
 
 pub(super) enum CloseOutcome { Complete, InvalidTemplate }

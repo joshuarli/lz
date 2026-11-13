@@ -5192,11 +5192,14 @@
         "integrations-lessclose-invalid-switch-quit",
         "integrations-lessclose-invalid-switch-int",
         "integrations-lessclose-invalid-switch-term",
-        "integrations-lessclose-invalid-switch-continue"
+        "integrations-lessclose-invalid-switch-continue",
+        "integrations-lessopen-keyboard-int-quit",
+        "integrations-lessopen-keyboard-int-untrapped",
+        "integrations-lessopen-exit-222"
       ],
       "implementation": "partial",
-      "evidence": "partially compatible",
-      "cause": "Named file-return scenarios cover quoted filename bytes, percent substitution, first-line/EOF and empty fallback, exit status, secure and CLI policies, exact initial diagnostics and acknowledgment, foreground tty input and TERM cleanup. A leading dash extends execution and validation to stdin. The file-return form retains stdin regardless of the returned filename, and helper reads consume stdin. Named file/stdin transitions retain applicability, data and file-count prompts. Live pipes, LESSCLOSE, custom shell/metachar settings, repeated interactive diagnostics and interrupted/stopped helper interactions remain open. Real SIGINT cleanup and -K are covered; keyboard SIGINT still misses pager interrupt behavior while the helper owns a separate foreground group. File-return postprocessing covers normal exit, switches, binary refusal, stdin, empty fallback and quoted arguments; live-pipe cleanup and interactive invalid-template diagnostics remain open. Invalid-template diagnostics also cover file-switch acknowledgment, key replay and -K interrupts."
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named file-return scenarios cover quoted filename bytes, percent substitution, first-line/EOF and empty fallback, exit status, secure and CLI policies, exact initial diagnostics and acknowledgment, foreground tty input and TERM cleanup. A leading dash extends execution and validation to stdin. The file-return form retains stdin regardless of the returned filename, and helper reads consume stdin. Named file/stdin transitions retain applicability, data and file-count prompts. Live pipes, LESSCLOSE, custom shell/metachar settings, repeated interactive diagnostics and interrupted/stopped helper interactions remain open. Real SIGINT cleanup and -K are covered; keyboard SIGINT now preserves helper cleanup and pager interruption in the named cases. File-return postprocessing covers normal exit, switches, binary refusal, stdin, empty fallback and quoted arguments; live-pipe cleanup and interactive invalid-template diagnostics remain open. Invalid-template diagnostics also cover file-switch acknowledgment, key replay and -K interrupts."
     },
     {
       "id": "man-1869",
