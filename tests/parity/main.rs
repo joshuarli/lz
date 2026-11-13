@@ -20,6 +20,8 @@ use fixtures::Fixture;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
+const BASELINE_WORKERS: usize = 8;
+
 #[derive(Debug)]
 struct NeedsEnvironment(String);
 impl std::fmt::Display for NeedsEnvironment {
@@ -307,7 +309,7 @@ fn run(args: &[String]) -> Result<()> {
     if selected.is_empty() { return Err("no selected cases".into()); }
     let meta = metadata(candidate)?;
     let result_dir = stdio::world()?.keep();
-    let results = collect_cases(&selected, if baseline { 4 } else { 1 }, |case| observe_case(&reference, candidate, case));
+    let results = collect_cases(&selected, if baseline { BASELINE_WORKERS } else { 1 }, |case| observe_case(&reference, candidate, case));
     let mut failed = false;
     let mut harness_error = false;
     let full_corpus = selected.len() == cases.len();

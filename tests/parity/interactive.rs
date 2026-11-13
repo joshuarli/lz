@@ -244,20 +244,22 @@ pub fn selftest() -> Result<()> {
     let mut blocked = case.clone();
     blocked.id = "parallel-timeout".into();
     blocked.args[1] = "timeout".into();
-    let mut ready = case.clone();
-    ready.id = "parallel-ready".into();
-    let mut following = ready.clone();
-    following.id = "parallel-following".into();
-    let mut fourth = ready.clone();
-    fourth.id = "parallel-fourth".into();
-    let parallel = super::collect_cases(&[&blocked, &ready, &following, &fourth], 4, |case| super::observe_case(&candidate, &candidate, case));
-    for (index, id, outcome) in [(0, "parallel-timeout", "harness-error"), (1, "parallel-ready", "pass"), (2, "parallel-following", "pass"), (3, "parallel-fourth", "pass")] {
-        if parallel[index]["case"]["id"] != id || parallel[index]["outcome"] != outcome {
+    let mut controls = vec![blocked];
+    for index in 0..super::BASELINE_WORKERS {
+        let mut ready = case.clone();
+        ready.id = format!("parallel-ready-{index}");
+        controls.push(ready);
+    }
+    let references: Vec<_> = controls.iter().collect();
+    let parallel = super::collect_cases(&references, super::BASELINE_WORKERS, |case| super::observe_case(&candidate, &candidate, case));
+    for (index, control) in controls.iter().enumerate() {
+        let outcome = if index == 0 { "harness-error" } else { "pass" };
+        if parallel[index]["case"]["id"] != control.id || parallel[index]["outcome"] != outcome {
             return Err("parallel collection lost, reordered or reclassified a case".into());
         }
     }
     if !parallel[0]["error"].as_str().is_some_and(|error| error.contains("timed out")) { return Err("parallel control failed outside its timeout observation".into()); }
-    println!("bounded workers preserve corpus order, independent fixture worlds and timeout classification while draining subsequent cases");
+    println!("bounded workers preserve corpus order, independent fixture worlds and timeout classification while draining cases beyond the worker count");
     let mut pipe_case = case.clone();
     pipe_case.source = "pty-pipe".into();
     pipe_case.fixture = b"owned data\n".to_vec().into();
