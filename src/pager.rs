@@ -387,6 +387,8 @@ pub struct Pager {
     compact_initial: bool,
     squished: bool,
     startup_bottom: bool,
+    follow_one_screen: bool,
+    bottom_gap: usize,
     startup_commands: VecDeque<Vec<u8>>,
     numeric_prefix: NumericPrefix,
     content_painted: bool,
@@ -436,6 +438,8 @@ impl Pager {
             compact_initial: config.initial_display == InitialDisplay::Startup && config.startup_commands.is_empty(),
             squished: false,
             startup_bottom: false,
+            follow_one_screen: false,
+            bottom_gap: 0,
             startup_commands: config.startup_commands.into(),
             numeric_prefix: NumericPrefix::Empty,
             content_painted: false,
@@ -524,6 +528,10 @@ impl Pager {
             self.render_frame(false)?;
             return self.finish_run();
         }
+        if self.mode == Mode::Follow {
+            self.startup_bottom = true;
+            self.follow_one_screen = true;
+        }
         self.run(keys)
     }
 
@@ -547,6 +555,7 @@ impl Pager {
                 if self.interrupt(keys) { return self.finish_run(); }
                 redraw = true;
             }
+            if self.finish_follow_one_screen()? { return self.finish_run(); }
             if terminal::TSTP_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst) {
                 terminal::handle_suspend()?;
             }
@@ -589,16 +598,29 @@ impl Pager {
             let previous_top = self.top_line;
             let quit_requested = if key == Key::Ctrl('c') { self.interrupt(keys) } else { self.handle_key(key) };
             if self.top_line != previous_top { self.squished = false; }
+            if !quit_requested && self.finish_follow_one_screen()? { return self.finish_run(); }
             if quit_requested {
                 return self.finish_run();
             }
         }
     }
 
+    fn finish_follow_one_screen(&mut self) -> io::Result<bool> {
+        if !self.follow_one_screen || self.mode != Mode::Normal { return Ok(false); }
+        self.follow_one_screen = false;
+        let options = OneScreenOptions { width:self.term_width, height:self.term_height, charset:self.charset, controls:self.controls, chop:!self.wrap, line_numbers:self.line_numbers };
+        if !matches!(one_screen(&mut self.buffer, options)?, OneScreen::Fits(_)) { return Ok(false); }
+        self.startup_bottom = true;
+        self.bottom_gap = 1;
+        self.render_frame(false)?;
+        Ok(true)
+    }
+
     fn finish_run(&mut self) -> io::Result<PagerExit> {
         if matches!(self.exit, PagerExit::Interrupted) && std::mem::take(&mut self.bell_requested) {
             let mut output = io::stdout().lock();
             output.write_all(&[7])?;
+            if self.follow_one_screen { output.write_all(b"\r\x1b[K")?; }
             output.flush()?;
         }
         Ok(self.exit)
@@ -1172,7 +1194,8 @@ impl Pager {
             stdout.write_all(&buf)?;
             return stdout.flush();
         }
-        let first_row = if self.mode == Mode::Help { 0 } else { self.initial_content_row(w, ch)? };
+        let first_row = if self.mode == Mode::Help { 0 } else { self.initial_content_row(w, ch)? }.saturating_sub(self.bottom_gap);
+        self.bottom_gap = 0;
         if !self.content_painted { self.squished = first_row > 0; }
         let primary = self.display_anchor.row.is_some();
         if let Some(command) = self.startup_echo.take() {

@@ -3027,11 +3027,15 @@
         "invocation-quit-one-screen-command-sequence",
         "invocation-quit-one-screen-command-no-init",
         "invocation-quit-one-screen-command-long",
-        "invocation-quit-one-screen-command-follow"
+        "invocation-quit-one-screen-command-follow",
+        "invocation-quit-one-screen-follow-keyboard-int",
+        "invocation-quit-one-screen-follow-int-quit",
+        "invocation-quit-one-screen-follow-signal",
+        "invocation-quit-one-screen-follow-growth"
       ],
       "implementation": "partial",
       "evidence": "partially compatible",
-      "cause": "Initial single-file -F covers size boundaries, wrapping, chopping, line numbers, controls, color, -X, resets, pipe EOF and interrupts. Startup positioning, search and command order are covered; +F follow interruption redraw and extremely long low-width input remain open."
+      "cause": "Initial single-file -F covers boundaries, wrapping, chopping, line numbers, controls, color, -X, resets, pipe EOF, interrupts and startup commands. Follow interruption while still one screen is covered; follow growth teardown and extremely long low-width input remain open."
     },
     {
       "id": "man-0870",
