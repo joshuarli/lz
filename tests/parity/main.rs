@@ -6,6 +6,7 @@ mod inventory;
 mod interactive;
 mod stdio;
 mod supervisor;
+mod shards;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -299,21 +300,24 @@ fn run(args: &[String]) -> Result<()> {
     if !matches!(mode, "admit" | "admitted" | "all") { return Err("unknown mode".into()); }
     let mut i = 0;
     while i < args.len() {
-        if !matches!(args[i].as_str(), "--case" | "--group" | "--mode" | "--selftest" | "--baseline") { return Err(format!("unknown argument {}", args[i]).into()); }
+        if !matches!(args[i].as_str(), "--case" | "--group" | "--mode" | "--shard" | "--selftest" | "--baseline") { return Err(format!("unknown argument {}", args[i]).into()); }
         if matches!(args[i].as_str(), "--selftest" | "--baseline") { i += 1; } else {
             if i + 1 == args.len() { return Err("missing argument value".into()); }
             i += 2;
         }
     }
-    if args.iter().any(|s| s == "--selftest") { interactive::selftest()?; interactive::checkpoint_selftest()?; fuzz::selftest()?; return resources::selftest(); }
+    if args.iter().any(|s| s == "--selftest") { interactive::selftest()?; interactive::checkpoint_selftest()?; fuzz::selftest()?; shards::selftest()?; return resources::selftest(); }
     let reference = oracle();
     let baseline = args.iter().any(|s| s == "--baseline");
     let candidate_path = if baseline { root().join(".work/tools/baseline-target/debug/lz") } else { PathBuf::from(env!("CARGO_BIN_EXE_lz")) };
     let candidate = candidate_path.as_path();
     let cases = cases()?;
+    let shard = value("--shard").map(shards::parse).transpose()?;
+    if shard.is_some() && (value("--case").is_some() || value("--group").is_some()) { return Err("shards cannot be combined with a case or group".into()); }
     if value("--case").is_some_and(|id| !cases.iter().any(|case| case.id == id)) || value("--group").is_some_and(|group| !cases.iter().any(|case| case.family == group)) { return Err("unknown case or group".into()); }
     let selected: Vec<_> = cases.iter().filter(|case| {
         if let Some(id) = value("--case") { return case.id == id; }
+        if shard.is_some_and(|shard| shards::number(&case.id) != shard) { return false; }
         let in_group = value("--group").is_none_or(|group| case.family == group);
         if mode == "admit" { return in_group || case.admitted; }
         in_group && (mode == "all" || case.admitted)
@@ -333,10 +337,16 @@ fn run(args: &[String]) -> Result<()> {
         }
         harness_error |= result["outcome"] == "harness-error";
     }
-    let report = json!({"metadata": meta, "results": results, "candidate_kind": if baseline { "baseline-2ae5660" } else { "current" }});
-    fs::write(result_dir.join("results.json"), serde_json::to_vec_pretty(&report)?)?;
+    let report = Value::Object(serde_json::Map::from_iter([
+        ("metadata".into(), meta.clone()),
+        ("results".into(), Value::Array(results)),
+        ("candidate_kind".into(), Value::String(if baseline { "baseline-2ae5660" } else { "current" }.into())),
+    ]));
+    shards::write_report(&result_dir.join("results.json"), &report)?;
+    drop(report);
     fs::write(root().join(".work/parity-latest"), result_dir.as_os_str().as_encoded_bytes())?;
     if full_corpus { fs::write(root().join(if baseline { ".work/parity-baseline" } else { ".work/parity-current" }), result_dir.as_os_str().as_encoded_bytes())?; }
+    if let Some(shard) = shard && mode == "all" { shards::record(shard, &result_dir, &cases, &meta, baseline)?; }
     println!("evidence: {}", result_dir.display());
     if failed && (!baseline || harness_error) { return Err("differential suite failed; retained observations and reproduction commands".into()); }
     Ok(())

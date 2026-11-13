@@ -91,7 +91,7 @@ parity-setup:
 
 parity-test:
 	@TMPDIR="$(CURDIR)/.work/tmp" python3 tests/parity/setup.py --verify >/dev/null
-	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo test --test parity -- $(if $(CASE),--case $(CASE),) $(if $(GROUP),--group $(GROUP),) --mode $(if $(MODE),$(MODE),admitted)
+	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo test --test parity -- $(if $(CASE),--case $(CASE),) $(if $(GROUP),--group $(GROUP),) $(if $(SHARD),--shard $(SHARD),) --mode $(if $(MODE),$(MODE),admitted)
 
 .PHONY: parity-selftest
 parity-selftest:
@@ -102,7 +102,7 @@ parity-baseline:
 	@mkdir -p "$(CURDIR)/.work/tools/baseline-source" "$(CURDIR)/.work/tmp"
 	@if test ! -f "$(CURDIR)/.work/tools/baseline-source/Cargo.toml"; then git archive 2ae5660205fb1b114610750ede846845196872ee | tar -x -C "$(CURDIR)/.work/tools/baseline-source"; fi
 	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo build --locked --manifest-path "$(CURDIR)/.work/tools/baseline-source/Cargo.toml" --target-dir "$(CURDIR)/.work/tools/baseline-target"
-	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo test --test parity -- --baseline --mode all
+	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo test --test parity -- --baseline $(if $(SHARD),--shard $(SHARD),) --mode all
 
 parity-inventory-check:
 	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo test --test parity -- --inventory-check
