@@ -108,9 +108,11 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12w accepted:** generator version 13 passed seeds 0–999 on macOS arm64 after the seed-117 resize fix. This covers the current bounded grammar only; remaining event families, holdouts, other platforms and the hardening gate remain open.
 
-**S12x planned:** translate the original `chinese1` upstream fixture and first four scrolling steps to the generic terminal comparator. Own its parity case, upstream disposition and documentation; the pinned upstream fixture and existing UTF-8 layout are prerequisites. Acceptance: strict per-step comparison on macOS and Linux arm64, or a retained mismatch with a concrete retry condition. The original custom termcap and remaining key sequence remain untranslated.
+**S12x accepted (partial translation):** the original `chinese1` fixture and first four scrolling steps pass strict generic-terminal comparison on macOS arm64 and Linux arm64 Docker. The original custom termcap and remaining key sequence remain untranslated.
 
 **S06k accepted:** `man-2365` accepts the pinned reference’s `LESSCHARSET=utf8` alias. The focused charset unit test and the upstream fixture’s startup screen passed on macOS arm64 and Linux arm64 Docker; all-target Clippy passed on macOS. Other character sets and aliases remain open.
+
+**S07ak accepted:** `man-0086` and `man-0088` support the named in-file `J`, `K` and `Y` movements. The original Chinese fixture’s first four steps and a counted case passed on macOS arm64 and Linux arm64 Docker, along with neighboring ordinary navigation; all-target Clippy passed on macOS. Movement past file boundaries and wrapped rows remains open.
 
 **S07aj accepted:** seed 117 exposed a `terminal-lifecycle` resize position mismatch after returning to a file and moving to its first line. The reference preserves position zero in a newly grown table, treats that table as empty, and restores the file-entry position. The pager now retains the maximum position-table height across visits and follows the tested behavior. Seven minimal and boundary cases plus neighboring resize cases passed on macOS arm64 and Linux arm64 Docker; seed 117 and all-target Clippy passed on macOS. Wrapped, filtered and other resize interactions remain open.
 

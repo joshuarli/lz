@@ -371,10 +371,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["upstream-chinese1-scroll", "navigation-force-line-in-file"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named in-file J/K/Y movements pass, including the first four upstream Chinese scrolling steps. Movement past boundaries and wrapped rows remains open."
     },
     {
       "id": "man-0088",
@@ -390,10 +390,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["upstream-chinese1-scroll", "navigation-force-line-in-file"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Named in-file J/K/Y movements pass, including the first four upstream Chinese scrolling steps. Movement past boundaries and wrapped rows remains open."
     },
     {
       "id": "man-0090",
@@ -8373,9 +8373,9 @@
       "file": "lesstest/lt/chinese1.lt",
       "sha256": "d81a2c4d23f16ab28169e62f7be6dbf54090a1d0ea332f7ba7f9453b0afae1d7",
       "instrumented": "pass",
-      "cases": [],
-      "disposition": "pending translation",
-      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+      "cases": ["upstream-chinese1-scroll"],
+      "disposition": "partial translation",
+      "cause": "The original fixture and first four scrolling steps are covered with a generic terminal. Remaining keys and original custom termcap checkpoints are untranslated."
     },
     {
       "id": "colorbars",

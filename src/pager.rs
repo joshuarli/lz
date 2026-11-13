@@ -1385,6 +1385,13 @@ impl Pager {
 
             Key::Char('j' | 'e') | Key::Ctrl('e' | 'n') | Key::Down | Key::Enter => self.scroll_down(count.unwrap_or(1)),
             Key::Char('k' | 'y') | Key::Ctrl('y' | 'p' | 'k') | Key::Up => self.scroll_up(count.unwrap_or(1)),
+            Key::Char('J') => {
+                self.position_initialized();
+                let target = self.top_line.saturating_add(count.unwrap_or(1));
+                if self.filter.is_none() { self.buffer.get_line(target); }
+                self.top_line = target.min(self.display_line_count().saturating_sub(1));
+            }
+            Key::Char('K' | 'Y') => { self.position_initialized(); self.scroll_up(count.unwrap_or(1)); }
             Key::Char('d' | 'u') | Key::Ctrl('d' | 'u') => {
                 if let Some(amount) = count.and_then(std::num::NonZeroUsize::new) { self.scroll_defaults.half_page = amount; }
                 let amount = self.scroll_defaults.half_page.get();
