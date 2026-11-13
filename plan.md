@@ -104,6 +104,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12u accepted:** generator version 12 can return once to the previous file at its known saved position. Fifty differential seeds passed on macOS arm64, including four return actions; deterministic controls passed on macOS and Linux arm64 Docker, and all-target Clippy passed on macOS. Repeated transitions remain open.
 
+**S12v accepted:** generator version 13 can repeatedly switch files and restore both known saved positions. Seed 280, the first generated repeat-transition seed, and seeds 0–49 passed on macOS arm64. Deterministic controls passed on macOS and Linux arm64 Docker; all-target Clippy passed on macOS. Saved positions are constrained to known near-start lines; broader transition boundaries remain open.
+
 **S04au:** interactive `-R` toggles color display and carries it across file switches. Six cases pass on macOS and in a Linux arm64 container, covering the upstream `github329` fixture, short and long views, raw mode, prompt replay and interruption. `Pager::control_display` exposes the current mode. Other option commands, suppression, queries and startup interactions remain open; the upstream translation is partial.
 
 **S04av:** interactive `-r` toggles raw display, switches from color mode and remains in effect across file switches in the named cases on macOS and in a Linux arm64 container. Other option interactions remain open.

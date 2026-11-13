@@ -7,7 +7,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const GENERATOR_VERSION: u32 = 12;
+const GENERATOR_VERSION: u32 = 13;
 
 struct Random(u64);
 impl Random {
@@ -21,7 +21,7 @@ impl Random {
 }
 
 #[derive(Clone, Copy)]
-enum FileVisit { First, Second { first_top: usize }, Returned }
+enum FileVisit { First { second_top: Option<usize> }, Second { first_top: usize } }
 
 fn checkpoint(line: usize) -> Event { Event::Checkpoint { ready: format!("{line:06}"), row: Some(0) } }
 
@@ -60,7 +60,7 @@ fn generate(seed: u64) -> Case {
     args.push(Argument::from("second"));
     let mut top = 1usize;
     let mut marks = [None; 2];
-    let mut visit = FileVisit::First;
+    let mut visit = FileVisit::First { second_top: None };
     let mut events = vec![checkpoint(top)];
     for _ in 0..8 {
         let action = if random.choose(10) < 3 { 14 } else { random.choose(14) };
@@ -102,14 +102,20 @@ fn generate(seed: u64) -> Case {
                 let target = if before_resize == 1 { 2 } else { 1 };
                 (format!("{target}g").into_bytes(), target)
             }
-            10 if matches!(visit, FileVisit::First) => {
-                let before_switch = if top == 2 { 3 } else { 2 };
-                events.push(Event::Send { bytes: format!("{before_switch}g").into_bytes() });
-                events.push(checkpoint(before_switch));
-                marks = [None; 2];
-                visit = FileVisit::Second { first_top: before_switch };
-                (b":n".to_vec(), 1)
-            }
+            10 => match visit {
+                FileVisit::First { second_top } => {
+                    let before_switch = if top == 2 { 3 } else { 2 };
+                    events.push(Event::Send { bytes: format!("{before_switch}g").into_bytes() });
+                    events.push(checkpoint(before_switch));
+                    marks = [None; 2];
+                    visit = FileVisit::Second { first_top: before_switch };
+                    (b":n".to_vec(), second_top.unwrap_or(1))
+                }
+                FileVisit::Second { .. } => {
+                    let target = if top == 1 { 2 } else { 1 };
+                    (format!("{target}g").into_bytes(), target)
+                }
+            },
             11 => (vec![b'-', 16, b'N'], top),
             12 if top > 1 => {
                 let target = 1 + random.choose(top - 1);
@@ -117,11 +123,14 @@ fn generate(seed: u64) -> Case {
             }
             13 => match visit {
                 FileVisit::Second { first_top } => {
+                    let before_switch = if top == 2 { 3 } else { 2 };
+                    events.push(Event::Send { bytes: format!("{before_switch}g").into_bytes() });
+                    events.push(checkpoint(before_switch));
                     marks = [None; 2];
-                    visit = FileVisit::Returned;
+                    visit = FileVisit::First { second_top: Some(before_switch) };
                     (b":p".to_vec(), first_top)
                 }
-                FileVisit::First | FileVisit::Returned => {
+                FileVisit::First { .. } => {
                     let target = if top == 1 { 2 } else { 1 };
                     (format!("{target}g").into_bytes(), target)
                 }
@@ -401,11 +410,15 @@ pub(super) fn generator_selftest() -> Result<()> {
     let mut generated_toggles = 0;
     let mut generated_backward_searches = 0;
     let mut generated_returns = 0;
+    let mut first_repeated_transition = None;
     for seed in 0..1000 {
         let generated = generate(seed);
         generated_toggles += generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes == &[b'-', 16, b'N'])).count();
         generated_backward_searches += generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes.first() == Some(&b'?'))).count();
         generated_returns += generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes == b":p")).count();
+        if generated.events.iter().filter(|event| matches!(event, Event::Send { bytes } if bytes == b":n" || bytes == b":p")).count() >= 3 {
+            first_repeated_transition.get_or_insert(seed);
+        }
         let Fixture::Bytes(bytes) = &generated.fixture else { return Err("generated fixture is not inline bytes".into()); };
         if bytes[..bytes.len().min(256)].contains(&0xff) { return Err("generated malformed byte enters the binary sample".into()); }
         for line in bytes.split(|byte| *byte == b'\n').filter(|line| !line.is_empty()) {
@@ -419,7 +432,8 @@ pub(super) fn generator_selftest() -> Result<()> {
     if generated_toggles == 0 { return Err("generated sessions never toggle line numbers".into()); }
     if generated_backward_searches == 0 { return Err("generated sessions never search backward".into()); }
     if generated_returns == 0 { return Err("generated sessions never return to the previous file".into()); }
-    println!("generated sessions are deterministic and cover line-number toggles, backward searches and previous-file returns");
+    let seed = first_repeated_transition.ok_or("generated sessions never revisit a file")?;
+    println!("generated sessions are deterministic and cover line-number toggles, backward searches and repeated file transitions; first repeat seed {seed}");
     Ok(())
 }
 
