@@ -109,6 +109,7 @@ enum Mode {
     SearchInput,
     FilterInput,
     ExamineInput,
+    HeaderInput,
     Follow,
     Help,
     FileCommand(std::num::NonZeroUsize),
@@ -148,7 +149,7 @@ impl OptionCommand {
 }
 
 #[derive(Clone, PartialEq)]
-enum OptionName { Typing(String), Raw, Color, LineNumbers, DisplayLineNumbers, Chop, ChopUpper, UseColor, UseColorUpper, IncrementalSearch, IncrementalSearchUpper }
+enum OptionName { Typing(String), Raw, Color, LineNumbers, DisplayLineNumbers, Chop, ChopUpper, UseColor, UseColorUpper, IncrementalSearch, IncrementalSearchUpper, Header }
 
 #[derive(Clone, Copy)]
 enum HelpPrefix { Colon(std::num::NonZeroUsize), Quit }
@@ -545,6 +546,19 @@ pub fn one_screen(buffer: &mut LineBuffer, options: OneScreenOptions) -> io::Res
 #[derive(Clone)]
 pub enum PagerExit { Quit, Interrupted, VisitFile(FileVisit), Examine(std::ffi::OsString) }
 
+/// Parse a supported header-row specification, retaining the current count for an empty row field.
+pub fn parse_header_lines(value: &[u8], current: usize) -> Option<usize> {
+    if value.starts_with(b"-") { return Some(0); }
+    let mut fields = value.split(|byte| *byte == b',');
+    let lines = fields.next()?;
+    let parse = |field: &[u8]| std::str::from_utf8(field).ok()?.parse::<usize>().ok();
+    let lines = if lines.is_empty() { current } else { parse(lines)? };
+    if let Some(columns) = fields.next() && !columns.is_empty() && parse(columns)? != 0 { return None; }
+    if let Some(start) = fields.next() && !start.is_empty() && parse(start)? > 1 { return None; }
+    if fields.next().is_some() { return None; }
+    Some(lines)
+}
+
 /// Select default continuation or exit status 2 after an interrupt.
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub enum InterruptPolicy { #[default] Continue, Quit }
@@ -827,6 +841,7 @@ pub struct Pager {
     search_input: LineEditor,
     filter_input: LineEditor,
     examine_input: LineEditor,
+    header_input: LineEditor,
     allow_examine: bool,
     restore_after_failed_examine: bool,
     filter: Option<Search>,
@@ -838,6 +853,7 @@ pub struct Pager {
     controls: ControlDisplay,
     backspaces: BackspaceDisplay,
     header_lines: usize,
+    header_start_line: usize,
     use_color: bool,
     status_msg: Option<String>,
     filename: Option<String>,
@@ -917,6 +933,7 @@ impl Pager {
             search_input: LineEditor::new(),
             filter_input: LineEditor::new(),
             examine_input: LineEditor::new(),
+            header_input: LineEditor::new(),
             allow_examine: config.allow_examine,
             restore_after_failed_examine: false,
             filter: None,
@@ -928,6 +945,7 @@ impl Pager {
             controls: config.controls,
             backspaces: config.backspaces,
             header_lines: config.header_lines,
+            header_start_line: 0,
             use_color: config.use_color,
             status_msg: None,
             filename,
@@ -976,6 +994,9 @@ impl Pager {
     pub fn use_color(&self) -> bool { self.use_color }
     /// Return whether interactive incremental search is enabled.
     pub fn incremental_search(&self) -> bool { self.incremental_search }
+
+    /// Return the header-row count for the next file visit.
+    pub fn header_lines(&self) -> usize { self.header_lines }
 
     /// Return the selected line-number option state.
     pub fn line_numbers(&self) -> LineNumberMode { self.line_numbers }
@@ -1229,7 +1250,7 @@ impl Pager {
         self.numeric_prefix = NumericPrefix::Empty;
         self.command_context = CommandContext::Interactive;
         self.bell_requested = true;
-        if matches!(self.mode, Mode::SetMark | Mode::JumpMark | Mode::FileCommand(_) | Mode::OptionPrefix(_) | Mode::OptionLong(_, _) | Mode::OptionNotice { .. } | Mode::CommandError(_)) {
+        if matches!(self.mode, Mode::SetMark | Mode::JumpMark | Mode::FileCommand(_) | Mode::OptionPrefix(_) | Mode::OptionLong(_, _) | Mode::HeaderInput | Mode::OptionNotice { .. } | Mode::CommandError(_)) {
             self.mode = if matches!(&self.mode, Mode::CommandError(error) if error.destination == ErrorDestination::Help) { Mode::Help } else { Mode::Normal };
             self.status_msg = None;
             self.filename_prompt = false;
@@ -1394,6 +1415,33 @@ impl Pager {
         false
     }
 
+    fn handle_header_key(&mut self, key: Key) {
+        match key {
+            Key::Enter => {
+                let value = self.header_input.content.as_bytes();
+                let parsed = if value.contains(&b',') { None } else { parse_header_lines(value, self.header_lines) };
+                if let Some(lines) = parsed {
+                    self.header_start_line = self.display_line_idx(self.top_line).unwrap_or(0);
+                    self.header_lines = lines;
+                    self.position_initialized();
+                    self.mode = Mode::Normal;
+                } else {
+                    self.command_error(format!("Unsupported header specification: {}", self.header_input.content), ErrorAction::Dismiss);
+                }
+            }
+            Key::Escape => self.mode = Mode::Normal,
+            Key::Backspace if self.header_input.content.is_empty() => self.mode = Mode::Normal,
+            Key::Backspace => self.header_input.backspace(),
+            Key::Delete => self.header_input.delete(),
+            Key::Left => self.header_input.move_left(),
+            Key::Right => self.header_input.move_right(),
+            Key::Home => self.header_input.move_home(),
+            Key::End => self.header_input.move_end(),
+            Key::Char(character) => self.header_input.insert(character),
+            _ => {}
+        }
+    }
+
     fn handle_key(&mut self, key: Key) -> bool {
         match self.mode.clone() {
             Mode::Normal => self.handle_normal_key(key),
@@ -1427,13 +1475,19 @@ impl Pager {
                     (OptionName::Chop | OptionName::ChopUpper, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_chop_option(command); }
                     (OptionName::UseColor | OptionName::UseColorUpper, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_use_color_option(command); }
                     (OptionName::IncrementalSearch | OptionName::IncrementalSearchUpper, Key::Enter | Key::Char('=')) => { self.mode = Mode::Normal; self.apply_incremental_search_option(command); }
+                    (OptionName::Header, Key::Enter | Key::Char('=')) => {
+                        if matches!(command, OptionCommand::Toggle | OptionCommand::ToggleQuietly | OptionCommand::Set | OptionCommand::SetQuietly) {
+                            self.header_input.clear();
+                            self.mode = Mode::HeaderInput;
+                        } else { self.command_error("Command not available".into(), ErrorAction::Dismiss); }
+                    }
                     (OptionName::Typing(name), Key::Enter | Key::Char('=')) => {
                         let repaint = self.squished;
                         if repaint { self.position_initialized(); }
                         self.status_msg = Some(format!("There is no --{name} option  (press RETURN)"));
                         self.mode = Mode::OptionNotice { repaint };
                     }
-                    (_, Key::Escape) | (OptionName::Raw | OptionName::Color | OptionName::LineNumbers | OptionName::DisplayLineNumbers | OptionName::Chop | OptionName::ChopUpper | OptionName::UseColor | OptionName::UseColorUpper | OptionName::IncrementalSearch | OptionName::IncrementalSearchUpper, Key::Backspace) => self.mode = Mode::Normal,
+                    (_, Key::Escape) | (OptionName::Raw | OptionName::Color | OptionName::LineNumbers | OptionName::DisplayLineNumbers | OptionName::Chop | OptionName::ChopUpper | OptionName::UseColor | OptionName::UseColorUpper | OptionName::IncrementalSearch | OptionName::IncrementalSearchUpper | OptionName::Header, Key::Backspace) => self.mode = Mode::Normal,
                     (OptionName::Typing(mut name), Key::Backspace) => {
                         if name.is_empty() { self.mode = Mode::Normal; }
                         else { name.pop(); self.mode = Mode::OptionLong(command, OptionName::Typing(name)); }
@@ -1461,6 +1515,7 @@ impl Pager {
                                 let completed = if name.as_bytes()[0].is_ascii_uppercase() { OptionName::UseColorUpper } else { OptionName::UseColor };
                                 self.mode = Mode::OptionLong(command, completed);
                             }
+                            Ok(option) if option.canonical_name() == "header" => self.mode = Mode::OptionLong(command, OptionName::Header),
                             result => {
                                 if matches!(result, Err(crate::option_catalog::OptionLookupError::Unknown)) { self.bell_requested = true; }
                                 self.mode = Mode::OptionLong(command, OptionName::Typing(name));
@@ -1513,6 +1568,7 @@ impl Pager {
                 false
             }
             Mode::ExamineInput => self.handle_examine_key(key),
+            Mode::HeaderInput => { self.handle_header_key(key); false },
             Mode::SearchInput => {
                 self.handle_search_input_key(key);
                 false
@@ -1642,9 +1698,13 @@ impl Pager {
                 self.position_initialized();
                 let target = count.unwrap_or(1).saturating_sub(1);
                 let row = if count.is_some() { self.jump_target.row(self.term_height) } else { 0 };
-                let top = target.saturating_sub(row);
-                let leading = row.saturating_sub(target);
-                if self.command_context == CommandContext::Interactive && self.content_painted && self.top_line == top && previous_leading == leading { self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now()); }
+                let minimum = if self.header_lines > 0 { self.header_start_line } else { 0 };
+                let top = target.saturating_sub(row).max(minimum);
+                let leading = if top == minimum && minimum > 0 { 0 } else { row.saturating_sub(target) };
+                if self.command_context == CommandContext::Interactive && self.content_painted
+                    && (target < minimum || (self.top_line == top && previous_leading == leading)) {
+                    self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
+                }
                 self.top_line = top;
                 self.leading_rows = leading;
                 self.buffer.get_line(target);
@@ -2207,10 +2267,11 @@ impl Pager {
 
     fn scroll_up(&mut self, lines: usize) {
         let previous = self.top_line;
+        let minimum = if self.header_lines > 0 { self.header_start_line } else { 0 };
         self.squished = false;
         if self.wraps() { self.scroll_up_wrapped(lines); }
-        else { self.top_line = self.top_line.saturating_sub(lines); }
-        if self.content_painted && self.top_line == previous && previous == 0 {
+        else { self.top_line = self.top_line.saturating_sub(lines).max(minimum); }
+        if self.content_painted && self.top_line == previous && previous == minimum {
             self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
         }
     }
@@ -2531,14 +2592,14 @@ impl Pager {
             buf.position(row);
             terminal::clear_line(buf);
             let display_idx = self.top_line.saturating_add(row - first_row);
-            let actual = if row < self.header_lines { Some(row) } else { self.display_line_idx(display_idx) };
+            let actual = if row < self.header_lines { Some(self.header_start_line.saturating_add(row)) } else { self.display_line_idx(display_idx) };
             let fragment = match actual { Some(index) => self.display_prefix(index, self.left_col.saturating_add(w).saturating_add(1).saturating_mul(16).max(4096))?, None => None };
             match actual.zip(fragment) {
                 Some((line_idx, fragment)) => {
                     self.last_visible_line = Some(line_idx);
                     let gutter = self.number_gutter(line_idx, w);
                     Self::write_number_gutter(buf, &gutter, self.use_color);
-                    let underline_header = row + 1 == self.header_lines && self.top_line != 0;
+                    let underline_header = row + 1 == self.header_lines && self.top_line != self.header_start_line;
                     if underline_header { buf.extend_from_slice(b"\x1b[4m"); }
                     let content_width = w.saturating_sub(gutter.len());
                     if self.can_stream_visible_color_line(line_idx, content_width, &fragment)
@@ -2846,13 +2907,14 @@ impl Pager {
         if let Mode::OptionPrefix(command) = self.mode { return match command { OptionCommand::Toggle => "-", OptionCommand::ToggleQuietly => "-(P)", OptionCommand::Reset => "-+", OptionCommand::ResetQuietly => "-(P)+", OptionCommand::Set => "-!", OptionCommand::SetQuietly => "-(P)!", OptionCommand::Query => "_" }.into(); }
         if let Mode::OptionLong(command, ref name) = self.mode {
             let prefix = match command { OptionCommand::Toggle => "--", OptionCommand::ToggleQuietly => "--(P)", OptionCommand::Reset => "--+", OptionCommand::ResetQuietly => "--(P)+", OptionCommand::Set => "--!", OptionCommand::SetQuietly => "--(P)!", OptionCommand::Query => "__" };
-            let name = match name { OptionName::Typing(name) => name.as_str(), OptionName::Raw => "raw-control-chars", OptionName::Color => "RAW-CONTROL-CHARS", OptionName::LineNumbers => "line-numbers", OptionName::DisplayLineNumbers => "LINE-NUMBERS", OptionName::Chop => "chop-long-lines", OptionName::ChopUpper => "CHOP-LONG-LINES", OptionName::UseColor => "use-color", OptionName::UseColorUpper => "USE-COLOR", OptionName::IncrementalSearch => "incsearch", OptionName::IncrementalSearchUpper => "INCSEARCH" };
+            let name = match name { OptionName::Typing(name) => name.as_str(), OptionName::Raw => "raw-control-chars", OptionName::Color => "RAW-CONTROL-CHARS", OptionName::LineNumbers => "line-numbers", OptionName::DisplayLineNumbers => "LINE-NUMBERS", OptionName::Chop => "chop-long-lines", OptionName::ChopUpper => "CHOP-LONG-LINES", OptionName::UseColor => "use-color", OptionName::UseColorUpper => "USE-COLOR", OptionName::IncrementalSearch => "incsearch", OptionName::IncrementalSearchUpper => "INCSEARCH", OptionName::Header => "header" };
             return format!("{prefix}{name}");
         }
         if matches!(self.mode, Mode::FileCommand(_)) { return " :".into(); }
         if self.mode == Mode::SetMark { return "set mark: ".into(); }
         if self.mode == Mode::JumpMark { return "goto mark: ".into(); }
         if self.mode == Mode::ExamineInput { return format!("Examine: {}", self.examine_input.content); }
+        if self.mode == Mode::HeaderInput { return format!("Header lines: {}", self.header_input.content); }
         if self.mode == Mode::SearchInput {
             let ch = if self.search_dir == SearchDir::Forward {
                 '/'

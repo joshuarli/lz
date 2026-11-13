@@ -407,6 +407,7 @@ fn run() -> Result<ExitAction, String> {
         args.control_display = pager.control_display();
         args.use_color = pager.use_color();
         args.incremental_search = pager.incremental_search();
+        args.header_lines = pager.header_lines();
         args.line_numbers = pager.line_numbers();
         args.chop = pager.chop();
         search_session = pager.take_search_session();

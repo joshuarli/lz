@@ -4435,10 +4435,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["rendering-header-rows-scroll", "rendering-header-rows-numbered", "rendering-header-rows-force-chop", "rendering-header-rows-file-switch", "rendering-header-rows-one-screen"],
+      "cases": ["rendering-header-rows-scroll", "rendering-header-rows-numbered", "rendering-header-rows-force-chop", "rendering-header-rows-file-switch", "rendering-header-rows-one-screen", "rendering-header-interactive-anchor", "rendering-header-interactive-cancel", "rendering-header-interactive-file-switch", "rendering-header-interactive-disable"],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Startup fixed rows anchored at the first line pass the named views. Header columns and alternate starts are explicitly unsupported; interactive editing, search and other interactions remain open."
+      "cause": "Startup fixed rows and interactive row editing pass the named views. Header columns and alternate explicit starts are unsupported; search, filtering, query/reset forms and other interactions remain open."
     },
     {
       "id": "man-1357",
@@ -8497,9 +8497,9 @@
       "file": "lesstest/lt/table-50x200.lt",
       "sha256": "9d2567d2d606af42f2b4d5a02ab9a6463e1cde43a1b7f614f8d026fd8216cef5",
       "instrumented": "pass",
-      "cases": ["upstream-table-chop"],
+      "cases": ["upstream-table-chop", "upstream-table-header-prompt"],
       "disposition": "partial translation",
-      "cause": "The original fixture and chop toggle pass generic-terminal checkpoints. Header configuration, later commands and original custom termcap remain untranslated."
+      "cause": "The original fixture, chop toggle and interactive row-header prompt pass generic-terminal checkpoints, with an added scroll check. Later table commands and original custom termcap remain untranslated."
     },
     {
       "id": "utf8-2.txt",

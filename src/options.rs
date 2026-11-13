@@ -111,18 +111,6 @@ fn scan_number(bytes: &[u8]) -> NumberScan {
     else { NumberScan::Number { bytes: start + digits, value: if sign == 0 { value as i32 } else { -(value as i32) } } }
 }
 
-fn header_lines(value: &[u8], current: usize) -> Option<usize> {
-    if value.starts_with(b"-") { return Some(0); }
-    let mut fields = value.split(|byte| *byte == b',');
-    let lines = fields.next()?;
-    let parse = |field: &[u8]| std::str::from_utf8(field).ok()?.parse::<usize>().ok();
-    let lines = if lines.is_empty() { current } else { parse(lines)? };
-    if let Some(columns) = fields.next() && !columns.is_empty() && parse(columns)? != 0 { return None; }
-    if let Some(start) = fields.next() && !start.is_empty() && parse(start)? > 1 { return None; }
-    if fields.next().is_some() { return None; }
-    Some(lines)
-}
-
 #[derive(Default)]
 struct Scanner { args: Args, pending: Option<&'static OptionSpec>, no_vbell: bool }
 
@@ -188,7 +176,7 @@ impl Scanner {
                     "tabs" => if let Some(stops) = lz::tabs::TabStops::parse(&payload[..end]) { self.args.tab_stops = stops; },
                     "header" => {
                         let value = &payload[..end];
-                        if let Some(lines) = header_lines(value, self.args.header_lines) { self.args.header_lines = lines; }
+                        if let Some(lines) = lz::pager::parse_header_lines(value, self.args.header_lines) { self.args.header_lines = lines; }
                         else { self.args.diagnostics.push(Diagnostic::UnsupportedHeader(value.to_vec())); }
                     },
                     _ => {}
