@@ -600,6 +600,10 @@ impl Pager {
                 }
             }
 
+            if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return self.finish_run(); }
+            if terminal::interrupt_pending() || terminal::TSTP_FLAG.load(std::sync::atomic::Ordering::SeqCst)
+                || terminal::CONT_FLAG.load(std::sync::atomic::Ordering::SeqCst) || terminal::WINCH_FLAG.load(std::sync::atomic::Ordering::SeqCst) { continue; }
+
             let key = if self.mode == Mode::Follow {
                 let new_lines = self.buffer.poll_new_lines();
                 if new_lines > 0 {
