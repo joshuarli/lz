@@ -1824,10 +1824,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["upstream-github329-toggle-color", "invocation-toggle-color-long-file", "invocation-toggle-color-replay", "invocation-toggle-color-from-raw", "invocation-toggle-color-interrupt", "sessions-toggle-color-next-file"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Interactive -R toggles color mode with the named prompt, replay, interruption and file-switch cases. Other interactive options, suppression, queries and startup interactions remain open."
     },
     {
       "id": "man-0404",
@@ -8402,9 +8402,9 @@
       "file": "lesstest/lt/github329.lt",
       "sha256": "0ad82fedb3404fd731fdfffd2fa28116f588e0aae1377c3be3ea8277f574edc0",
       "instrumented": "pass",
-      "cases": [],
-      "disposition": "pending translation",
-      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+      "cases": ["upstream-github329-toggle-color"],
+      "disposition": "partial translation",
+      "cause": "The original OSC 8 fixture and two -R toggles are exercised with a generic terminal. Its search, other option commands and per-key/custom termcap checkpoints remain untranslated."
     },
     {
       "id": "hdr-unicode",

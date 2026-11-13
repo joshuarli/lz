@@ -114,6 +114,8 @@ enum Mode {
     QuitPrefix,
     SetMark,
     JumpMark,
+    OptionPrefix,
+    OptionNotice { repaint: bool },
     CommandError(CommandError),
 }
 
@@ -827,6 +829,9 @@ impl Pager {
 
     pub fn scroll_defaults(&self) -> ScrollDefaults { self.scroll_defaults }
 
+    /// Return the control-display mode to carry to the next file.
+    pub fn control_display(&self) -> ControlDisplay { self.controls }
+
     /// Transfer the active search to the next file in the session.
     pub fn take_search_session(&mut self) -> SearchSession { SearchSession { search:self.search.take(), direction:self.search_dir, highlight:self.search_highlight } }
 
@@ -1061,7 +1066,7 @@ impl Pager {
         self.numeric_prefix = NumericPrefix::Empty;
         self.command_context = CommandContext::Interactive;
         self.bell_requested = true;
-        if matches!(self.mode, Mode::SetMark | Mode::JumpMark | Mode::FileCommand(_) | Mode::CommandError(_)) {
+        if matches!(self.mode, Mode::SetMark | Mode::JumpMark | Mode::FileCommand(_) | Mode::OptionPrefix | Mode::OptionNotice { .. } | Mode::CommandError(_)) {
             self.mode = if matches!(&self.mode, Mode::CommandError(error) if error.destination == ErrorDestination::Help) { Mode::Help } else { Mode::Normal };
             self.status_msg = None;
             self.filename_prompt = false;
@@ -1078,6 +1083,24 @@ impl Pager {
         match self.mode.clone() {
             Mode::Normal => self.handle_normal_key(key),
             Mode::SetMark | Mode::JumpMark => { self.handle_mark_key(key); false }
+            Mode::OptionPrefix => {
+                self.mode = Mode::Normal;
+                if key == Key::Char('R') {
+                    self.controls = if self.controls == ControlDisplay::Color { ControlDisplay::Standard } else { ControlDisplay::Color };
+                    let repaint = self.squished;
+                    if repaint { self.position_initialized(); }
+                    let message = if self.controls == ControlDisplay::Color { "Display ANSI sequences directly, other control characters as ^X" } else { "Display control characters as ^X" };
+                    self.status_msg = Some(format!("{message}  (press RETURN)"));
+                    self.mode = Mode::OptionNotice { repaint };
+                } else if key != Key::Escape { self.bell_requested = true; }
+                false
+            }
+            Mode::OptionNotice { .. } => {
+                self.mode = Mode::Normal;
+                self.status_msg = None;
+                if !key.is_prompt_acknowledgement() { return self.handle_key(key); }
+                false
+            }
             Mode::QuitPrefix => {
                 self.mode = Mode::Normal;
                 match key {
@@ -1170,6 +1193,7 @@ impl Pager {
             Key::Char('q' | 'Q') | Key::Escape => return true,
             Key::Ctrl('c') => self.bell_requested = true,
             Key::Char('Z') => self.mode = Mode::QuitPrefix,
+            Key::Char('-') => self.mode = Mode::OptionPrefix,
             Key::Char(':') => self.mode = Mode::FileCommand(std::num::NonZeroUsize::new(count.unwrap_or(1)).unwrap()),
             Key::Char('r') | Key::Ctrl('r' | 'l') => self.position_initialized(),
             Key::Char('R') => {
@@ -1781,7 +1805,7 @@ impl Pager {
         if boundary_bell && self.bell_policy.is_audible(terminal::BellKind::Boundary) { buf.push(7); }
         if general_bell && self.bell_policy.is_audible(terminal::BellKind::General) { buf.push(7); }
         buf.extend_from_slice(b"\x1b[?25l");
-        if matches!(self.mode, Mode::CommandError(_)) {
+        if matches!(self.mode, Mode::CommandError(_) | Mode::OptionNotice { repaint:false }) {
             if !self.content_painted { for row in 0..ch { buf.position(row); terminal::clear_line(&mut buf); } }
             if let Some(row) = self.display_anchor.row { buf.padding = ch.saturating_sub(row); }
             self.render_status(&mut buf, w);
@@ -2179,6 +2203,7 @@ impl Pager {
 
     fn build_status(&self) -> String {
         if self.mode == Mode::QuitPrefix { return " Z".into(); }
+        if self.mode == Mode::OptionPrefix { return "-".into(); }
         if matches!(self.mode, Mode::FileCommand(_)) { return " :".into(); }
         if self.mode == Mode::SetMark { return "set mark: ".into(); }
         if self.mode == Mode::JumpMark { return "goto mark: ".into(); }
