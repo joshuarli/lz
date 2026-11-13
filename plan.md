@@ -150,6 +150,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12av accepted:** interactive differential cases use the pinned reference build's `lessecho` helper unless overridden; setup checks its version and fails when it is absent. Missing-file examine cases and all 51 admitted session cases passed on macOS arm64 and Linux arm64 Docker. The test environment contract changed.
 
+**S08at accepted (partial):** Ctrl-W toggles wrap-around search; the tested forward, backward, repeat, missing-pattern acknowledgment and post-file-switch cases pass on macOS arm64 and Linux arm64 Docker. All 123 previously admitted search cases and all-target Clippy passed on macOS. `SearchSession` retains the setting. Cross-file search, incremental previews, filtered and other modifier combinations and live streams remain open.
+
 **S12ax accepted (partial translation):** the original `subsearch` fixture, first two movements and initial `es` search pass generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Later search modifiers, repeat commands and custom termcap remain open.
 
 **S12aw accepted (partial translation):** the original `utf8-2.txt` command sequence, including failed examine and the later color/navigation commands, passes generic-terminal checkpoints in C.UTF-8 on macOS arm64 and Linux arm64 Docker. Original custom termcap, intermediate per-key checkpoints and exact Linux en_US.UTF-8 remain open.

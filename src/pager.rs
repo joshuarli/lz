@@ -249,7 +249,7 @@ struct CommandError { action: ErrorAction, context: CommandContext, remainder: V
 enum ErrorDestination { Normal, Help }
 
 #[derive(Clone, PartialEq)]
-enum ErrorAction { Retry(Key), Dismiss }
+enum ErrorAction { Retry(Key), Dismiss, SearchWrapped(bool) }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct MarkName(u8);
@@ -713,10 +713,10 @@ impl FileStatus {
 }
 
 /// Search pattern and direction retained between files in one session.
-pub struct SearchSession { search: Option<Search>, direction: SearchDir, highlight: bool, nonmatch: bool }
+pub struct SearchSession { search: Option<Search>, direction: SearchDir, highlight: bool, nonmatch: bool, wrap: bool }
 
 impl Default for SearchSession {
-    fn default() -> Self { Self { search: None, direction: SearchDir::Forward, highlight: true, nonmatch: false } }
+    fn default() -> Self { Self { search: None, direction: SearchDir::Forward, highlight: true, nonmatch: false, wrap: false } }
 }
 
 /// Selected line-number option state; not all counting behavior is implemented.
@@ -791,6 +791,8 @@ pub struct Pager {
     search_nonmatch: bool,
     search_input_nonmatch: bool,
     search_input_keep_position: bool,
+    search_input_wrap: bool,
+    search_wrap: bool,
     incremental_search: bool,
     incremental_preview: Option<Search>,
     search_case: CaseSensitivity,
@@ -877,6 +879,8 @@ impl Pager {
             search_nonmatch: config.search_session.nonmatch,
             search_input_nonmatch: false,
             search_input_keep_position: false,
+            search_input_wrap: false,
+            search_wrap: config.search_session.wrap,
             incremental_search: config.incremental_search,
             incremental_preview: None,
             search_case: config.search_case,
@@ -959,7 +963,7 @@ impl Pager {
     pub fn chop(&self) -> bool { !self.wrap }
 
     /// Transfer the active search to the next file in the session.
-    pub fn take_search_session(&mut self) -> SearchSession { SearchSession { search:self.search.take(), direction:self.search_dir, highlight:self.search_highlight, nonmatch:self.search_nonmatch } }
+    pub fn take_search_session(&mut self) -> SearchSession { SearchSession { search:self.search.take(), direction:self.search_dir, highlight:self.search_highlight, nonmatch:self.search_nonmatch, wrap:self.search_wrap } }
 
     /// Transfer startup input that remains after a file switch to the next pager.
     pub fn take_startup_commands(&mut self) -> Vec<Vec<u8>> { self.startup_commands.drain(..).collect() }
@@ -1505,12 +1509,19 @@ impl Pager {
                 self.mode = if error.destination == ErrorDestination::Help { Mode::Help } else { Mode::Normal };
                 self.command_context = error.context;
                 self.status_msg = None;
-                if let ErrorAction::Retry(command) = error.action && self.handle_normal_key(command) { return true; }
+                if let ErrorAction::Retry(ref command) = error.action && self.handle_normal_key(command.clone()) { return true; }
                 if self.command_context == CommandContext::StartupAborted { self.command_context = CommandContext::StartupUnpositioned; }
                 else if !error.remainder.is_empty() { self.startup_commands.push_front(error.remainder); }
                 if self.restore_after_failed_examine { self.filename_prompt = true; }
-                if !key.is_prompt_acknowledgement() { return self.handle_key(key); }
+                if !key.is_prompt_acknowledgement() {
+                    if self.handle_key(key) { return true; }
+                    if let ErrorAction::SearchWrapped(forward) = error.action && self.mode == Mode::Normal {
+                        self.search_wrapped_notice(forward, false);
+                    }
+                    return false;
+                }
                 self.restore_after_failed_examine = false;
+                if let ErrorAction::SearchWrapped(forward) = error.action { self.search_wrapped_notice(forward, false); }
                 false
             }
         }
@@ -1658,6 +1669,7 @@ impl Pager {
                 self.search_input.clear();
                 self.search_input_nonmatch = false;
                 self.search_input_keep_position = false;
+                self.search_input_wrap = false;
                 self.incremental_preview = None;
                 self.history.reset_cursor();
             }
@@ -1667,6 +1679,7 @@ impl Pager {
                 self.search_input.clear();
                 self.search_input_nonmatch = false;
                 self.search_input_keep_position = false;
+                self.search_input_wrap = false;
                 self.incremental_preview = None;
                 self.history.reset_cursor();
             }
@@ -1873,6 +1886,7 @@ impl Pager {
             Key::Ctrl('c') => { self.history.push(&self.search_input.content); self.mode = Mode::Normal; self.bell_requested = true; }
             Key::Ctrl('n') | Key::Char('!') if self.search_input.content.is_empty() => { self.search_input_nonmatch = !self.search_input_nonmatch; }
             Key::Ctrl('k') if self.search_input.content.is_empty() => { self.search_input_keep_position = !self.search_input_keep_position; }
+            Key::Ctrl('w') if self.search_input.content.is_empty() => { self.search_input_wrap = !self.search_input_wrap; }
             Key::Enter => {
                 let pattern = self.search_input.content.clone();
                 self.mode = Mode::Normal;
@@ -1881,6 +1895,7 @@ impl Pager {
                 if let Some(search) = self.incremental_preview.take() {
                     self.search = Some(search);
                     self.search_nonmatch = self.search_input_nonmatch;
+                    self.search_wrap = self.search_input_wrap;
                     self.search_inherited = false;
                     self.search_highlight = true;
                     self.current_match_line = Some(self.target_line());
@@ -1890,6 +1905,7 @@ impl Pager {
                     Ok(s) => {
                         self.search = Some(s);
                         self.search_nonmatch = self.search_input_nonmatch;
+                        self.search_wrap = self.search_input_wrap;
                         self.search_inherited = false;
                         self.current_match_line = None;
                         self.do_search(self.search_dir == SearchDir::Forward, self.search_input_keep_position);
@@ -1971,6 +1987,12 @@ impl Pager {
         self.top_line.saturating_add(self.jump_target.row(self.term_height).saturating_sub(self.leading_rows))
     }
 
+    fn search_wrapped_notice(&mut self, forward: bool, repaint: bool) {
+        let message = if forward { "Search hit bottom; continuing at top" } else { "Search hit top; continuing at bottom" };
+        self.command_error(message.to_owned(), ErrorAction::Dismiss);
+        if let Mode::CommandError(error) = &mut self.mode { error.repaint = repaint; }
+    }
+
     fn do_search(&mut self, forward: bool, keep_position: bool) {
         self.search_highlight = true;
         let search = match self.search.take() {
@@ -2001,17 +2023,19 @@ impl Pager {
             (_, true) => self.current_match_line.map_or(self.top_line, |line| line.saturating_add(1)),
             (_, false) => self.current_match_line.unwrap_or(self.top_line),
         } };
-        let found = if self.filter.is_some() {
-            let count = self.filtered_lines.len();
-            let mut matches = |index: &usize| self.buffer.get_line(self.filtered_lines[*index]).is_some_and(|line| {
-                let matched = if self.controls == ControlDisplay::Standard { search.is_match_raw(line) } else { search.is_match(line) };
-                matched != self.search_nonmatch
-            });
-            if forward { (from.min(count)..count).find(&mut matches) }
-            else { (0..from.min(count)).rev().find(&mut matches) }
-        } else if self.controls == ControlDisplay::Standard { search.find_next_raw_line(&mut self.buffer, from, forward, self.search_nonmatch) }
-        else if self.search_nonmatch { search.find_next_nonmatching_line(&mut self.buffer, from, forward) }
-        else { search.find_next_line(&mut self.buffer, from, forward) };
+        let mut wrapped = false;
+        let found = self.find_search_line(&search, from, forward).or_else(|| {
+            if !self.search_wrap { return None; }
+            let found = if forward {
+                self.find_search_line(&search, 0, true).filter(|line| *line < from)
+            } else {
+                self.buffer.read_all();
+                let end = self.display_line_count();
+                self.find_search_line(&search, end, false).filter(|line| *line >= from)
+            };
+            wrapped = self.buffer.is_finished();
+            found
+        });
         match found {
             Some(line) => {
                 self.current_match_line = Some(line);
@@ -2022,14 +2046,30 @@ impl Pager {
                     self.top_line = line.saturating_sub(row);
                     self.leading_rows = row.saturating_sub(line);
                 }
+                if wrapped { self.search_wrapped_notice(forward, true); }
             }
             None => {
                 if self.squished { self.position_initialized(); }
-                self.command_error("Pattern not found".to_string(), ErrorAction::Dismiss);
+                let action = if wrapped { ErrorAction::SearchWrapped(forward) } else { ErrorAction::Dismiss };
+                self.command_error("Pattern not found".to_string(), action);
                 if let Mode::CommandError(error) = &mut self.mode { error.repaint = true; }
             }
         }
         self.search = Some(search);
+    }
+
+    fn find_search_line(&mut self, search: &Search, from: usize, forward: bool) -> Option<usize> {
+        if self.filter.is_some() {
+            let count = self.filtered_lines.len();
+            let mut matches = |index: &usize| self.buffer.get_line(self.filtered_lines[*index]).is_some_and(|line| {
+                let matched = if self.controls == ControlDisplay::Standard { search.is_match_raw(line) } else { search.is_match(line) };
+                matched != self.search_nonmatch
+            });
+            if forward { (from.min(count)..count).find(&mut matches) }
+            else { (0..from.min(count)).rev().find(&mut matches) }
+        } else if self.controls == ControlDisplay::Standard { search.find_next_raw_line(&mut self.buffer, from, forward, self.search_nonmatch) }
+        else if self.search_nonmatch { search.find_next_nonmatching_line(&mut self.buffer, from, forward) }
+        else { search.find_next_line(&mut self.buffer, from, forward) }
     }
 
     fn handle_filter_input_key(&mut self, key: Key) {
@@ -2769,7 +2809,8 @@ impl Pager {
             };
             let nonmatch = if self.search_input_nonmatch { "Non-match " } else { "" };
             let keep = if self.search_input_keep_position { "Keep-pos " } else { "" };
-            return format!("{nonmatch}{keep}{}{}", ch, self.search_input.content);
+            let wrap = if self.search_input_wrap { "Wrap " } else { "" };
+            return format!("{nonmatch}{keep}{wrap}{}{}", ch, self.search_input.content);
         }
 
         if self.mode == Mode::FilterInput {
