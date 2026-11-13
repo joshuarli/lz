@@ -1938,10 +1938,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["invocation-query-display-standard", "invocation-query-display-color", "invocation-query-display-raw"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Queries of r/R report standard, color and raw display modes without changing them. Other option queries remain open."
     },
     {
       "id": "man-0433",

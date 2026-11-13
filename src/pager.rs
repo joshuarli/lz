@@ -114,10 +114,13 @@ enum Mode {
     QuitPrefix,
     SetMark,
     JumpMark,
-    OptionPrefix { quiet: bool },
+    OptionPrefix(OptionCommand),
     OptionNotice { repaint: bool },
     CommandError(CommandError),
 }
+
+#[derive(Clone, Copy, PartialEq)]
+enum OptionCommand { Toggle, ToggleQuietly, Query }
 
 #[derive(Clone, Copy)]
 enum HelpPrefix { Colon(std::num::NonZeroUsize), Quit }
@@ -1066,7 +1069,7 @@ impl Pager {
         self.numeric_prefix = NumericPrefix::Empty;
         self.command_context = CommandContext::Interactive;
         self.bell_requested = true;
-        if matches!(self.mode, Mode::SetMark | Mode::JumpMark | Mode::FileCommand(_) | Mode::OptionPrefix { .. } | Mode::OptionNotice { .. } | Mode::CommandError(_)) {
+        if matches!(self.mode, Mode::SetMark | Mode::JumpMark | Mode::FileCommand(_) | Mode::OptionPrefix(_) | Mode::OptionNotice { .. } | Mode::CommandError(_)) {
             self.mode = if matches!(&self.mode, Mode::CommandError(error) if error.destination == ErrorDestination::Help) { Mode::Help } else { Mode::Normal };
             self.status_msg = None;
             self.filename_prompt = false;
@@ -1083,12 +1086,12 @@ impl Pager {
         match self.mode.clone() {
             Mode::Normal => self.handle_normal_key(key),
             Mode::SetMark | Mode::JumpMark => { self.handle_mark_key(key); false }
-            Mode::OptionPrefix { quiet } => {
-                if key == Key::Ctrl('p') && !quiet { self.mode = Mode::OptionPrefix { quiet:true }; return false; }
+            Mode::OptionPrefix(command) => {
+                if key == Key::Ctrl('p') && command == OptionCommand::Toggle { self.mode = Mode::OptionPrefix(OptionCommand::ToggleQuietly); return false; }
                 self.mode = Mode::Normal;
                 if let Key::Char(choice @ ('r' | 'R')) = key {
                     let selected = if choice == 'r' { ControlDisplay::Raw } else { ControlDisplay::Color };
-                    self.controls = if self.controls == selected { ControlDisplay::Standard } else { selected };
+                    if command != OptionCommand::Query { self.controls = if self.controls == selected { ControlDisplay::Standard } else { selected }; }
                     let repaint = self.squished;
                     if repaint { self.position_initialized(); }
                     let message = match self.controls {
@@ -1096,7 +1099,7 @@ impl Pager {
                         ControlDisplay::Raw => "Display control characters directly (not recommended)",
                         ControlDisplay::Color => "Display ANSI sequences directly, other control characters as ^X",
                     };
-                    if !quiet {
+                    if command != OptionCommand::ToggleQuietly {
                         self.status_msg = Some(format!("{message}  (press RETURN)"));
                         self.mode = Mode::OptionNotice { repaint };
                     }
@@ -1201,7 +1204,8 @@ impl Pager {
             Key::Char('q' | 'Q') | Key::Escape => return true,
             Key::Ctrl('c') => self.bell_requested = true,
             Key::Char('Z') => self.mode = Mode::QuitPrefix,
-            Key::Char('-') => self.mode = Mode::OptionPrefix { quiet:false },
+            Key::Char('-') => self.mode = Mode::OptionPrefix(OptionCommand::Toggle),
+            Key::Char('_') => self.mode = Mode::OptionPrefix(OptionCommand::Query),
             Key::Char(':') => self.mode = Mode::FileCommand(std::num::NonZeroUsize::new(count.unwrap_or(1)).unwrap()),
             Key::Char('r') | Key::Ctrl('r' | 'l') => self.position_initialized(),
             Key::Char('R') => {
@@ -2211,7 +2215,7 @@ impl Pager {
 
     fn build_status(&self) -> String {
         if self.mode == Mode::QuitPrefix { return " Z".into(); }
-        if let Mode::OptionPrefix { quiet } = self.mode { return if quiet { "-(P)" } else { "-" }.into(); }
+        if let Mode::OptionPrefix(command) = self.mode { return match command { OptionCommand::Toggle => "-", OptionCommand::ToggleQuietly => "-(P)", OptionCommand::Query => "_" }.into(); }
         if matches!(self.mode, Mode::FileCommand(_)) { return " :".into(); }
         if self.mode == Mode::SetMark { return "set mark: ".into(); }
         if self.mode == Mode::JumpMark { return "goto mark: ".into(); }
