@@ -895,6 +895,10 @@ impl Pager {
     // --- Rendering ---
 
     fn render(&mut self) -> io::Result<()> {
+        if !self.content_painted && !matches!(self.mode, Mode::CommandError(_)) {
+            self.buffer.byte_prefix(0, 0)?;
+            if self.buffer.is_empty() && self.buffer.state() == crate::buffer::SourceState::Waiting { return Ok(()); }
+        }
         let mut buf = Frame { bytes: Vec::with_capacity(4096), relative_row: self.display_anchor.row, padding: 0 };
         let w = self.term_width as usize;
         let ch = self.content_height();

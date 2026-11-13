@@ -150,6 +150,11 @@ fn same_termios(a: &lz::terminal::Termios, b: &lz::terminal::Termios) -> bool {
 
 pub fn producer(path: &Path) -> Result<()> {
     fs::write("producer-state", b"holding-open")?;
+    if let Some(delay) = std::env::var_os("LZ_PARITY_PRODUCER_DELAY_MS") {
+        let delay: u64 = delay.to_str().ok_or("producer delay is not UTF-8")?.parse()?;
+        if delay > 1000 { return Err("producer delay exceeds one second".into()); }
+        std::thread::sleep(Duration::from_millis(delay));
+    }
     io::copy(&mut File::open(path)?, &mut io::stdout().lock())?;
     loop { std::thread::park(); }
 }

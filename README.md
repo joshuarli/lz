@@ -33,7 +33,9 @@ An exact-viewport final line gets bounded source lookahead so its EOF prompt is 
 
 `-X`/`--no-init` preserves the primary screen, places a short file below the current cursor and clears its prompt on exit. `--no-keypad` independently suppresses application keypad and cursor modes. Both settings accept LESS defaults and CLI resets. Nondefault modes during suspend/resume, resizing, help and complex file transitions still need differential coverage.
 
-Initial display reads bounded line prefixes from disk-backed source storage. Streamed input and large line indexes use owned anonymous spill files. Source bytes are retained intact. Whole-line search, wrapped navigation and exact malformed-byte display remain unfinished.
+Initial display reads bounded line prefixes from disk-backed source storage. An open pipe waits for initial data or EOF before painting its first view; keyboard and signal handling remain active. Streamed input and large line indexes use owned anonymous spill files. Source bytes are retained intact. Whole-line search, wrapped navigation and exact malformed-byte display remain unfinished.
+
+PTY pipe fixtures accept `LZ_PARITY_PRODUCER_DELAY_MS` from 0 through 1000 to delay the owned producer’s first write. The delayed-startup regression compares the first screen against the oracle without changing readiness or output limits.
 
 History uses `LESSHISTFILE` or the less 668 XDG/home search order, reusing an existing destination before choosing a new one. The old `$XDG_STATE_HOME/lz/history` file is neither read nor migrated. Search and shell records merge at save time with atomic replacement and mode 0600. `LESSHISTSIZE` controls retained older entries. History obeys the resolved `LESSSECURE`/`LESSSECURE_ALLOW` policy, including unique feature-name prefixes and diagnostics. Marks, concurrent/interrupted writes, temporary-name collisions, other secure feature effects and full command editing remain unfinished.
 

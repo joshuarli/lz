@@ -7512,11 +7512,12 @@
       "cases": [
         "sources-open-pipe",
         "sources-open-pipe-term",
-        "sources-open-pipe-lines"
+        "sources-open-pipe-lines",
+        "sources-delayed-open-pipe"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Strict open-producer tests pass: -n with an unterminated 4096-byte line supports quit and TERM; default mode with complete lines supports quit. Screen cells, attributes, cursor, wraps, full kernel termios, status and child cleanup compare. Queued input survives restoration and reentry. Default line-counting on an unterminated producer, slow/error sources and follow interactions remain open."
+      "cause": "Open-producer cases cover quit/TERM, queued input, pre-repair kernel state and delayed first data without a premature empty view. Default counting on unterminated input, read errors and follow interactions remain open."
     },
     {
       "id": "source-short-startup",
