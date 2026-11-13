@@ -7,6 +7,7 @@ mod readiness;
 mod helper;
 pub mod history;
 pub mod input;
+pub mod option_catalog;
 pub mod pager;
 pub mod search;
 pub mod terminal;

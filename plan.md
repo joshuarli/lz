@@ -92,6 +92,8 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S04ay:** `-+r`/`-+R` reset and `-!r`/`-!R` set the display mode. Eight cases cover changed and already-selected values plus Ctrl-P suppression on macOS and in a Linux arm64 container. Other options remain open.
 
+**S04az accepted:** the `man-0404` option-name catalog and lookup have one shared library owner for CLI and interactive commands. The public API distinguishes unknown and ambiguous names. The catalog unit test, eight invocation option cases and all-target Clippy passed on macOS arm64; the unit test and ambiguous, unknown and numeric long-option cases also passed in Linux arm64 Docker.
+
 The subsequent macOS arm64 invocation check passed all 332 admitted cases after the option-prefix changes.
 
 **S08p:** `Esc-u` after a search with no matches reports the reference no-previous-pattern prompt. The case passes on macOS and in a Linux arm64 container; cross-file prepared regions are parked separately.
