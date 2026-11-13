@@ -1813,22 +1813,31 @@ impl Pager {
                 None => { self.command_error("No previous regular expression".to_string(), ErrorAction::Dismiss); return; }
             },
         };
+        let last_displayed = self.last_visible_line.and_then(|line| {
+            if self.filter.is_some() { self.filtered_lines.binary_search(&line).ok() } else { Some(line) }
+        });
         let from = if !forward && !self.content_painted && self.last_visible_line.is_none() && self.current_match_line.is_none() {
             self.buffer.read_all();
-            self.buffer.len()
+            self.display_line_count()
         } else { match (self.search_start, forward) {
-            (SearchStart::AfterScreen, true) => self.last_visible_line.map_or(self.top_line, |line| line.saturating_add(1)),
+            (SearchStart::AfterScreen, true) => last_displayed.map_or(self.top_line, |line| line.saturating_add(1)),
             (SearchStart::AfterScreen, false) => self.top_line,
             (SearchStart::AfterTarget, false) => self.target_line(),
             (SearchStart::AfterTarget, true) if self.content_painted => self.target_line().saturating_add(1),
             (SearchStart::Default, true) if self.current_match_line.is_some() => self.target_line().saturating_add(1),
             (SearchStart::Default, false) if self.current_match_line.is_some() => self.target_line(),
             (SearchStart::Default, false) if self.current_match_line.is_none() && self.search_inherited => self.top_line,
-            (SearchStart::Default, false) if self.current_match_line.is_none() => self.last_visible_line.map_or(self.top_line, |line| line.saturating_add(1)),
+            (SearchStart::Default, false) if self.current_match_line.is_none() => last_displayed.map_or(self.top_line, |line| line.saturating_add(1)),
             (_, true) => self.current_match_line.map_or(self.top_line, |line| line.saturating_add(1)),
             (_, false) => self.current_match_line.unwrap_or(self.top_line),
         } };
-        match search.find_next_line(&mut self.buffer, from, forward) {
+        let found = if self.filter.is_some() {
+            let count = self.filtered_lines.len();
+            let mut matches = |index: &usize| self.buffer.get_line(self.filtered_lines[*index]).is_some_and(|line| search.is_match(line));
+            if forward { (from.min(count)..count).find(&mut matches) }
+            else { (0..from.min(count)).rev().find(&mut matches) }
+        } else { search.find_next_line(&mut self.buffer, from, forward) };
+        match found {
             Some(line) => {
                 self.position_initialized();
                 self.current_match_line = Some(line);
@@ -1900,6 +1909,10 @@ impl Pager {
     }
 
     fn clear_filter(&mut self) {
+        if self.filter.is_some() {
+            self.top_line = self.display_line_idx(self.top_line).unwrap_or(0);
+            self.current_match_line = self.current_match_line.and_then(|line| self.display_line_idx(line));
+        }
         self.filter = None;
         self.filtered_lines.clear();
     }

@@ -8467,11 +8467,9 @@
       "file": "lesstest/lt/seq200.lt",
       "sha256": "b0c1c45cf8d8003eed4bba16923d9f5787a08cc97ae55f1770aeda2287372001",
       "instrumented": "pass",
-      "cases": [
-        "upstream-seq-search"
-      ],
+      "cases": ["upstream-seq-search", "upstream-seq-filter-search", "upstream-seq-filter-search-backward"],
       "disposition": "partial translation",
-      "cause": "Remaining commands/custom termcap checkpoints require generic VT scenarios in S12"
+      "cause": "The initial search, filter, repeated forward searches and filter clearing pass in generic-terminal checkpoints; an additional backward repeat is covered. Later commands and custom termcap checkpoints remain untranslated."
     },
     {
       "id": "subsearch",
