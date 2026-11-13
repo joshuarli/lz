@@ -1020,7 +1020,8 @@
         "search-highlight-crosses-right-edge",
         "search-highlight-hidden-right",
         "search-highlight-clipped-wide-glyph",
-        "search-highlight-wide-right-edge"
+        "search-highlight-wide-right-edge",
+        "search-highlight-clipped-wide-glyph-color"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
@@ -5022,7 +5023,7 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["rendering-chinese-use-color-after-missing", "invocation-use-color-startup", "sessions-use-color-next-file", "invocation-use-color-disable", "invocation-use-color-query-reset", "upstream-chinese1-use-color", "search-ui-color-plain-multiple", "search-ui-color-sgr-inside-match","search-ui-color-existing-inverse","search-ui-color-rgb-multiple","search-ui-color-indexed-background","search-ui-color-colon-parameters","search-ui-color-colon-simple","search-ui-color-colon-prior-style","search-ui-color-colon-color-space", "invocation-use-color-numbered","invocation-use-color-one-screen-numbered","sessions-use-color-numbered-next-file", "navigation-use-color-chopped-marker","navigation-use-color-horizontal-marker","navigation-use-color-styled-marker", "rendering-use-color-control-notation","invocation-use-color-one-screen-notation","search-use-color-highlight-notation"],
+      "cases": ["rendering-chinese-use-color-after-missing", "invocation-use-color-startup", "sessions-use-color-next-file", "invocation-use-color-disable", "invocation-use-color-query-reset", "upstream-chinese1-use-color", "search-ui-color-plain-multiple", "search-ui-color-sgr-inside-match","search-ui-color-existing-inverse","search-ui-color-rgb-multiple","search-ui-color-indexed-background","search-ui-color-colon-parameters","search-ui-color-colon-simple","search-ui-color-colon-prior-style","search-ui-color-colon-color-space", "invocation-use-color-numbered","invocation-use-color-one-screen-numbered","sessions-use-color-numbered-next-file", "navigation-use-color-chopped-marker","navigation-use-color-horizontal-marker","navigation-use-color-styled-marker", "navigation-clipped-wide-placeholder-color", "navigation-clipped-wide-restores-color", "rendering-use-color-control-notation","invocation-use-color-one-screen-notation","search-use-color-highlight-notation"],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
       "cause": "The tested startup and interactive use-color settings color prompts and notices and persist across files. Plain-text search highlights use the default color in the named cases. The named styled-source overlays restore indexed, RGB and inverse state. The named line-number cases use the default color in interactive and one-screen output. Named right-edge marker and control/invalid-byte notation cases also use the default colors. Other escape forms, color classes and custom colors remain open."
@@ -8505,9 +8506,9 @@
       "file": "lesstest/lt/utf8-2.txt.lt",
       "sha256": "def0b49526232eaf2a3cc544bfde56190b488cbdc82bf8c4e830cea58537d91a",
       "instrumented": "pass",
-      "cases": ["upstream-utf8-initial-scroll", "upstream-utf8-fifteen-scrolls", "upstream-utf8-regex-search", "upstream-utf8-after-search-navigation", "upstream-utf8-horizontal-vertical", "upstream-utf8-horizontal-cycle", "upstream-utf8-second-search"],
+      "cases": ["upstream-utf8-initial-scroll", "upstream-utf8-fifteen-scrolls", "upstream-utf8-regex-search", "upstream-utf8-after-search-navigation", "upstream-utf8-horizontal-vertical", "upstream-utf8-horizontal-cycle", "upstream-utf8-second-search", "upstream-utf8-wide-horizontal-cycle"],
       "disposition": "partial translation",
-      "cause": "The original Unicode fixture, first fifteen line-scroll commands, two regex searches and the intervening vertical/horizontal cycle pass generic-terminal comparisons in C.UTF-8; the search also passed en_US.UTF-8 on macOS. The intervening examine command, later navigation, original custom termcap and exact Linux locale remain open."
+      "cause": "The original Unicode fixture, first fifteen line-scroll commands, two regex searches and the intervening/following horizontal cycles pass generic-terminal comparisons in C.UTF-8; the search also passed en_US.UTF-8 on macOS. The intervening examine command, later navigation, original custom termcap and exact Linux locale remain open."
     },
     {
       "id": "version.c",

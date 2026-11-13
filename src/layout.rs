@@ -147,6 +147,13 @@ impl DisplayPrefix {
 
     pub(crate) fn source(&self) -> &[u8] { &self.bytes }
 
+    pub(crate) fn left_clipped_columns(&self, start: usize) -> usize {
+        self.glyphs.iter().find_map(|glyph| {
+            (matches!(glyph.representation, Representation::Literal) && glyph.columns.start < start && glyph.columns.end > start)
+                .then(|| glyph.columns.end - start)
+        }).unwrap_or(0)
+    }
+
     pub(crate) fn search_text<'a>(&self, visible: &'a str, start: usize) -> std::borrow::Cow<'a, str> {
         if !self.bytes.contains(&b'\x08') { return std::borrow::Cow::Borrowed(visible); }
         let mut targets = self.glyphs.iter().filter_map(|glyph| {
@@ -201,7 +208,14 @@ impl DisplayPrefix {
             }
             let visible = glyph.columns.end.min(end).saturating_sub(glyph.columns.start.max(start));
             match glyph.representation {
-                Representation::Literal if glyph.columns.start < start || glyph.columns.end > end => output.resize(output.len() + visible, b' '),
+                Representation::Literal if glyph.columns.start < start => {
+                    output.extend_from_slice(if notation_style == NotationStyle::Color { b"\x1b[30;46m" } else { b"\x1b[7m" });
+                    output.resize(output.len() + visible, b' ');
+                    output.extend_from_slice(b"\x1b[m");
+                    for sequence in &source_sgr { output.extend_from_slice(sequence); }
+                    attributes = (false, false, false);
+                }
+                Representation::Literal if glyph.columns.end > end => output.resize(output.len() + visible, b' '),
                 Representation::Literal => output.extend_from_slice(&self.bytes[glyph.source.clone()]),
                 Representation::Tab => output.resize(output.len() + visible, b' '),
                 Representation::Sgr | Representation::Hyperlink => unreachable!(),

@@ -296,6 +296,9 @@ impl DisplayLine {
         Self::Mapped(prefix) => prefix.fills_row(start, width),
         Self::Raw { .. } => self.columns() >= start.saturating_add(width),
     } }
+    fn left_clipped_columns(&self, start: usize) -> usize {
+        match self { Self::Mapped(prefix) => prefix.left_clipped_columns(start), Self::Raw { .. } => 0 }
+    }
     fn search_text<'a>(&self, visible: &'a str, start: usize) -> std::borrow::Cow<'a, str> {
         match self { Self::Mapped(prefix) => prefix.search_text(visible, start), Self::Raw { .. } => std::borrow::Cow::Borrowed(visible) }
     }
@@ -2548,6 +2551,10 @@ impl Pager {
                 }
                 visible
             };
+            let marker = source.left_clipped_columns(start).min(stripped.len());
+            let matches: Vec<_> = matches.into_iter().filter_map(|(first, last)| {
+                if last > marker { Some((first.max(marker), last)) } else { None }
+            }).collect();
             if !matches.is_empty() {
                 let colored = self.use_color;
                 let mut source_colors = crate::ansi::SgrColors::default();
