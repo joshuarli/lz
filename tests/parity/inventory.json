@@ -8407,9 +8407,9 @@
       "file": "lesstest/lt/colorbars.lt",
       "sha256": "31955351b939e145948079a5a040a5590f061b01b9361698209381a7d57ff132",
       "instrumented": "pass",
-      "cases": ["upstream-colorbars-scroll", "upstream-colorbars-page", "upstream-colorbars-info", "upstream-colorbars-chop", "upstream-colorbars-horizontal", "upstream-colorbars-right-cycle", "upstream-colorbars-search-after-shift", "upstream-colorbars-search-color-toggle", "upstream-colorbars-color-return-left"],
+      "cases": ["upstream-colorbars-scroll", "upstream-colorbars-page", "upstream-colorbars-info", "upstream-colorbars-chop", "upstream-colorbars-horizontal", "upstream-colorbars-right-cycle", "upstream-colorbars-search-after-shift", "upstream-colorbars-search-color-toggle", "upstream-colorbars-color-return-left", "upstream-colorbars-complete-sequence"],
       "disposition": "partial translation",
-      "cause": "The original fixture, initial movements, file-information notice, chop toggle, searches, use-color change and horizontal cycles through the return to the first column pass generic-terminal checkpoints. Later vertical navigation and original custom termcap remain untranslated."
+      "cause": "The original fixture and command sequence pass generic-terminal checkpoints. Intermediate per-key checkpoints and the original custom termcap remain untranslated."
     },
     {
       "id": "github216",

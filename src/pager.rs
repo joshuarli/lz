@@ -2166,6 +2166,10 @@ impl Pager {
     }
 
     fn scroll_down(&mut self, lines: usize) {
+        if self.eof_displayed && self.leading_rows == 0 && self.content_painted && self.buffer.is_finished() {
+            self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
+            return;
+        }
         if self.forced_leading_rows && self.leading_rows > 0 && self.eof_displayed && self.buffer.is_finished() {
             self.boundary_bell_requested |= terminal::request_eof_bell(std::time::SystemTime::now());
             return;

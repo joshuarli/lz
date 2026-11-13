@@ -150,6 +150,10 @@ Recent accepted slices cover help entry and navigation, CLI help, horizontal mov
 
 **S12av accepted:** interactive differential cases use the pinned reference build's `lessecho` helper unless overridden; setup checks its version and fails when it is absent. Missing-file examine cases and all 51 admitted session cases passed on macOS arm64 and Linux arm64 Docker. The test environment contract changed.
 
+**S07as accepted (partial):** ordinary forward movement preserves a search-positioned plain-line view when EOF is already visible. Two reduced cases, the upstream sequence and four neighboring cases pass on macOS arm64 and Linux arm64 Docker. The 152 previously admitted navigation cases, 62 session cases and all-target Clippy pass on macOS. Wrapped multirow, filters and live streams remain open.
+
+**S12bh accepted (partial translation):** the original `colorbars` command sequence passes generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Per-key checkpoints and original custom termcap remain open.
+
 **S12bg accepted (partial translation):** the original `colorbars` sequence through its post-color right-arrow cycle and return to the first column passes generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Later vertical navigation, per-key checks and original custom termcap remain open.
 
 **S12bf accepted (partial translation):** the original `colorbars` sequence through nine right arrows and the use-color change after its searches passes generic-terminal checkpoints on macOS arm64 and Linux arm64 Docker. Later navigation, per-key checks and original custom termcap remain open.
