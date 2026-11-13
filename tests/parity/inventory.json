@@ -1351,10 +1351,12 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "lifecycle-int-filter"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Filter input displays the reference &/ prompt and cancels on SIGINT. Filter execution, modifiers, positions and interactions remain unverified"
     },
     {
       "id": "man-0335",
@@ -7523,11 +7525,20 @@
         "linux-musl"
       ],
       "cases": [
-        "lifecycle-term"
+        "lifecycle-term",
+        "lifecycle-int-normal",
+        "lifecycle-int-keyboard",
+        "lifecycle-int-prefix",
+        "lifecycle-int-search",
+        "lifecycle-int-filter",
+        "lifecycle-int-follow",
+        "lifecycle-int-binary",
+        "lifecycle-int-diagnostic",
+        "lifecycle-int-preserve"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "TERM during idle key wait exits 15 and restores represented modes; suspend/resume, inherited dispositions and other signals remain untested"
+      "cause": "TERM cleanup and default SIGINT continuation pass in normal/search/filter/follow/prefix modes, binary/diagnostic prompts and preserved-screen/no-keypad sessions. Keyboard Ctrl-C rings and continues in normal mode. Quit-on-interrupt policy, suspend/resume, other signals, inherited dispositions and long operations remain open"
     },
     {
       "id": "input-boundaries",
@@ -7543,10 +7554,15 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": [
+        "lifecycle-int-normal",
+        "lifecycle-int-keyboard",
+        "lifecycle-int-search",
+        "lifecycle-int-filter"
+      ],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Real SIGINT is consumed outside the handler and keyboard Ctrl-C follows the same default interrupt path. Broader keyboard decoding, custom keys, inherited dispositions and interrupted long operations remain open"
     },
     {
       "id": "oracle-hup-leak",

@@ -406,6 +406,7 @@ impl Pager {
             keys.set_command_input(command);
             while keys.has_command_input() {
                 if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return Ok(true); }
+                if terminal::take_interrupt() { return Ok(self.interrupt(keys)); }
                 if self.handle_key(keys.read_key()?) {
                     if let PagerExit::VisitFile(visit) = &mut self.exit {
                         let remainder = keys.take_command_input();
@@ -454,6 +455,10 @@ impl Pager {
             if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 {
                 return Ok(self.exit);
             }
+            if terminal::take_interrupt() {
+                if self.interrupt(keys) { return Ok(self.exit); }
+                redraw = true;
+            }
             if terminal::TSTP_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst) {
                 terminal::handle_suspend();
             }
@@ -492,9 +497,32 @@ impl Pager {
             };
 
             redraw = true;
-            if self.handle_key(key) {
+            let quit_requested = if key == Key::Ctrl('c') { self.interrupt(keys) } else { self.handle_key(key) };
+            if quit_requested {
                 return Ok(self.exit);
             }
+        }
+    }
+
+    fn interrupt(&mut self, keys: &mut KeyReader) -> bool {
+        if self.filter.is_some() {
+            let line = self.display_line_idx(self.top_line).unwrap_or(0);
+            self.clear_filter();
+            self.top_line = line;
+        }
+        keys.set_command_input(Vec::new());
+        self.startup_commands.clear();
+        self.startup_echo = None;
+        self.numeric_prefix = NumericPrefix::Empty;
+        self.command_context = CommandContext::Interactive;
+        self.bell_requested = true;
+        if matches!(self.mode, Mode::SetMark | Mode::JumpMark | Mode::FileCommand(_) | Mode::CommandError(_)) {
+            self.mode = Mode::Normal;
+            self.status_msg = None;
+            self.filename_prompt = false;
+            false
+        } else {
+            self.handle_key(Key::Ctrl('c'))
         }
     }
 
@@ -589,7 +617,8 @@ impl Pager {
             return false;
         }
         match key {
-            Key::Char('q' | 'Q') | Key::Ctrl('c') | Key::Escape => return true,
+            Key::Char('q' | 'Q') | Key::Escape => return true,
+            Key::Ctrl('c') => self.bell_requested = true,
             Key::Char('Z') => self.mode = Mode::QuitPrefix,
             Key::Char(':') => self.mode = Mode::FileCommand(std::num::NonZeroUsize::new(count.unwrap_or(1)).unwrap()),
             Key::Char('m') => self.mode = Mode::SetMark,
@@ -1299,7 +1328,7 @@ impl Pager {
         }
 
         if self.mode == Mode::FilterInput {
-            return format!("&{}", self.filter_input.content);
+            return format!("&/{}", self.filter_input.content);
         }
 
         if self.mode == Mode::Help {

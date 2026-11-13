@@ -28,6 +28,8 @@ Ordinary in-file marks use `m` plus a letter and `'` plus that letter. Pressing 
 
 Startup `-t` selects a numeric or literal-prefix ctags address from `tags`; `-T` chooses another tags file. Pattern delimiters, backslash removal, optional end-of-line matching, raw bytes, extended records and the oracle’s secure-startup behavior are covered. Tag matching retains CR bytes while display normalizes CRLF. Duplicate matches, interactive tags, tag error prompts, color conversion, long-running cancellation and GLOBAL helpers remain unfinished.
 
+Default SIGINT and Ctrl-C ring the bell and continue paging; normal-mode Ctrl-C no longer exits. Interrupts cancel pending input, preserve follow-mode return context and use the same path for signals and keyboard input. Binary and diagnostic prompts also consume SIGINT and restore their acquired state on exit. Quit-on-interrupt policy, other signal modes and long-operation cancellation remain unfinished.
+
 Normal mode accepts `q`, `Q`, `:q`, `:Q` and `ZZ` to quit; numeric counts are ignored. A pending `Z` or colon command displays its prefix. Backspace, Ctrl-C and invalid second keys cancel the `Z` prefix with the reference bell.
 
 Oversized numeric prefixes show a dismissible error. Enter resumes the pending command without losing the rest of a startup command.

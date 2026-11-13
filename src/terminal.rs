@@ -31,6 +31,7 @@ const SIGCONT: i32 = 19;
 #[cfg(target_os = "linux")]
 const SIGCONT: i32 = 18;
 const SIGTERM: i32 = 15;
+const SIGINT: i32 = 2;
 const SIGHUP: i32 = 1;
 #[cfg(target_os = "macos")]
 const SIGSTOP: i32 = 17;
@@ -43,6 +44,10 @@ pub static WINCH_FLAG: AtomicBool = AtomicBool::new(false);
 pub static TSTP_FLAG: AtomicBool = AtomicBool::new(false);
 pub static CONT_FLAG: AtomicBool = AtomicBool::new(false);
 pub static TERMINATION_SIGNAL: AtomicI32 = AtomicI32::new(0);
+static INTERRUPT_FLAG: AtomicBool = AtomicBool::new(false);
+
+/// Consume a pending SIGINT from the active terminal session.
+pub fn take_interrupt() -> bool { INTERRUPT_FLAG.swap(false, Ordering::SeqCst) }
 
 /// The fd we set raw mode on (the /dev/tty fd).
 static ALT_SCREEN: AtomicBool = AtomicBool::new(false);
@@ -116,9 +121,13 @@ extern "C" fn handle_term(sig: i32) {
     let _ = TERMINATION_SIGNAL.compare_exchange(0, sig, Ordering::SeqCst, Ordering::SeqCst);
 }
 
+extern "C" fn handle_interrupt(_sig: i32) {
+    INTERRUPT_FLAG.store(true, Ordering::SeqCst);
+}
+
 fn install_signal_handlers() -> io::Result<Vec<(i32, usize)>> {
     let mut previous = Vec::new();
-    for (number, handler) in [(SIGWINCH, handle_winch as *const () as usize), (SIGTSTP, handle_tstp as *const () as usize), (SIGCONT, handle_cont as *const () as usize), (SIGTERM, handle_term as *const () as usize), (SIGHUP, handle_term as *const () as usize)] {
+    for (number, handler) in [(SIGWINCH, handle_winch as *const () as usize), (SIGTSTP, handle_tstp as *const () as usize), (SIGCONT, handle_cont as *const () as usize), (SIGTERM, handle_term as *const () as usize), (SIGHUP, handle_term as *const () as usize), (SIGINT, handle_interrupt as *const () as usize)] {
         // SAFETY: each handler has C ABI and only updates a lock-free atomic flag.
         let saved = unsafe { signal(number, handler) };
         if saved == usize::MAX {
@@ -316,6 +325,7 @@ impl Session {
         let keys = crate::input::KeyReader::new()?;
         SESSION_ACTIVE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).map_err(|_| io::Error::other("a terminal session is already active"))?;
         TERMINATION_SIGNAL.store(0, Ordering::SeqCst);
+        INTERRUPT_FLAG.store(false, Ordering::SeqCst);
         let mut session = Self { keys, previous_handlers: Vec::new() };
         session.previous_handlers = install_signal_handlers()?;
         enable_raw_mode(session.keys.fd())?;

@@ -109,6 +109,8 @@ All raw terminal interaction via libc FFI.
 - Signal handling: `SIGWINCH` (terminal resize), `SIGTSTP` (Ctrl-Z suspend), `SIGCONT` (resume after suspend), `SIGTERM` (clean exit). Signals are caught via `signal()` or `sigaction` FFI calls; handlers set atomic flags that the event loop checks.
 - Buffered output helpers: wraps `stdout` writes so that each rendered frame is assembled in memory and flushed with a single `write()` syscall.
 
+SIGINT handlers only set an atomic flag. `take_interrupt` consumes it outside the handler; pager dispatch cancels pending input and rings once while continuing by default. Main uses the same interrupt key for binary and diagnostic acknowledgment. Normal-mode Ctrl-C continues paging. Quit-on-interrupt policy and cancellation during long operations remain open.
+
 Key types: `Session` owns keyboard input and signal dispositions. `Session::start(Screen::Primary)` acquires raw input without alternate or application modes. `enter_interactive(InteractiveOptions)` acquires an interactive display once, with independent `ScreenMode` and `KeypadMode` policies. `Screen::Interactive` applies those policies during startup. Primary-screen rendering retains a relative `DisplayAnchor`; exit clears its current prompt. Nondefault suspend/resume remains untested.
 
 ### `input.rs`

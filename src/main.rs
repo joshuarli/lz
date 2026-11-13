@@ -57,7 +57,15 @@ enum BinaryAnswer { Open, Refuse, Quit }
 fn read_prompt_key(keys: &mut lz::input::KeyReader) -> io::Result<Option<lz::input::Key>> {
     loop {
         if terminal::TERMINATION_SIGNAL.load(std::sync::atomic::Ordering::SeqCst) != 0 { return Ok(None); }
-        if let Some(key) = keys.read_key_timeout(100)? { return Ok(Some(key)); }
+        let key = if terminal::take_interrupt() { Some(lz::input::Key::Ctrl('c')) } else { keys.read_key_timeout(100)? };
+        if let Some(key) = key {
+            if key == lz::input::Key::Ctrl('c') {
+                let mut output = io::stdout().lock();
+                output.write_all(&[7])?;
+                output.flush()?;
+            }
+            return Ok(Some(key));
+        }
     }
 }
 
