@@ -202,6 +202,7 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
             Event::Resize { columns, rows } => terminal.resize(Size::new(*columns, *rows)?)?,
             Event::Signal { number } => terminal.signal(*number)?,
             Event::Continue {} => terminal.signal(libc::SIGCONT)?,
+            Event::SuspendSignal {} => terminal.signal(libc::SIGTSTP)?,
             Event::Suspend {} => {
                 suspensions += 1;
                 terminal.signal(libc::SIGTSTP)?;
@@ -246,7 +247,7 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
 
 pub fn fixture(fault: &str) -> Result<()> {
     if matches!(fault, "kernel-restored" | "kernel-leak") {
-        let mut session = lz::terminal::Session::start(lz::terminal::Screen::Primary)?;
+        let mut session = lz::terminal::Session::start(lz::terminal::Screen::Primary, lz::terminal::SuspendPolicy::Allow)?;
         print!("probe");
         std::io::stdout().flush()?;
         session.keys_mut().read_key()?;

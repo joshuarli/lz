@@ -7042,11 +7042,19 @@
         "configuration-history-secure",
         "integrations-secure-history-denied",
         "integrations-secure-zero-denied",
-        "integrations-secure-zero"
+        "integrations-secure-zero",
+        "integrations-secure-stop-denied",
+        "integrations-secure-stop-zero",
+        "integrations-secure-stop-other-allow",
+        "integrations-secure-stop-preserve",
+        "integrations-secure-stop-binary",
+        "integrations-secure-stop-allow",
+        "integrations-secure-stop-prefix",
+        "integrations-secure-stop-empty"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "Nonempty LESSSECURE, including 0, denies history unless the resolved feature mask permits it. The permission decision has one policy owner. Other feature effects and helper/session enforcement remain open."
+      "cause": "Nonempty LESSSECURE, including 0, denies history unless the resolved feature mask permits it. The permission decision has one policy owner. Other feature effects and helper/session enforcement remain open. Secure stop policy ignores SIGTSTP for nonempty LESSSECURE including 0 and unrelated allowances, including preserved/no-keypad and binary-to-pager transitions. Explicit stop and unique st allowances, and empty LESSSECURE, retain actual suspension. Other secure effects and keyboard suspension remain open."
     },
     {
       "id": "man-2429",
@@ -7074,11 +7082,19 @@
         "integrations-secure-diagnostic-quit",
         "integrations-secure-diagnostic-term",
         "integrations-secure-partial-allow",
-        "integrations-secure-zero-denied"
+        "integrations-secure-zero-denied",
+        "integrations-secure-stop-denied",
+        "integrations-secure-stop-zero",
+        "integrations-secure-stop-other-allow",
+        "integrations-secure-stop-preserve",
+        "integrations-secure-stop-binary",
+        "integrations-secure-stop-allow",
+        "integrations-secure-stop-prefix",
+        "integrations-secure-stop-empty"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "History allowances, unique prefixes, spaces/commas, case sensitivity, invalid/ambiguous names and partial success pass. Diagnostics pause on the primary screen, retain a non-Return command, and clean up on TERM. The complete 12-name parser is shared, but other feature enforcement remains open."
+      "cause": "History allowances, unique prefixes, spaces/commas, case sensitivity, invalid/ambiguous names and partial success pass. Diagnostics pause on the primary screen, retain a non-Return command, and clean up on TERM. The complete 12-name parser is shared, but other feature enforcement remains open. Secure stop policy ignores SIGTSTP for nonempty LESSSECURE including 0 and unrelated allowances, including preserved/no-keypad and binary-to-pager transitions. Explicit stop and unique st allowances, and empty LESSSECURE, retain actual suspension. Other secure effects and keyboard suspension remain open."
     },
     {
       "id": "man-2432",
@@ -7570,11 +7586,19 @@
         "lifecycle-cont-no-keypad",
         "lifecycle-cont-preserve-no-keypad",
         "lifecycle-cont-prompt",
-        "lifecycle-cont-after-resume"
+        "lifecycle-cont-after-resume",
+        "integrations-secure-stop-denied",
+        "integrations-secure-stop-zero",
+        "integrations-secure-stop-other-allow",
+        "integrations-secure-stop-preserve",
+        "integrations-secure-stop-binary",
+        "integrations-secure-stop-allow",
+        "integrations-secure-stop-prefix",
+        "integrations-secure-stop-empty"
       ],
       "implementation": "partial",
       "evidence": "compatible in the named tested scenarios",
-      "cause": "TERM cleanup, default SIGINT continuation and configured interruption pass in named scenarios. SIGQUIT is ignored in normal and pending search input, binary prompts, preserved/no-keypad sessions and under quit-on-interrupt policy; navigation continues beyond the supervisor escalation interval. External suspension restores kernel and represented modes, retains screen/keypad options and resumes navigation in six named scenarios. Keyboard suspension, secure stop policy, inherited dispositions and prompt/resize interactions remain open. Unsolicited SIGCONT retains the initial prompt and saved termios across screen/keypad combinations and after a completed suspension."
+      "cause": "TERM cleanup, default SIGINT continuation and configured interruption pass in named scenarios. SIGQUIT is ignored in normal and pending search input, binary prompts, preserved/no-keypad sessions and under quit-on-interrupt policy; navigation continues beyond the supervisor escalation interval. External suspension restores kernel and represented modes, retains screen/keypad options and resumes navigation in six named scenarios. Keyboard suspension, secure stop policy, inherited dispositions and prompt/resize interactions remain open. Unsolicited SIGCONT retains the initial prompt and saved termios across screen/keypad combinations and after a completed suspension. Secure stop policy ignores SIGTSTP for nonempty LESSSECURE including 0 and unrelated allowances, including preserved/no-keypad and binary-to-pager transitions. Explicit stop and unique st allowances, and empty LESSSECURE, retain actual suspension. Other secure effects and keyboard suspension remain open."
     },
     {
       "id": "input-boundaries",

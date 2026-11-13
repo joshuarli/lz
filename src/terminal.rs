@@ -130,9 +130,9 @@ extern "C" fn handle_interrupt(_sig: i32) {
     INTERRUPT_FLAG.store(true, Ordering::SeqCst);
 }
 
-fn install_signal_handlers() -> io::Result<Vec<(i32, usize)>> {
+fn install_signal_handlers(suspension: SuspendPolicy) -> io::Result<Vec<(i32, usize)>> {
     let mut previous = Vec::new();
-    for (number, handler) in [(SIGWINCH, handle_winch as *const () as usize), (SIGTSTP, handle_tstp as *const () as usize), (SIGCONT, handle_cont as *const () as usize), (SIGTERM, handle_term as *const () as usize), (SIGHUP, handle_term as *const () as usize), (SIGINT, handle_interrupt as *const () as usize), (SIGQUIT, SIG_IGN)] {
+    for (number, handler) in [(SIGWINCH, handle_winch as *const () as usize), (SIGTSTP, if suspension == SuspendPolicy::Allow { handle_tstp as *const () as usize } else { SIG_IGN }), (SIGCONT, handle_cont as *const () as usize), (SIGTERM, handle_term as *const () as usize), (SIGHUP, handle_term as *const () as usize), (SIGINT, handle_interrupt as *const () as usize), (SIGQUIT, SIG_IGN)] {
         // SAFETY: entries are C handlers which only update atomic flags, or the platform SIG_IGN sentinel.
         let saved = unsafe { signal(number, handler) };
         if saved == usize::MAX {
@@ -344,8 +344,11 @@ pub struct InteractiveOptions {
 #[derive(Clone, Copy)]
 pub enum Screen { Primary, Interactive(InteractiveOptions) }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum SuspendPolicy { Allow, Ignore }
+
 impl Session {
-    pub fn start(screen: Screen) -> io::Result<Self> {
+    pub fn start(screen: Screen, suspension: SuspendPolicy) -> io::Result<Self> {
         let keys = crate::input::KeyReader::new()?;
         SESSION_ACTIVE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).map_err(|_| io::Error::other("a terminal session is already active"))?;
         TERMINATION_SIGNAL.store(0, Ordering::SeqCst);
@@ -356,7 +359,7 @@ impl Session {
         TSTP_FLAG.store(false, Ordering::SeqCst);
         CONT_FLAG.store(false, Ordering::SeqCst);
         let mut session = Self { keys, previous_handlers: Vec::new() };
-        session.previous_handlers = install_signal_handlers()?;
+        session.previous_handlers = install_signal_handlers(suspension)?;
         enable_raw_mode(session.keys.fd())?;
         if let Screen::Interactive(options) = screen { session.enter_interactive(options)?; }
         Ok(session)

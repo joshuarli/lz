@@ -209,7 +209,8 @@ fn run() -> Result<ExitAction, String> {
         .map_err(|error| format!("{}: {error}", args.filenames[0].to_string_lossy()))?;
     let primary = opened.binary_name.is_some() || security.has_diagnostics();
     let screen = if primary { terminal::Screen::Primary } else { terminal::Screen::Interactive(args.terminal) };
-    let mut session = terminal::Session::start(screen).map_err(|error| error.to_string())?;
+    let suspension = if security.allows(security::Feature::Stop) { terminal::SuspendPolicy::Allow } else { terminal::SuspendPolicy::Ignore };
+    let mut session = terminal::Session::start(screen, suspension).map_err(|error| error.to_string())?;
     if let Some(name) = opened.binary_name.take() {
         match confirm_binary(&name, charset, session.keys_mut()) {
             Ok(BinaryAnswer::Refuse) => return finish_session(Ok(ExitAction::FileError), session),

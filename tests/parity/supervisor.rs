@@ -339,14 +339,14 @@ pub fn probe(args: &[std::ffi::OsString]) -> Result<()> {
         Some(std::hint::black_box(bytes))
     } else { None };
     let primary = args.first().is_some_and(|arg| arg == "primary");
-    let mut session = lz::terminal::Session::start(if primary { lz::terminal::Screen::Primary } else { lz::terminal::Screen::Interactive(Default::default()) })?;
+    let mut session = lz::terminal::Session::start(if primary { lz::terminal::Screen::Primary } else { lz::terminal::Screen::Interactive(Default::default()) }, lz::terminal::SuspendPolicy::Allow)?;
     print!("probe");
     io::stdout().flush()?;
     if args.first().is_some_and(|arg| arg == "queued") {
         let mut command = [0];
         tty.read_exact(&mut command)?;
         session.finish()?;
-        let session = lz::terminal::Session::start(lz::terminal::Screen::Interactive(Default::default()))?;
+        let session = lz::terminal::Session::start(lz::terminal::Screen::Interactive(Default::default()), lz::terminal::SuspendPolicy::Allow)?;
         let mut queued = [0; 9];
         tty.read_exact(&mut queued)?;
         session.finish()?;

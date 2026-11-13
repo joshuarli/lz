@@ -107,6 +107,7 @@ enum Event {
     Signal { number: i32 },
     Suspend {},
     Continue {},
+    SuspendSignal {},
     Append { bytes: Vec<u8> },
 }
 
