@@ -1426,6 +1426,7 @@ impl Pager {
             Key::Enter => {
                 self.mode = Mode::Normal;
                 if !self.examine_input.content.is_empty() {
+                    self.new_file = true;
                     self.exit = PagerExit::Examine(std::ffi::OsString::from(&self.examine_input.content));
                     return true;
                 }
@@ -1886,6 +1887,7 @@ impl Pager {
         self.mode = Mode::Normal;
         self.squished = false;
         self.compact_initial = false;
+        self.new_file = true;
     }
 
     fn mark_position(&self) -> MarkPosition { MarkPosition { line:self.top_line, leading_rows:self.leading_rows } }
