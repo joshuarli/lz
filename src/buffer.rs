@@ -206,38 +206,44 @@ impl LineBuffer {
 
     pub fn is_finished(&self) -> bool { self.state == SourceState::Eof }
 
-    pub(crate) fn regular_file_position(&mut self, line: usize) -> Option<(u64, u64)> {
-        if !self.is_finished() {
-            let Source::File(file) = &self.source else { return None; };
-            match file.metadata() {
-                Ok(metadata) if metadata.is_file() && metadata.len() == self.scanned => { self.scan(); }
-                Ok(_) => return None,
-                Err(error) => { self.error = Some(error); self.state = SourceState::Failed; return None; }
-            }
-        }
-        let size = self.eof_regular_size()?;
-        let end = if line + 1 < self.starts.len() {
-            match self.starts.get(line + 1) {
-                Ok(end) => end,
-                Err(error) => { self.error = Some(error); self.state = SourceState::Failed; return None; }
-            }
-        } else { size };
-        Some((end, size))
+    /// Byte offset of the first byte of a scanned line.
+    pub(crate) fn line_offset(&self, index: usize) -> Option<u64> {
+        if index < self.starts.len() { self.starts.get(index).ok() } else { None }
     }
 
-    pub(crate) fn eof_regular_size(&mut self) -> Option<u64> {
-        if !self.is_finished() { return None; }
+    /// Number of lines whose start offset does not exceed `offset`.
+    pub(crate) fn position_line_number(&self, offset: u64) -> Option<u64> {
+        self.starts.partition_point(offset).ok().map(|count| count as u64)
+    }
+
+    /// Number of bytes read from the source so far.
+    pub(crate) fn scanned_len(&self) -> u64 { self.scanned }
+
+    /// Size of a regular input file; None for pipes.
+    pub(crate) fn regular_file_size(&self) -> Option<u64> {
         match &self.source {
             Source::File(file) => match file.metadata() {
-                Ok(metadata) if metadata.is_file() && metadata.len() == self.scanned => Some(self.scanned),
-                Ok(_) => None,
-                Err(error) => { self.error = Some(error); None }
+                Ok(metadata) if metadata.is_file() => Some(metadata.len()),
+                _ => None,
             },
             Source::Pipe { .. } => None,
         }
     }
 
-
+    /// Scan a regular file to EOF and report its line count.
+    /// A pipe that already reached EOF can also answer.
+    pub(crate) fn scanned_line_count(&mut self) -> Option<u64> {
+        match &self.source {
+            Source::File(file) => match file.metadata() {
+                Ok(metadata) if metadata.is_file() => {}
+                _ => return None,
+            },
+            Source::Pipe { .. } => if !self.is_finished() { return None },
+        }
+        if !self.is_finished() { self.read_all(); }
+        if self.state() == SourceState::Failed { return None; }
+        Some(self.len() as u64)
+    }
 
     /// Finish a waiting stream at its buffered boundary after an interrupt.
     pub fn finish_interrupted_stream(&mut self) -> io::Result<()> {

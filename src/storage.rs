@@ -50,6 +50,18 @@ impl Offsets {
             Ok(u64::from_le_bytes(bytes))
         } else { Ok(self.memory[index]) }
     }
+
+    /// Count the entries not exceeding `offset` (binary search).
+    pub fn partition_point(&self, offset: u64) -> io::Result<usize> {
+        let mut left = 0usize;
+        let mut right = self.len;
+        while left < right {
+            let middle = left + (right - left) / 2;
+            if self.get(middle)? <= offset { left = middle + 1; }
+            else { right = middle; }
+        }
+        Ok(left)
+    }
 }
 
 #[cfg(test)]

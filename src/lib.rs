@@ -9,6 +9,7 @@ pub mod history;
 pub mod input;
 pub mod option_catalog;
 pub mod pager;
+pub mod prompt;
 pub mod search;
 pub mod terminal;
 pub mod tabs;

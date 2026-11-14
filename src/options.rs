@@ -75,6 +75,10 @@ pub(super) struct Args {
     pub search_start: SearchStart,
     pub jump_target: lz::pager::JumpTarget,
     pub history_duplicates: lz::history::DuplicatePolicy,
+    /// Select the short, medium or long prompt template.
+    pub prompt_type: usize,
+    /// User-set prompt prototypes.
+    pub prompts: lz::prompt::PromptStore,
     pub tab_stops: lz::tabs::TabStops,
     pub filenames: Vec<OsString>,
     pub stdin_explicit: bool,
@@ -84,7 +88,7 @@ pub(super) struct Args {
 
 impl Default for Args {
     fn default() -> Self {
-        Self { terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, eof_policy: Default::default(), bell_policy: Default::default(), control_display: ControlDisplay::default(), use_color: false, backspaces: BackspaceDisplay::Overstrike, header: Default::default(), incremental_search: false, hilite_search: Default::default(), no_search_header_lines: false, no_search_header_columns: false, chop: false, line_numbers: Default::default(), show_eof_markers: true, window: None, horizontal_shift: None, search_case: CaseSensitivity::Sensitive,
+        Self { prompt_type: 0, prompts: Default::default(), terminal: Default::default(), startup_commands: Vec::new(), every_file_command: None, interrupt_policy: Default::default(), tag: None, tags_file: None, force: false, use_lessopen: true, quit_if_one_screen: false, eof_policy: Default::default(), bell_policy: Default::default(), control_display: ControlDisplay::default(), use_color: false, backspaces: BackspaceDisplay::Overstrike, header: Default::default(), incremental_search: false, hilite_search: Default::default(), no_search_header_lines: false, no_search_header_columns: false, chop: false, line_numbers: Default::default(), show_eof_markers: true, window: None, horizontal_shift: None, search_case: CaseSensitivity::Sensitive,
             line_number_width: Default::default(), search_start: SearchStart::default(), jump_target: Default::default(), history_duplicates: Default::default(), tab_stops: Default::default(), filenames: Vec::new(), stdin_explicit: false, action: Action::Page, diagnostics: Vec::new() }
     }
 }
@@ -145,6 +149,7 @@ impl Scanner {
             "chop-long-lines" => self.args.chop = !reset,
             "line-numbers" => self.args.line_numbers = if reset { lz::pager::LineNumberMode::Enabled } else if upper { lz::pager::LineNumberMode::Displayed } else { lz::pager::LineNumberMode::Off },
             "tilde" => self.args.show_eof_markers = reset,
+            "long-prompt" => self.args.prompt_type = if reset { 0 } else if upper { if self.args.prompt_type == 2 { 0 } else { 2 } } else if self.args.prompt_type == 1 { 0 } else { 1 },
             _ => {}
         }
     }
@@ -181,6 +186,18 @@ impl Scanner {
                         return consumed;
                     },
                     "tabs" => if let Some(stops) = lz::tabs::TabStops::parse(&payload[..end]) { self.args.tab_stops = stops; },
+                    "prompt" => {
+                        let value = &payload[..end];
+                        match value.first() {
+                            Some(b's') => self.args.prompts.short = Some(value[1..].to_vec()),
+                            Some(b'm') => self.args.prompts.medium = Some(value[1..].to_vec()),
+                            Some(b'M') => self.args.prompts.long = Some(value[1..].to_vec()),
+                            Some(b'=') => self.args.prompts.equals = Some(value[1..].to_vec()),
+                            Some(b'h') => self.args.prompts.help = Some(value[1..].to_vec()),
+                            Some(b'w') => self.args.prompts.waiting = Some(value[1..].to_vec()),
+                            _ => self.args.prompts.short = Some(value.to_vec()),
+                        }
+                    },
                     "header" => {
                         let value = &payload[..end];
                         if let Some(header) = lz::pager::parse_header(value, Default::default()) { self.args.header = header; }

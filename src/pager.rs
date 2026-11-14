@@ -814,6 +814,14 @@ pub struct Config {
     pub search_start: SearchStart,
     pub search_session: SearchSession,
     pub jump_target: JumpTarget,
+    /// Select the short, medium or long prompt template.
+    pub prompt_type: usize,
+    /// User-set prompt prototypes.
+    pub prompts: crate::prompt::PromptStore,
+    /// Editor name from VISUAL or EDITOR.
+    pub editor: Option<Vec<u8>>,
+    /// True when the current file was opened through a tags list.
+    pub via_tags: bool,
 }
 
 pub struct Pager {
@@ -826,6 +834,13 @@ pub struct Pager {
     scroll_defaults: ScrollDefaults,
     display_anchor: DisplayAnchor,
     buffer: LineBuffer,
+    prompt_type: usize,
+    prompts: crate::prompt::PromptStore,
+    editor: Option<Vec<u8>>,
+    via_tags: bool,
+    new_file: bool,
+    position_table: Vec<Option<u64>>,
+    row_lines: Vec<Option<usize>>,
     top_line: usize,
     initial_position: Option<SavedPosition>,
     marks: HashMap<MarkName, MarkPosition>,
@@ -878,6 +893,7 @@ pub struct Pager {
     header_start_line: usize,
     use_color: bool,
     status_msg: Option<String>,
+    status_highlight: bool,
     filename: Option<String>,
     filename_prompt: bool,
     compact_initial: bool,
@@ -973,6 +989,7 @@ impl Pager {
             header_start_line: 0,
             use_color: config.use_color,
             status_msg: None,
+            status_highlight: false,
             filename,
             filename_prompt: true,
             compact_initial: config.initial_display == InitialDisplay::Startup && config.startup_commands.is_empty(),
@@ -992,6 +1009,13 @@ impl Pager {
             command_context: CommandContext::StartupUnpositioned,
             bell_requested: false,
             boundary_bell_requested: false,
+            prompt_type: config.prompt_type,
+            prompts: config.prompts.clone(),
+            editor: config.editor.clone(),
+            via_tags: config.via_tags,
+            new_file: true,
+            position_table: vec![None; usize::from(h)],
+            row_lines: vec![None; usize::from(h.saturating_sub(1))],
             early_bells: 0,
         }
     }
@@ -1343,6 +1367,11 @@ impl Pager {
     }
 
     fn resize_position_table(&mut self, height: u16) {
+        let slots = usize::from(height);
+        self.position_table.resize(slots, None);
+        self.position_table.fill(None);
+        self.row_lines.resize(slots.saturating_sub(1), None);
+        self.row_lines.fill(None);
         let grew = height > self.display_anchor.position_capacity;
         self.display_anchor.position_capacity = self.display_anchor.position_capacity.max(height);
         if grew && self.content_painted && self.top_line == 0 && self.leading_rows == 0 && self.filter.is_none()
@@ -1384,24 +1413,13 @@ impl Pager {
     }
 
     fn show_file_info(&mut self) {
-        if self.filter.is_none() && self.files.count == 1
-            && let (Some(name), Some(last)) = (&self.filename, self.last_visible_line)
-            && let Some((position, size)) = self.buffer.regular_file_position(last) {
-            let first = self.top_line + 1;
-            let progress = if self.eof_displayed { "(END)".to_owned() } else {
-                let numerator = u128::from(position) * 100;
-                let denominator = u128::from(size);
-                let quotient = numerator / denominator;
-                let remainder = numerator % denominator;
-                let rounded = quotient + u128::from(remainder > denominator / 2 || (denominator % 2 == 0 && remainder == denominator / 2 && quotient % 2 == 1));
-                format!("{rounded}%")
-            };
-            let message = format!("{name} lines {first}-{}/{total} byte {position}/{size} {progress}  (press RETURN)", last + 1, total = self.buffer.len());
-            let repaint = self.squished;
-            if repaint { self.position_initialized(); }
-            self.status_msg = Some(message);
-            self.mode = Mode::OptionNotice { repaint };
-        }
+        let proto = self.prompts.equals_proto();
+        let context = self.prompt_context(&proto);
+        let expanded = String::from_utf8_lossy(&crate::prompt::expand(&proto, &context)).into_owned();
+        let repaint = self.squished;
+        if repaint { self.position_initialized(); }
+        self.status_msg = Some(format!("{expanded}  (press RETURN)"));
+        self.mode = Mode::OptionNotice { repaint };
     }
 
     fn begin_examine(&mut self) {
@@ -2473,6 +2491,7 @@ impl Pager {
         }
 
         if let Some(error) = self.buffer.take_error() { return Err(error); }
+        if self.mode != Mode::Help { self.update_position_table(); }
         if self.eof_policy != EofPolicy::Manual || self.buffer.is_finished() {
             self.eof_displayed = self.visible_end_of_file()?;
             if let Some(error) = self.buffer.take_error() { return Err(error); }
@@ -2625,11 +2644,13 @@ impl Pager {
     }
 
     fn render_nowrap(&mut self, buf: &mut Frame, w: usize, ch: usize, first_row: usize) -> io::Result<()> {
+        self.row_lines = vec![None; ch];
         for row in first_row..ch {
             buf.position(row);
             terminal::clear_line(buf);
             let display_idx = self.top_line.saturating_add(row - first_row);
             let actual = if row < self.header.lines { Some(self.header_start_line.saturating_add(row)) } else { self.display_line_idx(display_idx) };
+            self.row_lines[row] = actual;
             let fragment = match actual { Some(index) => self.display_prefix(index, self.left_col.saturating_add(w).saturating_add(1).saturating_mul(16).max(4096))?, None => None };
             match actual.zip(fragment) {
                 Some((line_idx, fragment)) => {
@@ -2670,6 +2691,7 @@ impl Pager {
     }
 
     fn render_wrapped(&mut self, buf: &mut Frame, w: usize, ch: usize, first_row: usize) -> io::Result<()> {
+        self.row_lines = vec![None; ch];
         let mut screen_row = first_row;
         let mut display_idx = self.top_line;
         while screen_row < ch {
@@ -2689,6 +2711,7 @@ impl Pager {
                         })? {
                         if sgr { buf.extend_from_slice(b"\x1b[m"); }
                         buf.wrapped_row(screen_row);
+                        self.row_lines[screen_row] = Some(actual);
                         screen_row += 1;
                         terminal::clear_line(buf);
                         if screen_row == ch { self.probe_after_complete_line(actual)?; }
@@ -2705,6 +2728,7 @@ impl Pager {
                         let display = fragment.display(wrap_row * content_width, w.saturating_sub(gutter.len()), NotationStyle::for_ui_color(self.use_color));
                         self.write_line_with_search(buf, &display, &fragment, wrap_row * content_width, actual);
                         buf.wrapped_row(screen_row);
+                        self.row_lines[screen_row] = Some(actual);
                         screen_row += 1;
                         if (wrap_row + 1 == rows_needed && fragment.complete()) || !fragment.fills_row(wrap_row * content_width, content_width) {
                             terminal::clear_line(buf);
@@ -2917,10 +2941,10 @@ impl Pager {
         }
     }
 
-    fn render_status(&self, buf: &mut Frame, w: usize) {
+    fn render_status(&mut self, buf: &mut Frame, w: usize) {
         buf.position(self.term_height.saturating_sub(1) as usize);
         let base_status = self.build_status();
-        let emphasized = self.mode == Mode::Follow || (self.mode == Mode::Help && self.help_prefix.is_none()) || (self.mode != Mode::Help && self.filename_prompt && (self.filename.is_some() || self.files.count > 1)) || base_status.starts_with("(END)") || self.status_msg.is_some() || (self.use_color && self.mode == Mode::Normal && self.numeric_prefix == NumericPrefix::Empty);
+        let emphasized = self.mode == Mode::Follow || (self.mode == Mode::Help && self.help_prefix.is_none()) || base_status.starts_with("(END)") || self.status_msg.is_some() || self.status_highlight || (self.use_color && self.mode == Mode::Normal && self.numeric_prefix == NumericPrefix::Empty);
         let prefix = if self.mode == Mode::Normal && self.filter.is_some() && self.status_msg.is_none() { "& " } else { "" };
         let status = format!("{prefix}{base_status}");
         let mut suffix_width = 0;
@@ -2949,7 +2973,124 @@ impl Pager {
         terminal::clear_line(buf);
     }
 
-    fn build_status(&self) -> String {
+    fn update_position_table(&mut self) {
+        let ch = self.content_height();
+        let slots = ch + 1;
+        self.position_table.fill(None);
+        self.position_table.resize(slots, None);
+        for row in 0..ch {
+            let line = self.row_lines.get(row).copied().flatten();
+            match line {
+                Some(actual) => {
+                    if self.position_table.iter().all(|slot| slot.is_none()) && let Some(seed) = self.buffer.line_offset(actual) {
+                        self.push_position(Some(seed));
+                    }
+                    let after = self.after_position(actual);
+                    self.push_position(after);
+                }
+                None => {
+                    if !Self::empty_lines(&self.position_table, 0, 0) && !Self::empty_lines(&self.position_table, 1, 1) && Self::empty_lines(&self.position_table, 2, ch) { break; }
+                    self.push_position(None);
+                }
+            }
+        }
+    }
+
+    fn push_position(&mut self, position: Option<u64>) {
+        self.position_table.rotate_left(1);
+        let last = self.position_table.len() - 1;
+        self.position_table[last] = position;
+    }
+
+    fn empty_lines(table: &[Option<u64>], start: usize, end: usize) -> bool {
+        table[start..=end].iter().all(|slot| matches!(slot, None | Some(0)))
+    }
+
+    fn after_position(&mut self, line: usize) -> Option<u64> {
+        match self.buffer.line_offset(line + 1) {
+            Some(offset) => Some(offset),
+            None => Some(self.buffer.scanned_len()),
+        }
+    }
+
+    fn prompt_file_size(&self) -> Option<u64> {
+        match self.buffer.regular_file_size() {
+            Some(size) => Some(size),
+            None => if self.buffer.is_finished() { Some(self.buffer.scanned_len()) } else { None },
+        }
+    }
+
+    fn prompt_total_lines(&mut self, proto_needs_it: bool) -> Option<u64> {
+        if !proto_needs_it { return None; }
+        match self.buffer.regular_file_size() {
+            Some(_) => { self.buffer.scanned_line_count() }
+            None => if self.buffer.is_finished() { self.buffer.scanned_line_count() } else { None },
+        }
+    }
+
+    fn prompt_near_position(&mut self, table_slot: usize, walk_from: Option<usize>, size: Option<u64>, total: Option<u64>) -> crate::prompt::NearPosition {
+        let table_entry = self.position_table.get(table_slot).copied().flatten();
+        let walked = if table_entry.is_none() && let Some(walk) = walk_from {
+            let ch = self.content_height();
+            self.position_table.iter().skip(walk).take(ch.saturating_sub(walk)).find(|entry| entry.is_some()).copied().flatten()
+        } else { None };
+        let byte = table_entry.or(walked).or(size);
+        let line = self.prompt_line_number(byte, size, total);
+        crate::prompt::NearPosition { byte, line }
+    }
+
+    fn prompt_line_number(&mut self, byte: Option<u64>, size: Option<u64>, total: Option<u64>) -> Option<u64> {
+        let byte = byte?;
+        if !self.line_numbers_active() { return None; }
+        if let Some(size) = size && byte >= size {
+            if size == 0 { return Some(0); }
+            return Some(total.unwrap_or(0));
+        }
+        self.buffer.position_line_number(byte)
+    }
+
+    fn line_numbers_active(&self) -> bool {
+        self.line_numbers != LineNumberMode::Off
+    }
+
+    fn prompt_context(&mut self, proto: &[u8]) -> crate::prompt::PromptContext {
+        let ch = self.content_height();
+        let terminal_rows = self.term_height as usize;
+        let proto_needs_lines = proto.windows(2).any(|pair| matches!(pair, b"%L" | b"%P" | b"%D" | b"?L" | b"?P" | b"?D"));
+        let size = self.prompt_file_size();
+        let total = self.prompt_total_lines(proto_needs_lines);
+        let jump_row = self.jump_target.row(self.term_height).min(ch);
+        let top = self.prompt_near_position(0, Some(0), size, total);
+        let middle = self.prompt_near_position(ch / 2, None, size, total);
+        let bottom = self.prompt_near_position(ch.saturating_sub(1), None, size, total);
+        let jump = self.prompt_near_position(jump_row, Some(jump_row), size, total);
+        let bottom_plus_one = self.prompt_near_position(ch, None, size, total);
+        crate::prompt::PromptContext {
+            filename: self.filename.as_deref().map(str::as_bytes).map(Vec::from),
+            next_filename: self.files.next_name.as_deref().map(str::as_bytes).map(Vec::from),
+            file_index: self.files.index as u64 + 1,
+            file_count: self.files.count as u64,
+            file_size: size,
+            total_lines: total,
+            top,
+            middle,
+            bottom,
+            bottom_plus_one,
+            jump,
+            terminal_rows,
+            header_lines: self.header.lines,
+            at_eof: self.eof_displayed,
+            hshift: self.left_col as u64,
+            new_file: self.new_file,
+            line_numbers: self.line_numbers_active(),
+            via_tags: self.via_tags,
+            osc8_uri: None,
+            editor: self.editor.clone(),
+        }
+    }
+
+    fn build_status(&mut self) -> String {
+        self.status_highlight = false;
         if self.mode == Mode::Normal && let NumericPrefix::Value { value, leading_zeroes } = self.numeric_prefix {
             let zeroes = "0".repeat(leading_zeroes.min(usize::from(self.term_width)));
             return if value == 0 { format!(":{zeroes}") } else { format!(":{zeroes}{value}") };
@@ -2997,18 +3138,13 @@ impl Pager {
             return msg.clone();
         }
 
-        let name = if self.files.count > 1 {
-            let prefix = self.filename.as_ref().map_or_else(String::new, |name| format!("{name} "));
-            Some(format!("{prefix}(file {} of {})", self.files.index + 1, self.files.count))
-        } else { self.filename.clone() };
-        if self.buffer.is_finished() && self.eof_displayed {
-            let mut status = if self.filename_prompt { name.map_or_else(|| "(END)".to_owned(), |name| format!("{name} (END)")) } else { "(END)".to_owned() };
-            if let Some(next) = &self.files.next_name { status.push_str(&format!(" - Next: {next}")); }
-            return status;
-        }
-        if self.filename_prompt { return name.unwrap_or_else(|| ":".to_owned()); }
-
-        ":".to_owned()
+        let proto = self.prompts.main_proto(self.prompt_type);
+        let context = self.prompt_context(&proto);
+        self.new_file = false;
+        let expanded = crate::prompt::expand(&proto, &context);
+        self.status_highlight = !expanded.is_empty();
+        if expanded.is_empty() { return ":".into(); }
+        String::from_utf8_lossy(&expanded).into_owned()
     }
 }
 

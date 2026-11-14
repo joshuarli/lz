@@ -242,6 +242,7 @@ fn run() -> Result<ExitAction, String> {
     let locale = ["LC_ALL", "LC_CTYPE", "LANG"].into_iter().map(text_setting).collect::<Result<Vec<_>, _>>()?
         .into_iter().flatten().find(|value| !value.is_empty());
     let charset = Charset::resolve(explicit_charset.as_deref(), locale.as_deref()).map_err(|error| error.to_string())?;
+    let editor = ["VISUAL", "EDITOR"].into_iter().map(text_setting).collect::<Result<Vec<_>, _>>()?.into_iter().flatten().find(|value| !value.is_empty()).map(String::into_bytes);
     let regex_locale = if locale.as_deref().is_none_or(|locale| matches!(locale, "C" | "POSIX")) { lz::search::RegexLocale::C } else { lz::search::RegexLocale::Unicode };
     let suspension = if security.allows(security::Feature::Stop) { terminal::SuspendPolicy::Allow } else { terminal::SuspendPolicy::Ignore };
     let mut session = terminal::Session::start(terminal::Screen::Primary, suspension).map_err(|error| error.to_string())?;
@@ -315,6 +316,7 @@ fn run() -> Result<ExitAction, String> {
     }
     if (!startup_one_screen || args.terminal.screen == terminal::ScreenMode::Preserve)
         && let Err(error) = session.enter_interactive(args.terminal) { return finish_opened(Err(error), opened, session); }
+    let via_tags = tag_address.is_some();
     if let Some(address) = tag_address {
         match address.locate(&mut opened.buffer) {
             Ok(line) => args.startup_commands.insert(0, format!("{line}g").into_bytes()),
@@ -341,7 +343,7 @@ fn run() -> Result<ExitAction, String> {
         let mut startup_commands = std::mem::take(&mut args.startup_commands);
         if let Some(command) = &args.every_file_command { startup_commands.push(command.clone()); }
         let alternate = opened.alternate.take();
-        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, backspaces: args.backspaces, header: args.header, use_color: args.use_color, incremental_search: args.incremental_search, hilite_search: args.hilite_search, no_search_header_lines: args.no_search_header_lines, no_search_header_columns: args.no_search_header_columns, allow_examine: security.allows(security::Feature::Examine), chop: args.chop, line_numbers: args.line_numbers, line_number_width: args.line_number_width, tab_stops: args.tab_stops.clone(), show_eof_markers: args.show_eof_markers, search_case: args.search_case, regex_locale, search_start: args.search_start, search_session, jump_target: args.jump_target }, opened.name, history);
+        let mut pager = pager::Pager::new(opened.buffer, pager::Config { files, initial_display, display_anchor, scroll_defaults, startup_commands, interrupt_policy: args.interrupt_policy, eof_policy: args.eof_policy, bell_policy: args.bell_policy, charset, controls: args.control_display, backspaces: args.backspaces, header: args.header, use_color: args.use_color, incremental_search: args.incremental_search, hilite_search: args.hilite_search, no_search_header_lines: args.no_search_header_lines, no_search_header_columns: args.no_search_header_columns, allow_examine: security.allows(security::Feature::Examine), chop: args.chop, line_numbers: args.line_numbers, line_number_width: args.line_number_width, tab_stops: args.tab_stops.clone(), show_eof_markers: args.show_eof_markers, search_case: args.search_case, regex_locale, search_start: args.search_start, search_session, jump_target: args.jump_target, prompt_type: args.prompt_type, prompts: args.prompts.clone(), editor: editor.clone(), via_tags }, opened.name, history);
         let mut first_run = true;
         let result = loop {
             let result = if first_run && showing_help { pager.run_help(session.keys_mut(), help_files) }
