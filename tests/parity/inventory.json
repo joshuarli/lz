@@ -3669,9 +3669,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-medium-after-scroll", "invocation-prompt-selector-medium"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "-m/--long-prompt is parsed only; the prompt is fixed and not verbose"
     },
     {
@@ -3688,9 +3688,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-long-after-scroll"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "-M/--LONG-PROMPT is parsed only; the prompt is fixed and not extra-verbose"
     },
     {
@@ -3813,9 +3813,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-custom-if-else", "invocation-prompt-custom-nested", "invocation-prompt-custom-where", "invocation-prompt-custom-equals", "invocation-prompt-total-lines-scan", "invocation-prompt-selector-medium"],
+      "implementation": "partial",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "-P/--prompt is parsed only; No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
@@ -5964,9 +5964,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
+      "cases": ["invocation-prompt-short-after-scroll", "invocation-prompt-medium-after-scroll", "invocation-prompt-long-after-scroll", "invocation-prompt-custom-if-else", "invocation-prompt-custom-nested", "invocation-prompt-custom-where", "invocation-prompt-custom-equals", "invocation-prompt-total-lines-scan", "invocation-prompt-selector-medium"],
       "implementation": "partial",
-      "evidence": "not tested",
+      "evidence": "partially compatible",
       "cause": "Prompts render as fixed strings; percent-escape expansion is absent; see member entries"
     },
     {
@@ -5984,7 +5984,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "%b byte-offset expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
@@ -6003,7 +6003,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "%B file-size expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
@@ -6022,7 +6022,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "%c page-number expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
@@ -6041,7 +6041,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "%d byte-offset magnitude is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
@@ -6060,7 +6060,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "%D total-page count is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
@@ -6079,7 +6079,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "%E editor name expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
@@ -6097,9 +6097,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-short-after-scroll", "invocation-prompt-medium-after-scroll", "invocation-prompt-long-after-scroll", "invocation-prompt-custom-if-else"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "%f filename expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
@@ -6117,7 +6117,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "%F basename expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
@@ -6136,7 +6136,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "%g shell-escaped filename expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
@@ -6155,7 +6155,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "%i file-index expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
@@ -6173,9 +6173,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-long-after-scroll", "invocation-prompt-custom-if-else", "invocation-prompt-custom-nested", "invocation-prompt-custom-where", "invocation-prompt-custom-equals", "invocation-prompt-selector-medium"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "%l line-number expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
@@ -6192,9 +6192,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-long-after-scroll", "invocation-prompt-total-lines-scan"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "%L last-line expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
@@ -6212,7 +6212,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "%m file-count expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
@@ -6231,7 +6231,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "partial",
       "evidence": "not tested",
       "cause": "%o OSC8 hyperlink URI expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
@@ -6249,9 +6249,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-medium-after-scroll"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "%p byte-offset percent expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
@@ -6269,7 +6269,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "%P line percent expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
@@ -6287,9 +6287,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-custom-equals", "invocation-prompt-total-lines-scan"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "%s size expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
@@ -6306,9 +6306,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-short-after-scroll", "invocation-prompt-medium-after-scroll", "invocation-prompt-long-after-scroll"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "%t trailing-space trim is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
@@ -6326,7 +6326,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "%T file/tag word expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
@@ -6345,7 +6345,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "%x next-file expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
@@ -6364,7 +6364,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "?a (file present) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
@@ -6383,7 +6383,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "?b (binary prompt) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
@@ -6402,7 +6402,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "?B (byte offset) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
@@ -6421,7 +6421,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "?c (page number) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
@@ -6440,7 +6440,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "?d (byte magnitude) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
@@ -6458,9 +6458,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-short-after-scroll", "invocation-prompt-medium-after-scroll", "invocation-prompt-long-after-scroll", "invocation-prompt-custom-nested", "invocation-prompt-custom-if-else"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "?e (more files) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
@@ -6477,9 +6477,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-short-after-scroll", "invocation-prompt-medium-after-scroll", "invocation-prompt-long-after-scroll", "invocation-prompt-custom-if-else", "invocation-prompt-custom-equals"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "?f (filename) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
@@ -6496,9 +6496,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-long-after-scroll"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "?l (line number) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
@@ -6515,9 +6515,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-long-after-scroll"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "?L (last line) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
@@ -6534,9 +6534,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-medium-after-scroll"],
+      "implementation": "implemented",
+      "evidence": "partially compatible",
       "cause": "?m (file count) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
@@ -6553,9 +6553,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-short-after-scroll", "invocation-prompt-medium-after-scroll", "invocation-prompt-long-after-scroll", "invocation-prompt-custom-if-else"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "?n (file index) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
@@ -6572,9 +6572,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-medium-after-scroll"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "?p (byte percent) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
@@ -6592,7 +6592,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "?P (line percent) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
@@ -6611,7 +6611,7 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unimplemented",
+      "implementation": "implemented",
       "evidence": "not tested",
       "cause": "?s (size) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
@@ -6629,9 +6629,9 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unimplemented",
-      "evidence": "not tested",
+      "cases": ["invocation-prompt-custom-nested"],
+      "implementation": "implemented",
+      "evidence": "partially compatible",
       "cause": "?x (next file) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
