@@ -16,9 +16,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Program-name section heading; lz is a Unix pager (O1 keeps the lz name); no runtime behavior to distinguish"
     },
     {
       "id": "man-0005",
@@ -89,9 +89,9 @@
         "invocation-one-screen-invalid-command-silent",
         "invocation-one-screen-invalid-repeat"
       ],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Manual section heading; coverage is tracked by its member entries. The implemented command set is covered by the navigations family; see member entries"
     },
     {
       "id": "man-0054",
@@ -212,9 +212,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "ESC-SPACE (full screenful even at EOF) is not bound in lz; plain SPACE is implemented"
     },
     {
       "id": "man-0066",
@@ -466,9 +466,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "ESC-} (scroll to the right edge of the longest line) is not implemented; the ESC-{ left variant is implemented (S07af)"
     },
     {
       "id": "man-0104",
@@ -587,9 +587,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "ESC-F (follow until match) is not implemented; plain F is implemented"
     },
     {
       "id": "man-0131",
@@ -649,9 +649,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "ESC-G (jump to last buffered stdin line) is not implemented"
     },
     {
       "id": "man-0142",
@@ -668,9 +668,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "p or % (percent-of-file position) is not implemented"
     },
     {
       "id": "man-0145",
@@ -687,9 +687,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "P (byte-offset position) is not implemented"
     },
     {
       "id": "man-0147",
@@ -706,9 +706,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "{ (forward curly-bracket match) is not implemented; no bracket matching exists"
     },
     {
       "id": "man-0155",
@@ -725,9 +725,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "} (backward curly-bracket match) is not implemented; no bracket matching exists"
     },
     {
       "id": "man-0163",
@@ -744,9 +744,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "( (forward paren match) is not implemented; no bracket matching exists"
     },
     {
       "id": "man-0165",
@@ -763,9 +763,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": ") (backward paren match) is not implemented; no bracket matching exists"
     },
     {
       "id": "man-0167",
@@ -782,9 +782,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "[ (forward square-bracket match) is not implemented; no bracket matching exists"
     },
     {
       "id": "man-0169",
@@ -801,9 +801,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "] (backward square-bracket match) is not implemented; no bracket matching exists"
     },
     {
       "id": "man-0171",
@@ -820,9 +820,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "ESC-^F (user-defined bracket match) is not implemented"
     },
     {
       "id": "man-0177",
@@ -839,9 +839,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "ESC-^B (user-defined backward bracket match) is not implemented"
     },
     {
       "id": "man-0183",
@@ -881,9 +881,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "M (mark last displayed line) is not implemented; only the first-line m variant exists"
     },
     {
       "id": "man-0191",
@@ -926,9 +926,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "^X^X (alias for single-quote jump) is not bound"
     },
     {
       "id": "man-0203",
@@ -945,9 +945,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "ESC-m (clear mark) is not implemented; marks.remove never called"
     },
     {
       "id": "man-0206",
@@ -1061,9 +1061,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "^E or * (multi-file search) is not implemented"
     },
     {
       "id": "man-0227",
@@ -1080,9 +1080,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "^F or @ (search from first file) is not implemented"
     },
     {
       "id": "man-0232",
@@ -1117,10 +1117,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": ["search-keep-position"],
-      "implementation": "implemented",
-      "evidence": "compatible in the named tested scenarios",
-      "cause": "Ctrl-K toggles keep-position in the forward search prompt; named case passes on macOS arm64 and Linux arm64 Docker; boundaries remain open"
+      "cases": [],
+      "implementation": "unimplemented",
+      "evidence": "not tested",
+      "cause": "No explicit ^R literal-modifier handling in the search prompt; the BMH fast path is automatic only. Previous binding to the keep-position case was a misattribution and is removed"
     },
     {
       "id": "man-0238",
@@ -1137,9 +1137,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "^S (sub-pattern selection) is not implemented"
     },
     {
       "id": "man-0248",
@@ -1175,9 +1175,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "^L (literal-next-character) is not implemented"
     },
     {
       "id": "man-0258",
@@ -1238,9 +1238,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "^E or * (multi-file backward search) is not implemented"
     },
     {
       "id": "man-0272",
@@ -1257,9 +1257,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "^F or @ (backward search from last file) is not implemented"
     },
     {
       "id": "man-0277",
@@ -1295,9 +1295,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "^R (forced-literal modifier) is not implemented; the BMH fast path is automatic only"
     },
     {
       "id": "man-0281",
@@ -1314,9 +1314,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "^S (sub-pattern selection, backward) is not implemented"
     },
     {
       "id": "man-0283",
@@ -1352,9 +1352,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "ESC-/pattern (multi-file forward search) is not implemented"
     },
     {
       "id": "man-0291",
@@ -1371,9 +1371,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "ESC-?pattern (multi-file backward search) is not implemented"
     },
     {
       "id": "man-0293",
@@ -1428,9 +1428,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "ESC-n (cross-file search repeat) is not implemented"
     },
     {
       "id": "man-0307",
@@ -1447,9 +1447,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "ESC-N (cross-file reverse repeat) is not implemented"
     },
     {
       "id": "man-0310",
@@ -1529,9 +1529,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Filter nonmatch modifier (^N or !) is not implemented; filter input takes no modifiers"
     },
     {
       "id": "man-0337",
@@ -1548,9 +1548,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Filter literal modifier (^R) is not implemented; filter input takes no modifiers"
     },
     {
       "id": "man-0341",
@@ -1566,10 +1566,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["sessions-examine-existing-file"],
+      "implementation": "partial",
+      "evidence": "partially compatible",
+      "cause": ":e opens literal regular-file paths and registers them; %/# substitution, file-name cycling and re-examine of the current file are absent; named case passes on macOS arm64 and Linux arm64 Docker"
     },
     {
       "id": "man-0360",
@@ -1585,10 +1585,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["sessions-examine-existing-file"],
+      "implementation": "partial",
+      "evidence": "partially compatible",
+      "cause": "E is bound to the examine command (pager.rs begin_examine); the ^X^V alternate binding is unbound; named case passes on macOS arm64 and Linux arm64 Docker"
     },
     {
       "id": "man-0364",
@@ -1697,9 +1697,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": ":x (examine first file) is not implemented in FileCommand mode"
     },
     {
       "id": "man-0373",
@@ -1716,9 +1716,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": ":d (remove file from list) is not implemented in FileCommand mode"
     },
     {
       "id": "man-0375",
@@ -1735,9 +1735,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "t (next tag) is not implemented"
     },
     {
       "id": "man-0378",
@@ -1754,9 +1754,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "T (previous tag) is not implemented"
     },
     {
       "id": "man-0380",
@@ -1773,9 +1773,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "^O^N (hyperlink search) is not implemented"
     },
     {
       "id": "man-0382",
@@ -1792,9 +1792,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "^O^P (hyperlink search, reverse) is not implemented"
     },
     {
       "id": "man-0384",
@@ -1811,9 +1811,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "^O^L (hyperlink list) is not implemented"
     },
     {
       "id": "man-0386",
@@ -1906,9 +1906,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--+ reset exists in the interactive option commands for a subset (raw/color/line-numbers/chop/incsearch/use-color); no runtime reset for other options"
     },
     {
       "id": "man-0420",
@@ -1944,9 +1944,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--! set-opposite exists in the interactive option commands for a subset; no runtime set for other options"
     },
     {
       "id": "man-0428",
@@ -1982,9 +1982,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "__ query exists in the interactive option commands for a subset (raw/color/line-numbers/chop/incsearch/use-color); no query for other options"
     },
     {
       "id": "man-0438",
@@ -2052,9 +2052,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "V (interactive version) is not bound; the version exists only as CLI -V"
     },
     {
       "id": "man-0448",
@@ -2100,9 +2100,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "v (editor) is not implemented"
     },
     {
       "id": "man-0462",
@@ -2119,9 +2119,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "! shell-command is not implemented"
     },
     {
       "id": "man-0474",
@@ -2138,9 +2138,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "# shell-command (expanded like a prompt) is not implemented"
     },
     {
       "id": "man-0478",
@@ -2157,9 +2157,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "| <m> shell-command (pipe to shell) is not implemented"
     },
     {
       "id": "man-0489",
@@ -2176,9 +2176,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "s filename (save pipe to file) is not implemented"
     },
     {
       "id": "man-0492",
@@ -2195,9 +2195,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "^O^O (open hyperlink) is not implemented"
     },
     {
       "id": "man-0508",
@@ -2214,9 +2214,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Hyperlink '#'-fragment special case is not implemented"
     },
     {
       "id": "man-0512",
@@ -2233,9 +2233,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Hyperlink ':e filename' opener special case is not implemented"
     },
     {
       "id": "man-0555",
@@ -2251,10 +2251,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["sessions-follow-control-x"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Ctrl-X stops the waiting (follow) state as documented; named case passes on macOS arm64 and Linux arm64 Docker"
     },
     {
       "id": "man-0574",
@@ -2271,9 +2271,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Options section heading; option parsing and interactive option commands cover a subset of 668; see member entries"
     },
     {
       "id": "man-0629",
@@ -2390,9 +2390,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-b/--buffers is parsed only; lz uses bounded disk spill instead of a per-file buffer budget"
     },
     {
       "id": "man-0664",
@@ -2409,9 +2409,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-B/--auto-buffers is parsed only; pipe buffering is bounded by the spill policy"
     },
     {
       "id": "man-0677",
@@ -2428,9 +2428,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-c/--clear-screen is parsed only; repaints always scroll bottom-up"
     },
     {
       "id": "man-0681",
@@ -2447,9 +2447,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-C/--CLEAR-SCREEN is parsed only; repaints always scroll bottom-up"
     },
     {
       "id": "man-0684",
@@ -2466,9 +2466,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-d/--dumb is parsed only; the dumb-terminal message is not suppressed"
     },
     {
       "id": "man-0692",
@@ -2485,9 +2485,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D/--color is parsed only; no --color spec is applied"
     },
     {
       "id": "man-0697",
@@ -2504,9 +2504,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D B (binary chars) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0699",
@@ -2523,9 +2523,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D C (control chars) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0701",
@@ -2542,9 +2542,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D E (errors/messages) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0703",
@@ -2561,9 +2561,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D H (header lines) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0705",
@@ -2580,9 +2580,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D M (marks) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0707",
@@ -2599,9 +2599,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D N (line numbers) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0709",
@@ -2618,9 +2618,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D P (prompts) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0711",
@@ -2637,9 +2637,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D R (rscroll char) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0713",
@@ -2656,9 +2656,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D S (search results) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0715",
@@ -2675,9 +2675,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D W (-w highlight) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0717",
@@ -2694,9 +2694,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D 1-5 (sub-pattern colors) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0724",
@@ -2713,9 +2713,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D d (bold text) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0726",
@@ -2732,9 +2732,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D k (blinking text) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0728",
@@ -2751,9 +2751,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D s (standout text) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0730",
@@ -2770,9 +2770,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-D u (underlined text) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0758",
@@ -2789,9 +2789,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "4-bit color b (blue) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0760",
@@ -2808,9 +2808,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "4-bit color c (cyan) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0762",
@@ -2827,9 +2827,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "4-bit color g (green) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0764",
@@ -2846,9 +2846,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "4-bit color k (black) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0766",
@@ -2865,9 +2865,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "4-bit color m (magenta) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0768",
@@ -2884,9 +2884,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "4-bit color r (red) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0770",
@@ -2903,9 +2903,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "4-bit color w (white) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0772",
@@ -2922,9 +2922,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "4-bit color y (yellow) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0795",
@@ -2941,9 +2941,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "8-bit attribute s/~ (standout) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0797",
@@ -2960,9 +2960,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "8-bit attribute u/_ (underline) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0799",
@@ -2979,9 +2979,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "8-bit attribute d/* (bold) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0801",
@@ -2998,9 +2998,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "8-bit attribute l/& (blink) The --color UI color map is not implemented. Unimplemented."
     },
     {
       "id": "man-0806",
@@ -3017,9 +3017,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-Da bold/blink note MS-DOS/Windows-specific --color caveat; out of scope (Unix-only). Unimplemented here."
     },
     {
       "id": "man-0809",
@@ -3036,9 +3036,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-Da lowercase selector note MS-DOS/Windows-specific --color caveat; out of scope (Unix-only). Unimplemented here."
     },
     {
       "id": "man-0813",
@@ -3055,9 +3055,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "CHAR_INFO 4-bit note MS-DOS/Windows-specific --color caveat; out of scope (Unix-only). Unimplemented here."
     },
     {
       "id": "man-0829",
@@ -3074,9 +3074,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "4-bit color note MS-DOS/Windows-specific --color caveat; out of scope (Unix-only). Unimplemented here."
     },
     {
       "id": "man-0832",
@@ -3093,9 +3093,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Limited ANSI color sequences note MS-DOS/Windows-specific --color caveat; out of scope (Unix-only). Unimplemented here."
     },
     {
       "id": "man-0835",
@@ -3112,9 +3112,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-Da option unsupported MS-DOS/Windows-specific --color caveat; out of scope (Unix-only). Unimplemented here."
     },
     {
       "id": "man-0844",
@@ -3183,10 +3183,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["redirected-force-special", "rendering-binary-forced"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "-f forces non-regular files and suppresses the binary question; named cases pass on macOS arm64 and Linux arm64 Docker; directory/device edges remain open"
     },
     {
       "id": "man-0865",
@@ -3445,9 +3445,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-J/--status-column is parsed only; no status column is rendered"
     },
     {
       "id": "man-0935",
@@ -3464,9 +3464,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "> status-column match-right indicator unavailable; no status column"
     },
     {
       "id": "man-0939",
@@ -3483,9 +3483,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "< status-column match-left indicator unavailable; no status column"
     },
     {
       "id": "man-0943",
@@ -3502,9 +3502,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "= status-column match-both indicator unavailable; no status column"
     },
     {
       "id": "man-0946",
@@ -3521,9 +3521,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "* status-column visible-match indicator unavailable; no status column"
     },
     {
       "id": "man-0949",
@@ -3540,9 +3540,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "a-z,A-Z status-column mark letters unavailable; no status column"
     },
     {
       "id": "man-0952",
@@ -3559,9 +3559,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-k/--lesskey-file is parsed only; lesskey support is not implemented in lz. Unimplemented."
     },
     {
       "id": "man-0965",
@@ -3578,9 +3578,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--lesskey-src is parsed only; lesskey support is not implemented in lz. Unimplemented."
     },
     {
       "id": "man-0991",
@@ -3597,9 +3597,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--lesskey-content is parsed only; lesskey support is not implemented in lz. Unimplemented."
     },
     {
       "id": "man-1010",
@@ -3650,10 +3650,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["integrations-lessopen-short-disabled", "integrations-lessopen-long-disabled"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "-L/--no-lessopen disables LESSOPEN preprocessing; named cases pass on macOS arm64 and Linux arm64 Docker; other secure policies remain open"
     },
     {
       "id": "man-1027",
@@ -3670,9 +3670,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-m/--long-prompt is parsed only; the prompt is fixed and not verbose"
     },
     {
       "id": "man-1036",
@@ -3689,9 +3689,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-M/--LONG-PROMPT is parsed only; the prompt is fixed and not extra-verbose"
     },
     {
       "id": "man-1041",
@@ -3707,10 +3707,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["invocation-toggle-line-numbers", "invocation-line-number-off-startup", "sessions-toggle-line-numbers-next-file"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "-n toggles numbered display and carries state across files; named cases pass on macOS arm64 and Linux arm64 Docker; displayed-vs-enabled distinction for other prompts remains open"
     },
     {
       "id": "man-1051",
@@ -3750,9 +3750,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-o/--log-file is parsed only; pipe output is not copied to a file"
     },
     {
       "id": "man-1063",
@@ -3769,9 +3769,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-O/--LOG-FILE (overwrite) is parsed only; pipe output is not copied to a file"
     },
     {
       "id": "man-1074",
@@ -3814,9 +3814,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-P/--prompt is parsed only; No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-1100",
@@ -3892,10 +3892,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["invocation-tab-raw", "navigation-help-raw"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "-r selects raw control display; named cases pass on macOS arm64 and Linux arm64 Docker; mixed overrides and the -R/-r reset matrix remain open"
     },
     {
       "id": "man-1128",
@@ -3967,9 +3967,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-s/--squeeze-blank-lines is parsed only; consecutive blank lines are not squeezed"
     },
     {
       "id": "man-1168",
@@ -4100,9 +4100,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-U/--UNDERLINE-SPECIAL is parsed only; backspace policy is fixed to Overstrike"
     },
     {
       "id": "man-1226",
@@ -4119,9 +4119,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "implemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Version action prints the lz banner; the oracle banner intentionally differs (O1) and cannot match under strict comparison; no differential scenario admitted"
     },
     {
       "id": "man-1229",
@@ -4138,9 +4138,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-w/--hilite-unread is parsed only; no unread-line highlight in follow mode"
     },
     {
       "id": "man-1241",
@@ -4157,9 +4157,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-W/--HILITE-UNREAD is parsed only; no highlight behavior differs from -w"
     },
     {
       "id": "man-1244",
@@ -4243,9 +4243,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-y/--max-forw-scroll is parsed only; the forward window is not limited"
     },
     {
       "id": "man-1264",
@@ -4296,9 +4296,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--quotes is parsed only; the filename quote characters are fixed"
     },
     {
       "id": "man-1292",
@@ -4379,9 +4379,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--exit-follow-on-close is parsed only; follow mode does not exit when the pipe closes"
     },
     {
       "id": "man-1310",
@@ -4398,9 +4398,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--file-size is parsed only; the = command never precounts lines"
     },
     {
       "id": "man-1318",
@@ -4417,9 +4417,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--follow-name is parsed only; follow polls the open descriptor"
     },
     {
       "id": "man-1331",
@@ -4474,9 +4474,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--intr is parsed only; the interrupt characters are fixed"
     },
     {
       "id": "man-1369",
@@ -4527,9 +4527,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--match-shift is parsed only; there is no horizontal shift to reveal matches"
     },
     {
       "id": "man-1388",
@@ -4546,9 +4546,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--modelines is parsed only; no modeline scanning exists"
     },
     {
       "id": "man-1415",
@@ -4565,9 +4565,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--mouse is parsed only; no mouse input handling exists"
     },
     {
       "id": "man-1430",
@@ -4584,9 +4584,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--MOUSE is parsed only; no mouse input handling exists"
     },
     {
       "id": "man-1433",
@@ -4655,9 +4655,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--no-number-headers is parsed only; header lines keep their line numbers"
     },
     {
       "id": "man-1447",
@@ -4796,9 +4796,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--proc-return is parsed only; carriage-return policy is not overridable"
     },
     {
       "id": "man-1474",
@@ -4815,9 +4815,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--PROC-RETURN is parsed only; carriage-return policy is not overridable"
     },
     {
       "id": "man-1477",
@@ -4834,9 +4834,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--proc-tab is parsed only; tab policy is not overridable"
     },
     {
       "id": "man-1483",
@@ -4853,9 +4853,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--PROC-TAB is parsed only; tab policy is not overridable"
     },
     {
       "id": "man-1486",
@@ -4872,9 +4872,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--redraw-on-quit is parsed only; no full repaint happens on exit"
     },
     {
       "id": "man-1494",
@@ -4891,9 +4891,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--rscroll is parsed only; the chop marker character is fixed"
     },
     {
       "id": "man-1499",
@@ -4910,9 +4910,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--save-marks is parsed only; marks are not persisted to the history file"
     },
     {
       "id": "man-1503",
@@ -4929,9 +4929,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--search-options is parsed only; no default search modifiers are injected"
     },
     {
       "id": "man-1515",
@@ -4948,9 +4948,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--show-preproc-errors is parsed only; preprocessor exit-status notice absent"
     },
     {
       "id": "man-1520",
@@ -4967,9 +4967,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--status-col-width is parsed only; no status column exists"
     },
     {
       "id": "man-1523",
@@ -4986,9 +4986,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--status-line is parsed only; no status-line emphasis exists"
     },
     {
       "id": "man-1529",
@@ -5005,9 +5005,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--use-backslash is parsed only; option values take no backslash escapes"
     },
     {
       "id": "man-1534",
@@ -5043,9 +5043,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--wheel-lines is parsed only; there is no mouse wheel"
     },
     {
       "id": "man-1546",
@@ -5062,9 +5062,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "--wordwrap is parsed only; wrapping breaks at any character"
     },
     {
       "id": "man-1551",
@@ -5080,10 +5080,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["redirected-double-dash"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "-- terminates option parsing; named case passes on macOS arm64 and Linux arm64 Docker"
     },
     {
       "id": "man-1555",
@@ -5151,9 +5151,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Line editor exists for left/right/home/end/backspace/delete and history cycling; word operations, completion and rebinding are absent; see member entries"
     },
     {
       "id": "man-1583",
@@ -5170,9 +5170,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Left arrow moves the cursor; the ESC-h alternate binding is unbound"
     },
     {
       "id": "man-1585",
@@ -5189,9 +5189,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Right arrow moves the cursor; the ESC-l alternate binding is unbound"
     },
     {
       "id": "man-1587",
@@ -5208,9 +5208,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Word-left cursor movement does not exist"
     },
     {
       "id": "man-1590",
@@ -5227,9 +5227,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Word-right cursor movement does not exist"
     },
     {
       "id": "man-1593",
@@ -5246,9 +5246,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Home moves the cursor to the line start; the ESC-0 alternate binding is unbound"
     },
     {
       "id": "man-1595",
@@ -5265,9 +5265,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "End moves the cursor to the line end; the ESC-$ alternate binding is unbound"
     },
     {
       "id": "man-1597",
@@ -5284,9 +5284,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Backspace deletes left of the cursor; empty-prompt cancel exists for search/filter"
     },
     {
       "id": "man-1600",
@@ -5303,9 +5303,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Delete key deletes under the cursor; the ESC-x alternate binding is unbound"
     },
     {
       "id": "man-1602",
@@ -5322,9 +5322,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Delete-word-left (Ctrl-Backspace) does not exist"
     },
     {
       "id": "man-1605",
@@ -5341,9 +5341,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Delete-word-under-cursor (Ctrl-Delete) does not exist"
     },
     {
       "id": "man-1608",
@@ -5360,9 +5360,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Up recalls older history (no prefix filtering); the ESC-k alternate binding is unbound"
     },
     {
       "id": "man-1612",
@@ -5379,9 +5379,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Down recalls newer history (no prefix filtering); the ESC-j alternate binding is unbound"
     },
     {
       "id": "man-1616",
@@ -5398,9 +5398,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "No filename completion exists"
     },
     {
       "id": "man-1625",
@@ -5417,9 +5417,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "No completion cycling exists"
     },
     {
       "id": "man-1627",
@@ -5436,9 +5436,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "No filename listing exists"
     },
     {
       "id": "man-1631",
@@ -5455,9 +5455,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "No line-kill (Ctrl-U) exists in prompt editing"
     },
     {
       "id": "man-1636",
@@ -5474,9 +5474,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "No abort key distinct from Escape exists"
     },
     {
       "id": "man-1639",
@@ -5493,9 +5493,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Default key behavior exists as listed above; no lesskey-style rebinding exists"
     },
     {
       "id": "man-1700",
@@ -5588,9 +5588,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "ASCII and UTF-8 work; the other 668 national sets are unsupported; see member entries"
     },
     {
       "id": "man-1871",
@@ -5679,10 +5679,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["sources-binary-charset-override", "sources-binary-ascii-alias"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "ASCII charset is supported and resolved from LESSCHARSET; named cases pass on macOS arm64 and Linux arm64 Docker; boundaries remain open"
     },
     {
       "id": "man-1888",
@@ -5699,9 +5699,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "iso8859 National character set unsupported; charset.rs handles ASCII and UTF-8 only. Unimplemented."
     },
     {
       "id": "man-1892",
@@ -5718,9 +5718,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "latin1 National character set unsupported; charset.rs handles ASCII and UTF-8 only. Unimplemented."
     },
     {
       "id": "man-1894",
@@ -5737,9 +5737,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "latin9 National character set unsupported; charset.rs handles ASCII and UTF-8 only. Unimplemented."
     },
     {
       "id": "man-1896",
@@ -5756,9 +5756,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "dos National character set unsupported; charset.rs handles ASCII and UTF-8 only. Unimplemented."
     },
     {
       "id": "man-1898",
@@ -5775,9 +5775,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "ebcdic National character set unsupported; charset.rs handles ASCII and UTF-8 only. Unimplemented."
     },
     {
       "id": "man-1900",
@@ -5794,9 +5794,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "IBM-1047 National character set unsupported; charset.rs handles ASCII and UTF-8 only. Unimplemented."
     },
     {
       "id": "man-1905",
@@ -5813,9 +5813,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "koi8-r National character set unsupported; charset.rs handles ASCII and UTF-8 only. Unimplemented."
     },
     {
       "id": "man-1907",
@@ -5832,9 +5832,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "next National character set unsupported; charset.rs handles ASCII and UTF-8 only. Unimplemented."
     },
     {
       "id": "man-1909",
@@ -5850,10 +5850,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["invocation-charset-utf8-alias", "sources-binary-utf8-alias"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "UTF-8 charset is supported and resolved from LESSCHARSET aliases and the locale chain; named cases pass on macOS arm64 and Linux arm64 Docker; boundaries remain open"
     },
     {
       "id": "man-1913",
@@ -5870,9 +5870,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "windows cp1252 National character set unsupported; charset.rs handles ASCII and UTF-8 only. Unimplemented."
     },
     {
       "id": "man-2025",
@@ -5889,9 +5889,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSUTFCHARDEF 'p' type (binary) is not configurable; no charset-definition parsing exists"
     },
     {
       "id": "man-2027",
@@ -5908,9 +5908,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSUTFCHARDEF 'w' type (wide) is not configurable; no charset-definition parsing exists"
     },
     {
       "id": "man-2029",
@@ -5927,9 +5927,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSUTFCHARDEF 'b' type (binary printable) is not configurable; no charset-definition parsing exists"
     },
     {
       "id": "man-2031",
@@ -5946,9 +5946,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSUTFCHARDEF 'c' type (composing) is not configurable; no charset-definition parsing exists"
     },
     {
       "id": "man-2042",
@@ -5965,9 +5965,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Prompts render as fixed strings; percent-escape expansion is absent; see member entries"
     },
     {
       "id": "man-2054",
@@ -5984,9 +5984,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%b byte-offset expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2064",
@@ -6003,9 +6003,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%B file-size expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2066",
@@ -6022,9 +6022,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%c page-number expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2069",
@@ -6041,9 +6041,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%d byte-offset magnitude is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2072",
@@ -6060,9 +6060,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%D total-page count is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2075",
@@ -6079,9 +6079,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%E editor name expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2079",
@@ -6098,9 +6098,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%f filename expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2081",
@@ -6117,9 +6117,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%F basename expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2083",
@@ -6136,9 +6136,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%g shell-escaped filename expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2087",
@@ -6155,9 +6155,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%i file-index expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2090",
@@ -6174,9 +6174,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%l line-number expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2093",
@@ -6193,9 +6193,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%L last-line expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2095",
@@ -6212,9 +6212,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%m file-count expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2097",
@@ -6231,9 +6231,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%o OSC8 hyperlink URI expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2101",
@@ -6250,9 +6250,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%p byte-offset percent expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2104",
@@ -6269,9 +6269,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%P line percent expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2107",
@@ -6288,9 +6288,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%s size expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2109",
@@ -6307,9 +6307,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%t trailing-space trim is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2112",
@@ -6326,9 +6326,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%T file/tag word expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2116",
@@ -6345,9 +6345,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "%x next-file expansion is not implemented. No dynamic prompt-string expansion engine; the option is parsed but percent escapes are inert. Unimplemented."
     },
     {
       "id": "man-2134",
@@ -6364,9 +6364,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?a (file present) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2136",
@@ -6383,9 +6383,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?b (binary prompt) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2138",
@@ -6402,9 +6402,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?B (byte offset) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2140",
@@ -6421,9 +6421,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?c (page number) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2142",
@@ -6440,9 +6440,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?d (byte magnitude) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2144",
@@ -6459,9 +6459,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?e (more files) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2146",
@@ -6478,9 +6478,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?f (filename) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2149",
@@ -6497,9 +6497,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?l (line number) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2151",
@@ -6516,9 +6516,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?L (last line) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2153",
@@ -6535,9 +6535,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?m (file count) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2155",
@@ -6554,9 +6554,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?n (file index) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2157",
@@ -6573,9 +6573,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?p (byte percent) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2160",
@@ -6592,9 +6592,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?P (line percent) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2163",
@@ -6611,9 +6611,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?s (size) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2165",
@@ -6630,9 +6630,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "?x (next file) condition is not implemented. ?conditional prompts are not implemented; no expansion engine exists. Unimplemented."
     },
     {
       "id": "man-2236",
@@ -6649,9 +6649,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSSECURE/LESSSECURE_ALLOW are enforced for Stop/Lessopen/History/Examine; Edit/Glob/Osc8/Pipe/Shell/Logfile and the conf family are absent; see member entries"
     },
     {
       "id": "man-2241",
@@ -6668,9 +6668,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "v (editor) is not implemented (Feature::Edit unenforced)"
     },
     {
       "id": "man-2243",
@@ -6686,10 +6686,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["sessions-examine-secure-allowed", "sessions-examine-existing-file"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "examine is gated by the Examine secure-mode feature; named cases pass on macOS arm64 and Linux arm64 Docker"
     },
     {
       "id": "man-2245",
@@ -6706,9 +6706,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "Filename globbing/completion is not implemented"
     },
     {
       "id": "man-2249",
@@ -6724,10 +6724,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["integrations-secure-history-allow", "integrations-secure-history-denied"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "history persistence is gated by the History secure-mode feature; named cases pass on macOS arm64 and Linux arm64 Docker"
     },
     {
       "id": "man-2251",
@@ -6744,9 +6744,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "-k/--lesskey-file is parsed only; lesskey support is not implemented in lz. Unimplemented."
     },
     {
       "id": "man-2253",
@@ -6762,10 +6762,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["integrations-lessopen-secure-allow", "integrations-lessopen-secure-denied"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "LESSOPEN preprocessing is gated by the Lessopen secure-mode feature; named cases pass on macOS arm64 and Linux arm64 Docker"
     },
     {
       "id": "man-2255",
@@ -6782,9 +6782,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "s/log-file writing is not implemented"
     },
     {
       "id": "man-2257",
@@ -6801,9 +6801,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "No OSC 8 hyperlink handling or opening exists"
     },
     {
       "id": "man-2259",
@@ -6820,9 +6820,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "No pipe command (| <m>) exists"
     },
     {
       "id": "man-2261",
@@ -6839,9 +6839,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "No shell command (!/#) exists"
     },
     {
       "id": "man-2263",
@@ -6857,10 +6857,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["integrations-secure-stop-allow", "integrations-secure-stop-denied"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "suspension is gated by the Stop secure-mode feature; named cases pass on macOS arm64 and Linux arm64 Docker"
     },
     {
       "id": "man-2267",
@@ -6898,9 +6898,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESS_IS_MORE/more-link compatibility mode is not implemented"
     },
     {
       "id": "man-2320",
@@ -6917,9 +6917,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "A subset of the documented variables is honored (LESS, LESSCHARSET, LESSHISTFILE, LESSHISTSIZE, LESSSECURE*, LESSOPEN/LESSCLOSE); the rest are unsupported; see member entries"
     },
     {
       "id": "man-2329",
@@ -6936,9 +6936,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "COLUMNS is not read; the tty reports geometry via TIOCGWINSZ"
     },
     {
       "id": "man-2335",
@@ -6955,9 +6955,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "EDITOR is not read; no editor command exists"
     },
     {
       "id": "man-2337",
@@ -6973,10 +6973,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["configuration-history-home-existing", "configuration-history-default"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "HOME locates the default history destinations; named cases pass on macOS arm64 and Linux arm64 Docker"
     },
     {
       "id": "man-2340",
@@ -6990,9 +6990,9 @@
       "slice": "S10",
       "platforms": [],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "Outside Unix scope: platform-specific documented configuration"
+      "cause": "Windows/MS-DOS history variables; out of scope (Unix-only)"
     },
     {
       "id": "man-2344",
@@ -7006,9 +7006,9 @@
       "slice": "S10",
       "platforms": [],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "Outside Unix scope: platform-specific documented configuration"
+      "cause": "OS/2 INIT variable; out of scope (Unix-only)"
     },
     {
       "id": "man-2346",
@@ -7024,10 +7024,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["invocation-charset-utf8-alias", "search-utf8-charset-c-regex"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "LANG is read in the charset/locale resolution chain; UTF-8-locale cases pass on macOS arm64 and Linux arm64 Docker"
     },
     {
       "id": "man-2348",
@@ -7044,9 +7044,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "implemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LC_CTYPE is read in the charset/locale resolution chain (main.rs); no differential case isolates it"
     },
     {
       "id": "man-2350",
@@ -7091,9 +7091,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSANSIENDCHARS is not read; ANSI parsing is built in"
     },
     {
       "id": "man-2357",
@@ -7110,9 +7110,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSANSIMIDCHARS is not read; ANSI parsing is built in"
     },
     {
       "id": "man-2361",
@@ -7129,9 +7129,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSBINFMT is not read; binary/control notation is fixed"
     },
     {
       "id": "man-2363",
@@ -7148,9 +7148,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSCHARDEF is not read; no charset-definition parsing exists"
     },
     {
       "id": "man-2365",
@@ -7168,7 +7168,7 @@
       ],
       "cases": ["invocation-charset-utf8-alias"],
       "implementation": "partial",
-      "evidence": "compatible in the named tested scenario",
+      "evidence": "compatible in the named tested scenarios",
       "cause": "The utf8 spelling selects UTF-8 in the named case. Other character sets and aliases remain open."
     },
     {
@@ -7220,9 +7220,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSECHO is not read; quoting is built in"
     },
     {
       "id": "man-2373",
@@ -7239,9 +7239,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSEDIT is not read; no editor command exists"
     },
     {
       "id": "man-2376",
@@ -7258,9 +7258,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSGLOBALTAGS is not read; global helpers are absent"
     },
     {
       "id": "man-2381",
@@ -7308,10 +7308,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["configuration-history-default", "configuration-history-home-existing"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Linux/Unix history destination resolution matches less; named cases pass on macOS arm64 and Linux arm64 Docker"
     },
     {
       "id": "man-2391",
@@ -7325,9 +7325,9 @@
       "slice": "S10",
       "platforms": [],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "Outside Unix scope: platform-specific documented configuration"
+      "cause": "Windows/MS-DOS history path; out of scope (Unix-only)"
     },
     {
       "id": "man-2393",
@@ -7341,9 +7341,9 @@
       "slice": "S10",
       "platforms": [],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "Outside Unix scope: platform-specific documented configuration"
+      "cause": "OS/2 history path; out of scope (Unix-only)"
     },
     {
       "id": "man-2396",
@@ -7381,9 +7381,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSKEYIN is not read; lesskey support is not implemented in lz. Unimplemented."
     },
     {
       "id": "man-2403",
@@ -7400,9 +7400,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSKEY is not read; lesskey support is not implemented in lz. Unimplemented."
     },
     {
       "id": "man-2407",
@@ -7419,9 +7419,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSKEY_CONTENT is not read; lesskey support is not implemented in lz. Unimplemented."
     },
     {
       "id": "man-2409",
@@ -7438,9 +7438,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSKEYIN_SYSTEM is not read; lesskey support is not implemented in lz. Unimplemented."
     },
     {
       "id": "man-2413",
@@ -7457,9 +7457,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSKEY_SYSTEM is not read; lesskey support is not implemented in lz. Unimplemented."
     },
     {
       "id": "man-2417",
@@ -7476,9 +7476,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSMETACHARS is not read; quoting is built in"
     },
     {
       "id": "man-2419",
@@ -7495,9 +7495,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSMETAESCAPE is not read; quoting is built in"
     },
     {
       "id": "man-2424",
@@ -7650,9 +7650,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSSEPARATOR is not read"
     },
     {
       "id": "man-2434",
@@ -7669,9 +7669,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSUTFBINFMT is not read; binary notation is fixed"
     },
     {
       "id": "man-2436",
@@ -7688,9 +7688,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESSUTFCHARDEF is not read; no charset-definition parsing exists"
     },
     {
       "id": "man-2438",
@@ -7707,9 +7707,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESS_COLUMNS is not read; the tty reports geometry via TIOCGWINSZ"
     },
     {
       "id": "man-2446",
@@ -7726,9 +7726,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESS_LINES is not read; the tty reports geometry via TIOCGWINSZ"
     },
     {
       "id": "man-2458",
@@ -7745,9 +7745,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESS_DATA_DELAY is not read"
     },
     {
       "id": "man-2462",
@@ -7764,9 +7764,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESS_IS_MORE is not read"
     },
     {
       "id": "man-2466",
@@ -7783,9 +7783,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESS_OSC8_xxx is not read; OSC 8 handling is absent"
     },
     {
       "id": "man-2469",
@@ -7802,9 +7802,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESS_OSC8_ANY is not read; OSC 8 handling is absent"
     },
     {
       "id": "man-2472",
@@ -7821,9 +7821,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESS_TERMCAP_xx is not read"
     },
     {
       "id": "man-2475",
@@ -7840,9 +7840,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LESS_UNSUPPORT is not read"
     },
     {
       "id": "man-2482",
@@ -7859,9 +7859,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "LINES is not read; the tty reports geometry via TIOCGWINSZ"
     },
     {
       "id": "man-2488",
@@ -7878,9 +7878,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "MORE is not read"
     },
     {
       "id": "man-2493",
@@ -7897,9 +7897,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "PATH is not read for lesskey lookup; no lesskey support"
     },
     {
       "id": "man-2496",
@@ -7916,9 +7916,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "partial",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "SHELL is used only for LESSOPEN/LESSCLOSE command construction; no case sets SHELL"
     },
     {
       "id": "man-2498",
@@ -7935,9 +7935,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "TERM is not read; the tty is programmed directly via termios"
     },
     {
       "id": "man-2502",
@@ -7954,9 +7954,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "VISUAL is not read; no editor command exists"
     },
     {
       "id": "man-2504",
@@ -7973,9 +7973,9 @@
         "linux-musl"
       ],
       "cases": [],
-      "implementation": "unassessed",
+      "implementation": "unimplemented",
       "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cause": "XDG_CONFIG_HOME is not read anywhere in lz"
     },
     {
       "id": "man-2508",
@@ -7991,10 +7991,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["configuration-history-default"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "XDG_DATA_HOME participates in history destination resolution; named case passes on macOS arm64 and Linux arm64 Docker"
     },
     {
       "id": "man-2510",
@@ -8010,10 +8010,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["configuration-history-default"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "XDG_STATE_HOME hosts the default history destination; named case passes on macOS arm64 and Linux arm64 Docker"
     },
     {
       "id": "source-redirected",
@@ -8075,12 +8075,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [
-        "redirected-nonutf8"
-      ],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "macOS fixture filesystem rejects invalid UTF-8 names with EILSEQ before either pager runs; repeat on a byte-preserving Unix filesystem"
+      "cases": ["redirected-file-text", "sources-binary-ascii-alias"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "Source bytes are retained byte-exactly (regular files seekable, stdin spooled, stdout verbatim); named cases pass on macOS arm64 and Linux arm64 Docker"
     },
     {
       "id": "terminal-lifecycle",
