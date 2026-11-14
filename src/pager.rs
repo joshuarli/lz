@@ -1755,7 +1755,7 @@ impl Pager {
             }
             Key::HorizontalStart => { self.position_initialized(); self.left_col = 0; }
             Key::ToggleSearchHighlight => {
-                if self.search.is_some() && (self.current_match_line.is_some() || self.search_inherited) { self.search_highlight = !self.search_highlight; }
+                if self.search.is_some() && (self.current_match_line.is_some() || self.search_inherited) { self.search_highlight.toggle(); }
                 else { self.command_error("No previous regular expression".to_string(), ErrorAction::Dismiss); }
             }
             Key::ClearSearchHighlight => {
@@ -1992,9 +1992,9 @@ impl Pager {
         match key {
             Key::Escape => self.mode = Mode::Normal,
             Key::Ctrl('c') => { self.history.push(&self.search_input.content); self.mode = Mode::Normal; self.bell_requested = true; }
-            Key::Ctrl('n') | Key::Char('!') if self.search_input.content.is_empty() => { self.search_input_nonmatch = !self.search_input_nonmatch; }
-            Key::Ctrl('k') if self.search_input.content.is_empty() => { self.search_input_keep_position = !self.search_input_keep_position; }
-            Key::Ctrl('w') if self.search_input.content.is_empty() => { self.search_input_wrap = !self.search_input_wrap; }
+            Key::Ctrl('n') | Key::Char('!') if self.search_input.content.is_empty() => { self.search_input_nonmatch.toggle(); }
+            Key::Ctrl('k') if self.search_input.content.is_empty() => { self.search_input_keep_position.toggle(); }
+            Key::Ctrl('w') if self.search_input.content.is_empty() => { self.search_input_wrap.toggle(); }
             Key::Enter => {
                 let pattern = self.search_input.content.clone();
                 self.mode = Mode::Normal;
