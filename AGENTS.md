@@ -231,7 +231,10 @@ The main event loop and renderer. This is the largest and most central module.
 `Pager::new` takes a named `Config` containing startup command bytes, charset and control-display policy,
 chopping, line-number display, search case policy, validated `FileStatus`, retained `DisplayAnchor` and `ScrollDefaults`, and an explicit `InitialDisplay` placement. `InitialDisplay::FileSwitch` carries an optional opaque `SavedPosition`, obtained with `saved_position` before transferring history. Main retains one saved logical-line position per CLI file; wrapped-row and horizontal offsets remain open. `run` returns `PagerExit::VisitFile` with an opaque validated `FileVisit`; main opens that index under the same terminal session. Numeric :n/:p counts and zero defaults share boundary acknowledgment with other command errors. FileVisit::initial_display retains startup command origin and continuation boundaries. Main transfers take_startup_commands to the next pager; inline commands continue before painting, while separate commands paint an intervening frame. Startup file switches use full viewport placement and preserve command text before the first line. Missing-file skipping remains open. `into_history` transfers search history to the next pager. Startup commands use the same key decoder and dispatcher as tty input, with frame boundaries between separate entries. CLI ++COMMAND keeps the last every-file command separately from pending one-time input and appends it on each visit, matching the reference input order. Numeric startup positions and `-p` searches
 are supported. A position-dependent startup movement before any jump/search rings
-a bell and discards the remaining command, matching the reference.
+a bell and discards the remaining command, matching the reference. Normal-mode
+status expansion re-arms the `new_file` prompt condition after leaving help and
+after an examine attempt is confirmed, matching the reference's `edit_ifile`
+entry rule; the re-arm is consumed by the next file prompt.
 
 Key types: `Pager` struct, `Mode` enum (`Normal`, `SearchInput`, `FilterInput`, `Follow`, `Help`), `SearchDir` enum (`Forward`, `Backward`), `LineEditor` struct.
 
