@@ -880,7 +880,6 @@ pub struct Pager {
     examine_input: LineEditor,
     header_input: LineEditor,
     allow_examine: bool,
-    restore_after_failed_examine: bool,
     filter: Option<Search>,
     filtered_lines: Vec<usize>,
     history: SearchHistory,
@@ -895,7 +894,6 @@ pub struct Pager {
     status_msg: Option<String>,
     status_highlight: bool,
     filename: Option<String>,
-    filename_prompt: bool,
     compact_initial: bool,
     squished: bool,
     bottom_aligned: bool,
@@ -976,7 +974,6 @@ impl Pager {
             examine_input: LineEditor::new(),
             header_input: LineEditor::new(),
             allow_examine: config.allow_examine,
-            restore_after_failed_examine: false,
             filter: None,
             filtered_lines: Vec::new(),
             history,
@@ -991,7 +988,6 @@ impl Pager {
             status_msg: None,
             status_highlight: false,
             filename,
-            filename_prompt: true,
             compact_initial: config.initial_display == InitialDisplay::Startup && config.startup_commands.is_empty(),
             squished: false,
             bottom_aligned: false,
@@ -1104,12 +1100,10 @@ impl Pager {
                 break;
             }
             if !self.startup_commands.is_empty() {
-                self.filename_prompt = !self.content_painted;
                 self.render()?;
                 self.command_context = CommandContext::Interactive;
             }
         }
-        self.filename_prompt = !self.content_painted;
         self.command_context = CommandContext::Interactive;
         Ok(false)
     }
@@ -1164,7 +1158,6 @@ impl Pager {
             }
             if terminal::CONT_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst)
                 && terminal::handle_resume()? == terminal::ResumeOutcome::Restored {
-                self.filename_prompt = false;
                 let (w, h) = terminal::get_terminal_size();
                 if (w, h) != (self.term_width, self.term_height) { self.scroll_defaults.resize(h); }
                 self.resize_position_table(h);
@@ -1174,7 +1167,6 @@ impl Pager {
                 continue;
             }
             if terminal::WINCH_FLAG.swap(false, std::sync::atomic::Ordering::SeqCst) {
-                self.filename_prompt = false;
                 let (w, h) = terminal::get_terminal_size();
                 if (w, h) != (self.term_width, self.term_height) { self.scroll_defaults.resize(h); }
                 self.resize_position_table(h);
@@ -1271,7 +1263,6 @@ impl Pager {
     pub fn examine_error(&mut self, message: String) {
         let repaint = self.squished;
         if repaint { self.position_initialized(); }
-        self.restore_after_failed_examine = true;
         self.command_error(message, ErrorAction::Dismiss);
         if let Mode::CommandError(error) = &mut self.mode { error.repaint = repaint; }
     }
@@ -1302,13 +1293,9 @@ impl Pager {
         if matches!(self.mode, Mode::SetMark | Mode::JumpMark | Mode::FileCommand(_) | Mode::OptionPrefix(_) | Mode::OptionLong(_, _) | Mode::HeaderInput | Mode::OptionNotice { .. } | Mode::CommandError(_)) {
             self.mode = if matches!(&self.mode, Mode::CommandError(error) if error.destination == ErrorDestination::Help) { Mode::Help } else { Mode::Normal };
             self.status_msg = None;
-            self.filename_prompt = false;
             false
         } else {
-            let filename_prompt = self.filename_prompt;
-            let quit = self.handle_key(Key::Ctrl('c'));
-            if !self.content_painted { self.filename_prompt = filename_prompt; }
-            quit
+            self.handle_key(Key::Ctrl('c'))
         }
     }
 
@@ -1632,7 +1619,6 @@ impl Pager {
                 if let ErrorAction::Retry(ref command) = error.action && self.handle_normal_key(command.clone()) { return true; }
                 if self.command_context == CommandContext::StartupAborted { self.command_context = CommandContext::StartupUnpositioned; }
                 else if !error.remainder.is_empty() { self.startup_commands.push_front(error.remainder); }
-                if self.restore_after_failed_examine { self.filename_prompt = true; }
                 if !key.is_prompt_acknowledgement() {
                     if self.handle_key(key) { return true; }
                     if let ErrorAction::SearchWrapped(forward) = error.action && self.mode == Mode::Normal {
@@ -1640,7 +1626,6 @@ impl Pager {
                     }
                     return false;
                 }
-                self.restore_after_failed_examine = false;
                 if let ErrorAction::SearchWrapped(forward) = error.action { self.search_wrapped_notice(forward, false); }
                 false
             }
@@ -1648,8 +1633,6 @@ impl Pager {
     }
 
     fn handle_normal_key(&mut self, key: Key) -> bool {
-        if !matches!(key, Key::Char('/' | '?')) { self.restore_after_failed_examine = false; }
-        self.filename_prompt = false;
         self.status_msg = None;
         if let Key::Char(character @ '0'..='9') = key {
             self.numeric_prefix = self.numeric_prefix.push(character);
@@ -1901,7 +1884,6 @@ impl Pager {
 
     fn leave_help(&mut self) {
         self.mode = Mode::Normal;
-        self.filename_prompt = true;
         self.squished = false;
         self.compact_initial = false;
     }
@@ -2033,10 +2015,6 @@ impl Pager {
                         self.search_inherited = false;
                         self.current_match_line = None;
                         self.do_search(self.search_dir == SearchDir::Forward, self.search_input_keep_position);
-                        if self.restore_after_failed_examine && self.mode == Mode::Normal {
-                            self.filename_prompt = true;
-                            self.restore_after_failed_examine = false;
-                        }
                     }
                     Err(e) => {
                         self.status_msg = Some(e);
