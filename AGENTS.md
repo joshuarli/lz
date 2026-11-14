@@ -6,9 +6,9 @@ This document is written for AI agents working on the lz codebase. It covers arc
 
 ## What lz Is
 
-lz is a minimal, fast pager (like `less`) written in Rust. The active parity campaign targets the documented less 668 surface; see `plan.md` for its scope and remaining proof. It is Unix-only and has two direct runtime dependencies: `regex-automata` and `unicode-width`; `regex-syntax` is the regex parser. Everything else — terminal control, key input, signal handling — is done via direct libc FFI or standard library primitives.
+lz is a minimal, fast pager (like `less`) written in Rust. The less 668 parity target, its current verdict, and the evidence commands live in [docs/parity.md](docs/parity.md). It is Unix-only and has two direct runtime dependencies: `regex-automata` and `unicode-width`; `regex-syntax` is the regex parser. Everything else — terminal control, key input, signal handling — is done via direct libc FFI or standard library primitives.
 
-The design philosophy is small binary, simple code, zero unnecessary dependencies. `plan.md` now authorizes a less 668 parity campaign that supersedes the intentional omissions below; those sections describe the current interactive implementation, not the target contract. Redirected stdout already copies arbitrary input bytes before any terminal or binary detection. `make parity-setup` builds isolated ordinary/instrumented references; `make parity-test GROUP=redirected MODE=admit` compares redirected behavior offline.
+The design philosophy is small binary, simple code, zero unnecessary dependencies. The intentional omissions below describe the current interactive implementation, not the full less 668 surface; [docs/parity.md](docs/parity.md) records the target, what is verified, and what remains. Redirected stdout already copies arbitrary input bytes before any terminal or binary detection. `make parity-setup` builds isolated ordinary/instrumented references; `make parity-test GROUP=redirected MODE=admit` compares redirected behavior offline.
 
 ---
 
