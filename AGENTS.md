@@ -23,6 +23,7 @@ src/
   tags.rs       Byte-preserving numeric and literal-prefix ctags startup selection
   security.rs   Secure feature-name parsing, permission mask and diagnostics
   options.rs    Binary-only CLI option-name diagnostics
+  prompt.rs     less-style prompt string expansion
   pager.rs      Main event loop and rendering
   buffer.rs     Byte source access, line indexing and display fragments
   charset.rs    ASCII/UTF-8 policy for binary samples and byte presentation
@@ -60,6 +61,7 @@ lib.rs
   │     │     └── buffer.rs
   │     ├── terminal.rs
   │     ├── ansi.rs
+  │     ├── prompt.rs
   │     └── unicode-width (crate)
   └── history.rs
 
@@ -84,6 +86,7 @@ parsing a documented name does not establish full CLI parity.
 Entry point and CLI argument parsing.
 
 - Hand-rolled argument parsing (no clap). Handles `--follow`, `--force`, `-r`/`--raw`, `-h`/`--help`, `-V`/`--version`, `--`, `-` (explicit stdin), and positional file arguments.
+- VISUAL and EDITOR thread into the prompt engine as the `%E` expansion; interactive option diagnostics remain hand-rolled in `options.rs`.
 - Installs a panic hook that restores the terminal (exits alt screen, disables raw mode) before printing the panic message, so a crash does not leave the terminal broken.
 - Calls into `pager::run()` with a constructed config.
 
@@ -190,6 +193,20 @@ Search over file content with a fast literal path.
 
 Key types: `Search` struct, `Matcher` enum (`Literal`, `Regex`), `BMH` struct.
 
+### `prompt.rs`
+
+less-style prompt string expansion and the prompt prototypes.
+
+- `PromptStore` holds user-set prototypes selected by `-P` selector (`s`/`m`/`M`/`=`/`h`/`w`); unset slots fall back to the built-in short, medium, long and equals prototypes. `-m`/`-M` flip the short/medium/long type like the reference TRIPLE option.
+- `expand()` replicates `prompt.c`: `?` conditionals with wherechars (`t`/`m`/`b`/`B`/`j`), nesting, `:` else and `.` endif, `%` escapes (filename, basename, shell-escaped, sizes, line/byte/percent positions, page numbers, totals, `%t` trailing-space trim), and `\` escapes (a literal percent is written `\%`). Unknown escapes emit nothing and unknown conditions are false, matching the reference.
+- `NearPosition` carries the byte offset and line number of the TOP/MIDDLE/BOTTOM/BOTTOM_PLUS_ONE/JUMP rows; `muldiv` rounds half-to-even like `umuldiv`. Positions feed from a position table in `pager.rs` replicated from `position.c` (fresh-screen seed, per-line after-position pushes, EOF-tail NULL pushes with the empty-lines break rule).
+- `%L`, `%D` and `%P` scan a regular file to EOF on first use, like the reference's lazy total-line count; live pipes return `?`.
+- The equals notice expands EQ_PROTO with the same two-space `(press RETURN)` suffix as the reference.
+- Named differential cases cover default short/medium/long prompts at startup and after scrolling, custom conditionals, nested IFs, wherechars, `-P=` custom equals, the total-line scan and `-P` selector routing. `%o` prints `?` without an OSC8 selection, `-Ph`/`-Pw` are parsed but not wired to the fixed help and waiting messages, and a raw ESC inside a template keeps lz's prompt emphasis where the reference drops it (ANSI-in-line is not tracked).
+- Emphasis rule matches the reference: a non-empty Normal-mode expansion renders with the prompt color (inverse, or the `--use-color` prompt color); an empty expansion prints a plain colon.
+
+Key types: `PromptStore`, `PromptContext`, `NearPosition`.
+
 ### `pager.rs`
 
 The main event loop and renderer. This is the largest and most central module.
@@ -202,7 +219,7 @@ The main event loop and renderer. This is the largest and most central module.
 - Help mode: `h` or `H` opens the embedded less 668 help document and `q`, `Q`, `:q`, `:Q` or `ZZ` returns to the file. Help respects wrapping, line numbers and screen mode, and supports line, page, half-page and numbered movement. Search and other help commands remain open. `render_help()` draws static help text instead of file content. `h`, `q`, or Escape returns to Normal.
 - A complete line at the bottom of the viewport probes for the next source line with a zero-byte prefix request; this detects exact-viewport EOF without reading a whole following line.
 - Initial short-file content is placed at the bottom with blank unused rows. Empty files keep an interactive EOF view. Explicit startup positioning uses a full paint.
-- Rendering: full redraw every frame. Each frame: clear screen, render visible lines (or help screen) top-to-bottom, render inverse-video status bar at the bottom showing context on the left (filename, filter, wrap state, or input prompt) and position info on the right (line range, total, percentage/END).
+- Rendering: full redraw every frame. Each frame: clear screen, render visible lines (or help screen) top-to-bottom, render the status bar at the bottom showing the expanded Normal-mode file prompt, the active input/prefix prompt or message in other modes. The Normal-mode file prompt and the `=` notice expand through `prompt.rs`; emphasis follows the non-empty-expansion rule described there.
 - Horizontal scroll: tracks a column offset, increments/decrements in 8-column steps.
 - Wrap mode: enabled by default and disabled with `-S`. When enabled, long lines are wrapped using `unicode-width` for correct column calculation (this is why `pager.rs` depends on the crate directly).
 - Search highlighting: when a search is active, matching spans on each visible line are wrapped in `\x1b[7m` (inverse video) and reset afterward.
@@ -235,6 +252,7 @@ Key types: `Pager` struct, `Mode` enum (`Normal`, `SearchInput`, `FilterInput`, 
 - ANSI color pass-through (colors in input are preserved in output)
 - Raw escape mode (`-r` flag, shows escape sequences literally)
 - Binary file detection (refuses to display binary content)
+- `-m`, `-M` and `-P` prompt strings with the reference's short/medium/long/equals expansion, percent escapes, conditionals and number-position table; empty expansions print a plain colon and non-empty prompts are emphasized
 - Signal handling: Ctrl-Z suspend/resume, terminal resize (SIGWINCH), clean exit on SIGTERM
 
 ### What lz Intentionally Does Not Do
