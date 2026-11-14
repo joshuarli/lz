@@ -149,7 +149,7 @@ impl Scanner {
             "chop-long-lines" => self.args.chop = !reset,
             "line-numbers" => self.args.line_numbers = if reset { lz::pager::LineNumberMode::Enabled } else if upper { lz::pager::LineNumberMode::Displayed } else { lz::pager::LineNumberMode::Off },
             "tilde" => self.args.show_eof_markers = reset,
-            "long-prompt" => self.args.prompt_type = if reset { 0 } else if upper { if self.args.prompt_type == 2 { 0 } else { 2 } } else if self.args.prompt_type == 1 { 0 } else { 1 },
+            "long-prompt" => self.args.prompt_type = if reset { 0 } else if upper { 2 } else { 1 },
             _ => {}
         }
     }
