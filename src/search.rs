@@ -1,7 +1,35 @@
 use crate::ansi::strip_ansi;
 use crate::buffer::LineBuffer;
 use regex_automata::{Anchored, Input, MatchKind, nfa::thompson::pikevm::{Cache, PikeVM}};
+use std::borrow::Cow;
 use std::sync::Mutex;
+
+/// Number of leading lines and visible columns excluded from a search.
+#[derive(Clone, Copy, Default)]
+pub(crate) struct HeaderSkip { pub lines: usize, pub columns: usize }
+
+pub(crate) fn skip_columns_boundary(text: &str, columns: usize) -> usize {
+    let mut skipped = 0usize;
+    let mut index = 0usize;
+    while skipped < columns && index < text.len() {
+        let Some(character) = text[index..].chars().next() else { break };
+        if character == '\x1b' {
+            match text[index..].find(|candidate: char| ('@'..='~').contains(&candidate)) {
+                Some(end) => { index += end + 1; continue; }
+                None => break,
+            }
+        }
+        skipped += unicode_width::UnicodeWidthChar::width(character).unwrap_or(0);
+        index += character.len_utf8();
+    }
+    index
+}
+
+fn strip_visible_columns(text: &str, columns: usize) -> Cow<'_, str> {
+    if columns == 0 { return Cow::Borrowed(text); }
+    let boundary = skip_columns_boundary(text, columns);
+    Cow::Owned(text[boundary..].to_string())
+}
 
 /// Boyer-Moore-Horspool substring searcher.
 ///
@@ -327,6 +355,19 @@ impl Search {
         }
     }
 
+    pub(crate) fn match_after_columns(&self, line: &str, columns: usize) -> bool {
+        if columns == 0 { return self.is_match(line); }
+        let base = if line.contains('\x1b') { Cow::Owned(strip_ansi(line)) } else { Cow::Borrowed(line) };
+        let skipped = strip_visible_columns(&base, columns);
+        self.is_match_raw(skipped.as_ref())
+    }
+
+    pub(crate) fn match_raw_after_columns(&self, line: &str, columns: usize) -> bool {
+        if columns == 0 { return self.is_match_raw(line); }
+        let skipped = strip_visible_columns(line, columns);
+        self.is_match_raw(skipped.as_ref())
+    }
+
     pub(crate) fn uses_byte_regex(&self) -> bool {
         matches!(&self.matcher, Matcher::Regex(regex) if regex.byte_mode)
     }
@@ -354,25 +395,40 @@ impl Search {
     }
 
     pub(crate) fn find_next_raw_line(&self, buffer: &mut LineBuffer, from_line: usize, forward: bool, nonmatch: bool) -> Option<usize> {
-        self.find_next_with(buffer, from_line, forward, nonmatch, true)
+        self.find_next_with(buffer, from_line, forward, nonmatch, true, HeaderSkip::default())
+    }
+
+    pub(crate) fn find_next_raw_line_skipping(&self, buffer: &mut LineBuffer, from_line: usize, forward: bool, nonmatch: bool, skip: HeaderSkip) -> Option<usize> {
+        self.find_next_with(buffer, from_line, forward, nonmatch, true, skip)
     }
 
     pub(crate) fn find_next_nonmatching_line(&self, buffer: &mut LineBuffer, from_line: usize, forward: bool) -> Option<usize> {
-        self.find_next_with(buffer, from_line, forward, true, false)
+        self.find_next_with(buffer, from_line, forward, true, false, HeaderSkip::default())
     }
 
-    fn find_next_with(&self, buffer: &mut LineBuffer, from_line: usize, forward: bool, nonmatch: bool, raw: bool) -> Option<usize> {
-        let matches = |line: &str| if raw { self.is_match_raw(line) } else { self.is_match(line) } != nonmatch;
+    pub(crate) fn find_next_nonmatching_line_skipping(&self, buffer: &mut LineBuffer, from_line: usize, forward: bool, skip: HeaderSkip) -> Option<usize> {
+        self.find_next_with(buffer, from_line, forward, true, false, skip)
+    }
+
+    pub(crate) fn find_next_line_skipping(&self, buffer: &mut LineBuffer, from_line: usize, forward: bool, skip: HeaderSkip) -> Option<usize> {
+        self.find_next_with(buffer, from_line, forward, false, false, skip)
+    }
+
+    fn find_next_with(&self, buffer: &mut LineBuffer, from_line: usize, forward: bool, nonmatch: bool, raw: bool, skip: HeaderSkip) -> Option<usize> {
+        let matches = |index: usize, line: &str| {
+            if index < skip.lines { return false; }
+            (if raw { self.match_raw_after_columns(line, skip.columns) } else { self.match_after_columns(line, skip.columns) }) != nonmatch
+        };
         if forward {
             let mut line = from_line;
             loop {
-                if matches(buffer.get_line(line)?) { return Some(line); }
+                if matches(line, buffer.get_line(line)?) { return Some(line); }
                 line = line.checked_add(1)?;
             }
         } else {
             let mut line = from_line;
             while let Some(previous) = line.checked_sub(1) {
-                if matches(buffer.get_line(previous)?) { return Some(previous); }
+                if matches(previous, buffer.get_line(previous)?) { return Some(previous); }
                 line = previous;
             }
             None
@@ -387,7 +443,7 @@ impl Search {
         from_line: usize,
         forward: bool,
     ) -> Option<usize> {
-        self.find_next_with(buffer, from_line, forward, false, false)
+        self.find_next_with(buffer, from_line, forward, false, false, HeaderSkip::default())
     }
 }
 

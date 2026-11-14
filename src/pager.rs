@@ -805,6 +805,10 @@ pub struct Config {
     pub search_case: CaseSensitivity,
     /// Select which found matches are highlighted.
     pub hilite_search: HiliteSearch,
+    /// Exclude header lines from searches.
+    pub no_search_header_lines: bool,
+    /// Exclude header columns from searches.
+    pub no_search_header_columns: bool,
     /// Character interpretation used for regular expressions.
     pub regex_locale: RegexLocale,
     pub search_start: SearchStart,
@@ -835,6 +839,8 @@ pub struct Pager {
     search_inherited: bool,
     search_highlight: bool,
     hilite_search: HiliteSearch,
+    no_search_header_lines: bool,
+    no_search_header_columns: bool,
     search_nonmatch: bool,
     search_input_nonmatch: bool,
     search_input_keep_position: bool,
@@ -928,6 +934,8 @@ impl Pager {
             search_inherited,
             search_highlight: config.search_session.highlight,
             hilite_search: config.hilite_search,
+            no_search_header_lines: config.no_search_header_lines,
+            no_search_header_columns: config.no_search_header_columns,
             search_nonmatch: config.search_session.nonmatch,
             search_input_nonmatch: false,
             search_input_keep_position: false,
@@ -2183,17 +2191,23 @@ impl Pager {
     }
 
     fn find_search_line(&mut self, search: &Search, from: usize, forward: bool) -> Option<usize> {
+        let header_lines = if self.no_search_header_lines { self.header.lines } else { 0 };
+        let header_columns = if self.no_search_header_columns { self.header.columns } else { 0 };
         if self.filter.is_some() {
             let count = self.filtered_lines.len();
-            let mut matches = |index: &usize| self.buffer.get_line(self.filtered_lines[*index]).is_some_and(|line| {
-                let matched = if self.controls == ControlDisplay::Standard { search.is_match_raw(line) } else { search.is_match(line) };
-                matched != self.search_nonmatch
-            });
+            let mut matches = |index: &usize| {
+                let actual = self.filtered_lines[*index];
+                if actual < header_lines { return false; }
+                self.buffer.get_line(actual).is_some_and(|line| {
+                    let matched = if self.controls == ControlDisplay::Standard { search.match_raw_after_columns(line, header_columns) } else { search.match_after_columns(line, header_columns) };
+                    matched != self.search_nonmatch
+                })
+            };
             if forward { (from.min(count)..count).find(&mut matches) }
             else { (0..from.min(count)).rev().find(&mut matches) }
-        } else if self.controls == ControlDisplay::Standard { search.find_next_raw_line(&mut self.buffer, from, forward, self.search_nonmatch) }
-        else if self.search_nonmatch { search.find_next_nonmatching_line(&mut self.buffer, from, forward) }
-        else { search.find_next_line(&mut self.buffer, from, forward) }
+        } else if self.controls == ControlDisplay::Standard { search.find_next_raw_line_skipping(&mut self.buffer, from, forward, self.search_nonmatch, crate::search::HeaderSkip { lines: header_lines, columns: header_columns }) }
+        else if self.search_nonmatch { search.find_next_nonmatching_line_skipping(&mut self.buffer, from, forward, crate::search::HeaderSkip { lines: header_lines, columns: header_columns }) }
+        else { search.find_next_line_skipping(&mut self.buffer, from, forward, crate::search::HeaderSkip { lines: header_lines, columns: header_columns }) }
     }
 
     fn handle_filter_input_key(&mut self, key: Key) {
@@ -2755,7 +2769,7 @@ impl Pager {
             HiliteSearch::All => true,
             HiliteSearch::Match => self.current_match_line == Some(line_idx),
             HiliteSearch::None => false,
-        };
+        } && !(self.no_search_header_lines && line_idx < self.header.lines);
         if (self.search_highlight || self.incremental_preview.is_some())
             && hilite_allowed
             && let Some(search) = self.incremental_preview.as_ref().or(self.search.as_ref())
@@ -2770,7 +2784,8 @@ impl Pager {
             let full = source.display(0, source.columns(), NotationStyle::for_ui_color(self.use_color));
             let context = strip_ansi(&String::from_utf8_lossy(&full));
             let searchable = source.search_text(&context, 0);
-            let mut matches: Vec<_> = search.find_matches_stripped(&searchable).into_iter().filter(|(start, end)| start < end).collect();
+            let skip = if self.no_search_header_columns { crate::search::skip_columns_boundary(&searchable, self.header.columns) } else { 0 };
+            let mut matches: Vec<_> = search.find_matches_stripped(&searchable[skip..]).into_iter().filter(|(start, end)| start < end).map(|(start, end)| (start + skip, end + skip)).collect();
             if search.uses_byte_regex() {
                 let mut aligned: Vec<(usize, usize)> = Vec::new();
                 for (mut start, mut end) in matches {

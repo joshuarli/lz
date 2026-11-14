@@ -4673,10 +4673,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-no-search-header-lines", "search-no-search-header-lines-columns"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "--no-search-header-lines excludes fixed header rows from search and match highlighting; named cases pass on macOS arm64; find/equivalent highlight behavior for anchored interactive headers remains open"
     },
     {
       "id": "man-1449",
@@ -4692,10 +4692,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-no-search-header-columns"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "--no-search-header-columns excludes the leading fixed columns of every line from search and match highlighting; named case passes on macOS arm64; overlapping-boundary and notation cases remain open"
     },
     {
       "id": "man-1451",
@@ -4711,10 +4711,10 @@
         "macos",
         "linux-musl"
       ],
-      "cases": [],
-      "implementation": "unassessed",
-      "evidence": "not tested",
-      "cause": "No distinguishing differential scenario yet"
+      "cases": ["search-no-search-headers"],
+      "implementation": "implemented",
+      "evidence": "compatible in the named tested scenarios",
+      "cause": "--no-search-headers applies both header line and header column exclusions; named case passes on macOS arm64; boundaries remain open"
     },
     {
       "id": "man-1453",
