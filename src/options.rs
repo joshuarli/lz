@@ -6,6 +6,11 @@ use lz::ansi::{BackspaceDisplay, ControlDisplay};
 
 use lz::option_catalog::{all, lookup, OptionLookupError, OptionSpec, ValueKind};
 
+pub(super) const EXAMPLES: &[&[&str]] = &[
+    &["lz", "file.txt"],
+    &["lz", "-N", "+120", "file.txt"],
+];
+
 pub(super) enum Diagnostic {
     UnknownShort(u8),
     UnknownLong(Vec<u8>),

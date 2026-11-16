@@ -1,4 +1,5 @@
 mod options;
+mod cli_help;
 mod security;
 mod tags;
 mod preprocessor;
@@ -164,9 +165,15 @@ fn open_input(filename: &std::ffi::OsStr, charset: Charset, controls: ControlDis
 }
 
 fn run() -> Result<ExitAction, String> {
+    let argv: Vec<OsString> = std::env::args_os().skip(1).collect();
+    let long_help = argv.iter().any(|arg| arg == "--help");
+    let explicit_help = long_help && matches!(options::parse(argv.clone(), None).action, options::Action::Help);
+    if (argv.len() == 1 && argv[0] == "-h") || explicit_help {
+        cli_help::write(&mut io::stdout().lock()).map_err(|error| error.to_string())?;
+        return Ok(ExitAction::Success);
+    }
     let security = security::Policy::from_environment();
     security.write_diagnostics(&mut io::stderr().lock()).map_err(|error| error.to_string())?;
-    let argv: Vec<OsString> = std::env::args_os().skip(1).collect();
     let mut args = options::parse(argv, std::env::var_os("LESS"));
     for diagnostic in &args.diagnostics {
         diagnostic.write(&mut io::stderr().lock()).map_err(|error| error.to_string())?;
