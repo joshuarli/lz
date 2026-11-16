@@ -85,6 +85,8 @@ impl OptionSpec {
     pub fn shorts(&self) -> &'static [u8] { self.shorts }
     /// Return the canonical long option name.
     pub fn canonical_name(&self) -> &'static str { self.names[0] }
+    /// Return all accepted long names.
+    pub fn names(&self) -> &'static [&'static str] { self.names }
     /// Return the option's value kind.
     pub fn value(&self) -> ValueKind { self.value }
 }
