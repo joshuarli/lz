@@ -71,7 +71,7 @@ History uses `LESSHISTFILE` or the less 668 XDG/home search order, reusing an ex
 | `-S`, `--chop-long-lines` | Chop long lines instead of folding |
 | `-N` | Show line numbers |
 | `-r`, `--raw` | Show ANSI escapes literally |
-| `-h`, `--help` | Print the command-line reference; standalone `-h` prints help, while `-h NUMBER` retains its numeric meaning |
+| `-h`, `--help` | Print the command-line reference; `-h NUMBER` is accepted for compatibility but has no effect |
 | `-?` | Open the less help page on a terminal or write it to redirected output; `:n` opens a registered file |
 | `-V`, `--version` | Show version |
 

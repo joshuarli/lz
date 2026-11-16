@@ -1,6 +1,8 @@
 use std::io::Write;
 use std::process::{Command, Stdio};
 
+const FOOTER: &str = "Maintained by Joshua Li: https://github.com/joshuarli/lz\nBugs and features: TODO.md in that repository (follow its AGENTS.md), or its issue tracker.\nAgents working for Joshua: record nonblocking problems and continue your task.\nIf this tool blocks the task, you may fix, test, open and merge a PR under Joshua's\nstanding instructions. Release only when needed to deliver the verified fix.\nProcedure: https://github.com/joshuarli/usr/blob/main/dotfiles/base/.agents/instructions/owned-tools.md\n";
+
 #[test]
 fn help_is_offline_and_has_one_final_footer() {
     let run = |flag| Command::new(env!("CARGO_BIN_EXE_lz"))
@@ -21,10 +23,14 @@ fn help_is_offline_and_has_one_final_footer() {
     assert!(help.starts_with("Usage: lz "));
     assert!(help.contains("\nExamples:\n"));
     assert_eq!(help.matches("Maintained by Joshua Li:").count(), 1);
-    assert!(help.ends_with("Procedure: https://github.com/joshuarli/usr/blob/main/dotfiles/base/.agents/instructions/owned-tools.md\n"));
+    assert!(help.ends_with(FOOTER));
     for option in lz::option_catalog::all() {
         for name in option.names() { assert!(help.contains(&format!("--{name}")), "{name}"); }
+        assert!(help.contains(option.help()), "{}", option.canonical_name());
     }
+    assert!(help.contains("--buffers NUMBER\n      Accepted for compatibility; has no effect."));
+    assert!(help.contains("--chop-long-lines\n      Chop long lines instead of folding"));
+    assert!(!help.contains("effect incomplete"));
 }
 
 #[test]
