@@ -20,9 +20,11 @@ All source lives in `src/`:
 src/
   lib.rs        Library root (modules below) and binary test suite
   main.rs       CLI entry point, arg parsing, panic hook
+  cli_help.rs   Offline command reference written by `-h` and `--help`
   tags.rs       Byte-preserving numeric and literal-prefix ctags startup selection
   security.rs   Secure feature-name parsing, permission mask and diagnostics
   options.rs    Binary-only CLI option-name diagnostics
+  option_catalog.rs Shared option names, value kinds and help text
   prompt.rs     less-style prompt string expansion
   pager.rs      Main event loop and rendering
   buffer.rs     Byte source access, line indexing and display fragments
@@ -30,6 +32,7 @@ src/
   layout.rs     Bounded byte-prefix mapping for standard/color display and notation
   storage.rs    Anonymous spill files and bounded line indexes
   readiness.rs  Platform descriptor readiness
+  tabs.rs       Tab-stop parsing and repeated spacing
   input.rs      Key reading and escape sequence parsing
   terminal.rs   Raw termios, alt screen, signals, output helpers
   helper.rs     Owned helper process group and foreground tty lease
@@ -49,27 +52,26 @@ benches/
 
 ```
 main.rs
-  └── lz (the library)
+  └── options.rs, cli_help.rs, security.rs, tags.rs, preprocessor.rs
+       └── lz (the library)
 
 lib.rs
   ├── pager.rs
-  │     ├── buffer.rs
+  │     ├── ansi.rs ──┐
+  │     ├── buffer.rs ├── charset.rs, storage.rs, readiness.rs
+  │     ├── layout.rs ┘       └── tabs.rs
+  │     ├── search.rs ─── ansi.rs, buffer.rs
+  │     ├── terminal.rs ─── helper.rs, input.rs ─── readiness.rs
   │     ├── history.rs
   │     ├── input.rs
-  │     ├── search.rs
-  │     │     ├── ansi.rs
-  │     │     └── buffer.rs
-  │     ├── terminal.rs
-  │     ├── ansi.rs
+  │     ├── option_catalog.rs
   │     ├── prompt.rs
   │     └── unicode-width (crate)
+  ├── input.rs
   └── history.rs
-
-ansi.rs
-  └── unicode-width (crate)
 ```
 
-`main.rs` is a thin binary that links `lib.rs`; `benches/bench.rs` also links the library. `pager.rs` owns the event loop and pulls in everything else. `search.rs` and `ansi.rs` are utility modules used by multiple callers. `terminal.rs` and `input.rs` are low-level I/O modules with no upward dependencies. `history.rs` is a standalone utility used by both `main.rs` (load/save) and `pager.rs` (cycling).
+`main.rs` is a thin binary that links `lib.rs`; `benches/bench.rs` also links the library. `pager.rs` owns the event loop and pulls in everything else. `search.rs`, `layout.rs`, `ansi.rs` and `buffer.rs` are utility modules used by multiple callers. `terminal.rs` owns raw modes and signals and reaches `input.rs` and `helper.rs`; `helper.rs` returns to `terminal.rs` for its shell command and interrupt status, so those two are mutually dependent. `history.rs`, `storage.rs`, `tabs.rs`, `charset.rs`, `readiness.rs`, `security.rs` and `prompt.rs` have no upward dependencies.
 
 ---
 
@@ -86,6 +88,8 @@ parsing a documented name does not establish full CLI parity.
 Entry point and CLI argument parsing.
 
 - Hand-rolled argument parsing (no clap). Handles `--follow`, `--force`, `-r`/`--raw`, `-h`/`--help`, `-V`/`--version`, `--`, `-` (explicit stdin), and positional file arguments.
+- `--help` and a lone `-h` are intercepted before option parsing and write `cli_help.rs`; the intercept also suppresses diagnostics for any other argument on the same command line.
+- When stdout is not a terminal, input bytes are copied before any terminal setup, and a consumer that closes early reports `lz: Broken pipe` with status 1 where the reference exits quietly.
 - VISUAL and EDITOR thread into the prompt engine as the `%E` expansion; interactive option diagnostics remain hand-rolled in `options.rs`.
 - Installs a panic hook that restores the terminal (exits alt screen, disables raw mode) before printing the panic message, so a crash does not leave the terminal broken.
 - Calls into `pager::run()` with a constructed config.
@@ -134,7 +138,8 @@ Key event reading from `/dev/tty`.
 - Defines the `Key` enum covering all keys the pager acts on: arrow keys, page up/down, Home/End, printable characters, Ctrl combinations, Escape.
 - Internal 64-byte read buffer: reads up to 64 bytes at once. This is critical for escape sequences — arrow keys send `\x1b[A` as three bytes. Buffering the read means all three bytes arrive in one call, avoiding timing-dependent races where only `\x1b` is read and the rest is lost.
 - Read readiness uses `select` on macOS (`poll` rejects `/dev/tty` with `POLLNVAL`) and `poll` on Linux. Idle key waits allow the pager to observe signal flags without repainting.
-- Escape sequence parser with a 50ms timeout: after seeing `\x1b`, waits up to 50ms for the rest of the sequence before treating it as a bare Escape keypress.
+- Escape sequence parser with a 50ms timeout: after seeing `\x1b`, waits up to 50ms for the rest of the sequence before treating it as a bare Escape keypress. Every unrecognized ESC sequence collapses to `Key::Escape`, which normal mode treats as quit, so an unimplemented chord exits the pager instead of being ignored.
+- CSI numeric parameters accumulate in an unbounded `u32`; ten digits overflow and panic in the debug profile, and the release profile wraps into usable key indices.
 - `Key::is_prompt_acknowledgement` defines which dismissal keys are consumed; other keys resume normal dispatch.
 - `unread_key` retains one decoded key before buffered input and rejects overwriting a pending key. Startup diagnostics use it to preserve a non-Return command.
 - Raw mode for the tty fd is set here (separate from the stdout terminal) so that escape sequences arrive as raw bytes even when stdin is redirected.
