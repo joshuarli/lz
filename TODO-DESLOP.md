@@ -5,18 +5,26 @@ Deslop campaign backlog ([plan](https://github.com/laputa-systems/stuff/blob/mai
 
 ## Report
 
-Not started.
+Ground used default revision `b76d8b11869193dbea1b61ad17fef444a14122f9`
+on macOS ARM64 with nightly 2026-11-09. Both `make test` runs
+passed 169 cases. The empty target took 422.99 s and the warm
+repeat took 2.47 s. `make lint` passed in 482.82 s. The
+measurement used repo-local `TMPDIR`, an isolated
+`CARGO_TARGET_DIR` and two Cargo build jobs. The timings include
+host load and compiler caching.
+
+The fleet test rule passed. The macOS and both Linux musl
+default jobs passed through the retained Make entry point.
+[Default tests](https://github.com/joshuarli/lz/actions/runs/44477817892) ·
+[Default lint](https://github.com/joshuarli/lz/actions/runs/44477818011)
+
+The [verification guide](AGENTS.md#verification) maps the pager
+boundaries, pinned Less oracle and existing benchmark workload.
+Ground ran the ordinary suite. The live parity and release
+performance workloads remain separate.
 
 ## Tickets
 
-### DSLP-1 · P2 · Ground: baseline, boundaries, and CI test entry point
-
-- **Area:** deslop · ground
-- **Where:** AGENTS.md, Makefile, .github/workflows/
-- **Problem:** Base 2c02347; code lines Rust 10.9k, Python 0.2k (fleet/loc/v1, vendored included); timings not yet measured. Open fleet lint findings: rust-collections 45, mdtool 8, audit-upgrades 6, linux-musl-toolchain 4, registry-sources 2, audit-registry 1, binary-release-static 1, make-clean-target 1, and 3 more. Perf gate applies: rustybench benches/baseline.json.
-- **Recommendation:** Run the deslop Ground step. Accept: CI runs make test and is green, and AGENTS.md has a Verification section.
-- **Fix with:** deslop
-- **Effort:** S
 
 ### DSLP-2 · P2 · Diagnose: ultrareview into this backlog
 
