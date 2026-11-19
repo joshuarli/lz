@@ -318,3 +318,23 @@ Tests live in the standard Rust `#[cfg(test)]` blocks within each module.
 `cargo bench --bench bench` runs the rustybench harness in `benches/bench.rs` (buffer scanning, literal/regex search, and ANSI/width hot paths). `make bench` re-runs it against `benches/baseline.json` and rewrites that file; `make bench-syscalls` reports syscall counts on Linux.
 
 The release binary is small by design. Do not add dependencies without a strong reason. Before adding any crate, check whether the functionality can be implemented directly in a reasonable number of lines.
+
+## Verification
+
+- On macOS ARM64, `make test` passed 169 cases. The empty-target run
+  took 422.99 s and the warm repeat took 2.47 s. `make lint` took
+  482.82 s. These observations include concurrent host load.
+- `tests/cli_help.rs` covers help, exit status and stdin passthrough.
+  Option unit tests cover parser behavior. The parity stdio and
+  interactive cases cover output, exit and terminal behavior.
+- Buffer, search, pager, terminal and storage unit tests cover their
+  internal boundaries. The parity resources and spill cases cover
+  process-level limits. The live Less oracle requires separate setup.
+- The release workflow checks the artifact name, size and static
+  Linux binary contract. The CLI has no network endpoint.
+- Use the existing buffer, search and ANSI-width workload in
+  `benches/bench.rs` for affected runtime changes. Its locked
+  baseline and syscall target are described in Build and Test.
+- The help and oracle use Less 668. `tests/parity/setup.py` pins
+  revision `e77e1176c80cca989694818866ae6cd7e7707161` and
+  verifies the downloaded archive.
