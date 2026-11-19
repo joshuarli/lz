@@ -29,8 +29,15 @@ test:
 	$(call cargo,test) test --quiet
 
 test-ci:
+ifeq ($(CI_TEST_MODE),macos)
+	cargo test --workspace --lib --tests --no-fail-fast
+else ifeq ($(CI_TEST_MODE),musl)
+	docker run --rm --init --platform "$(CI_TEST_PLATFORM)" -e CI -v "$(CURDIR):/lz" -w /lz \
+		lz-builder:$(TARGET) sh -ec 'cargo clippy --workspace --all-targets -- -D warnings; make test TARGET=$(TARGET)'
+else
 	@test -x "target/$(TARGET)/dist/$(NAME)" || { echo 'run make release first' >&2; exit 1; }
 	$(call cargo,test) test --quiet --release
+endif
 
 verify-release:
 	@test -f "target/$(TARGET)/dist/$(NAME)"

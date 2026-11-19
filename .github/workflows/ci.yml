@@ -43,7 +43,9 @@ jobs:
           rustup component add clippy
           cargo clippy --workspace --all-targets -- -D warnings
       - name: Test
-        run: cargo test --workspace --lib --tests --no-fail-fast
+        env:
+          CI_TEST_MODE: macos
+        run: make test-ci
 
   linux-musl:
     name: Lint and test (Linux ${{ matrix.arch }} musl)
@@ -81,14 +83,8 @@ jobs:
           tags: lz-builder:${{ matrix.target }}
           cache-from: type=gha,scope=lz-${{ matrix.target }}
       - name: Lint and test in image
-        run: |
-          docker run --rm --init \
-            --platform "${{ matrix.platform }}" \
-            -e CI \
-            -v "$GITHUB_WORKSPACE:/lz" \
-            -w /lz \
-            lz-builder:${{ matrix.target }} \
-            sh -ec '
-              cargo clippy --workspace --all-targets -- -D warnings
-              make test TARGET=${{ matrix.target }}
-            '
+        env:
+          CI_TEST_MODE: musl
+          CI_TEST_PLATFORM: ${{ matrix.platform }}
+          TARGET: ${{ matrix.target }}
+        run: make test-ci
