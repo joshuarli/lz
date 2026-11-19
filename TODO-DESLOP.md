@@ -119,6 +119,3 @@ profile and dead-code removal remain DSLP-3 through DSLP-5.
 - **Recommendation:** Treat EPIPE on the redirected copy as a successful early exit (or restore the default SIGPIPE disposition) so a closed reader exits quietly like the reference instead of reporting a file error and status 1.
 - **Fix with:** deslop
 - **Effort:** S
-
-
-
