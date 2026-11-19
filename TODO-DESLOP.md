@@ -49,18 +49,41 @@ the release performance gate. The `perf-gate-ready` check exits 0, but
 no S14 workload exists to gate. Coverage, mutation, the strict type
 profile and dead-code removal remain DSLP-3 through DSLP-5.
 
+Types audited revision `d8652b95` on macOS ARM64 with the pinned nightly.
+Each candidate ran independently with `cargo clippy --workspace --all-targets
+--message-format=json -- -W <candidate>`; counts below are distinct primary
+source locations, deduplicated across targets. There are 12,340 first-party
+Rust lines in `src`, `tests` and `benches`, so the false-positive limit is two
+for this scope. No setting met the adoption rule; the existing `make lint`
+profile remains the adopted profile.
+
+| Candidate | Findings | Decision and evidence |
+| --- | ---: | --- |
+| `unsafe_code` | 65 | Reject: required FFI and system calls, including `readiness.rs:24` and `terminal.rs:174`; forbidding them rejects supported behavior. |
+| `wildcard_enum_match_arm` | 21 | Reject: intentional dispatch fallbacks, including `pager.rs:1570` and `pager.rs:1597`; no demonstrated defect. |
+| `match_wildcard_for_single_variants` | 0 | Reject: no defect or escape hatch witness. |
+| `cast_possible_truncation` | 19 | Reject: more than two bounded conversions, including `buffer.rs:172`, `input.rs:56` and `options.rs:123`; no demonstrated defect. |
+| `cast_sign_loss` | 14 | Reject: more than two guarded conversions, including `readiness.rs:47`, `pager.rs:679` and `tabs.rs:21`; no demonstrated defect. |
+| `unwrap_used` | 30 production; 230 all targets | Reject: more than two established invariants, including nonempty UTF-8 in `charset.rs:24`, positive width in `pager.rs:496` and positive window in `pager.rs:730`. |
+| `expect_used` | 1 production; 3 all targets | Reject: `search.rs:191` preserves the input UTF-8 while replacing ASCII bytes; no demonstrated defect. |
+| `redundant_clone` | 4 | Reject: test-harness clones only; no typing defect or escape hatch removed. |
+| `needless_pass_by_value` | 14 | Reject: no demonstrated typing defect or escape hatch removed. |
+
+Production assertion counts come from a separate `cargo clippy --workspace
+--lib --bins --message-format=json -- -W clippy::unwrap_used -W
+clippy::expect_used` run. The strict candidates ran successfully at warning
+level; none was adopted, so the existing lint profile is the clean profile.
+The tools-reference escape-hatch expression counted 285 matching lines before
+and 285 after across `src`, `tests` and `benches`. No type contract changed,
+so no new negative type witness is claimed. Deferred leads, in order: the CSI
+parameter overflow and wrap (DSLP-8), then the regex longest-match assertion
+at `search.rs:238`, which relies on the two automata sharing an NFA and needs
+dependency-level proof. DSLP-6 through DSLP-9 remain for Findings.
+
 ## Tickets
 
 
 
-### DSLP-3 · P2 · Types: strict profile and typing findings
-
-- **Area:** deslop · types
-- **Where:** type checker and lint configuration; Rust/Python sources
-- **Problem:** The strict-profile candidates in the deslop skill's tools reference have not been measured here.
-- **Recommendation:** Run the deslop Types step. Accept: clean at the adopted profile, escape hatches not increased, witnesses recorded.
-- **Fix with:** deslop
-- **Effort:** M
 
 ### DSLP-4 · P2 · Tests: coverage, boundary gaps, mutation
 
