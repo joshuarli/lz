@@ -134,6 +134,16 @@ selftest failed at the auxiliary repeat reducer; the repeat passed, so its
 intermittent cause remains unverified. Reference setup required Homebrew
 Python because the system Python 3.9 lacks the tar extraction filter API.
 
+DSLP-7: Unknown Escape chords now ring without leaving the file; bare
+Escape stays in normal mode. The PTY regression covers the seven listed
+chords and bare Escape; input tests check their decoded keys.
+
+DSLP-8: CSI parameters longer than three digits are consumed as unknown;
+unit regressions cover arithmetic overflow and the value that wrapped to PageUp.
+
+DSLP-9: Redirected copying restores default SIGPIPE behavior. File and stdin
+regressions verify signal termination and empty stderr after the reader closes.
+
 ## Tickets
 
 
@@ -150,33 +160,3 @@ Python because the system Python 3.9 lacks the tar extraction filter API.
 - **Recommendation:** Decide whether the documented `--help` divergence is intended. If not, run options parsing and diagnostics first, and let a redirected `--help` emit less-help.txt as the pre-3bfe6f2 code did; then re-freeze docs/parity.md and tests/parity/coverage.md from a full run. If it is intended, the 35 admitted cases and the coverage row must be re-based instead.
 - **Fix with:** deslop
 - **Effort:** M
-
-
-### DSLP-7 · P2 · Input: any unhandled ESC chord quits the pager, and bare Escape quits
-
-- **Area:** deslop · diagnose
-- **Where:** src/input.rs:191-205 (parse_escape); src/pager.rs:1662
-- **Problem:** parse_escape maps every ESC byte it does not recognize to Key::Escape, and normal mode treats Key::Escape as quit (pager.rs:1662). So every documented ESC chord lz does not implement exits instead of ringing the bell: ESC-v, ESC-SPACE, ESC-n, ESC-N, ESC-}, ESC-m and ESC-^F all quit with status 0 and leave the file at once. A bare Escape keypress also quits, which less does not do (less keeps paging and only `q` exits). Reproduced in a pty on a 23-line file: `printf` of the two bytes `1b 76` at `target/debug/lz FILE` ends the process with status 0 and the alternate screen cleared, while the pinned Less reference stays running for the same input. This makes an accidental Escape or an unknown terminal chord lose the reading position without a warning.
-- **Recommendation:** Return Key::Unknown (or a dedicated ignored key) instead of Key::Escape for unrecognized ESC sequences, and stop binding bare Escape to quit so it matches the reference; add parity cases for the ESC chords the inventory already lists as unimplemented.
-- **Fix with:** deslop
-- **Effort:** S
-
-
-### DSLP-8 · P2 · Input: a long CSI numeric parameter panics the escape parser
-
-- **Area:** deslop · diagnose
-- **Where:** src/input.rs:216-247 (parse_csi numeric accumulation at line 227)
-- **Problem:** parse_csi accumulates a CSI numeric parameter with `num = num * 10 + digit` in a u32 with no bound. Ten digits overflow it, and the debug profile panics with `attempt to multiply with overflow` at src/input.rs:227. Reproduced by writing the bytes `1b 5b 39 39 39 39 39 39 39 39 39 39 7e` (ESC [ 9999999999 ~) to a pty running `target/debug/lz FILE`: the process prints `thread 'main' panicked at src/input.rs:227:35` and exits 101 after the panic hook restores the terminal. The shipped release profile disables overflow checks, so it silently wraps: ESC [ 4294967301 ~ produces exactly the same screen bytes as a real PageUp (`1b 5b 35 7e`), so a crafted or misparsed sequence can drive an unrelated bound key. The pinned Less reference ignores both sequences and keeps paging.
-- **Recommendation:** Saturate or reject an over-long or over-large CSI parameter (return Key::Unknown past a small bound) so the parser cannot overflow or wrap into a valid key index; cover both the overflow and the wrapped-value case in the input unit tests.
-- **Fix with:** deslop
-- **Effort:** S
-
-
-### DSLP-9 · P2 · Redirected: a closed consumer makes lz exit 1 with a stderr error
-
-- **Area:** deslop · diagnose
-- **Where:** src/main.rs:194-224 (redirected copy loop)
-- **Problem:** In the redirected path `io::copy` returns EPIPE when the consumer closes early, and the error stringifies into `Err` so main prints `lz: Broken pipe (os error 32)` and exits 1. Reproduced in both profiles: `target/debug/lz 200000-line-file 2>err | head -1` gives PIPESTATUS `1 0` with `lz: Broken pipe (os error 32)` on stderr; `cat file | lz | head -1` gives `141 1 0` with the same message. The pinned Less reference treats this as normal early-consumer exit: the same two commands give `141 0` with empty stderr and `141 141 0`. lz also swallows the SIGPIPE that would have produced the reference's 141, so a script cannot tell a broken pipe from a real file error.
-- **Recommendation:** Treat EPIPE on the redirected copy as a successful early exit (or restore the default SIGPIPE disposition) so a closed reader exits quietly like the reference instead of reporting a file error and status 1.
-- **Fix with:** deslop
-- **Effort:** S

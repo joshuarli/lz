@@ -62,6 +62,14 @@ mod tests {
     }
 
     #[test]
+    fn unhandled_escape_chords_are_unknown() {
+        assert_eq!(parse_keys_from_bytes(b"\x1b"), vec![Key::Escape]);
+        for chord in [b'v', b' ', b'n', b'N', b'}', b'm', 6] {
+            assert_eq!(parse_keys_from_bytes(&[0x1b, chord]), vec![Key::Unknown]);
+        }
+    }
+
+    #[test]
     fn parse_arrow_keys() {
         let keys = parse_keys_from_bytes(b"\x1b[A");
         assert_eq!(keys, vec![Key::Up]);
@@ -133,6 +141,16 @@ mod tests {
 
         let keys = parse_keys_from_bytes(b"\x1b[8~");
         assert_eq!(keys, vec![Key::End]);
+    }
+
+    #[test]
+    fn oversized_csi_parameter_is_unknown() {
+        assert_eq!(parse_keys_from_bytes(b"\x1b[9999999999~q"), vec![Key::Unknown, Key::Char('q')]);
+    }
+
+    #[test]
+    fn csi_parameter_cannot_wrap_to_page_up() {
+        assert_eq!(parse_keys_from_bytes(b"\x1b[4294967301~q"), vec![Key::Unknown, Key::Char('q')]);
     }
 
     #[test]

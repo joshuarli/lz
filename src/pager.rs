@@ -1659,7 +1659,8 @@ impl Pager {
             return true;
         }
         match key {
-            Key::Char('q' | 'Q') | Key::Escape => return true,
+            Key::Char('q' | 'Q') => return true,
+            Key::Unknown => self.bell_requested = true,
             Key::Char('E') => self.begin_examine(),
             Key::Ctrl('c') => self.bell_requested = true,
             Key::Char('Z') => self.mode = Mode::QuitPrefix,

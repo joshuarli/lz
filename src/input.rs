@@ -200,7 +200,7 @@ impl KeyReader {
             Some(b'{') => Ok(Key::HorizontalStart),
             Some(b'u') => Ok(Key::ToggleSearchHighlight),
             Some(b'U') => Ok(Key::ClearSearchHighlight),
-            Some(_) => Ok(Key::Escape),
+            Some(_) => Ok(Key::Unknown),
         }
     }
 
@@ -215,6 +215,7 @@ impl KeyReader {
             Some(b'F') => Ok(Key::End),
             Some(b) if b.is_ascii_digit() => {
                 let mut num = (b - b'0') as u32;
+                let mut digits = 1;
                 loop {
                     match self.next_byte_timeout(50)? {
                         None => return Ok(Key::Unknown),
@@ -224,6 +225,11 @@ impl KeyReader {
                             return Ok(Key::Unknown);
                         }
                         Some(d) if d.is_ascii_digit() => {
+                            digits += 1;
+                            if digits > 3 {
+                                self.consume_csi_remainder()?;
+                                return Ok(Key::Unknown);
+                            }
                             num = num * 10 + (d - b'0') as u32;
                         }
                         Some(b'A') => return Ok(Key::Up),

@@ -192,6 +192,9 @@ fn run() -> Result<ExitAction, String> {
     });
 
     if !io::stdout().is_terminal() {
+        unsafe extern "C" { fn signal(number: i32, handler: usize) -> usize; }
+        // SAFETY: SIGPIPE is 13 on supported Unix targets; 0 restores its default disposition.
+        if unsafe { signal(13, 0) } == usize::MAX { return Err(io::Error::last_os_error().to_string()); }
         let mut output = io::stdout().lock();
         for filename in &args.filenames {
             if filename == "-" {
