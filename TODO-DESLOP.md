@@ -141,6 +141,9 @@ chords and bare Escape; input tests check their decoded keys.
 DSLP-8: CSI parameters longer than three digits are consumed as unknown;
 unit regressions cover arithmetic overflow and the value that wrapped to PageUp.
 
+DSLP-9: Redirected copying restores default SIGPIPE behavior. File and stdin
+regressions verify signal termination and empty stderr after the reader closes.
+
 ## Tickets
 
 
@@ -157,13 +160,3 @@ unit regressions cover arithmetic overflow and the value that wrapped to PageUp.
 - **Recommendation:** Decide whether the documented `--help` divergence is intended. If not, run options parsing and diagnostics first, and let a redirected `--help` emit less-help.txt as the pre-3bfe6f2 code did; then re-freeze docs/parity.md and tests/parity/coverage.md from a full run. If it is intended, the 35 admitted cases and the coverage row must be re-based instead.
 - **Fix with:** deslop
 - **Effort:** M
-
-
-### DSLP-9 · P2 · Redirected: a closed consumer makes lz exit 1 with a stderr error
-
-- **Area:** deslop · diagnose
-- **Where:** src/main.rs:194-224 (redirected copy loop)
-- **Problem:** In the redirected path `io::copy` returns EPIPE when the consumer closes early, and the error stringifies into `Err` so main prints `lz: Broken pipe (os error 32)` and exits 1. Reproduced in both profiles: `target/debug/lz 200000-line-file 2>err | head -1` gives PIPESTATUS `1 0` with `lz: Broken pipe (os error 32)` on stderr; `cat file | lz | head -1` gives `141 1 0` with the same message. The pinned Less reference treats this as normal early-consumer exit: the same two commands give `141 0` with empty stderr and `141 141 0`. lz also swallows the SIGPIPE that would have produced the reference's 141, so a script cannot tell a broken pipe from a real file error.
-- **Recommendation:** Treat EPIPE on the redirected copy as a successful early exit (or restore the default SIGPIPE disposition) so a closed reader exits quietly like the reference instead of reporting a file error and status 1.
-- **Fix with:** deslop
-- **Effort:** S
