@@ -1,6 +1,6 @@
 # less 668 parity coverage
 
-Generated from `inventory.json` and fingerprint-checked full current/baseline results. Counts are manual/source entries, not proof of all interactions. Platform: macOS arm64, POSIX regex, system ncurses. Four platform-only manual entries are outside Unix scope. Other platforms and S14 performance remain unproved.
+Generated from `inventory.json` and full current/baseline results. Current counts are from the `7c86047` full run. Counts are manual/source entries, not proof of all interactions. Platform: macOS arm64, POSIX regex, system ncurses. Four platform-only manual entries are outside Unix scope. Other platforms and S14 performance remain unproved.
 
 | Family | Applicable entries | Implemented | Tested by named cases | Compatible in named scenarios |
 | --- | ---: | ---: | ---: | ---: |

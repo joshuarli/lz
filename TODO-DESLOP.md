@@ -134,6 +134,12 @@ selftest failed at the auxiliary repeat reducer; the repeat passed, so its
 intermittent cause remains unverified. Reference setup required Homebrew
 Python because the system Python 3.9 lacks the tar extraction filter API.
 
+DSLP-6: Option diagnostics precede help handling; redirected `--help`
+writes the less help page, and `--lz-help` retains the lz reference. The full
+run at `7c86047` passed all 1089 admitted cases, with 3 parked mismatches and
+1 needs-environment case. The long-SGR case passed that run and at `ca9a146f`;
+other attempts timed out on the host, so their timing remains unverified.
+
 DSLP-7: Unknown Escape chords now ring without leaving the file; bare
 Escape stays in normal mode. The PTY regression covers the seven listed
 chords and bare Escape; input tests check their decoded keys.
@@ -145,18 +151,3 @@ DSLP-9: Redirected copying restores default SIGPIPE behavior. File and stdin
 regressions verify signal termination and empty stderr after the reader closes.
 
 ## Tickets
-
-
-
-
-
-
-
-### DSLP-6 · P2 · Parity: the --help intercept regressed 35 admitted cases
-
-- **Area:** deslop · diagnose
-- **Where:** src/main.rs:169-174; tests/parity/cases.json invocation cases; docs/parity.md:9
-- **Problem:** At HEAD 14edc95 the admitted parity gate is red: `make parity-test MODE=all` ran all 1089 admitted cases and reported 1054 pass and 35 mismatch (0 harness errors, 0 needs-environment). All 35 are invocation cases whose oracle diagnostics or help bytes are missing (`make parity-test CASE=invocation-missing-number MODE=all` -> expected stderr `Value is required after -h (--max-back-scroll)\n`, actual `[]`; `--badopt --help`, `-Z --help` and `--shift=. --help` likewise print the lz reference instead of the reference diagnostic). docs/parity.md:9 and tests/parity/coverage.md still record 1089 passes. Cause: the unconditional help intercept added in 3bfe6f2 returns cli_help before options parsing and before the redirected help page at main.rs:183, so `-h` alone, redirected `--help` and any diagnostic-triggering `--help` combination never reach either path. Reachable through the documented target `make parity-test`, so every later deslop step inherits a gate that cannot be trusted.
-- **Recommendation:** Decide whether the documented `--help` divergence is intended. If not, run options parsing and diagnostics first, and let a redirected `--help` emit less-help.txt as the pre-3bfe6f2 code did; then re-freeze docs/parity.md and tests/parity/coverage.md from a full run. If it is intended, the 35 admitted cases and the coverage row must be re-based instead.
-- **Fix with:** deslop
-- **Effort:** M
