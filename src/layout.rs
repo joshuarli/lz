@@ -237,6 +237,16 @@ mod tests {
     use super::*;
 
     #[test]
+    fn color_display_rejects_osc52_but_preserves_sgr_and_osc8() {
+        let input = b"A\x1b]52;;x\x07B\x1b[31mred\x1b[m\x1b]8;;https://e\x07link\x1b]8;;\x07";
+        let layout = DisplayPrefix::new(input.to_vec(), Charset::Ascii, true, None, ControlDisplay::Color, BackspaceDisplay::Overstrike, &TabStops::default());
+        let output = layout.display(0, 80, NotationStyle::Inverse);
+        assert!(!output.windows(4).any(|bytes| bytes == b"\x1b]52"));
+        assert!(output.windows(5).any(|bytes| bytes == b"\x1b[31m"));
+        assert!(output.windows(15).any(|bytes| bytes == b"\x1b]8;;https://e\x07"));
+    }
+
+    #[test]
     fn bytes_map_to_columns_before_clipping() {
         let layout = DisplayPrefix::new(b"A\tB\x01\xff".to_vec(), Charset::Utf8, true, None, ControlDisplay::Standard, BackspaceDisplay::Overstrike, &TabStops::default());
         assert_eq!(layout.columns, 15);
