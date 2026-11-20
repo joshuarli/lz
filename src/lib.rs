@@ -62,6 +62,14 @@ mod tests {
     }
 
     #[test]
+    fn unhandled_escape_chords_are_unknown() {
+        assert_eq!(parse_keys_from_bytes(b"\x1b"), vec![Key::Escape]);
+        for chord in [b'v', b' ', b'n', b'N', b'}', b'm', 6] {
+            assert_eq!(parse_keys_from_bytes(&[0x1b, chord]), vec![Key::Unknown]);
+        }
+    }
+
+    #[test]
     fn parse_arrow_keys() {
         let keys = parse_keys_from_bytes(b"\x1b[A");
         assert_eq!(keys, vec![Key::Up]);

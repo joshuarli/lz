@@ -200,7 +200,7 @@ impl KeyReader {
             Some(b'{') => Ok(Key::HorizontalStart),
             Some(b'u') => Ok(Key::ToggleSearchHighlight),
             Some(b'U') => Ok(Key::ClearSearchHighlight),
-            Some(_) => Ok(Key::Escape),
+            Some(_) => Ok(Key::Unknown),
         }
     }
 

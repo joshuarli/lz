@@ -134,6 +134,10 @@ selftest failed at the auxiliary repeat reducer; the repeat passed, so its
 intermittent cause remains unverified. Reference setup required Homebrew
 Python because the system Python 3.9 lacks the tar extraction filter API.
 
+DSLP-7: Unknown Escape chords now ring without leaving the file; bare
+Escape stays in normal mode. The PTY regression covers the seven listed
+chords and bare Escape; input tests check their decoded keys.
+
 ## Tickets
 
 
@@ -150,16 +154,6 @@ Python because the system Python 3.9 lacks the tar extraction filter API.
 - **Recommendation:** Decide whether the documented `--help` divergence is intended. If not, run options parsing and diagnostics first, and let a redirected `--help` emit less-help.txt as the pre-3bfe6f2 code did; then re-freeze docs/parity.md and tests/parity/coverage.md from a full run. If it is intended, the 35 admitted cases and the coverage row must be re-based instead.
 - **Fix with:** deslop
 - **Effort:** M
-
-
-### DSLP-7 · P2 · Input: any unhandled ESC chord quits the pager, and bare Escape quits
-
-- **Area:** deslop · diagnose
-- **Where:** src/input.rs:191-205 (parse_escape); src/pager.rs:1662
-- **Problem:** parse_escape maps every ESC byte it does not recognize to Key::Escape, and normal mode treats Key::Escape as quit (pager.rs:1662). So every documented ESC chord lz does not implement exits instead of ringing the bell: ESC-v, ESC-SPACE, ESC-n, ESC-N, ESC-}, ESC-m and ESC-^F all quit with status 0 and leave the file at once. A bare Escape keypress also quits, which less does not do (less keeps paging and only `q` exits). Reproduced in a pty on a 23-line file: `printf` of the two bytes `1b 76` at `target/debug/lz FILE` ends the process with status 0 and the alternate screen cleared, while the pinned Less reference stays running for the same input. This makes an accidental Escape or an unknown terminal chord lose the reading position without a warning.
-- **Recommendation:** Return Key::Unknown (or a dedicated ignored key) instead of Key::Escape for unrecognized ESC sequences, and stop binding bare Escape to quit so it matches the reference; add parity cases for the ESC chords the inventory already lists as unimplemented.
-- **Fix with:** deslop
-- **Effort:** S
 
 
 ### DSLP-8 · P2 · Input: a long CSI numeric parameter panics the escape parser
