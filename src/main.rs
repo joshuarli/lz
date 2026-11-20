@@ -166,12 +166,6 @@ fn open_input(filename: &std::ffi::OsStr, charset: Charset, controls: ControlDis
 
 fn run() -> Result<ExitAction, String> {
     let argv: Vec<OsString> = std::env::args_os().skip(1).collect();
-    let long_help = argv.iter().any(|arg| arg == "--help");
-    let explicit_help = long_help && matches!(options::parse(argv.clone(), None).action, options::Action::Help);
-    if (argv.len() == 1 && argv[0] == "-h") || explicit_help {
-        cli_help::write(&mut io::stdout().lock()).map_err(|error| error.to_string())?;
-        return Ok(ExitAction::Success);
-    }
     let security = security::Policy::from_environment();
     security.write_diagnostics(&mut io::stderr().lock()).map_err(|error| error.to_string())?;
     let mut args = options::parse(argv, std::env::var_os("LESS"));
@@ -180,6 +174,7 @@ fn run() -> Result<ExitAction, String> {
     }
     let help_requested = matches!(args.action, options::Action::Help);
     match args.action {
+        options::Action::LzHelp => { cli_help::write(&mut io::stdout().lock()).map_err(|error| error.to_string())?; return Ok(ExitAction::Success); }
         options::Action::Help if !io::stdout().is_terminal() => { io::stdout().lock().write_all(include_bytes!("less-help.txt")).map_err(|error| error.to_string())?; return Ok(ExitAction::Success); }
         options::Action::Help => {}
         options::Action::Version => { println!("lz {}", VERSION); return Ok(ExitAction::Success); }
