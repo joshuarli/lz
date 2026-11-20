@@ -8,7 +8,7 @@ cargo = $(if $(findstring -linux-musl,$(TARGET)),,$(if $(filter test,$(1)),CARGO
 RUSTYBENCH_DEFAULT := $(CURDIR)/.work/tools/bin/rustybench
 RUSTYBENCH ?= "$(RUSTYBENCH_DEFAULT)"
 
-.PHONY: setup build release install test test-ci coverage pc bump-version lint verify-release bench bench-syscalls rustybench
+.PHONY: setup build release install test test-ci coverage pc bump-version lint verify-release bench bench-check bench-list bench-syscalls rustybench
 
 setup:
 	rustup show active-toolchain
@@ -68,15 +68,23 @@ lint:
 	cargo clippy --workspace --all-targets -- -D warnings
 
 ifeq ($(RUSTYBENCH),"$(RUSTYBENCH_DEFAULT)")
-bench bench-syscalls: rustybench
+bench-syscalls: rustybench
 endif
 
 rustybench:
 	@mkdir -p "$(CURDIR)/.work/tmp" "$(CURDIR)/.work/tools"
 	@if test ! -x "$(RUSTYBENCH_DEFAULT)"; then TMPDIR="$(CURDIR)/.work/tmp" cargo install rustybench --version 0.3.0 --locked --root "$(CURDIR)/.work/tools"; fi
 
+BENCH_ARGS = --tier $(if $(TIER),$(TIER),change) $(foreach w,$(WORKLOAD),--workload $(w)) $(foreach a,$(AREA),--area $(a)) $(foreach s,$(SKIP),--skip $(s)) $(if $(DRY_RUN),--dry-run,)
+
 bench:
-	@TMPDIR="$(CURDIR)/.work/tmp" $(RUSTYBENCH) baseline --root "$(CURDIR)" --baseline "$(CURDIR)/benches/baseline.json" -- cargo bench --bench bench
+	@TMPDIR="$(CURDIR)/.work/tmp" python3 benches/driver.py $(BENCH_ARGS)
+
+bench-check:
+	@TMPDIR="$(CURDIR)/.work/tmp" python3 benches/driver.py $(BENCH_ARGS) --check
+
+bench-list:
+	@python3 benches/driver.py --list
 
 bench-syscalls:
 	@TMPDIR="$(CURDIR)/.work/tmp" $(RUSTYBENCH) syscalls --root "$(CURDIR)"

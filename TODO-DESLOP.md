@@ -1,5 +1,5 @@
 Prefix: DSLP
-Next: 11
+Next: 15
 
 Deslop campaign backlog ([plan](https://github.com/laputa-systems/stuff/blob/main/docs/campaigns/deslop.md), tier B). One agent works this file with the `deslop` skill: take the lowest-numbered open ticket whose area does not start with `Needs owner ·`. After DSLP-5, work the open P1 and P2 findings, then fill in `## Report` below.
 
@@ -151,3 +151,30 @@ DSLP-9: Redirected copying restores default SIGPIPE behavior. File and stdin
 regressions verify signal termination and empty stderr after the reader closes.
 
 ## Tickets
+
+### DSLP-12 · P3 · Measure complete pager journeys and resource growth
+
+- **Area:** deslop · bench
+- **Where:** benches/bench.rs; docs/benchmarks.md
+- **Problem:** The synthetic library benchmarks do not verify completed interactive or redirected pager work, startup, memory growth, or long-line and stream behavior; regressions in those outcomes can be missed.
+- **Recommendation:** Add representative end-to-end workloads with output or terminal oracles and scoped resource measurements.
+- **Fix with:** refactor-benchmarks
+- **Effort:** L
+
+### DSLP-13 · P3 · Establish valid comparative performance gates and attribution
+
+- **Area:** deslop · bench
+- **Where:** benches/baseline.json; benches/driver.py; Makefile
+- **Problem:** The baseline has synthetic results without interleaved reference comparisons or budgets; CPU, memory, I/O and trace attribution for pager journeys is incomplete, so a regression can go undetected.
+- **Recommendation:** Define matched reference budgets and host-valid interleaved runs, then document low-overhead profiling and syscall attribution for each journey.
+- **Fix with:** bench-pyramid
+- **Effort:** L
+
+### DSLP-14 · P3 · Verify benchmark cleanup and input identity
+
+- **Area:** deslop · bench
+- **Where:** benches/bench.rs; benches/driver.py
+- **Problem:** Fixture cleanup is best effort and runs do not verify leftover processes or record complete artifact and host identity; stale state can obscure a regression.
+- **Recommendation:** Verify cleanup and capture the minimum artifact, source and host identity needed to reproduce a run.
+- **Fix with:** bench-pyramid
+- **Effort:** M
