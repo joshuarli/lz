@@ -326,20 +326,26 @@ The release binary is small by design. Do not add dependencies without a strong 
 
 ## Verification
 
-- On macOS ARM64, `make test` passed 169 cases. The empty-target run
-  took 422.99 s and the warm repeat took 2.47 s. `make lint` took
-  482.82 s. These observations include concurrent host load.
-- `tests/cli_help.rs` covers help, exit status and stdin passthrough.
-  Option unit tests cover parser behavior. The parity stdio and
-  interactive cases cover output, exit and terminal behavior.
-- Buffer, search, pager, terminal and storage unit tests cover their
-  internal boundaries. The parity resources and spill cases cover
-  process-level limits. The live Less oracle requires separate setup.
-- The release workflow checks the artifact name, size and static
-  Linux binary contract. The CLI has no network endpoint.
-- Use the existing buffer, search and ANSI-width workload in
-  `benches/bench.rs` for affected runtime changes. Its locked
-  baseline and syscall target are described in Build and Test.
-- The help and oracle use Less 668. `tests/parity/setup.py` pins
-  revision `e77e1176c80cca989694818866ae6cd7e7707161` and
-  verifies the downloaded archive.
+- Edit: `cargo test --lib <test-name>` selects a regression; cost unmeasured.
+- Change: `TMPDIR=$PWD/.work/tmp make test` runs unit and CLI integration
+  tests: 169 cases, 422.99 s cold and 2.47 s warm on loaded macOS ARM64;
+  `make lint` took 482.82 s; Tests-step warm repeat took 1.26 s.
+- Scenario: `make parity-test CASE=<id> MODE=all` compares the named case
+  with pinned Less 668; setup is separate. Full `make parity-test MODE=all`
+  is manual; DSLP-6 records its 35 known help mismatches.
+- Terminal restoration and signals: parity `lifecycle-term`, `lifecycle-hup`
+  and `lifecycle-suspend-default`; termios is checked by the PTY harness.
+- Color and untrusted escapes: parity `rendering-color-csi-discard`,
+  `rendering-long-osc8-bel`; `color_display_rejects_osc52_but_preserves_sgr_and_osc8`
+  and the `streamed_color_lines_accept_only_complete_osc8_sequences` test.
+- Key decoding: `parse_arrow_keys`, `parse_modified_arrows_consumed` and
+  `parse_multiple_keys_in_sequence` in `src/lib.rs`; DSLP-7 and DSLP-8 remain.
+- Search: `src/search.rs` tests and parity `search-case-default` cover matching.
+- Large files and pipes: `display_prefix_does_not_read_a_sixteen_mib_line`,
+  `open_stream_preserves_bytes_and_distinguishes_waiting_from_eof`, and parity `sources-open-pipe-lines`; DSLP-9 records broken pipes.
+- CLI options and exits: `tests/cli_help.rs`, `src/options.rs` tests and parity
+  `invocation-unknown-short`; the help intercept is DSLP-6.
+- `make coverage` reports library and CLI branches; it excludes parity. Cost varies.
+- Release CI checks artifact naming, size and static Linux linkage; no network endpoint.
+  Runtime performance uses `benches/bench.rs`; see Build and Test.
+- `tests/parity/setup.py` pins Less `e77e1176c80cca989694818866ae6cd7e7707161` and verifies the archive.

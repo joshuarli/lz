@@ -8,7 +8,7 @@ cargo = $(if $(findstring -linux-musl,$(TARGET)),,$(if $(filter test,$(1)),CARGO
 RUSTYBENCH_DEFAULT := $(CURDIR)/.work/tools/bin/rustybench
 RUSTYBENCH ?= "$(RUSTYBENCH_DEFAULT)"
 
-.PHONY: setup build release install test test-ci pc bump-version lint verify-release bench bench-syscalls rustybench
+.PHONY: setup build release install test test-ci coverage pc bump-version lint verify-release bench bench-syscalls rustybench
 
 setup:
 	rustup show active-toolchain
@@ -27,6 +27,9 @@ release:
 
 test:
 	$(call cargo,test) test --quiet
+
+coverage:
+	cargo llvm-cov --branch --lib --test cli_help --summary-only
 
 test-ci:
 ifeq ($(CI_TEST_MODE),macos)

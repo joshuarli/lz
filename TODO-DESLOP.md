@@ -80,19 +80,36 @@ parameter overflow and wrap (DSLP-8), then the regex longest-match assertion
 at `search.rs:238`, which relies on the two automata sharing an NFA and needs
 dependency-level proof. DSLP-6 through DSLP-9 remain for Findings.
 
+Tests audited fd064ac7 on macOS ARM64, nightly 2026-11-09. The verification
+map names each critical contract and its tests. The ordinary renderer lacked an
+OSC 52 assertion: `color_display_rejects_osc52_but_preserves_sgr_and_osc8`
+checks rejection and positive SGR/OSC 8 controls. Replacing the `sgr_span`
+character guard with `true` made that assertion fail (exit 101); the original
+was restored. No production behavior or dependency changed.
+
+`cargo-mutants 27.1.0`, one job, selected only that guard (required scope).
+Before: 1 missed, 0 caught, 0 timeout, 0 unviable (about 153 s). Its behavior
+was the OSC 52 gap, now asserted. After: 1 caught, 0 missed, 0 timeout, 0
+unviable (59 s); the failing assertion was the OSC 52 check. No equivalence or
+accepted-risk exclusions. A first after-run hit its 240 s outer deadline while
+building; it is incomplete, not a pass. Total runner time about 452 s, under
+10 minutes. Another attempt rejected incompatible copy flags before running.
+Mutation tools are not mirrored, so no mutation CI lane is claimed. Wider
+mutation is advisory and was not run. No false pass was demonstrated in the
+mapped tests; no tests were removed. Warm `make test` took 1.26 s versus
+2.47 s at ground (170 versus 169 tests). Known defects DSLP-6 through DSLP-9 stay
+open. Native Linux and the full parity gate were not rerun.
+
+`make coverage` is a report for library and CLI tests, excluding the separate
+parity oracle: before 40.33% lines / 21.90% branches, after 40.77% / 22.28%.
+The numbers indicate reach, not correctness. The existing parity harness
+protects signal and terminal contracts that this coverage run does not measure.
+
 ## Tickets
 
 
 
 
-### DSLP-4 · P2 · Tests: coverage, boundary gaps, mutation
-
-- **Area:** deslop · tests
-- **Where:** test suites and CI
-- **Problem:** Coverage and mutation results are unmeasured; no deslop mutation lane exists.
-- **Recommendation:** Run the deslop Tests step. Accept: no undispositioned survivor in critical code, the test cost budget holds, and the lane is green where the tools are mirrored.
-- **Fix with:** deslop
-- **Effort:** M
 
 ### DSLP-5 · P2 · Dead code: tools and debloat
 
