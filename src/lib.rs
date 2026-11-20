@@ -144,6 +144,16 @@ mod tests {
     }
 
     #[test]
+    fn oversized_csi_parameter_is_unknown() {
+        assert_eq!(parse_keys_from_bytes(b"\x1b[9999999999~q"), vec![Key::Unknown, Key::Char('q')]);
+    }
+
+    #[test]
+    fn csi_parameter_cannot_wrap_to_page_up() {
+        assert_eq!(parse_keys_from_bytes(b"\x1b[4294967301~q"), vec![Key::Unknown, Key::Char('q')]);
+    }
+
+    #[test]
     fn parse_modified_arrows_consumed() {
         // ESC [ 1 ; 5 A = Ctrl+Up — should be consumed as Unknown
         let keys = parse_keys_from_bytes(b"\x1b[1;5A");

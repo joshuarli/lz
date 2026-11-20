@@ -138,6 +138,9 @@ DSLP-7: Unknown Escape chords now ring without leaving the file; bare
 Escape stays in normal mode. The PTY regression covers the seven listed
 chords and bare Escape; input tests check their decoded keys.
 
+DSLP-8: CSI parameters longer than three digits are consumed as unknown;
+unit regressions cover arithmetic overflow and the value that wrapped to PageUp.
+
 ## Tickets
 
 
@@ -154,16 +157,6 @@ chords and bare Escape; input tests check their decoded keys.
 - **Recommendation:** Decide whether the documented `--help` divergence is intended. If not, run options parsing and diagnostics first, and let a redirected `--help` emit less-help.txt as the pre-3bfe6f2 code did; then re-freeze docs/parity.md and tests/parity/coverage.md from a full run. If it is intended, the 35 admitted cases and the coverage row must be re-based instead.
 - **Fix with:** deslop
 - **Effort:** M
-
-
-### DSLP-8 · P2 · Input: a long CSI numeric parameter panics the escape parser
-
-- **Area:** deslop · diagnose
-- **Where:** src/input.rs:216-247 (parse_csi numeric accumulation at line 227)
-- **Problem:** parse_csi accumulates a CSI numeric parameter with `num = num * 10 + digit` in a u32 with no bound. Ten digits overflow it, and the debug profile panics with `attempt to multiply with overflow` at src/input.rs:227. Reproduced by writing the bytes `1b 5b 39 39 39 39 39 39 39 39 39 39 7e` (ESC [ 9999999999 ~) to a pty running `target/debug/lz FILE`: the process prints `thread 'main' panicked at src/input.rs:227:35` and exits 101 after the panic hook restores the terminal. The shipped release profile disables overflow checks, so it silently wraps: ESC [ 4294967301 ~ produces exactly the same screen bytes as a real PageUp (`1b 5b 35 7e`), so a crafted or misparsed sequence can drive an unrelated bound key. The pinned Less reference ignores both sequences and keeps paging.
-- **Recommendation:** Saturate or reject an over-long or over-large CSI parameter (return Key::Unknown past a small bound) so the parser cannot overflow or wrap into a valid key index; cover both the overflow and the wrapped-value case in the input unit tests.
-- **Fix with:** deslop
-- **Effort:** S
 
 
 ### DSLP-9 · P2 · Redirected: a closed consumer makes lz exit 1 with a stderr error
