@@ -1857,7 +1857,7 @@ impl Pager {
             }
             Key::Char(':') => { self.help_prefix = Some(HelpPrefix::Colon(std::num::NonZeroUsize::new(count.unwrap_or(1)).unwrap())); return; }
             Key::Char('Z') => { self.help_prefix = Some(HelpPrefix::Quit); return; }
-            Key::Escape => { self.bell_requested = true; return; }
+            Key::Escape | Key::Unknown => { self.bell_requested = true; return; }
             Key::Char('h' | 'H') => return,
             Key::Char('g' | '<') | Key::Home => self.help_top = count.map_or(0, |line| self.help_line_start(line.saturating_sub(1))).min(last),
             Key::Char('G' | '>') | Key::End => self.help_top = count.map_or(last, |line| self.help_line_start(line.saturating_sub(1))).min(last),

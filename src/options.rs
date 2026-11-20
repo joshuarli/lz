@@ -48,7 +48,7 @@ impl Diagnostic {
     }
 }
 
-pub(super) enum Action { Page, Help, Version, Stop }
+pub(super) enum Action { Page, Help, LzHelp, Version, Stop }
 
 pub(super) struct Args {
     pub terminal: lz::terminal::InteractiveOptions,
@@ -130,6 +130,7 @@ impl Scanner {
     fn apply_flag(&mut self, option: &OptionSpec, upper: bool, reset: bool) {
         match option.canonical_name() {
             "help" => self.args.action = Action::Help,
+            "lz-help" => self.args.action = Action::LzHelp,
             "version" => self.args.action = Action::Version,
             "force" => self.args.force = !reset,
             "no-lessopen" => self.args.use_lessopen = reset,

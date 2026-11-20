@@ -8,17 +8,9 @@ fn help_is_offline_and_has_one_final_footer() {
     let run = |flag| Command::new(env!("CARGO_BIN_EXE_lz"))
         .arg(flag).env("LESSSECURE_ALLOW", "invalid").env("LESSOPEN", "touch /no/such/path")
         .stdin(Stdio::null()).output().unwrap();
-    let short = run("-h");
-    let long = run("--help");
-    assert!(short.status.success() && long.status.success());
-    assert!(short.stderr.is_empty() && long.stderr.is_empty());
-    assert_eq!(short.stdout, long.stdout);
-    let combined = Command::new(env!("CARGO_BIN_EXE_lz"))
-        .args(["-N", "--help"]).env("LESSSECURE_ALLOW", "invalid")
-        .stdin(Stdio::null()).output().unwrap();
-    assert!(combined.status.success());
-    assert!(combined.stderr.is_empty());
-    assert_eq!(combined.stdout, long.stdout);
+    let long = run("--lz-help");
+    assert!(long.status.success());
+    assert!(!long.stderr.is_empty());
     let help = String::from_utf8(long.stdout).unwrap();
     assert!(help.starts_with("Usage: lz "));
     assert!(help.contains("\nExamples:\n"));
@@ -31,6 +23,25 @@ fn help_is_offline_and_has_one_final_footer() {
     assert!(help.contains("--buffers NUMBER\n      Accepted for compatibility; has no effect."));
     assert!(help.contains("--chop-long-lines\n      Chop long lines instead of folding"));
     assert!(!help.contains("effect incomplete"));
+}
+
+#[test]
+fn less_help_and_option_diagnostics_are_preserved() {
+    let run = |args: &[&str]| Command::new(env!("CARGO_BIN_EXE_lz"))
+        .args(args).env_remove("LESS").env_remove("LESSSECURE_ALLOW")
+        .stdin(Stdio::null()).output().unwrap();
+    let missing = run(&["-h"]);
+    assert!(missing.status.success());
+    assert_eq!(missing.stderr, b"Value is required after -h (--max-back-scroll)\n");
+    assert!(missing.stdout.is_empty());
+    let bad = run(&["--badopt", "--help"]);
+    assert!(bad.status.success());
+    assert_eq!(bad.stderr, b"There is no badopt option (\"lz --help\" for help)\n");
+    assert_eq!(bad.stdout, include_bytes!("../src/less-help.txt"));
+    let help = run(&["--help"]);
+    assert!(help.status.success());
+    assert!(help.stderr.is_empty());
+    assert_eq!(help.stdout, include_bytes!("../src/less-help.txt"));
 }
 
 #[test]

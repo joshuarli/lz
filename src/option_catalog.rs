@@ -6,7 +6,8 @@ pub enum ValueKind { Flag, Number, Text }
 pub struct OptionSpec { shorts: &'static [u8], names: &'static [&'static str], value: ValueKind, help: &'static str }
 
 const OPTIONS: &[OptionSpec] = &[
-    OptionSpec { shorts: b"?", names: &["help"], value: ValueKind::Flag, help: "Print this reference with --help; -? opens the less help page" },
+    OptionSpec { shorts: b"?", names: &["help"], value: ValueKind::Flag, help: "Open the less help page" },
+    OptionSpec { shorts: b"", names: &["lz-help"], value: ValueKind::Flag, help: "Print the lz command-line reference" },
     OptionSpec { shorts: b"aA", names: &["search-skip-screen"], value: ValueKind::Flag, help: "Set search start (-a after screen, -A after target)" },
     OptionSpec { shorts: b"b", names: &["buffers"], value: ValueKind::Number, help: "Accepted for compatibility; has no effect." },
     OptionSpec { shorts: b"B", names: &["auto-buffers"], value: ValueKind::Flag, help: "Accepted for compatibility; has no effect." },
@@ -17,7 +18,7 @@ const OPTIONS: &[OptionSpec] = &[
     OptionSpec { shorts: b"f", names: &["force"], value: ValueKind::Flag, help: "Allow binary input" },
     OptionSpec { shorts: b"F", names: &["quit-if-one-screen"], value: ValueKind::Flag, help: "Quit if input fits on one screen" },
     OptionSpec { shorts: b"gG", names: &["hilite-search"], value: ValueKind::Flag, help: "Highlight only the current match (-g) or none (-G)" },
-    OptionSpec { shorts: b"h", names: &["max-back-scroll"], value: ValueKind::Number, help: "A number is accepted for compatibility but has no effect; standalone -h prints this reference" },
+    OptionSpec { shorts: b"h", names: &["max-back-scroll"], value: ValueKind::Number, help: "A number is accepted for compatibility but has no effect" },
     OptionSpec { shorts: b"iI", names: &["ignore-case"], value: ValueKind::Flag, help: "Set search case policy (-i smart, -I insensitive)" },
     OptionSpec { shorts: b"j", names: &["jump-target"], value: ValueKind::Text, help: "Set the target screen row or fraction" },
     OptionSpec { shorts: b"J", names: &["status-column"], value: ValueKind::Flag, help: "Accepted for compatibility; has no effect." },
