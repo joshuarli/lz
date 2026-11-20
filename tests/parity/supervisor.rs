@@ -104,8 +104,8 @@ impl GroupChild {
 
 pub(super) struct Cleanup { manifest: PathBuf, active: bool }
 impl Cleanup {
-    pub fn new(manifest: PathBuf) -> Self { Self { manifest, active:true } }
-    pub fn disarm(&mut self) { self.active = false; }
+    pub(crate) fn new(manifest: PathBuf) -> Self { Self { manifest, active:true } }
+    pub(crate) fn disarm(&mut self) { self.active = false; }
 }
 impl Drop for Cleanup {
     fn drop(&mut self) {
@@ -201,7 +201,7 @@ fn record_job(manifest: &Path, stops: usize, continues: usize, fd: i32, baseline
     Ok(())
 }
 
-pub fn producer(path: &Path) -> Result<()> {
+pub(crate) fn producer(path: &Path) -> Result<()> {
     fs::write("producer-state", b"holding-open")?;
     if let Some(delay) = std::env::var_os("LZ_PARITY_PRODUCER_DELAY_MS") {
         let delay: u64 = delay.to_str().ok_or("producer delay is not UTF-8")?.parse()?;
@@ -222,7 +222,7 @@ pub fn producer(path: &Path) -> Result<()> {
     loop { std::thread::park(); }
 }
 
-pub fn run(binary: &Path, fixture: Option<&Path>, manifest: &Path, args: &[std::ffi::OsString], limit: super::resources::RssLimit, spill_limit: super::spill::Limit) -> Result<()> {
+pub(crate) fn run(binary: &Path, fixture: Option<&Path>, manifest: &Path, args: &[std::ffi::OsString], limit: super::resources::RssLimit, spill_limit: super::spill::Limit) -> Result<()> {
     fs::write(manifest.with_extension("session"), std::process::id().to_string())?;
     let forwarded = [1, 2, 3, 15, 28, JOB_SIGNALS[0], JOB_SIGNALS[1]];
     for number in forwarded { disposition(number, remember as *const () as usize)?; }
@@ -346,7 +346,7 @@ fn wait_probe_input(keys: &mut lz::input::KeyReader) -> io::Result<()> {
     }
 }
 
-pub fn probe(args: &[std::ffi::OsString]) -> Result<()> {
+pub(crate) fn probe(args: &[std::ffi::OsString]) -> Result<()> {
     let mut bytes = [0; 11];
     io::stdin().read_exact(&mut bytes)?;
     let mut tty = File::open("/dev/tty")?;
@@ -442,13 +442,13 @@ impl std::fmt::Display for SessionLeak {
 }
 impl std::error::Error for SessionLeak {}
 
-pub fn assert_session_empty(manifest: &Path) -> Result<()> {
+pub(crate) fn assert_session_empty(manifest: &Path) -> Result<()> {
     let members = session_members(owned_session(manifest)?)?;
     if !members.is_empty() { return Err(Box::new(SessionLeak(members))); }
     Ok(())
 }
 
-pub fn assert_cleanup(manifest: &Path, expected_children: usize) -> Result<()> {
+pub(crate) fn assert_cleanup(manifest: &Path, expected_children: usize) -> Result<()> {
     let active: Vec<u32> = serde_json::from_slice(&fs::read(manifest)?)?;
     let finished: Vec<u32> = serde_json::from_slice(&fs::read(manifest.with_extension("finished"))?)?;
     if !active.is_empty() || finished.len() != expected_children { return Err("supervisor did not finish reaping its owned children".into()); }

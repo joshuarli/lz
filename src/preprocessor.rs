@@ -13,7 +13,7 @@ pub(super) struct Template { bytes: Vec<u8>, scope: InputScope }
 #[derive(Debug)]
 pub(super) struct InvalidTemplate { scope: InputScope }
 impl InvalidTemplate {
-    pub fn applies_to(&self, filename: &OsStr) -> bool { self.scope.includes(filename) }
+    pub(crate) fn applies_to(&self, filename: &OsStr) -> bool { self.scope.includes(filename) }
 }
 impl std::fmt::Display for InvalidTemplate {
     fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -23,7 +23,7 @@ impl std::fmt::Display for InvalidTemplate {
 impl std::error::Error for InvalidTemplate {}
 
 impl Template {
-    pub fn from_environment() -> Result<Option<Self>, InvalidTemplate> {
+    pub(crate) fn from_environment() -> Result<Option<Self>, InvalidTemplate> {
         let Some(value) = std::env::var_os("LESSOPEN") else { return Ok(None); };
         let mut bytes = value.as_bytes();
         if bytes.is_empty() || bytes[0] == b'|' { return Ok(None); }
@@ -45,7 +45,7 @@ impl Template {
         Ok(Some(Self { bytes:bytes.to_vec(), scope }))
     }
 
-    pub fn run(&self, filename: &OsStr, session: &mut lz::terminal::Session) -> io::Result<Option<OsString>> {
+    pub(crate) fn run(&self, filename: &OsStr, session: &mut lz::terminal::Session) -> io::Result<Option<OsString>> {
         if !self.scope.includes(filename) { return Ok(None); }
         let quoted = quote(filename.as_bytes());
         let mut command = Vec::new();

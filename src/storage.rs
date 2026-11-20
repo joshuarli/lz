@@ -20,13 +20,13 @@ pub(crate) struct Offsets {
 }
 
 impl Offsets {
-    pub fn new() -> Self { Self { memory: vec![0], file: None, len: 1, last: 0 } }
+    pub(crate) fn new() -> Self { Self { memory: vec![0], file: None, len: 1, last: 0 } }
 
-    pub fn len(&self) -> usize { self.len }
+    pub(crate) fn len(&self) -> usize { self.len }
 
-    pub fn last(&self) -> u64 { self.last }
+    pub(crate) fn last(&self) -> u64 { self.last }
 
-    pub fn push(&mut self, offset: u64) -> io::Result<()> {
+    pub(crate) fn push(&mut self, offset: u64) -> io::Result<()> {
         if self.file.is_none() && self.memory.len() == 8192 {
             let file = anonymous_file()?;
             for (index, value) in self.memory.iter().enumerate() {
@@ -42,7 +42,7 @@ impl Offsets {
         Ok(())
     }
 
-    pub fn get(&self, index: usize) -> io::Result<u64> {
+    pub(crate) fn get(&self, index: usize) -> io::Result<u64> {
         if index >= self.len { return Err(io::Error::new(io::ErrorKind::InvalidInput, "line index outside scanned source")); }
         if let Some(file) = &self.file {
             let mut bytes = [0; 8];
@@ -52,7 +52,7 @@ impl Offsets {
     }
 
     /// Count the entries not exceeding `offset` (binary search).
-    pub fn partition_point(&self, offset: u64) -> io::Result<usize> {
+    pub(crate) fn partition_point(&self, offset: u64) -> io::Result<usize> {
         let mut left = 0usize;
         let mut right = self.len;
         while left < right {

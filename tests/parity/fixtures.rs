@@ -26,19 +26,19 @@ pub(super) struct Numbered { numbered: NumberedLines }
 struct NumberedLines { count: u32, needle_lines: Vec<u32> }
 
 impl Numbered {
-    pub fn line_count(&self) -> usize { self.numbered.count as usize }
-    pub fn marker_count(&self) -> usize { self.numbered.needle_lines.len() }
-    pub fn remove_lines(&mut self, count: usize) {
+    pub(crate) fn line_count(&self) -> usize { self.numbered.count as usize }
+    pub(crate) fn marker_count(&self) -> usize { self.numbered.needle_lines.len() }
+    pub(crate) fn remove_lines(&mut self, count: usize) {
         self.numbered.count -= count as u32;
         self.numbered.needle_lines.retain(|line| *line <= self.numbered.count);
     }
-    pub fn remove_markers(&mut self, range: std::ops::Range<usize>) { self.numbered.needle_lines.drain(range); }
+    pub(crate) fn remove_markers(&mut self, range: std::ops::Range<usize>) { self.numbered.needle_lines.drain(range); }
 }
 
 impl From<Vec<u8>> for Fixture { fn from(bytes: Vec<u8>) -> Self { Self::Bytes(bytes) } }
 
 impl Fixture {
-    pub fn validate(&self) -> io::Result<()> {
+    pub(crate) fn validate(&self) -> io::Result<()> {
         let invalid = |message| io::Error::new(io::ErrorKind::InvalidInput, message);
         match self {
             Self::Bytes(bytes) => if bytes.len() > INLINE_BYTES { return Err(invalid("large inline fixture requires a streaming recipe")); },
@@ -60,7 +60,7 @@ impl Fixture {
         Ok(())
     }
 
-    pub fn write_to(&self, output: &mut impl Write) -> io::Result<()> {
+    pub(crate) fn write_to(&self, output: &mut impl Write) -> io::Result<()> {
         self.validate()?;
         match self {
             Self::Bytes(bytes) => output.write_all(bytes),
