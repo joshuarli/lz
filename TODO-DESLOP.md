@@ -105,20 +105,41 @@ parity oracle: before 40.33% lines / 21.90% branches, after 40.77% / 22.28%.
 The numbers indicate reach, not correctness. The existing parity harness
 protects signal and terminal contracts that this coverage run does not measure.
 
+Dead code audited `88bd3aaa` on macOS ARM64 and checked for Linux ARM64
+musl; no Cargo features are declared. The compiler found no dead code, but
+reported unreachable public methods. `storage::Offsets` methods feed
+`LineBuffer` indexing; `preprocessor::Template` and `InvalidTemplate` feed
+main's LESSOPEN startup and opening paths. Their visibility is now crate-local.
+Parity fixture methods feed generation and reduction in `fuzz.rs`; inventory,
+interactive, stdio, supervisor and shard methods feed the parity runner,
+its selftests or subprocess entry points in `tests/parity/main.rs`. Their
+visibility is also crate-local. No implementation, dependency, or behavior
+was removed. No `allow(dead_code)` suppressions were found.
+
+Test-only `find_matches`, `from_lines` and `parse_keys_from_bytes` feed the
+search and library unit tests; buffer and history fixture helpers feed their
+own test modules. The remaining test-module helpers are compiled by the
+all-target checks. The option catalog is consumed by option parsing and help;
+accepted less options remain a compatibility surface even when their effects
+are incomplete. `cargo-machete` reports no unused dependencies; in particular,
+the `laputa-ptytest` package is imported as `ptytest` by the parity runner.
+Public library exports remain available to external callers. No walk-back was
+proposed. DSLP-6 through DSLP-9 remain Findings work.
+
+`cargo check --locked --workspace --all-targets` with `-W dead_code -W
+unreachable_pub` passed without warnings on macOS and for
+`aarch64-unknown-linux-musl`. `cargo-machete` 0.10.1, `make test` (170
+tests), `make lint` and `make parity-selftest` passed. The first parity
+selftest failed at the auxiliary repeat reducer; the repeat passed, so its
+intermittent cause remains unverified. Reference setup required Homebrew
+Python because the system Python 3.9 lacks the tar extraction filter API.
+
 ## Tickets
 
 
 
 
 
-### DSLP-5 · P2 · Dead code: tools and debloat
-
-- **Area:** deslop · dead code
-- **Where:** whole repository
-- **Problem:** No dead-code scan has run.
-- **Recommendation:** Run the deslop Dead code step. Accept: tools clean or allowlisted with reasons; walk-backs filed as Needs owner tickets.
-- **Fix with:** deslop
-- **Effort:** M
 
 
 ### DSLP-6 · P2 · Parity: the --help intercept regressed 35 admitted cases

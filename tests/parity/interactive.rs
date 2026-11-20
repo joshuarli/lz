@@ -176,7 +176,7 @@ fn files(root: &Path) -> Result<Value> {
     Ok(json!(result))
 }
 
-pub fn execute(binary: &Path, case: &Case) -> Result<Value> {
+pub(crate) fn execute(binary: &Path, case: &Case) -> Result<Value> {
     execute_recorded(binary, case).map(|(observation, _)| observation)
 }
 
@@ -302,7 +302,7 @@ fn execute_supervised(binary: &Path, case: &Case, manifest: &Path) -> Result<Val
         "final_bells": final_bells, "files": effects, "raw_input": input, "raw_output": output, "restored": true, "kernel_terminal":kernel}))
 }
 
-pub fn fixture(fault: &str) -> Result<()> {
+pub(crate) fn fixture(fault: &str) -> Result<()> {
     if matches!(fault, "kernel-restored" | "kernel-leak") {
         let mut session = lz::terminal::Session::start(lz::terminal::Screen::Primary, lz::terminal::SuspendPolicy::Allow)?;
         print!("probe");
@@ -334,7 +334,7 @@ pub fn fixture(fault: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn selftest() -> Result<()> {
+pub(crate) fn selftest() -> Result<()> {
     super::fixtures::selftest()?;
     {
         use std::io::{Seek, SeekFrom};

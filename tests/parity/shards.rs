@@ -6,18 +6,18 @@ use std::path::{Path, PathBuf};
 
 const COUNT: usize = 4;
 
-pub fn parse(value: &str) -> Result<usize> {
+pub(crate) fn parse(value: &str) -> Result<usize> {
     let number = value.parse::<usize>()?;
     if !(1..=COUNT).contains(&number) { return Err("shard must be between 1 and 4".into()); }
     Ok(number)
 }
 
-pub fn number(id: &str) -> usize {
+pub(crate) fn number(id: &str) -> usize {
     let hash = id.bytes().fold(0xcbf29ce484222325u64, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3));
     (hash % COUNT as u64) as usize + 1
 }
 
-pub fn write_report(path: &Path, report: &Value) -> Result<()> {
+pub(crate) fn write_report(path: &Path, report: &Value) -> Result<()> {
     let mut output = BufWriter::new(File::create(path)?);
     serde_json::to_writer(&mut output, report)?;
     output.flush()?;
@@ -52,7 +52,7 @@ fn assemble(reports: Vec<Value>, cases: &[Case], metadata: &Value, kind: &str) -
     ])))
 }
 
-pub fn record(shard: usize, directory: &Path, cases: &[Case], metadata: &Value, baseline: bool) -> Result<()> {
+pub(crate) fn record(shard: usize, directory: &Path, cases: &[Case], metadata: &Value, baseline: bool) -> Result<()> {
     let name = if baseline { "baseline" } else { "current" };
     let kind = if baseline { "baseline-2ae5660" } else { "current" };
     fs::write(root().join(format!(".work/parity-{name}-shard-{shard}")), directory.as_os_str().as_encoded_bytes())?;
@@ -76,7 +76,7 @@ pub fn record(shard: usize, directory: &Path, cases: &[Case], metadata: &Value, 
     Ok(())
 }
 
-pub fn selftest() -> Result<()> {
+pub(crate) fn selftest() -> Result<()> {
     let cases = super::cases()?;
     let cases = &cases[..cases.len().min(32)];
     let metadata = json!({"version":1});

@@ -56,7 +56,7 @@ fn safe_relative(path: &str) -> bool {
     Path::new(path).components().all(|c| matches!(c, std::path::Component::Normal(_)))
 }
 
-pub fn check_and_report() -> Result<()> {
+pub(crate) fn check_and_report() -> Result<()> {
     let inventory: Inventory = serde_json::from_slice(&fs::read(root().join("tests/parity/inventory.json"))?)?;
     let reference = oracle();
     let base = reference.parent().unwrap();

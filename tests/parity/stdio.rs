@@ -21,15 +21,15 @@ impl Drop for OwnedChild {
     }
 }
 
-pub fn observed(stdout: Vec<u8>, stderr: Vec<u8>, status: ExitStatus) -> Value {
+pub(crate) fn observed(stdout: Vec<u8>, stderr: Vec<u8>, status: ExitStatus) -> Value {
     json!({"stdout": stdout, "stderr": stderr, "code": status.code(), "signal": status.signal()})
 }
 
-pub fn root() -> PathBuf {
+pub(crate) fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
 
-pub fn world() -> io::Result<tempfile::TempDir> {
+pub(crate) fn world() -> io::Result<tempfile::TempDir> {
     let scratch = root().join(".work/tmp");
     fs::create_dir_all(&scratch)?;
     tempfile::tempdir_in(scratch)
@@ -70,7 +70,7 @@ fn wait(child: &mut Child, paths: &[PathBuf]) -> io::Result<ExitStatus> {
     }
 }
 
-pub fn redirected(binary: &Path, fixture_data: &super::Fixture, source: &str, args: &[OsString], fixture_name: &[u8], files: &BTreeMap<String, super::Fixture>) -> super::Result<Value> {
+pub(crate) fn redirected(binary: &Path, fixture_data: &super::Fixture, source: &str, args: &[OsString], fixture_name: &[u8], files: &BTreeMap<String, super::Fixture>) -> super::Result<Value> {
     let dir = world()?;
     let cwd = dir.path();
     let fixture = cwd.join(OsString::from_vec(fixture_name.to_vec()));
