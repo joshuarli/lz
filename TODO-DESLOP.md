@@ -5,6 +5,51 @@ Deslop campaign backlog ([plan](https://github.com/laputa-systems/stuff/blob/mai
 
 ## Report
 
+DSLP-1 named `2c02347` as its base revision. Ground measured the later
+revision `b76d8b11869193dbea1b61ad17fef444a14122f9` on macOS ARM64
+with nightly 2026-11-09. The campaign runs from seed [#4](https://github.com/joshuarli/lz/pull/4)
+through Bench [#15](https://github.com/joshuarli/lz/pull/15), the latest
+merged PR labeled deslop. The remaining tickets are DSLP-12, DSLP-13 and
+DSLP-14, all P3. The step records below retain the measurements and limits.
+
+**Scorecard**
+
+| Measure | Before | After / disposition |
+| --- | --- | --- |
+| Tracked lines in `src` and `tests` | Ground revision: 9,560 and 615,275 | #15: 9,595 and 615,350. Counts include all tracked files and fixtures, not just Rust. Counted with `git ls-tree` and `git show` at each revision. |
+| Warm `make test` | 2.47 s, 169 cases at Ground | 1.26 s, 170 cases at Tests. Host load and caching affect timings; no comparative performance verdict. |
+| Coverage | 40.33% lines, 21.90% branches | 40.77% lines, 22.28% branches. Library and CLI only; parity is excluded. |
+| Bounded mutation trial | One selected mutant missed | One caught, none missed. This covers one `sgr_span` guard, not the whole suite. |
+| Escape hatches | 285 matching lines across `src`, `tests` and `benches` | 285 at Types, using the tools-reference expression for unsafe, allow, unwrap and casts. No strict candidate was adopted; later campaign-wide count not measured. |
+| Dead code | Unreachable public methods identified | No dead implementation or unused dependency found; #12 narrowed 35 live methods to crate visibility. |
+| Findings | Four P2 findings, DSLP-6 through DSLP-9 | All four fixed in #13 and #14. Three P3 benchmark gaps remain. |
+| Parity gate | Diagnose: 1,054 pass, 35 mismatch | #14: all 1,089 admitted cases passed. Three parked mismatches and one needs-environment case remain outside admission. |
+| Performance | Comparative gate not established | Perf gate deferred: host busy. #15 exercised selected benchmarks but claims no timing verdict; Scenario and Full tiers were not run. |
+| Escaped regressions | Not measured | #13 introduced a help-mode escape regression. The parity gate caught it and #14 fixed it. |
+
+The tests now protect rejection of OSC 52 while retaining SGR and OSC 8,
+unknown Escape chords and bare Escape in normal mode, oversized CSI parameters,
+closed redirected pipes, help diagnostics and help-mode Escape handling. The
+verification map also identifies existing tests for terminal restoration,
+search, large files and pipes. Wider mutation, native Linux execution and the
+full live-pipe and follow matrix remain unverified in these step records. The
+parity run has the parked and environment gaps above. The first dead-code
+parity selftest failed before a repeat passed; its intermittent cause remains
+unverified. Long-SGR readiness timed out in some runs under load, although it
+passed the final full parity run.
+
+**Steps and cost**
+
+- [#4](https://github.com/joshuarli/lz/pull/4) seeded the tier B backlog. Cost: not measured.
+- [#8](https://github.com/joshuarli/lz/pull/8) established Ground and the verification boundaries. Empty-target `make test` took 422.99 s, warm `make test` 2.47 s, and `make lint` 482.82 s, under the recorded host and cache conditions.
+- [#9](https://github.com/joshuarli/lz/pull/9) diagnosed four P2 findings. Review cost: not measured.
+- [#10](https://github.com/joshuarli/lz/pull/10) audited nine strict lint candidates and retained the existing profile. Audit cost: not measured.
+- [#11](https://github.com/joshuarli/lz/pull/11) mapped test boundaries and added the OSC 52 regression. The bounded mutation attempts took about 452 runner-seconds, including an incomplete run.
+- [#12](https://github.com/joshuarli/lz/pull/12) audited dead code and narrowed live method visibility. Audit cost: not measured.
+- [#13](https://github.com/joshuarli/lz/pull/13) fixed DSLP-7 through DSLP-9. Implementation cost: not measured.
+- [#14](https://github.com/joshuarli/lz/pull/14) fixed DSLP-6 and the help-mode regression from #13. The owner ruled the help divergence unintended; `--lz-help` retains the lz reference. Implementation and parity-run costs: not measured.
+- [#15](https://github.com/joshuarli/lz/pull/15) added selective benchmark entry points and filed DSLP-12 through DSLP-14. Audit cost: not measured.
+
 Ground used default revision `b76d8b11869193dbea1b61ad17fef444a14122f9`
 on macOS ARM64 with nightly 2026-11-09. Both `make test` runs
 passed 169 cases. The empty target took 422.99 s and the warm
