@@ -135,3 +135,10 @@ parity-upstream:
 parity-fuzz:
 	@TMPDIR="$(CURDIR)/.work/tmp" python3 tests/parity/setup.py --verify >/dev/null
 	TMPDIR="$(CURDIR)/.work/tmp" CARGO_NET_OFFLINE=true cargo test --test parity -- --fuzz --seed $(if $(SEED),$(SEED),0) --cases $(if $(CASES),$(CASES),50)
+
+.PHONY: clean
+clean:
+	@if test -L ./target || { test -e ./target && ! test -d ./target; }; then \
+	  printf '%s\n' 'make clean: ./target must be a local build directory' >&2; exit 1; \
+	fi
+	rm -rf -- ./target

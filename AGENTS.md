@@ -326,6 +326,8 @@ The release binary is small by design. Do not add dependencies without a strong 
 
 ## Verification
 
+`make clean` removes the checkout's ordinary `./target` directory. It refuses a file or symlink at that path.
+
 - Edit: `cargo test --lib <test-name>` selects a regression; cost unmeasured.
 - Change: `TMPDIR=$PWD/.work/tmp make test` runs unit and CLI integration
   tests: 169 cases, 422.99 s cold and 2.47 s warm on loaded macOS ARM64;
