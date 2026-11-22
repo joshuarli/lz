@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import datetime
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -38,13 +39,36 @@ def command(name, tier):
     if name == 'driver':
         return [sys.executable, 'benches/driver.py', '--self-test']
     samples = ['--sample-count', '1', '--sample-size', '1'] if tier == 'change' else []
-    return ['cargo', 'bench', '--bench', 'bench', '--', 'bench::' + name, '--exact', *samples]
+    return ['cargo', 'bench', '--bench', 'bench', '--', 'bench::' + name, '--exact', '--format', 'json', *samples]
+
+
+def has_measurement(log: str, name: str) -> bool:
+    for line in log.splitlines():
+        try:
+            report: object = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(report, dict):
+            continue
+        measurements: object = report.get('benchmarks')
+        if not isinstance(measurements, list):
+            continue
+        for entry in measurements:
+            if not isinstance(entry, dict) or entry.get('name') != f'bench::{name}':
+                continue
+            samples: object = entry.get('sample_count')
+            iterations: object = entry.get('iter_count')
+            median: object = entry.get('median_ns')
+            if (type(samples) is int and samples > 0 and type(iterations) is int and iterations >= samples
+                    and type(median) is int and median >= 0):
+                return True
+    return False
 
 
 def preflight(selected):
     problems = []
     for tool in (['cargo', 'rustc'] if any(n != 'driver' for n in selected) else []):
-        if not shutil.which(tool):
+        if shutil.which(tool) is None:
             problems.append(f'{tool} missing: install the pinned Rust toolchain; needed by {", ".join(selected)}')
     if shutil.disk_usage(ROOT).free < 512 * 1024 * 1024:
         problems.append(f'less than 512 MiB free: free disk space; needed by {", ".join(selected)}')
@@ -67,6 +91,14 @@ class SelectionTests(unittest.TestCase):
         for args in [('change', ['nope'], [], []), ('edit', [], ['search'], []), ('change', [], ['search_hit_literal'], [])]:
             with self.assertRaises(ValueError):
                 select(*args)
+
+    def test_measurement_requires_completed_work(self):
+        name = 'search_hit_literal'
+        entry = {'name': f'bench::{name}', 'sample_count': 1, 'iter_count': 1, 'median_ns': 42}
+        for incomplete in ({'name': entry['name']}, {**entry, 'sample_count': True}, {**entry, 'iter_count': 0}, None):
+            self.assertFalse(has_measurement(json.dumps({'benchmarks': [incomplete]}), name))
+        self.assertFalse(has_measurement('search_hit_literal samples alloc:', name))
+        self.assertTrue(has_measurement(json.dumps({'benchmarks': [entry]}), name))
 
 
 def main():
@@ -104,11 +136,11 @@ def main():
         sys.exit(1)
     if a.check:
         gate = shutil.which('perf-gate-ready')
-        ready = bool(gate and subprocess.run([gate, '-1']).returncode == 0)
+        ready = gate is not None and subprocess.run([gate, '-1']).returncode == 0
         print('host readiness: ' + ('ready' if ready else 'busy or unavailable; timing deferred'))
         return
     gate = shutil.which('perf-gate-ready')
-    ready = bool(gate and subprocess.run([gate, '-1']).returncode == 0)
+    ready = gate is not None and subprocess.run([gate, '-1']).returncode == 0
     if a.tier in ('scenario', 'full') and not ready:
         print(f'{a.tier} timing deferred: host busy or readiness tool unavailable', file=sys.stderr)
         sys.exit(1)
@@ -121,12 +153,12 @@ def main():
             result = subprocess.run(command(n, a.tier), cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
         duration = time.monotonic() - start
         status = result.returncode
-        if n != 'driver' and status == 0 and not all(text in (out / f'{n}.log').read_text() for text in (n, 'samples', 'alloc:')):
-            print(f'{n}: benchmark missing from output', file=sys.stderr)
+        if n != 'driver' and status == 0 and not has_measurement((out / f'{n}.log').read_text(), n):
+            print(f'{n}: no completed benchmark measurement in output', file=sys.stderr)
             status = 1
         summary.append((n, status, duration))
         print(f'{n}: exit {status}, {duration:.2f}s, log {out / (n + ".log")}')
-    after = bool(gate and subprocess.run([gate, '-1']).returncode == 0)
+    after = gate is not None and subprocess.run([gate, '-1']).returncode == 0
     validity = 'host gate passed; no performance budget or interleaved reference, inconclusive' if ready and after else 'timing deferred: host busy or readiness unavailable'
     lines = [f'timing: {validity}', 'completion is not a performance verdict'] + [f'{n}: exit {rc}, {duration:.2f}s' for n, rc, duration in summary] + [f'excluded {n}: selection or tier' for n in ['driver', *NAMES] if n not in selected]
     (out / 'summary.txt').write_text('\n'.join(lines) + '\n')
