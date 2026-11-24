@@ -4,6 +4,8 @@ This document is written for AI agents working on the lz codebase. It covers arc
 
 ---
 
+The roadmap, [docs/roadmap.md](docs/roadmap.md), holds all current and future work; its Status is the resume point.
+
 ## What lz Is
 
 lz is a minimal, fast pager (like `less`) written in Rust. The less 668 parity target, its current verdict, and the evidence commands live in [docs/parity.md](docs/parity.md). It is Unix-only and has two direct runtime dependencies: `regex-automata` and `unicode-width`; `regex-syntax` is the regex parser. Everything else — terminal control, key input, signal handling — is done via direct libc FFI or standard library primitives.
