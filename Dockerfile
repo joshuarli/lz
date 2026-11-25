@@ -1,6 +1,8 @@
 # Toolchain bump: edit rust-toolchain.toml only; this image reads the channel
 # from it. Bump RUSTUP_VERSION (plus its checksums) separately.
 FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+COPY --from=oci.17166969.xyz/owned-tools@sha256:1a5d1306bb105f21b60c67bbf04677a92048c02a808ae9b29dfdac1a90f2f073 /opt/laputa /opt/laputa
+ENV PATH=/opt/laputa/bin:$PATH
 
 ARG TARGETARCH
 ARG RUSTUP_VERSION=1.29.1
@@ -11,7 +13,6 @@ RUN apk add --no-cache \
     binutils=2.45.1-r1 \
     bash=5.3.9-r1 \
     file=5.47-r2 \
-    git=2.54.1-r0 \
     make=4.4.1-r4 \
     gcc=15.2.0-r5 \
     musl-dev=1.2.6-r3
