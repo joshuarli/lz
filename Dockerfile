@@ -1,6 +1,8 @@
 # Toolchain bump: edit rust-toolchain.toml only; this image reads the channel
 # from it. Bump RUSTUP_VERSION (plus its checksums) separately.
 FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+COPY --from=oci.17166969.xyz/owned-tools@sha256:aaec19e7a44cbc53b40db2d22093600ee888689b89be94da90e5398ed02f1883 /opt/laputa /opt/laputa
+ENV PATH=$PATH:/opt/laputa/bin
 
 ARG TARGETARCH
 ARG RUSTUP_VERSION=1.29.1
@@ -13,8 +15,13 @@ RUN apk add --no-cache \
     file=5.47-r2 \
     git=2.54.1-r0 \
     make=4.4.1-r4 \
-    gcc=15.2.0-r5 \
     musl-dev=1.2.6-r3
+
+# Rust links host proc-macros against -lgcc_s, which only gcc's package symlinks; the C
+# compiler and linker driver is the owned clang.
+RUN apk add --no-cache libgcc=15.2.0-r5 \
+    && ln -s libgcc_s.so.1 /usr/lib/libgcc_s.so \
+    && ln -s /opt/laputa/bin/clang /usr/local/bin/cc
 
 RUN case "$TARGETARCH" in \
         amd64) arch=x86_64; sum=$RUSTUP_X86_64_SHA256 ;; \
