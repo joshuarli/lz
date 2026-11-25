@@ -96,7 +96,7 @@ ifndef V
 	$(eval OLD := $(shell sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml))
 	$(eval V := $(shell echo "$(OLD)" | awk -F. '{printf "%d.%d.%d", $$1, $$2, $$3+1}'))
 endif
-	sed -i '' 's/^version = ".*"/version = "$(V)"/' Cargo.toml
+	@set -eu; tmp=$$(mktemp ./Cargo.toml.XXXXXX); trap 'rm -f "$$tmp"' 0; trap 'rm -f "$$tmp"; trap - HUP; kill -HUP "$$$$"' HUP; trap 'rm -f "$$tmp"; trap - INT; kill -INT "$$$$"' INT; trap 'rm -f "$$tmp"; trap - TERM; kill -TERM "$$$$"' TERM; sed 's/^version = ".*"/version = "$(V)"/' Cargo.toml > "$$tmp"; mv "$$tmp" Cargo.toml
 	cargo check --quiet 2>/dev/null
 	git add Cargo.toml Cargo.lock
 	git commit -m "bump version to $(V)"
